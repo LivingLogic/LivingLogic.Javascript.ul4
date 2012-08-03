@@ -1498,7 +1498,11 @@ var ul4 = {
 		}
 		var result = obj.indexOf(search);
 		if (result !== -1)
+		{
+			if (start < 0)
+				start += obj.length;
 			result += start;
+		}
 		return result;
 	},
 
@@ -1519,7 +1523,11 @@ var ul4 = {
 		}
 		var result = obj.lastIndexOf(search);
 		if (result !== -1)
+		{
+			if (start < 0)
+				start += obj.length;
 			result += start;
+		}
 		return result;
 	},
 
