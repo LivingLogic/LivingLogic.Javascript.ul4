@@ -1484,6 +1484,10 @@ var ul4 = {
 	_me_find: function(obj, search, start, stop)
 	{
 		ul4._checkmethargs("find", arguments.length, 1, 3);
+		if (start < 0)
+			start += obj.length:
+		if (start < 0)
+			start = 0;
 		if (typeof(start) === "undefined" || start === null)
 			start = 0;
 		if (typeof(stop) === "undefined" || stop === null)
@@ -1498,17 +1502,17 @@ var ul4 = {
 		}
 		var result = obj.indexOf(search);
 		if (result !== -1)
-		{
-			if (start < 0)
-				start += obj.length;
 			result += start;
-		}
 		return result;
 	},
 
 	_me_rfind: function(obj, search, start, stop)
 	{
 		ul4._checkmethargs("rfind", arguments.length, 1, 3);
+		if (start < 0)
+			start += obj.length:
+		if (start < 0)
+			start = 0;
 		if (typeof(start) === "undefined" || start === null)
 			start = 0;
 		if (typeof(stop) === "undefined" || stop === null)
@@ -1523,11 +1527,7 @@ var ul4 = {
 		}
 		var result = obj.lastIndexOf(search);
 		if (result !== -1)
-		{
-			if (start < 0)
-				start += obj.length;
 			result += start;
-		}
 		return result;
 	},
 
