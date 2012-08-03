@@ -1485,7 +1485,7 @@ var ul4 = {
 	{
 		ul4._checkmethargs("find", arguments.length, 1, 3);
 		if (start < 0)
-			start += obj.length:
+			start += obj.length;
 		if (start < 0)
 			start = 0;
 		if (typeof(start) === "undefined" || start === null)
@@ -1510,7 +1510,7 @@ var ul4 = {
 	{
 		ul4._checkmethargs("rfind", arguments.length, 1, 3);
 		if (start < 0)
-			start += obj.length:
+			start += obj.length;
 		if (start < 0)
 			start = 0;
 		if (typeof(start) === "undefined" || start === null)
