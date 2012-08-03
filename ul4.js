@@ -1481,33 +1481,43 @@ var ul4 = {
 		}
 	},
 
-	_me_find: function(string, searchstring, start, stop)
+	_me_find: function(obj, search, start, stop)
 	{
 		ul4._checkmethargs("find", arguments.length, 1, 3);
 		if (typeof(start) === "undefined" || start === null)
 			start = 0;
 		if (typeof(stop) === "undefined" || stop === null)
-			stop = string.length;
+			stop = obj.length;
 
-		if (start !== 0 || stop !== string.length)
-			string = string.substring(start, stop);
-		var result = string.indexOf(searchstring);
+		if (start !== 0 || stop !== obj.length)
+		{
+			if (typeof(obj) == "string")
+				obj = obj.substring(start, stop);
+			else
+				obj = obj.slice(start, stop);
+		}
+		var result = obj.indexOf(search);
 		if (result !== -1)
 			result += start;
 		return result;
 	},
 
-	_me_rfind: function(string, searchstring, start, stop)
+	_me_rfind: function(obj, search, start, stop)
 	{
 		ul4._checkmethargs("rfind", arguments.length, 1, 3);
 		if (typeof(start) === "undefined" || start === null)
 			start = 0;
 		if (typeof(stop) === "undefined" || stop === null)
-			stop = string.length;
+			stop = obj.length;
 
-		if (start !== 0 || stop !== string.length)
-			string = string.substring(start, stop);
-		var result = string.lastIndexOf(searchstring);
+		if (start !== 0 || stop !== obj.length)
+		{
+			if (typeof(obj) == "string")
+				obj = obj.substring(start, stop);
+			else
+				obj = obj.slice(start, stop);
+		}
+		var result = obj.lastIndexOf(search);
 		if (result !== -1)
 			result += start;
 		return result;
