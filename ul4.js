@@ -820,6 +820,62 @@ var ul4 = {
 			return "0b" + obj.toString(2);
 	},
 
+	// Return the minimum value
+	_fu_min: function()
+	{
+		ul4._checkfuncargs("min", arguments, 1, null);
+
+		var obj;
+		if (arguments.length > 1)
+			obj = Array.prototype.slice.call(arguments, 0);
+		else
+			obj = arguments[0];
+		var iter = this._iter(obj);
+		var result;
+		var first = true;
+		while (true)
+		{
+			var item = iter();
+			if (item === null)
+			{
+				if (first)
+					throw "min() argument sequence is empty";
+				return result;
+			}
+			if (first || (item[0] < result))
+				result = item[0];
+			first = false;
+		}
+	},
+
+	// Return the maximum value
+	_fu_max: function()
+	{
+		ul4._checkfuncargs("max", arguments, 1, null);
+
+		var obj;
+		if (arguments.length > 1)
+			obj = Array.prototype.slice.call(arguments, 0);
+		else
+			obj = arguments[0];
+		var iter = this._iter(obj);
+		var result;
+		var first = true;
+		while (true)
+		{
+			var item = iter();
+			if (item === null)
+			{
+				if (first)
+					throw "max() argument sequence is empty";
+				return result;
+			}
+			if (first || (item[0] > result))
+				result = item[0];
+			first = false;
+		}
+	},
+
 	// Return a sorted version of ``obj``
 	_fu_sorted: function(obj)
 	{
@@ -2259,12 +2315,14 @@ var ul4 = {
 	{
 		if (typeof(max) === "undefined")
 			max = min;
-		if (args.length < min || args.length > max)
+		if (args.length < min || (max !== null && args.length > max))
 		{
 			if (min == max)
 				throw "function " + funcname + "() requires " + min + " argument" + (min!==1 ? "s" : "") + ", " + args.length + " given";
-			else
+			else if (max !== null)
 				throw "function " + funcname + "() requires " + min + "-" + max + " arguments, " + args.length + " given";
+			else
+				throw "function " + funcname + "() requires at least " + min + " argument" + (min!==1 ? "s" : "") + ", " + args.length + " given";
 		}
 	},
 
