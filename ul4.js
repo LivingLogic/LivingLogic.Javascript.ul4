@@ -839,7 +839,7 @@ var ul4 = {
 			if (item === null)
 			{
 				if (first)
-					throw "min() argument sequence is empty";
+					throw "min() arg is an empty sequence!";
 				return result;
 			}
 			if (first || (item[0] < result))
@@ -867,7 +867,7 @@ var ul4 = {
 			if (item === null)
 			{
 				if (first)
-					throw "max() argument sequence is empty";
+					throw "max() arg is and empty sequence!";
 				return result;
 			}
 			if (first || (item[0] > result))
