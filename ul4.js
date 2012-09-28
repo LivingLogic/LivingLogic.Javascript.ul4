@@ -3647,8 +3647,7 @@ ul4.Template = ul4._inherit(
 	register("floordivvar", ul4.FloorDivVar);
 	register("modvar", ul4.ModVar);
 	register("delvar", ul4.DelVar);
-	register("for", ul4.ForNormal);
-	register("foru", ul4.ForUnpack);
+	register("for", ul4.For);
 	register("break", ul4.Break);
 	register("continue", ul4.Continue);
 	register("ieie", ul4.IfElIfElse);
