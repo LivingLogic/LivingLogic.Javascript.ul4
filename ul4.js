@@ -3368,7 +3368,7 @@ ul4.For = ul4._inherit(
 			v.push(this._line(indent, "var item" + this.__id__ + " = iter" + this.__id__ + "();"));
 			v.push(this._line(indent, "if (item" + this.__id__ + " === null)"));
 			v.push(this._line(indent+1, "break;"));
-			v.push(this._line(indent, "ul4._unpackvariable(vars, " + ul4._fu_asjson(this.varname) + ", item" + this.__id__ + "[0];"));
+			v.push(this._line(indent, "ul4._unpackvariable(vars, " + ul4._fu_asjson(this.varname) + ", item" + this.__id__ + "[0]);"));
 			v.push(this._formatjs_content(indent));
 			--indent;
 			v.push(this._line(indent, "}"));
