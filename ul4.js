@@ -28,7 +28,7 @@
 
 /*jslint vars: true */
 var ul4 = {
-	version: "17",
+	version: "18",
 
 	// REs for parsing JSON
 	_rvalidchars: /^[\],:{}\s]*$/,
@@ -2090,6 +2090,36 @@ var ul4 = {
 		throw "'" + this._fu_type(obj) + "' object is not iterable";
 	},
 
+	_unpackvariable: function(vars, varname, item)
+	{
+		if (typeof(varname) === "string")
+			vars[varname] = item;
+		else
+		{
+			var iter = this._iter(item);
+
+			for (var i = 0;;++i)
+			{
+				var nextitem = iter();
+
+				if (nextitem !== null)
+				{
+					if (i < varname.length)
+						this._unpackvariable(vars, varname[i], nextitem);
+					else
+						throw "mismatched variable unpacking: " + varname.length + " varnames, >" + i + " items";
+				}
+				else
+				{
+					if (i == varname.length)
+						break;
+					else
+						throw "mismatched variable unpacking: " + varname.length + " varnames, " + (i+1) + " items";
+				}
+			}
+		}
+	},
+
 	// Repeat string ``str`` ``rep`` times
 	_str_repeat: function(str, rep)
 	{
@@ -3318,17 +3348,17 @@ ul4.Block = ul4._inherit(
 	}
 );
 
-ul4.ForNormal = ul4._inherit(
+ul4.For = ul4._inherit(
 	ul4.Block,
 	{
-		create: function(location, container, varname)
+		create: function(location, varname, container)
 		{
-			var fornormal = ul4.Block.create.call(this, location);
-			fornormal.container = container;
-			fornormal.varname = varname;
-			return fornormal;
+			var for_ = ul4.Block.create.call(this, location);
+			for_.varname = varname;
+			for_.container = container;
+			return for_;
 		},
-		_ul4onattrs: ul4.Block._ul4onattrs.concat(["container", "varname"]),
+		_ul4onattrs: ul4.Block._ul4onattrs.concat(["varname", "container"]),
 		formatjs: function(indent)
 		{
 			var v = [];
@@ -3338,7 +3368,7 @@ ul4.ForNormal = ul4._inherit(
 			v.push(this._line(indent, "var item" + this.__id__ + " = iter" + this.__id__ + "();"));
 			v.push(this._line(indent, "if (item" + this.__id__ + " === null)"));
 			v.push(this._line(indent+1, "break;"));
-			v.push(this._line(indent, "vars[" + ul4._fu_asjson(this.varname) + "] = item" + this.__id__ + "[0];"));
+			v.push(this._line(indent, "ul4._unpackvariable(vars, " + ul4._fu_asjson(this.varname) + ", item" + this.__id__ + "[0];"));
 			v.push(this._formatjs_content(indent));
 			--indent;
 			v.push(this._line(indent, "}"));
@@ -3346,44 +3376,27 @@ ul4.ForNormal = ul4._inherit(
 		},
 		format: function(indent)
 		{
-			return this._line(indent, "for " + this.varname + " in " + this.container.format(indent)) + ul4.Block.format.call(this, indent);
-		}
-	}
-);
-
-ul4.ForUnpack = ul4._inherit(
-	ul4.Block,
-	{
-		create: function(location, container, varnames)
-		{
-			var fornormal = ul4.Block.create.call(this, location);
-			fornormal.container = container;
-			fornormal.varnames = varnames;
-			return fornormal;
-		},
-		_ul4onattrs: ul4.Block._ul4onattrs.concat(["container", "varnames"]),
-		formatjs: function(indent)
-		{
-			var v = [];
-			v.push(this._line(indent, "for (var iter" + this.__id__ + " = ul4._iter(" + this.container.formatjs(indent) + ");;)"));
-			v.push(this._line(indent, "{"));
-			++indent;
-			v.push(this._line(indent, "var item" + this.__id__ + " = iter" + this.__id__ + "();"));
-			v.push(this._line(indent, "if (item" + this.__id__ + " === null)"));
-			v.push(this._line(indent+1, "break;"));
-			v.push(this._line(indent, "var items" + this.__id__ + " = ul4._fu_list(item" + this.__id__ + "[0]);"));
-			v.push(this._line(indent, "if (items" + this.__id__ + ".length != " + this.varnames.length + ")"));
-			v.push(this._line(indent+1, "throw 'mismatched for loop unpacking: " + this.varnames.length + " varnames, ' + items" + this.__id__ + ".length + ' items';"));
-			for (var i = 0; i < this.varnames.length; ++i)
-				v.push(this._line(indent, "vars[" + ul4._fu_asjson(this.varnames[i]) + "] = items" + this.__id__ + "[" + i + "];"));
-			v.push(this._formatjs_content(indent));
-			--indent;
-			v.push(this._line(indent, "}"));
-			return v.join("");
-		},
-		format: function(indent)
-		{
-			return this._line(indent, "for (" + this.varnames.join(", ") + ") in " + this.container.format(indent)) + ul4.Block.format.call(this, indent);
+			var formatvarname = function(varname)
+			{
+				if (typeof(varname) === "string")
+					return varname;
+				else if (varname.length == 1)
+					return "(" + formatvarname(varname[0]) + ",)";
+				else
+				{
+					var v = [];
+					v.push("(");
+					for (var i in varname)
+					{
+						if (i)
+							v.push(", ");
+						v.push(formatvarname(varname[i]);
+					}
+					v.push(")");
+					return v.join("");
+				}
+			}
+			return this._line(indent, "for " + formatname(this.varname) + " in " + this.container.format(indent)) + ul4.Block.format.call(this, indent);
 		}
 	}
 );
