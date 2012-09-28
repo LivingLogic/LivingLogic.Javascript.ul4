@@ -3390,7 +3390,7 @@ ul4.For = ul4._inherit(
 					{
 						if (i)
 							v.push(", ");
-						v.push(formatvarname(varname[i]);
+						v.push(formatvarname(varname[i]));
 					}
 					v.push(")");
 					return v.join("");
