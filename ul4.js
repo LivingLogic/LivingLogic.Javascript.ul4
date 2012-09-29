@@ -2105,13 +2105,13 @@ var ul4 = {
 				if (nextitem !== null)
 				{
 					if (i < varname.length)
-						this._unpackvariable(vars, varname[i], nextitem);
+						this._unpackvariable(vars, varname[i], nextitem[0]);
 					else
 						throw "mismatched variable unpacking: " + varname.length + " varnames, >" + i + " items";
 				}
 				else
 				{
-					if (i == varname.length)
+					if (i === varname.length)
 						break;
 					else
 						throw "mismatched variable unpacking: " + varname.length + " varnames, " + (i+1) + " items";
@@ -3396,7 +3396,7 @@ ul4.For = ul4._inherit(
 					return v.join("");
 				}
 			}
-			return this._line(indent, "for " + formatname(this.varname) + " in " + this.container.format(indent)) + ul4.Block.format.call(this, indent);
+			return this._line(indent, "for " + formatvarname(this.varname) + " in " + this.container.format(indent)) + ul4.Block.format.call(this, indent);
 		}
 	}
 );
