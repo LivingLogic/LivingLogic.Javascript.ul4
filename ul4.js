@@ -2090,6 +2090,27 @@ var ul4 = {
 		throw "'" + this._fu_type(obj) + "' object is not iterable";
 	},
 
+	formatnestedname: function(varname)
+	{
+		if (typeof(varname) === "string")
+			return varname;
+		else if (varname.length == 1)
+			return "(" + this.formatnestedname(varname[0]) + ",)";
+		else
+		{
+			var v = [];
+			v.push("(");
+			for (var i in varname)
+			{
+				if (i)
+					v.push(", ");
+				v.push(formatnestedname(varname[i]));
+			}
+			v.push(")");
+			return v.join("");
+		}
+	},
+
 	_unpackvariable: function(vars, varname, item)
 	{
 		if (typeof(varname) === "string")
@@ -3190,11 +3211,11 @@ ul4.StoreVar = ul4._inherit(
 	{
 		format: function(indent)
 		{
-			return this._line(indent, this.varname + " = " + this.value.format(indent));
+			return this._line(indent, ul4.formatnestedname(this.varname) + " = " + this.value.format(indent));
 		},
 		formatjs: function(indent)
 		{
-			return this._line(indent, "vars[" + ul4._fu_asjson(this.varname) + "] = " + this.value.formatjs(indent) + ";");
+			return this._line(indent, "ul4._unpackvariable(vars, " + ul4._fu_asjson(this.varname) + ", " + this.value.formatjs(indent) + ");");
 		}
 	}
 );
@@ -3376,27 +3397,7 @@ ul4.For = ul4._inherit(
 		},
 		format: function(indent)
 		{
-			var formatvarname = function(varname)
-			{
-				if (typeof(varname) === "string")
-					return varname;
-				else if (varname.length == 1)
-					return "(" + formatvarname(varname[0]) + ",)";
-				else
-				{
-					var v = [];
-					v.push("(");
-					for (var i in varname)
-					{
-						if (i)
-							v.push(", ");
-						v.push(formatvarname(varname[i]));
-					}
-					v.push(")");
-					return v.join("");
-				}
-			}
-			return this._line(indent, "for " + formatvarname(this.varname) + " in " + this.container.format(indent)) + ul4.Block.format.call(this, indent);
+			return this._line(indent, "for " + ul4.formatnestedname(this.varname) + " in " + this.container.format(indent)) + ul4.Block.format.call(this, indent);
 		}
 	}
 );
