@@ -511,8 +511,6 @@ var ul4 = {
 	{
 		ul4._checkfuncargs("list", arguments, 0, 1);
 
-		if (typeof(obj) === "undefined")
-			return [];
 		if (typeof(obj) == "string" || this._fu_islist(obj))
 		{
 			var result = [];
