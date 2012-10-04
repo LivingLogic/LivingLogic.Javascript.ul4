@@ -1928,108 +1928,6 @@ var ul4 = {
 		return obj.withlum(newlum);
 	},
 
-	// "Classes"
-	Color: {
-		__iscolor__: true,
-
-		create: function(r, g, b, a)
-		{
-			var c = ul4._clone(this);
-			c.r = typeof(r) !== "undefined" ? r : 0;
-			c.g = typeof(g) !== "undefined" ? g : 0;
-			c.b = typeof(b) !== "undefined" ? b : 0;
-			c.a = typeof(a) !== "undefined" ? a : 255;
-			return c;
-		},
-
-		lum: function()
-		{
-			return this.hls()[1];
-		},
-
-		hls: function()
-		{
-			var r = this.r/255.0;
-			var g = this.g/255.0;
-			var b = this.b/255.0;
-			var maxc = Math.max(r, g, b);
-			var minc = Math.min(r, g, b);
-			var h, l, s;
-			var rc, gc, bc;
-
-			l = (minc+maxc)/2.0;
-			if (minc == maxc)
-				return [0.0, l, 0.0];
-			if (l <= 0.5)
-				s = (maxc-minc) / (maxc+minc);
-			else
-				s = (maxc-minc) / (2.0-maxc-minc);
-			rc = (maxc-r) / (maxc-minc);
-			gc = (maxc-g) / (maxc-minc);
-			bc = (maxc-b) / (maxc-minc);
-			if (r == maxc)
-				h = bc-gc;
-			else if (g == maxc)
-				h = 2.0+rc-bc;
-			else
-				h = 4.0+gc-rc;
-			h = (h/6.0) % 1.0;
-			return [h, l, s];
-		},
-
-		hlsa: function()
-		{
-			var hls = this.hls();
-			return hls.concat(this.a/255.0);
-		},
-
-		hsv: function()
-		{
-			var r = this.r/255.0;
-			var g = this.g/255.0;
-			var b = this.b/255.0;
-			var maxc = Math.max(r, g, b);
-			var minc = Math.min(r, g, b);
-			var v = maxc;
-			if (minc == maxc)
-				return [0.0, 0.0, v];
-			var s = (maxc-minc) / maxc;
-			var rc = (maxc-r) / (maxc-minc);
-			var gc = (maxc-g) / (maxc-minc);
-			var bc = (maxc-b) / (maxc-minc);
-			var h;
-			if (r == maxc)
-				h = bc-gc;
-			else if (g == maxc)
-				h = 2.0+rc-bc;
-			else
-				h = 4.0+gc-rc;
-			h = (h/6.0) % 1.0;
-			return [h, s, v];
-		},
-
-		hsva: function()
-		{
-			var hsv = this.hsv();
-			return hsv.concat(this.a/255.0);
-		},
-
-		witha: function(a)
-		{
-			if (typeof(a) !== "number")
-				throw "witha() requires a number";
-			return ul4.Color.create(this.r, this.g, this.b, a);
-		},
-
-		withlum: function(lum)
-		{
-			if (typeof(lum) !== "number")
-				throw "witha() requires a number";
-			var hlsa = this.hlsa();
-			return ul4._fu_hls(hlsa[0], lum, hlsa[2], hlsa[3]);
-		}
-	},
-
 	/// Helper functions
 
 	// Crockford style object creation
@@ -2402,6 +2300,115 @@ ul4.Proto = {
 		return this.__prototype__.isa(type);
 	}
 };
+
+ul4.Color = ul4._inherit(
+	ul4.Proto,
+	{
+		__iscolor__: true,
+
+		create: function(r, g, b, a)
+		{
+			var c = ul4._clone(this);
+			c.r = typeof(r) !== "undefined" ? r : 0;
+			c.g = typeof(g) !== "undefined" ? g : 0;
+			c.b = typeof(b) !== "undefined" ? b : 0;
+			c.a = typeof(a) !== "undefined" ? a : 255;
+			return c;
+		},
+
+		lum: function()
+		{
+			return this.hls()[1];
+		},
+
+		hls: function()
+		{
+			var r = this.r/255.0;
+			var g = this.g/255.0;
+			var b = this.b/255.0;
+			var maxc = Math.max(r, g, b);
+			var minc = Math.min(r, g, b);
+			var h, l, s;
+			var rc, gc, bc;
+
+			l = (minc+maxc)/2.0;
+			if (minc == maxc)
+				return [0.0, l, 0.0];
+			if (l <= 0.5)
+				s = (maxc-minc) / (maxc+minc);
+			else
+				s = (maxc-minc) / (2.0-maxc-minc);
+			rc = (maxc-r) / (maxc-minc);
+			gc = (maxc-g) / (maxc-minc);
+			bc = (maxc-b) / (maxc-minc);
+			if (r == maxc)
+				h = bc-gc;
+			else if (g == maxc)
+				h = 2.0+rc-bc;
+			else
+				h = 4.0+gc-rc;
+			h = (h/6.0) % 1.0;
+			return [h, l, s];
+		},
+
+		hlsa: function()
+		{
+			var hls = this.hls();
+			return hls.concat(this.a/255.0);
+		},
+
+		hsv: function()
+		{
+			var r = this.r/255.0;
+			var g = this.g/255.0;
+			var b = this.b/255.0;
+			var maxc = Math.max(r, g, b);
+			var minc = Math.min(r, g, b);
+			var v = maxc;
+			if (minc == maxc)
+				return [0.0, 0.0, v];
+			var s = (maxc-minc) / maxc;
+			var rc = (maxc-r) / (maxc-minc);
+			var gc = (maxc-g) / (maxc-minc);
+			var bc = (maxc-b) / (maxc-minc);
+			var h;
+			if (r == maxc)
+				h = bc-gc;
+			else if (g == maxc)
+				h = 2.0+rc-bc;
+			else
+				h = 4.0+gc-rc;
+			h = (h/6.0) % 1.0;
+			return [h, s, v];
+		},
+
+		hsva: function()
+		{
+			var hsv = this.hsv();
+			return hsv.concat(this.a/255.0);
+		},
+
+		witha: function(a)
+		{
+			if (typeof(a) !== "number")
+				throw "witha() requires a number";
+			return ul4.Color.create(this.r, this.g, this.b, a);
+		},
+
+		withlum: function(lum)
+		{
+			if (typeof(lum) !== "number")
+				throw "witha() requires a number";
+			var hlsa = this.hlsa();
+			return ul4._fu_hls(hlsa[0], lum, hlsa[2], hlsa[3]);
+		},
+
+		__iterator__: function()
+		{
+			return ul4.ColorIterator.create(this);
+		}
+	}
+);
 
 ul4.Location = ul4._inherit(
 	ul4.Proto,
