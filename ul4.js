@@ -920,8 +920,7 @@ var ul4 = {
 				return null;
 			return [start + (i++) * step];
 		};
-		result.__iter__ = true;
-		return result;
+		return ul4._markiter(result);
 	},
 
 	// Encodes ``obj`` in the Javascript Object Notation (see http://json.org/; with support for dates, colors and templates)
@@ -1042,8 +1041,7 @@ var ul4 = {
 		{
 			return i >= 0 ? [obj[i--]] : null;
 		};
-		result.__iter__ = true;
-		return result;
+		return ul4._markiter(result);
 	},
 
 	// Returns a random number in the interval ``[0;1[``
@@ -1109,8 +1107,7 @@ var ul4 = {
 			var inner = iter();
 			return inner !== null ? [[i++, inner[0]]] : null;
 		};
-		result.__iter__ = true;
-		return result;
+		return ul4._markiter(result);
 	},
 
 	// Return an iterator over ``[isfirst, item]`` lists from the iterable object ``obj`` (``isfirst`` is true for the first item, false otherwise)
@@ -1127,8 +1124,7 @@ var ul4 = {
 			isfirst = false;
 			return result;
 		};
-		result.__iter__ = true;
-		return result;
+		return ul4._markiter(result);
 	},
 
 	// Return an iterator over ``[islast, item]`` lists from the iterable object ``obj`` (``islast`` is true for the last item, false otherwise)
@@ -1147,8 +1143,7 @@ var ul4 = {
 			lastitem = inner;
 			return result;
 		};
-		result.__iter__ = true;
-		return result;
+		return ul4._markiter(result);
 	},
 
 	// Return an iterator over ``[isfirst, islast, item]`` lists from the iterable object ``obj`` (``isfirst`` is true for the first item, ``islast`` is true for the last item. Both are false otherwise)
@@ -1169,8 +1164,7 @@ var ul4 = {
 			isfirst = false;
 			return result;
 		};
-		result.__iter__ = true;
-		return result;
+		return ul4._markiter(result);
 	},
 
 	// Return an iterator over ``[index, isfirst, islast, item]`` lists from the iterable object ``obj`` (``isfirst`` is true for the first item, ``islast`` is true for the last item. Both are false otherwise)
@@ -1194,8 +1188,7 @@ var ul4 = {
 			isfirst = false;
 			return result;
 		};
-		result.__iter__ = true;
-		return result;
+		return ul4._markiter(result);
 	},
 
 	// Return an iterator over lists, where the i'th list consists of all i'th items from the arguments (terminating when the shortest argument ends)
@@ -1228,9 +1221,7 @@ var ul4 = {
 				return null;
 			}
 		}
-		result.__iter__ = true;
-
-		return result;
+		return ul4._markiter(result);
 	},
 
 	// Return the absolute value for the number ``obj``
@@ -1668,9 +1659,15 @@ var ul4 = {
 		if (typeof(sep) !== "string")
 			throw "join() requires a string";
 
-		if (!this._fu_islist(container))
-			container = this._fu_list(container);
-		return container.join(sep);
+		var resultlist = [];
+		for (var iter = ul4._iter(container);;)
+		{
+			var item = iter();
+			if (item === null)
+				break;
+			resultlist.push(item[0]);
+		}
+		return resultlist.join(sep);
 	},
 
 	_me_startswith: function(string, prefix)
@@ -1981,8 +1978,7 @@ var ul4 = {
 			{
 				return (i < obj.length) ? [obj[i++]] : null;
 			};
-			result.__iter__ = true;
-			return result;
+			return ul4._markiter(result);
 		}
 		else if (this._fu_isdict(obj))
 		{
@@ -1996,14 +1992,20 @@ var ul4 = {
 					return null;
 				return [keys[i++]];
 			};
-			result.__iter__ = true;
-			return result;
+			return ul4._markiter(result);
 		}
 		else if (obj !== null && obj !== undefined && typeof(obj.__iter__) !== "undefined")
 		{
 			return obj;
 		}
 		throw "'" + this._fu_type(obj) + "' object is not iterable";
+	},
+
+	// Mark a function as an iterator
+	_markiter: function(f)
+	{
+		f.__iter__ = true;
+		return f;
 	},
 
 	formatnestedname: function(varname)
@@ -2762,12 +2764,57 @@ ul4.DictComp = ul4._inherit(
 			result += "ul4._unpackvariable(vars, " + ul4._fu_asjson(this.varname) + ", item[0]);";
 			if (this.condition !== null)
 				result += "if(ul4._fu_bool(" + this.condition.formatjs(indent) + "))";
-			result += "result[" + this.key.formatjs(indent) + "]=" + this.value.formatjs(indent) + ";}return result;})()"
+			result += "result[" + this.key.formatjs(indent) + "]=" + this.value.formatjs(indent) + ";}return result;})()";
 			return result;
 		},
 		format: function(indent)
 		{
 			return "{ " + this.key.format(indent) + " : " + this.value.format(indent) + " for " + ul4.formatnestedname(this.varname) + " in " + this.container.format(indent) + (this.condition !== null ? " if " + this.condition.format(indent) : "") + " }";
+		},
+		precedence: 11
+	}
+);
+
+ul4.GenExpr = ul4._inherit(
+	ul4.AST,
+	{
+		create: function(location, item, varname, container, condition)
+		{
+			var genexp = ul4.AST.create.call(this, location);
+			genexp.item = item;
+			genexp.varname = varname;
+			genexp.container = container;
+			genexp.condition = condition;
+			return genexp;
+		},
+		_ul4onattrs: ul4.AST._ul4onattrs.concat(["item", "varname", "container", "condition"]),
+		formatjs: function(indent)
+		{
+			var v = [];
+			v.push("ul4._markiter(");
+				v.push("(function(container){");
+					v.push("var iter=ul4._iter(container);");
+					v.push("return(function(){");
+						v.push("var item;");
+						v.push("for (;;)");
+						v.push("{");
+							v.push("item = iter();");
+							v.push("if(item===null)");
+								v.push("return null;");
+							v.push("ul4._unpackvariable(vars, " + ul4._fu_asjson(this.varname) + ", item[0]);");
+							if (this.condition !== null)
+								v.push("if(ul4._fu_bool(" + this.condition.formatjs(indent) + "))");
+							v.push("break;");
+						v.push("}");
+						v.push("return[" + this.item.formatjs(indent) + "];");
+					v.push("})");
+				v.push("})(" + this.container.formatjs(indent) + ")");
+			v.push(")");
+			return v.join("");
+		},
+		format: function(indent)
+		{
+			return "( " + this.item.format(indent) + " for " + ul4.formatnestedname(this.varname) + " in " + this.container.format(indent) + (this.condition !== null ? " if " + this.condition.format(indent) : "") + " )";
 		},
 		precedence: 11
 	}
@@ -3695,6 +3742,7 @@ ul4.Template = ul4._inherit(
 	register("listcomp", ul4.ListComp);
 	register("dict", ul4.Dict);
 	register("dictcomp", ul4.DictComp);
+	register("genexpr", ul4.GenExpr);
 	register("var", ul4.LoadVar);
 	register("not", ul4.Not);
 	register("neg", ul4.Neg);
