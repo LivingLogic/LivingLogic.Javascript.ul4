@@ -1259,6 +1259,26 @@ var ul4 = {
 		return new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds(), now.getUTCMilliseconds());
 	},
 
+	// Return a ``Date`` object from the arguments passed in
+	_fu_date: function(year, month, day, hour, minute, second, microsecond)
+	{
+		ul4._checkfuncargs("date", arguments, 3, 7);
+
+		if (typeof(hour) === "undefined")
+			hour = 0;
+
+		if (typeof(minute) === "undefined")
+			minute = 0;
+
+		if (typeof(second) === "undefined")
+			second = 0;
+
+		if (typeof(microsecond) === "undefined")
+			microsecond = 0;
+
+		return new Date(year, month-1, day, hour, minute, second, microsecond/1000);
+	},
+
 	// Return a ``Color`` object from the hue, luminescence, saturation and alpha values ``h``, ``l``, ``s`` and ``a`` (i.e. using the HLS color model)
 	_fu_hls: function(h, l, s, a)
 	{
@@ -2401,11 +2421,6 @@ ul4.Color = ul4._inherit(
 				throw "witha() requires a number";
 			var hlsa = this.hlsa();
 			return ul4._fu_hls(hlsa[0], lum, hlsa[2], hlsa[3]);
-		},
-
-		__iterator__: function()
-		{
-			return ul4.ColorIterator.create(this);
 		}
 	}
 );
@@ -2657,6 +2672,36 @@ ul4.List = ul4._inherit(
 	}
 );
 
+ul4.ListComp = ul4._inherit(
+	ul4.AST,
+	{
+		create: function(location, item, varname, container, condition)
+		{
+			var listcomp = ul4.AST.create.call(this, location);
+			listcomp.item = item;
+			listcomp.varname = varname;
+			listcomp.container = container;
+			listcomp.condition = condition;
+			return listcomp;
+		},
+		_ul4onattrs: ul4.AST._ul4onattrs.concat(["item", "varname", "container", "condition"]),
+		formatjs: function(indent)
+		{
+			var result = "(function(){var result=[];for(var iter=ul4._iter(" + this.container.formatjs(indent) + ");;){var item=iter();if(item===null)break;";
+			result += "ul4._unpackvariable(vars, " + ul4._fu_asjson(this.varname) + ", item[0]);";
+			if (this.condition !== null)
+				result += "if(ul4._fu_bool(" + this.condition.formatjs(indent) + "))";
+			result += "result.push(" + this.item.formatjs(indent) + ");}return result;})()"
+			return result;
+		},
+		format: function(indent)
+		{
+			return "[ " + this.item.format(indent) + " for " + ul4.formatnestedname(this.varname) + " in " + this.container.format(indent) + (this.condition !== null ? " if " + this.condition.format(indent) : "") + " ]";
+		},
+		precedence: 11
+	}
+);
+
 ul4.Dict = ul4._inherit(
 	ul4.AST,
 	{
@@ -2692,6 +2737,37 @@ ul4.Dict = ul4._inherit(
 					v.push("**" + item[0].format(indent));
 			}
 			return "{" + v.join(", ") + "}";
+		},
+		precedence: 11
+	}
+);
+
+ul4.DictComp = ul4._inherit(
+	ul4.AST,
+	{
+		create: function(location, key, value, varname, container, condition)
+		{
+			var listcomp = ul4.AST.create.call(this, location);
+			listcomp.key = key;
+			listcomp.value = value;
+			listcomp.varname = varname;
+			listcomp.container = container;
+			listcomp.condition = condition;
+			return listcomp;
+		},
+		_ul4onattrs: ul4.AST._ul4onattrs.concat(["key", "value", "varname", "container", "condition"]),
+		formatjs: function(indent)
+		{
+			var result = "(function(){var result={};for(var iter=ul4._iter(" + this.container.formatjs(indent) + ");;){var item=iter();if(item===null)break;";
+			result += "ul4._unpackvariable(vars, " + ul4._fu_asjson(this.varname) + ", item[0]);";
+			if (this.condition !== null)
+				result += "if(ul4._fu_bool(" + this.condition.formatjs(indent) + "))";
+			result += "result[" + this.key.formatjs(indent) + "]=" + this.value.formatjs(indent) + ";}return result;})()"
+			return result;
+		},
+		format: function(indent)
+		{
+			return "{ " + this.key.format(indent) + " : " + this.value.format(indent) + " for " + ul4.formatnestedname(this.varname) + " in " + this.container.format(indent) + (this.condition !== null ? " if " + this.condition.format(indent) : "") + " }";
 		},
 		precedence: 11
 	}
@@ -3616,7 +3692,9 @@ ul4.Template = ul4._inherit(
 	register("color", ul4.LoadColor);
 	register("date", ul4.LoadDate);
 	register("list", ul4.List);
+	register("listcomp", ul4.ListComp);
 	register("dict", ul4.Dict);
+	register("dictcomp", ul4.DictComp);
 	register("var", ul4.LoadVar);
 	register("not", ul4.Not);
 	register("neg", ul4.Neg);
