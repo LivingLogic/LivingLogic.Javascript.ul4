@@ -2476,28 +2476,6 @@ ul4.Location = ul4._inherit(
 	}
 );
 
-ul4.Stack = ul4._inherit(
-	ul4.Proto,
-	{
-		create: function()
-		{
-			var stack = ul4._clone(this);
-			stack.stack = [];
-			return stack;
-		},
-		push: function(obj)
-		{
-			this.stack.push(obj);
-			return obj;
-		},
-		pop: function(obj)
-		{
-			var result = this.stack.pop();
-			return (typeof(obj) === "undefined") ? result : obj;
-		}
-	}
-);
-
 ul4.AST = ul4._inherit(
 	ul4.Proto,
 	{
@@ -3110,7 +3088,7 @@ ul4.And = ul4._inherit(
 	{
 		formatjs: function(indent)
 		{
-			return "ul4._fu_bool(stack.push(" + this.obj2.formatjs(indent) + ")) ? stack.pop(" + this.obj1.formatjs(indent) + ") : stack.pop()";
+			return "(function(){var obj1=" + this.obj1.formatjs(indent) + "; return (!ul4._fu_bool(obj1)) ? obj1 : " + this.obj2.formatjs(indent) + ";})()";
 		},
 		format: function(indent)
 		{
@@ -3125,7 +3103,7 @@ ul4.Or = ul4._inherit(
 	{
 		formatjs: function(indent)
 		{
-			return "ul4._fu_bool(stack.push(" + this.obj1.formatjs(indent) + ")) ? stack.pop() : stack.pop(" + this.obj2.formatjs(indent) + ")";
+			return "(function(){var obj1=" + this.obj1.formatjs(indent) + "; return ul4._fu_bool(obj1) ? obj1 : " + this.obj2.formatjs(indent) + ";})()";
 		},
 		format: function(indent)
 		{
@@ -3694,7 +3672,6 @@ ul4.Template = ul4._inherit(
 				var v = [];
 				v.push(this._line(0, "(function(self, vars)"));
 				v.push(this._line(0, "{"));
-				v.push(this._line(1, "var stack = ul4.Stack.create();"));
 				v.push(this._line(1, "var out = [];"));
 				v.push(this._formatjs_content(1));
 				v.push(this._line(1, "return out;"));
