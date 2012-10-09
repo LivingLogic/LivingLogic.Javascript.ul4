@@ -620,14 +620,225 @@ var ul4 = {
 	},
 
 	// Format ``obj`` using the format string ``format``
-	_fu_format: function(obj, format)
+	_fu_format: function(obj, format, lang)
 	{
-		ul4._checkfuncargs("format", arguments, 2);
+		ul4._checkfuncargs("format", arguments, 2, 3);
 
-		var weekdays1 = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-		var weekdays2 = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-		var months1 = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-		var months2 = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November','December'];
+		var translations = {
+			de: {
+				ms: ["Jan", "Feb", "M\u00e4r", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
+				ml: ["Januar", "Februar", "M\u00e4rz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"],
+				ws: ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
+				wl: ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"],
+				xf: "%d.%m.%Y",
+				Xf: "%H:%M:%S",
+				cf: "%a %d %b %Y %H:%M:%S",
+			},
+			de_AT: {
+				ms: ["J\u00e4n", "Feb", "M\u00e4r", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
+				ml: ["J\u00e4nner", "Feber", "M\u00e4rz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"],
+				ws: ["Son", "Mon", "Die", "Mit", "Don", "Fre", "Sam"],
+				wl: ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"],
+				xf: "%Y-%m-%d",
+				Xf: "%H:%M:%S",
+				cf: "%a %d %b %Y %H:%M:%S",
+			},
+			en: {
+				ms: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+				ml: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"],
+				ws: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+				wl: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+				xf: "%m/%d/%Y",
+				Xf: "%I:%M:%S %p",
+				cf: "%a %d %b %Y %I:%M:%S %p",
+			},
+			fr: {
+				ms: ["janv.", "f\u00e9vr.", "mars", "avril", "mai", "juin", "juil.", "ao\u00fbt", "sept.", "oct.", "nov.", "d\u00e9c."],
+				ml: ["janvier", "f\u00e9vrier", "mars", "avril", "mai", "juin", "juillet", "ao\u00fbt", "septembre", "octobre", "novembre", "d\u00e9cembre"],
+				ws: ["dim.", "lun.", "mar.", "mer.", "jeu.", "ven.", "sam."],
+				wl: ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"],
+				xf: "%d/%m/%Y",
+				Xf: "%H:%M:%S",
+				cf: "%a %d %b %Y %H:%M:%S",
+			},
+			es: {
+				ms: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"],
+				ml: ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"],
+				ws: ["dom", "lun", "mar", "mi\u00e9", "jue", "vie", "s\u00e1b"],
+				wl: ["domingo", "lunes", "martes", "mi\u00e9rcoles", "jueves", "viernes", "s\u00e1bado"],
+				xf: "%d/%m/%y",
+				Xf: "%H:%M:%S",
+				cf: "%a %d %b %Y %H:%M:%S",
+			},
+			it: {
+				ms: ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"],
+				ml: ["gennaio", "febbraio", "marzo", "aprile", "maggio", "giugno", "luglio", "agosto", "settembre", "ottobre", "novembre", "dicembre"],
+				ws: ["dom", "lun", "mar", "mer", "gio", "ven", "sab"],
+				wl: ["domenica", "luned\u00ec", "marted\u00ec", "mercoled\u00ec", "gioved\u00ec", "venerd\u00ec", "sabato"],
+				xf: "%d/%m/%Y",
+				Xf: "%H:%M:%S",
+				cf: "%a %d %b %Y %H:%M:%S",
+			},
+			da: {
+				ms: ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"],
+				ml: ["januar", "februar", "marts", "april", "maj", "juni", "juli", "august", "september", "oktober", "november", "december"],
+				ws: ["s\u00f8n", "man", "tir", "ons", "tor", "fre", "l\u00f8r"],
+				wl: ["s\u00f8ndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "l\u00f8rdag"],
+				xf: "%d-%m-%Y",
+				Xf: "%H:%M:%S",
+				cf: "%a %d %b %Y %H:%M:%S",
+			},
+			sv: {
+				ms: ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"],
+				ml: ["januari", "februari", "mars", "april", "maj", "juni", "juli", "augusti", "september", "oktober", "november", "december"],
+				ws: ["s\u00f6n", "m\u00e5n", "tis", "ons", "tor", "fre", "l\u00f6r"],
+				wl: ["s\u00f6ndag", "m\u00e5ndag", "tisdag", "onsdag", "torsdag", "fredag", "l\u00f6rdag"],
+				xf: "%Y-%m-%d",
+				Xf: "%H.%M.%S",
+				cf: "%a %d %b %Y %H.%M.%S",
+			},
+			nl: {
+				ms: ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"],
+				ml: ["januari", "februari", "maart", "april", "mei", "juni", "juli", "augustus", "september", "oktober", "november", "december"],
+				ws: ["zo", "ma", "di", "wo", "do", "vr", "za"],
+				wl: ["zondag", "maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag"],
+				xf: "%d-%m-%y",
+				Xf: "%H:%M:%S",
+				cf: "%a %d %b %Y %H:%M:%S",
+			},
+			pt: {
+				ms: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"],
+				ml: ["Janeiro", "Fevereiro", "Mar\u00e7o", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"],
+				ws: ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "S\u00e1b"],
+				wl: ["Domingo", "Segunda", "Ter\u00e7a", "Quarta", "Quinta", "Sexta", "S\u00e1bado"],
+				xf: "%d-%m-%Y",
+				Xf: "%H:%M:%S",
+				cf: "%a %d %b %Y %H:%M:%S",
+			},
+			cs: {
+				ms: ["led", "\u00fano", "b\u0159e", "dub", "kv\u011b", "\u010den", "\u010dec", "srp", "z\u00e1\u0159", "\u0159\u00edj", "lis", "pro"],
+				ml: ["leden", "\u00fanor", "b\u0159ezen", "duben", "kv\u011bten", "\u010derven", "\u010dervenec", "srpen", "z\u00e1\u0159\u00ed", "\u0159\u00edjen", "listopad", "prosinec"],
+				ws: ["Ne", "Po", "\u00dat", "St", "\u010ct", "P\u00e1", "So"],
+				wl: ["Ned\u011ble", "Pond\u011bl\u00ed", "\u00dater\u00fd", "St\u0159eda", "\u010ctvrtek", "P\u00e1tek", "Sobota"],
+				xf: "%d.%m.%Y",
+				Xf: "%H:%M:%S",
+				cf: "%a\u00a0%d.\u00a0%B\u00a0%Y,\u00a0%H:%M:%S",
+			},
+			sk: {
+				ms: ["jan", "feb", "mar", "apr", "m\u00e1j", "j\u00fan", "j\u00fal", "aug", "sep", "okt", "nov", "dec"],
+				ml: ["janu\u00e1r", "febru\u00e1r", "marec", "apr\u00edl", "m\u00e1j", "j\u00fan", "j\u00fal", "august", "september", "okt\u00f3ber", "november", "december"],
+				ws: ["Ne", "Po", "Ut", "St", "\u0160t", "Pi", "So"],
+				wl: ["Nede\u013ea", "Pondelok", "Utorok", "Streda", "\u0160tvrtok", "Piatok", "Sobota"],
+				xf: "%d.%m.%Y",
+				Xf: "%H:%M:%S",
+				cf: "%a\u00a0%d.\u00a0%B\u00a0%Y,\u00a0%H:%M:%S",
+			},
+			pl: {
+				ms: ["sty", "lut", "mar", "kwi", "maj", "cze", "lip", "sie", "wrz", "pa\u017a", "lis", "gru"],
+				ml: ["stycze\u0144", "luty", "marzec", "kwiecie\u0144", "maj", "czerwiec", "lipiec", "sierpie\u0144", "wrzesie\u0144", "pa\u017adziernik", "listopad", "grudzie\u0144"],
+				ws: ["nie", "pon", "wto", "\u015bro", "czw", "pi\u0105", "sob"],
+				wl: ["niedziela", "poniedzia\u0142ek", "wtorek", "\u015broda", "czwartek", "pi\u0105tek", "sobota"],
+				xf: "%d.%m.%Y",
+				Xf: "%H:%M:%S",
+				cf: "%a, %d %b %Y, %H:%M:%S",
+			},
+			hr: {
+				ms: ["Sij", "Vel", "O\u017eu", "Tra", "Svi", "Lip", "Srp", "Kol", "Ruj", "Lis", "Stu", "Pro"],
+				ml: ["Sije\u010danj", "Velja\u010da", "O\u017eujak", "Travanj", "Svibanj", "Lipanj", "Srpanj", "Kolovoz", "Rujan", "Listopad", "Studeni", "Prosinac"],
+				ws: ["Ned", "Pon", "Uto", "Sri", "\u010cet", "Pet", "Sub"],
+				wl: ["Nedjelja", "Ponedjeljak", "Utorak", "Srijeda", "\u010cetvrtak", "Petak", "Subota"],
+				xf: "%d.%m.%Y",
+				Xf: "%H:%M:%S",
+				cf: "%a %d %b %Y %H:%M:%S",
+			},
+			sr: {
+				ms: ["\u0458\u0430\u043d", "\u0444\u0435\u0431", "\u043c\u0430\u0440", "\u0430\u043f\u0440", "\u043c\u0430\u0458", "\u0458\u0443\u043d", "\u0458\u0443\u043b", "\u0430\u0432\u0433", "\u0441\u0435\u043f", "\u043e\u043a\u0442", "\u043d\u043e\u0432", "\u0434\u0435\u0446"],
+				ml: ["\u0458\u0430\u043d\u0443\u0430\u0440", "\u0444\u0435\u0431\u0440\u0443\u0430\u0440", "\u043c\u0430\u0440\u0442", "\u0430\u043f\u0440\u0438\u043b", "\u043c\u0430\u0458", "\u0458\u0443\u043d", "\u0458\u0443\u043b", "\u0430\u0432\u0433\u0443\u0441\u0442", "\u0441\u0435\u043f\u0442\u0435\u043c\u0431\u0430\u0440", "\u043e\u043a\u0442\u043e\u0431\u0430\u0440", "\u043d\u043e\u0432\u0435\u043c\u0431\u0430\u0440", "\u0434\u0435\u0446\u0435\u043c\u0431\u0430\u0440"],
+				ws: ["\u043d\u0435\u0434", "\u043f\u043e\u043d", "\u0443\u0442\u043e", "\u0441\u0440\u0435", "\u0447\u0435\u0442", "\u043f\u0435\u0442", "\u0441\u0443\u0431"],
+				wl: ["\u043d\u0435\u0434\u0435\u0459\u0430", "\u043f\u043e\u043d\u0435\u0434\u0435\u0459\u0430\u043a", "\u0443\u0442\u043e\u0440\u0430\u043a", "\u0441\u0440\u0435\u0434\u0430", "\u0447\u0435\u0442\u0432\u0440\u0442\u0430\u043a", "\u043f\u0435\u0442\u0430\u043a", "\u0441\u0443\u0431\u043e\u0442\u0430"],
+				xf: "%d.%m.%Y.",
+				Xf: "%H:%M:%S",
+				cf: "%A, %d. %B %Y. %H:%M:%S",
+			},
+			ro: {
+				ms: ["ian", "feb", "mar", "apr", "mai", "iun", "iul", "aug", "sep", "oct", "nov", "dec"],
+				ml: ["ianuarie", "februarie", "martie", "aprilie", "mai", "iunie", "iulie", "august", "septembrie", "octombrie", "noiembrie", "decembrie"],
+				ws: ["Du", "Lu", "Ma", "Mi", "Jo", "Vi", "Sb"],
+				wl: ["duminic\u0103", "luni", "mar\u0163i", "miercuri", "joi", "vineri", "s\u00e2mb\u0103t\u0103"],
+				xf: "%d.%m.%Y",
+				Xf: "%H:%M:%S",
+				cf: "%a %d %b %Y %H:%M:%S",
+			},
+			hu: {
+				ms: ["jan", "febr", "m\u00e1rc", "\u00e1pr", "m\u00e1j", "j\u00fan", "j\u00fal", "aug", "szept", "okt", "nov", "dec"],
+				ml: ["janu\u00e1r", "febru\u00e1r", "m\u00e1rcius", "\u00e1prilis", "m\u00e1jus", "j\u00fanius", "j\u00falius", "augusztus", "szeptember", "okt\u00f3ber", "november", "december"],
+				ws: ["v", "h", "k", "sze", "cs", "p", "szo"],
+				wl: ["vas\u00e1rnap", "h\u00e9tf\u0151", "kedd", "szerda", "cs\u00fct\u00f6rt\u00f6k", "p\u00e9ntek", "szombat"],
+				xf: "%Y-%m-%d",
+				Xf: "%H.%M.%S",
+				cf: "%Y. %b. %d., %A, %H.%M.%S",
+			},
+			tr: {
+				ms: ["Oca", "\u015eub", "Mar", "Nis", "May", "Haz", "Tem", "A\u011fu", "Eyl", "Eki", "Kas", "Ara"],
+				ml: ["Ocak", "\u015eubat", "Mart", "Nisan", "May\u0131s", "Haziran", "Temmuz", "A\u011fustos", "Eyl\u00fcl", "Ekim", "Kas\u0131m", "Aral\u0131k"],
+				ws: ["Paz", "Pzt", "Sal", "\u00c7r\u015f", "Pr\u015f", "Cum", "Cts"],
+				wl: ["Pazar", "Pazartesi", "Sal\u0131", "\u00c7ar\u015famba", "Per\u015fembe", "Cuma", "Cumartesi"],
+				xf: "%d-%m-%Y",
+				Xf: "%H:%M:%S",
+				cf: "%a %d %b %Y %H:%M:%S",
+			},
+			ru: {
+				ms: ["\u042f\u043d\u0432", "\u0424\u0435\u0432", "\u041c\u0430\u0440", "\u0410\u043f\u0440", "\u041c\u0430\u0439", "\u0418\u044e\u043d", "\u0418\u044e\u043b", "\u0410\u0432\u0433", "\u0421\u0435\u043d", "\u041e\u043a\u0442", "\u041d\u043e\u044f", "\u0414\u0435\u043a"],
+				ml: ["\u042f\u043d\u0432\u0430\u0440\u044c", "\u0424\u0435\u0432\u0440\u0430\u043b\u044c", "\u041c\u0430\u0440\u0442", "\u0410\u043f\u0440\u0435\u043b\u044c", "\u041c\u0430\u0439", "\u0418\u044e\u043d\u044c", "\u0418\u044e\u043b\u044c", "\u0410\u0432\u0433\u0443\u0441\u0442", "\u0421\u0435\u043d\u0442\u044f\u0431\u0440\u044c", "\u041e\u043a\u0442\u044f\u0431\u0440\u044c", "\u041d\u043e\u044f\u0431\u0440\u044c", "\u0414\u0435\u043a\u0430\u0431\u0440\u044c"],
+				ws: ["\u0412\u0441\u043a", "\u041f\u043d\u0434", "\u0412\u0442\u0440", "\u0421\u0440\u0434", "\u0427\u0442\u0432", "\u041f\u0442\u043d", "\u0421\u0431\u0442"],
+				wl: ["\u0412\u043e\u0441\u043a\u0440\u0435\u0441\u0435\u043d\u044c\u0435", "\u041f\u043e\u043d\u0435\u0434\u0435\u043b\u044c\u043d\u0438\u043a", "\u0412\u0442\u043e\u0440\u043d\u0438\u043a", "\u0421\u0440\u0435\u0434\u0430", "\u0427\u0435\u0442\u0432\u0435\u0440\u0433", "\u041f\u044f\u0442\u043d\u0438\u0446\u0430", "\u0421\u0443\u0431\u0431\u043e\u0442\u0430"],
+				xf: "%d.%m.%Y",
+				Xf: "%H:%M:%S",
+				cf: "%a %d %b %Y %H:%M:%S",
+			},
+			zh: {
+				ms: [" 1\u6708", " 2\u6708", " 3\u6708", " 4\u6708", " 5\u6708", " 6\u6708", " 7\u6708", " 8\u6708", " 9\u6708", "10\u6708", "11\u6708", "12\u6708"],
+				ml: ["\u4e00\u6708", "\u4e8c\u6708", "\u4e09\u6708", "\u56db\u6708", "\u4e94\u6708", "\u516d\u6708", "\u4e03\u6708", "\u516b\u6708", "\u4e5d\u6708", "\u5341\u6708", "\u5341\u4e00\u6708", "\u5341\u4e8c\u6708"],
+				ws: ["\u65e5", "\u4e00", "\u4e8c", "\u4e09", "\u56db", "\u4e94", "\u516d"],
+				wl: ["\u661f\u671f\u65e5", "\u661f\u671f\u4e00", "\u661f\u671f\u4e8c", "\u661f\u671f\u4e09", "\u661f\u671f\u56db", "\u661f\u671f\u4e94", "\u661f\u671f\u516d"],
+				xf: "%Y\u5e74%b%d\u65e5",
+				Xf: "%H\u65f6%M\u5206%S\u79d2",
+				cf: "%Y\u5e74%b%d\u65e5 %A %H\u65f6%M\u5206%S\u79d2",
+			},
+			ko: {
+				ms: [" 1\uc6d4", " 2\uc6d4", " 3\uc6d4", " 4\uc6d4", " 5\uc6d4", " 6\uc6d4", " 7\uc6d4", " 8\uc6d4", " 9\uc6d4", "10\uc6d4", "11\uc6d4", "12\uc6d4"],
+				ml: ["1\uc6d4", "2\uc6d4", "3\uc6d4", "4\uc6d4", "5\uc6d4", "6\uc6d4", "7\uc6d4", "8\uc6d4", "9\uc6d4", "10\uc6d4", "11\uc6d4", "12\uc6d4"],
+				ws: ["\uc77c", "\uc6d4", "\ud654", "\uc218", "\ubaa9", "\uae08", "\ud1a0"],
+				wl: ["\uc77c\uc694\uc77c", "\uc6d4\uc694\uc77c", "\ud654\uc694\uc77c", "\uc218\uc694\uc77c", "\ubaa9\uc694\uc77c", "\uae08\uc694\uc77c", "\ud1a0\uc694\uc77c"],
+				xf: "%Y\ub144 %B %d\uc77c",
+				Xf: "%H\uc2dc %M\ubd84 %S\ucd08",
+				cf: "%Y\ub144 %B %d\uc77c (%a) %p %I\uc2dc %M\ubd84 %S\ucd08",
+			},
+			ja: {
+				ms: [" 1\u6708", " 2\u6708", " 3\u6708", " 4\u6708", " 5\u6708", " 6\u6708", " 7\u6708", " 8\u6708", " 9\u6708", "10\u6708", "11\u6708", "12\u6708"],
+				ml: ["1\u6708", "2\u6708", "3\u6708", "4\u6708", "5\u6708", "6\u6708", "7\u6708", "8\u6708", "9\u6708", "10\u6708", "11\u6708", "12\u6708"],
+				ws: ["\u65e5", "\u6708", "\u706b", "\u6c34", "\u6728", "\u91d1", "\u571f"],
+				wl: ["\u65e5\u66dc\u65e5", "\u6708\u66dc\u65e5", "\u706b\u66dc\u65e5", "\u6c34\u66dc\u65e5", "\u6728\u66dc\u65e5", "\u91d1\u66dc\u65e5", "\u571f\u66dc\u65e5"],
+				xf: "%Y\u5e74%B%d\u65e5",
+				Xf: "%H\u6642%M\u5206%S\u79d2",
+				cf: "%Y\u5e74%B%d\u65e5 %H\u6642%M\u5206%S\u79d2",
+			}
+		}
+
+		if (typeof(lang) === "undefined" || lang === null)
+			lang = "en";
+		else
+		{
+			lang = lang.toLowerCase();
+			if (typeof(translations[lang]) == "undefined")
+			{
+				lang = lang.split(/_/)[0];
+				if (typeof(translations[lang]) == "undefined")
+					lang = "en";
+			}
+		}
+		var translation = translations[lang];
+
 		var firstday;
 
 		if (this._fu_isdate(obj))
@@ -642,19 +853,19 @@ var ul4 = {
 					switch (c)
 					{
 						case "a":
-							c = weekdays1[obj.getDay()];
+							c = translation.ws[obj.getDay()];
 							break;
 						case "A":
-							c = weekdays2[obj.getDay()];
+							c = translation.wl[obj.getDay()];
 							break;
 						case "b":
-							c = months1[obj.getMonth()];
+							c = translation.ms[obj.getMonth()];
 							break;
 						case "B":
-							c = months2[obj.getMonth()];
+							c = translation.ml[obj.getMonth()];
 							break;
 						case "c":
-							c = weekdays1[obj.getDay()] + " " + months1[obj.getMonth()] + " " + this._lpad(obj.getDate(), " ", 2) + " " + this._lpad(obj.getHours(), "0", 2) + ":" + this._lpad(obj.getMinutes(), "0", 2) + ":" + this._lpad(obj.getSeconds(), "0", 2) + " " + obj.getFullYear();
+							c = ul4._fu_format(obj, translation.cf, lang);
 							break;
 						case "d":
 							c = this._lpad(obj.getDate(), "0", 2);
@@ -696,10 +907,10 @@ var ul4 = {
 							c = this._lpad(Math.floor((this._me_yearday(obj) + firstday - 1) / 7), "0", 2);
 							break;
 						case "x":
-							c = this._lpad(obj.getMonth() + 1, "0", 2) + "/" + this._lpad(obj.getDate(), "0", 2) + "/" + this._lpad(obj.getFullYear() % 100, "0", 2);
+							c = ul4._fu_format(obj, translation.xf, lang);
 							break;
 						case "X":
-							c = this._lpad(obj.getHours(), "0", 2) + ":" + this._lpad(obj.getMinutes(), "0", 2) + ":" + this._lpad(obj.getSeconds(), "0", 2);
+							c = ul4._fu_format(obj, translation.Xf, lang);
 							break;
 						case "y":
 							c = (obj.getFullYear() % 100).toString();
