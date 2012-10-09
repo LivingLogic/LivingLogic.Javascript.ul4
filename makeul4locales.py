@@ -27,7 +27,7 @@ langs = "de de_AT en fr es it da sv nl pt cs sk pl hr sr ro hu tr ru zh.UTF-8 ko
 
 print("var translations = {")
 for (i, l) in enumerate(langs):
-	print("\t{}: {{".format(l.split(".")[0]))
+	print("\t{}: {{".format(l.split(".")[0].lower()))
 	print("\t\tms: {},".format(json.dumps([format(datetime.date(2012, m, 1), '%b', l) for m in range(1, 13)])))
 	print("\t\tml: {},".format(json.dumps([format(datetime.date(2012, m, 1), '%B', l) for m in range(1, 13)])))
 	print("\t\tws: {},".format(json.dumps([format(datetime.date(2012, 10, w), '%a', l) for w in range(14, 21)])))

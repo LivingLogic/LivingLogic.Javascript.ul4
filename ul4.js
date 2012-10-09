@@ -634,7 +634,7 @@ var ul4 = {
 				Xf: "%H:%M:%S",
 				cf: "%a %d %b %Y %H:%M:%S",
 			},
-			de_AT: {
+			de_at: {
 				ms: ["J\u00e4n", "Feb", "M\u00e4r", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
 				ml: ["J\u00e4nner", "Feber", "M\u00e4rz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"],
 				ws: ["Son", "Mon", "Die", "Mit", "Don", "Fre", "Sam"],
@@ -830,10 +830,10 @@ var ul4 = {
 		else
 		{
 			lang = lang.toLowerCase();
-			if (typeof(translations[lang]) == "undefined")
+			if (typeof(translations[lang]) === "undefined")
 			{
 				lang = lang.split(/_/)[0];
-				if (typeof(translations[lang]) == "undefined")
+				if (typeof(translations[lang]) === "undefined")
 					lang = "en";
 			}
 		}
