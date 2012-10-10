@@ -886,16 +886,13 @@ var ul4 = {
 							c = this._lpad(obj.getSeconds(), "0", 2);
 							break;
 						case "U":
-							firstday = (new Date(obj.getFullYear(), 0, 1).getDay());
-							c = this._lpad(Math.floor((this._me_yearday(obj) + firstday - 1) / 7), "0", 2);
+							c = this._lpad(ul4._me_week(obj, 6), "0", 2);
 							break;
 						case "w":
 							c = obj.getDay();
 							break;
 						case "W":
-							firstday = (new Date(obj.getFullYear(), 0, 1).getDay());
-							firstday = firstday ? firstday-1 : 6;
-							c = this._lpad(Math.floor((this._me_yearday(obj) + firstday - 1) / 7), "0", 2);
+							c = this._lpad(ul4._me_week(obj, 0), "0", 2);
 							break;
 						case "x":
 							c = ul4._fu_format(obj, translation.xf, lang);
@@ -1993,6 +1990,28 @@ var ul4 = {
 
 		var d = obj.getDay();
 		return d ? d-1 : 6;
+	},
+
+	_me_week: function(obj, firstweekday)
+	{
+		if (typeof(firstweekday) === "undefined" || firstweekday === null)
+			firstweekday = 0;
+		else
+			firstweekday %= 7;
+
+		var yearday = ul4._me_yearday(obj)+6;
+		var jan1 = new Date(obj.getFullYear(), 0, 1);
+		var jan1weekday = jan1.getDay();
+		if (--jan1weekday < 0)
+			jan1weekday = 6;
+
+		while (jan1weekday != firstweekday)
+		{
+			--yearday;
+			if (++jan1weekday == 7)
+				jan1weekday = 0;
+		}
+		return Math.floor(yearday/7);
 	},
 
 	_isleap: function(obj)
