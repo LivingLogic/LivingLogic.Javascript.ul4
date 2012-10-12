@@ -641,7 +641,7 @@ var ul4 = {
 				wl: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
 				xf: "%m/%d/%Y",
 				Xf: "%H:%M:%S",
-				cf: "%a %b %d %H:%M:%S %Y",
+				cf: "%a %d %b %Y %I:%M:%S %p ",
 			},
 			fr: {
 				ms: ["janv.", "f\u00e9vr.", "mars", "avril", "mai", "juin", "juil.", "ao\u00fbt", "sept.", "oct.", "nov.", "d\u00e9c."],
