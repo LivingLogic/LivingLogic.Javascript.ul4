@@ -312,6 +312,22 @@ var ul4 = {
 		return Object.prototype.toString.call(obj) == "[object Object]" && !!obj.__iscolor__;
 	},
 
+	// Check if ``obj`` is a timedelta object
+	_fu_istimedelta: function(obj)
+	{
+		ul4._checkfuncargs("istimedelta", arguments, 1);
+
+		return Object.prototype.toString.call(obj) == "[object Object]" && !!obj.__istimedelta__;
+	},
+
+	// Check if ``obj`` is a monthdelta object
+	_fu_ismonthdelta: function(obj)
+	{
+		ul4._checkfuncargs("ismonthdelta", arguments, 1);
+
+		return Object.prototype.toString.call(obj) == "[object Object]" && !!obj.__ismonthdelta__;
+	},
+
 	// Check if ``obj`` is a template
 	_fu_istemplate: function(obj)
 	{
@@ -380,7 +396,7 @@ var ul4 = {
 			return Math.round(obj) == obj ? "int" : "float";
 		else if (this._fu_islist(obj))
 			return "list";
-		else if (obj instanceof Date)
+		else if (this._fu_isdate(obj))
 			return "date";
 		else if (this._fu_iscolor(obj))
 			return "color";
@@ -398,19 +414,18 @@ var ul4 = {
 
 		if (typeof(obj) === "undefined")
 			return "";
-
-		if (typeof(obj) === "string")
-			return obj;
 		else if (obj === null)
 			return "";
 		else if (obj === false)
 			return "False";
 		else if (obj === true)
 			return "True";
+		else if (typeof(obj) === "string")
+			return obj;
 		else if (typeof(obj) === "number")
-		{
 			return obj.toString();
-		}
+		else if (this._fu_isdate(obj))
+			return this._date_str(obj);
 		else if (this._fu_islist(obj))
 		{
 			var v = [];
@@ -424,13 +439,9 @@ var ul4 = {
 			v.push("]");
 			return v.join("");
 		}
-		else if (obj instanceof Date)
+		else if (typeof(obj.__str__) === "function")
 		{
-			return this._date_str(obj);
-		}
-		else if (this._fu_iscolor(obj))
-		{
-			return this._color_str(obj);
+			return obj.__str__();
 		}
 		else if (this._fu_isdict(obj))
 		{
@@ -575,17 +586,11 @@ var ul4 = {
 		else if (typeof(obj) === "string")
 			return this._str_repr(obj);
 		else if (typeof(obj) === "number")
-		{
 			return "" + obj;
-		}
-		else if (obj instanceof Date)
-		{
+		else if (this._fu_isdate(obj))
 			return this._date_repr(obj);
-		}
-		else if (this._fu_iscolor(obj))
-		{
-			return this._color_repr(obj);
-		}
+		else if (typeof(obj.__repr__) === "function")
+			return obj.__repr__();
 		else if (this._fu_islist(obj))
 		{
 			var v = [];
@@ -1469,6 +1474,22 @@ var ul4 = {
 		return new Date(year, month-1, day, hour, minute, second, microsecond/1000);
 	},
 
+	// Return a ``TimeDelta`` object from the arguments passed in
+	_fu_timedelta: function(days, seconds, microseconds)
+	{
+		ul4._checkfuncargs("timedelta", arguments, 0, 3);
+
+		return this.TimeDelta.create(days, seconds, microseconds);
+	},
+
+	// Return a ``MonthDelta`` object from the arguments passed in
+	_fu_monthdelta: function(months)
+	{
+		ul4._checkfuncargs("monthdelta", arguments, 0, 1);
+
+		return this.MonthDelta.create(months);
+	},
+
 	// Return a ``Color`` object from the hue, luminescence, saturation and alpha values ``h``, ``l``, ``s`` and ``a`` (i.e. using the HLS color model)
 	_fu_hls: function(h, l, s, a)
 	{
@@ -2329,56 +2350,11 @@ var ul4 = {
 		var minute = obj.getMinutes();
 		var second = obj.getSeconds();
 		var ms = obj.getMilliseconds();
-		var result = year + "-" + this._lpad(month.toString(), "0", 2) + "-" + this._lpad(day.toString(), "0", 2);
 
-		if (hour || minute || second || ms)
-		{
-			result += " " + this._lpad(hour.toString(), "0", 2) + ":" + this._lpad(minute.toString(), "0", 2) + ":" + this._lpad(second.toString(), "0", 2);
-			if (ms)
-				result += "." + this._lpad(ms.toString(), "0", 3) + "000";
-		}
+		var result = year + "-" + this._lpad(month.toString(), "0", 2) + "-" + this._lpad(day.toString(), "0", 2) + " " + this._lpad(hour.toString(), "0", 2) + ":" + this._lpad(minute.toString(), "0", 2) + ":" + this._lpad(second.toString(), "0", 2);
+		if (ms)
+			result += "." + this._lpad(ms.toString(), "0", 3) + "000";
 		return result;
-	},
-
-	_color_repr: function(obj)
-	{
-		var r = this._lpad(obj.r.toString(16), "0", 2);
-		var g = this._lpad(obj.g.toString(16), "0", 2);
-		var b = this._lpad(obj.b.toString(16), "0", 2);
-		var a = this._lpad(obj.a.toString(16), "0", 2);
-		if (obj.a !== 0xff)
-		{
-			if (r[0] === r[1] && g[0] === g[1] && b[0] === b[1] && a[0] === a[1])
-				return "#" + r[0] + g[0] + b[0] + a[0];
-			else
-				return "#" + r + g + b + a;
-		}
-		else
-		{
-			if (r[0] === r[1] && g[0] === g[1] && b[0] === b[1])
-				return "#" + r[0] + g[0] + b[0];
-			else
-				return "#" + r + g + b;
-		}
-	},
-
-	_color_str: function(obj)
-	{
-		if (obj.a !== 0xff)
-		{
-			return "rgba(" + obj.r + ", " + obj.g + ", " + obj.b + ", " + (obj.a/255) + ")";
-		}
-		else
-		{
-			var r = this._lpad(obj.r.toString(16), "0", 2);
-			var g = this._lpad(obj.g.toString(16), "0", 2);
-			var b = this._lpad(obj.b.toString(16), "0", 2);
-			var a = this._lpad(obj.a.toString(16), "0", 2);
-			if (r[0] === r[1] && g[0] === g[1] && b[0] === b[1])
-				return "#" + r[0] + g[0] + b[0];
-			else
-				return "#" + r + g + b;
-		}
 	},
 
 	_str_json: function(str)
@@ -2559,6 +2535,47 @@ ul4.Color = ul4._inherit(
 			return c;
 		},
 
+		__repr__: function()
+		{
+			var r = ul4._lpad(this.r.toString(16), "0", 2);
+			var g = ul4._lpad(this.g.toString(16), "0", 2);
+			var b = ul4._lpad(this.b.toString(16), "0", 2);
+			var a = ul4._lpad(this.a.toString(16), "0", 2);
+			if (this.a !== 0xff)
+			{
+				if (r[0] === r[1] && g[0] === g[1] && b[0] === b[1] && a[0] === a[1])
+					return "#" + r[0] + g[0] + b[0] + a[0];
+				else
+					return "#" + r + g + b + a;
+			}
+			else
+			{
+				if (r[0] === r[1] && g[0] === g[1] && b[0] === b[1])
+					return "#" + r[0] + g[0] + b[0];
+				else
+					return "#" + r + g + b;
+			}
+		},
+
+		__str__: function()
+		{
+			if (this.a !== 0xff)
+			{
+				return "rgba(" + this.r + ", " + this.g + ", " + this.b + ", " + (this.a/255) + ")";
+			}
+			else
+			{
+				var r = ul4._lpad(this.r.toString(16), "0", 2);
+				var g = ul4._lpad(this.g.toString(16), "0", 2);
+				var b = ul4._lpad(this.b.toString(16), "0", 2);
+				var a = ul4._lpad(this.a.toString(16), "0", 2);
+				if (r[0] === r[1] && g[0] === g[1] && b[0] === b[1])
+					return "#" + r[0] + g[0] + b[0];
+				else
+					return "#" + r + g + b;
+			}
+		},
+
 		lum: function()
 		{
 			return this.hls()[1];
@@ -2645,6 +2662,133 @@ ul4.Color = ul4._inherit(
 			var hlsa = this.hlsa();
 			return ul4._fu_hls(hlsa[0], lum, hlsa[2], hlsa[3]);
 		}
+	}
+);
+
+ul4.TimeDelta = ul4._inherit(
+	ul4.Proto,
+	{
+		__istimedelta__: true,
+
+		create: function(days, seconds, microseconds)
+		{
+			var td = ul4._clone(this);
+			if (typeof(days) === "undefined")
+				days = 0;
+			if (typeof(seconds) === "undefined")
+				seconds = 0;
+			if (typeof(microseconds) === "undefined")
+				microseconds = 0;
+
+			var total_microseconds = Math.floor((days * 86400 + seconds)*1000000 + microseconds);
+
+			microseconds = ul4._op_mod(total_microseconds, 1000000);
+			var total_seconds = Math.floor(total_microseconds / 1000000);
+			seconds = ul4._op_mod(total_seconds, 86400);
+			days = Math.floor(total_seconds / 86400);
+			if (seconds < 0)
+			{
+				seconds += 86400;
+				--days;
+			}
+
+			td.microseconds = microseconds;
+			td.seconds = seconds;
+			td.days = days;
+
+			return td;
+		},
+
+		__repr__: function()
+		{
+			if (!this.microseconds)
+			{
+				if (!this.seconds)
+				{
+					if (!this.days)
+						return "timedelta()";
+					return "timedelta(" + this.days + ")";
+				}
+				return "timedelta(" + this.days + ", " + this.seconds + ")";
+			}
+			return "timedelta(" + this.days + ", " + this.seconds + ", " + this.microseconds + ")";
+		},
+
+		__str__: function()
+		{
+			var v = [];
+			if (this.days)
+			{
+				v.push(this.days + " day");
+				if (this.days !== -1 && this.days !== 1)
+					v.push("s");
+				v.push(", ");
+			}
+			var seconds = this.seconds % 60;
+			var minutes = Math.floor(this.seconds / 60);
+			var hours = Math.floor(minutes / 60);
+			minutes = minutes % 60;
+
+			v.push("" + hours);
+			v.push(":");
+			v.push(ul4._lpad(minutes.toString(), "0", 2));
+			v.push(":");
+			v.push(ul4._lpad(seconds.toString(), "0", 2));
+			if (this.microseconds)
+			{
+				v.push(".");
+				v.push(ul4._lpad(this.microseconds.toString(), "0", 6));
+			}
+			return v.join("");
+		},
+
+		add: function(other)
+		{
+			if (ul4._fu_istimedelta(other))
+				return ul4.MonthDelta.create(this.months + other.months);
+			throw ul._fu_type(this) + " + " + this._fu_type(this) + " not supported";
+		},
+
+	}
+);
+
+ul4.MonthDelta = ul4._inherit(
+	ul4.Proto,
+	{
+		__ismonthdelta__: true,
+
+		create: function(months)
+		{
+			var md = ul4._clone(this);
+			md.months = typeof(months) !== "undefined" ? months : 0;
+			return md;
+		},
+
+		__repr__: function()
+		{
+			if (!this.months)
+				return "monthdelta()";
+			return "monthdelta(" + this.months + ")";
+		},
+
+		__str__: function()
+		{
+			if (this.months)
+			{
+				if (this.months !== -1 && this.months !== 1)
+					return this.months + " months";
+				return this.months + " month";
+			}
+			return "0 months";
+		},
+
+		add: function(other)
+		{
+			if (ul4._fu_ismonthdelta(other))
+				return ul4.MonthDelta.create(this.months + other.months);
+			throw ul._fu_type(this) + " + " + this._fu_type(this) + " not supported";
+		},
+
 	}
 );
 
