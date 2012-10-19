@@ -41,6 +41,10 @@ var ul4 = {
 	// Addition: num + num, string + string
 	_op_add: function(obj1, obj2)
 	{
+		if (obj1 !== null && typeof(obj1.__add__) === "function")
+			return obj1.__add__(obj2);
+		else if (obj2 !== null && typeof(obj2.__radd__) === "function")
+			return obj2.__radd__(obj1);
 		if (obj1 === null || obj2 === null)
 			throw this._fu_type(obj1) + " + " + this._fu_type(obj2) + " not supported";
 		return obj1 + obj2;
@@ -49,6 +53,10 @@ var ul4 = {
 	// Substraction: num - num
 	_op_sub: function(obj1, obj2)
 	{
+		if (obj2 !== null && typeof(obj1.__sub__) === "function")
+			return obj1.__sub__(obj2);
+		else if (obj2 !== null && typeof(obj2.__rsub__) === "function")
+			return obj2.__rsub__(obj1);
 		if (obj1 === null || obj2 === null)
 			throw this._fu_type(obj1) + " - " + this._fu_type(obj2) + " not supported";
 		return obj1 - obj2;
@@ -57,6 +65,10 @@ var ul4 = {
 	// Multiplication: num * num, int * str, str * int, int * list, list * int
 	_op_mul: function(obj1, obj2)
 	{
+		if (obj1 !== null && typeof(obj1.__mul__) === "function")
+			return obj1.__mul__(obj2);
+		else if (obj2 !== null && typeof(obj2.__rmul__) === "function")
+			return obj2.__rmul__(obj1);
 		if (obj1 === null || obj2 === null)
 			throw this._fu_type(obj1) + " * " + this._fu_type(obj2) + " not supported";
 		else if (this._fu_isint(obj1) || this._fu_isbool(obj1))
@@ -95,6 +107,10 @@ var ul4 = {
 	// Truncating division
 	_op_floordiv: function(obj1, obj2)
 	{
+		if (obj1 !== null && typeof(obj1.__floordiv__) === "function")
+			return obj1.__floordiv__(obj2);
+		else if (obj2 !== null && typeof(obj2.__rfloordiv__) === "function")
+			return obj2.__rfloordiv__(obj1);
 		if (obj1 === null || obj2 === null)
 			throw this._fu_type(obj1) + " // " + this._fu_type(obj2) + " not supported";
 		return Math.floor(obj1 / obj2);
@@ -103,6 +119,10 @@ var ul4 = {
 	// "Real" division
 	_op_truediv: function(obj1, obj2)
 	{
+		if (obj1 !== null && typeof(obj1.__truediv__) === "function")
+			return obj1.__truediv__(obj2);
+		else if (obj2 !== null && typeof(obj2.__rtruediv__) === "function")
+			return obj2.__rtruediv__(obj1);
 		if (obj1 === null || obj2 === null)
 			throw this._fu_type(obj1) + " / " + this._fu_type(obj2) + " not supported";
 		return obj1 / obj2;
@@ -125,13 +145,15 @@ var ul4 = {
 	// Negation
 	_op_neg: function(obj)
 	{
+		if (obj !== null && typeof(obj.__neg__) === "function")
+			return obj.__neg__();
 		return -obj;
 	},
 
 	// Not
 	_op_not: function(obj)
 	{
-		return !obj;
+		return !this._fu_bool(obj);
 	},
 
 	// Containment test: string in string, obj in list, key in dict, value in rgb
@@ -170,37 +192,115 @@ var ul4 = {
 	// Comparison operator ==
 	_op_eq: function(obj1, obj2)
 	{
-		return obj1 === obj2;
+		if (typeof(obj1.__eq__) !== "undefined")
+		{
+			if (typeof(obj2.__eq__) !== "undefined")
+				return obj1.__eq__(obj2);
+			else
+				return false;
+		}
+		else
+		{
+			if (typeof(obj2.__eq__) !== "undefined")
+				return false;
+			else
+				return obj1 === obj2;
+		}
 	},
 
 	// Comparison operator !=
 	_op_ne: function(obj1, obj2)
 	{
-		return obj1 !== obj2;
+		if (typeof(obj1.__ne__) !== "undefined")
+		{
+			if (typeof(obj2.__ne__) !== "undefined")
+				return obj1.__ne__(obj2);
+			else
+				return true;
+		}
+		else
+		{
+			if (typeof(obj2.__ne__) !== "undefined")
+				return true;
+			else
+				return obj1 !== obj2;
+		}
 	},
 
 	// Comparison operator <
 	_op_lt: function(obj1, obj2)
 	{
-		return obj1 < obj2;
+		if (typeof(obj1.__lt__) !== "undefined")
+		{
+			if (typeof(obj2.__lt__) !== "undefined")
+				return obj1.__lt__(obj2);
+			else
+				throw "unorderable types: " + this._fu_type(obj1) + "() < " + this._fu_type(obj2) + "()";
+		}
+		else
+		{
+			if (typeof(obj2.__lt__) !== "undefined")
+				throw "unorderable types: " + this._fu_type(obj1) + "() < " + this._fu_type(obj2) + "()";
+			else
+				return obj1 < obj2;
+		}
 	},
 
 	// Comparison operator <=
 	_op_le: function(obj1, obj2)
 	{
-		return obj1 <= obj2;
+		if (typeof(obj1.__le__) !== "undefined")
+		{
+			if (typeof(obj2.__le__) !== "undefined")
+				return obj1.__le__(obj2);
+			else
+				throw "unorderable types: " + this._fu_type(obj1) + "() <= " + this._fu_type(obj2) + "()";
+		}
+		else
+		{
+			if (typeof(obj2.__lt__) !== "undefined")
+				throw "unorderable types: " + this._fu_type(obj1) + "() <= " + this._fu_type(obj2) + "()";
+			else
+				return obj1 <= obj2;
+		}
 	},
 
 	// Comparison operator >
 	_op_gt: function(obj1, obj2)
 	{
-		return obj1 > obj2;
+		if (typeof(obj1.__gt__) !== "undefined")
+		{
+			if (typeof(obj2.__gt__) !== "undefined")
+				return obj1.__gt__(obj2);
+			else
+				throw "unorderable types: " + this._fu_type(obj1) + "() > " + this._fu_type(obj2) + "()";
+		}
+		else
+		{
+			if (typeof(obj2.__lt__) !== "undefined")
+				throw "unorderable types: " + this._fu_type(obj1) + "() > " + this._fu_type(obj2) + "()";
+			else
+				return obj1 > obj2;
+		}
 	},
 
 	// Comparison operator >=
 	_op_ge: function(obj1, obj2)
 	{
-		return obj1 >= obj2;
+		if (typeof(obj1.__ge__) !== "undefined")
+		{
+			if (typeof(obj2.__ge__) !== "undefined")
+				return obj1.__ge__(obj2);
+			else
+				throw "unorderable types: " + this._fu_type(obj1) + "() >= " + this._fu_type(obj2) + "()";
+		}
+		else
+		{
+			if (typeof(obj2.__lt__) !== "undefined")
+				throw "unorderable types: " + this._fu_type(obj1) + "() >= " + this._fu_type(obj2) + "()";
+			else
+				return obj1 >= obj2;
+		}
 	},
 
 	// Item access: dict[key], list[index], string[index], color[index]
@@ -309,7 +409,7 @@ var ul4 = {
 	{
 		ul4._checkfuncargs("iscolor", arguments, 1);
 
-		return Object.prototype.toString.call(obj) == "[object Object]" && !!obj.__iscolor__;
+		return Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "color";
 	},
 
 	// Check if ``obj`` is a timedelta object
@@ -317,7 +417,7 @@ var ul4 = {
 	{
 		ul4._checkfuncargs("istimedelta", arguments, 1);
 
-		return Object.prototype.toString.call(obj) == "[object Object]" && !!obj.__istimedelta__;
+		return Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "timedelta";
 	},
 
 	// Check if ``obj`` is a monthdelta object
@@ -325,7 +425,7 @@ var ul4 = {
 	{
 		ul4._checkfuncargs("ismonthdelta", arguments, 1);
 
-		return Object.prototype.toString.call(obj) == "[object Object]" && !!obj.__ismonthdelta__;
+		return Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "monthdelta";
 	},
 
 	// Check if ``obj`` is a template
@@ -333,7 +433,7 @@ var ul4 = {
 	{
 		ul4._checkfuncargs("istemplate", arguments, 1);
 
-		return Object.prototype.toString.call(obj) == "[object Object]" && !!obj.__istemplate__;
+		return Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "template";
 	},
 
 	// Check if ``obj`` is a list
@@ -349,18 +449,20 @@ var ul4 = {
 	{
 		ul4._checkfuncargs("isdict", arguments, 1);
 
-		return Object.prototype.toString.call(obj) == "[object Object]" && !obj.__iscolor__ && !obj.__istemplate__;
+		return Object.prototype.toString.call(obj) == "[object Object]" && typeof(obj.__type__) === "undefined";
 	},
 
 	// Convert ``obj`` to bool, according to its "truth value"
 	_fu_bool: function(obj)
 	{
-		ul4._checkfuncargs("bool", arguments, 1);
+		ul4._checkfuncargs("bool", arguments, 0, 1);
 
-		if (obj === null || obj === false || obj === 0 || obj === "")
+		if (typeof(obj) === "undefined" || obj === null || obj === false || obj === 0 || obj === "")
 			return false;
 		else
 		{
+			if (typeof(obj.__bool__) === "function")
+				return obj.__bool__();
 			if (this._fu_islist(obj))
 				return obj.length !== 0;
 			else if (this._fu_isdict(obj))
@@ -398,8 +500,10 @@ var ul4 = {
 			return "list";
 		else if (this._fu_isdate(obj))
 			return "date";
-		else if (this._fu_iscolor(obj))
-			return "color";
+		else if (typeof(obj.__type__) !== "undefined")
+			return obj.__type__;
+		else if (this._fu_istimedelta(obj))
+			return "timedelta";
 		else if (this._fu_isdict(obj))
 			return "dict";
 		else if (this._fu_istemplate(obj))
@@ -2517,13 +2621,40 @@ ul4.Proto = {
 		if (this.__prototype__ === null)
 			return false;
 		return this.__prototype__.isa(type);
+	},
+
+	// To support comparison you only have to implement ``__eq__`` and ``__lt__``
+
+	__ne__: function(other)
+	{
+		return !this.__eq__(other);
+	},
+
+	__le__: function(other)
+	{
+		return this.__eq__(other) || this.__lt__(other);
+	},
+
+	__gt__: function(other)
+	{
+		return !this.__eq__(other) && !this.__lt__(other);
+	},
+
+	__ge__: function(other)
+	{
+		return !this.__lt__(other);
+	},
+
+	__bool__: function()
+	{
+		return true;
 	}
 };
 
 ul4.Color = ul4._inherit(
 	ul4.Proto,
 	{
-		__iscolor__: true,
+		__type__: "color",
 
 		create: function(r, g, b, a)
 		{
@@ -2668,7 +2799,7 @@ ul4.Color = ul4._inherit(
 ul4.TimeDelta = ul4._inherit(
 	ul4.Proto,
 	{
-		__istimedelta__: true,
+		__type__: "timedelta",
 
 		create: function(days, seconds, microseconds)
 		{
@@ -2742,20 +2873,60 @@ ul4.TimeDelta = ul4._inherit(
 			return v.join("");
 		},
 
-		add: function(other)
+		__bool__: function()
 		{
-			if (ul4._fu_istimedelta(other))
-				return ul4.MonthDelta.create(this.months + other.months);
-			throw ul._fu_type(this) + " + " + this._fu_type(this) + " not supported";
+			return this.days !== 0 || this.seconds !== 0 || this.microseconds !== 0;
 		},
 
+		__eq__: function(other)
+		{
+			if (ul4._fu_istimedelta(other))
+				return (this.days === other.days) && (this.seconds === other.seconds) && (this.microseconds === other.microseconds);
+			return false;
+		},
+
+		__lt__: function(other)
+		{
+			if (ul4._fu_istimedelta(other))
+			{
+				if (this.days < other.days)
+					return true;
+				if (this.days > other.days)
+					return false;
+				if (this.seconds < other.seconds)
+					return true;
+				if (this.seconds > other.seconds)
+					return false;
+				return this.microseconds < other.microseconds;
+			}
+			throw "unorderable types: " + ul4._fu_type(this) + "() >=< " + ul4._fu_type(other) + "()";
+		},
+
+		__neg__: function()
+		{
+			return ul4.TimeDelta.create(-this.days, -this.seconds, -this.microseconds);
+		},
+
+		__add__: function(other)
+		{
+			if (ul4._fu_istimedelta(other))
+				return ul4.TimeDelta.create(this.days + other.days, this.seconds + other.seconds, this.microseconds + other.microseconds);
+			throw ul._fu_type(this) + " + " + this._fu_type(other) + " not supported";
+		},
+
+		__sub__: function(other)
+		{
+			if (ul4._fu_istimedelta(other))
+				return ul4.TimeDelta.create(this.days - other.days, this.seconds - other.seconds, this.microseconds - other.microseconds);
+			throw ul._fu_type(this) + " - " + this._fu_type(other) + " not supported";
+		}
 	}
 );
 
 ul4.MonthDelta = ul4._inherit(
 	ul4.Proto,
 	{
-		__ismonthdelta__: true,
+		__type__: "monthdelta",
 
 		create: function(months)
 		{
@@ -2782,13 +2953,43 @@ ul4.MonthDelta = ul4._inherit(
 			return "0 months";
 		},
 
-		add: function(other)
+		__bool__: function()
+		{
+			return this.months !== 0;
+		},
+
+		__eq__: function(other)
+		{
+			if (ul4._fu_ismonthdelta(other))
+				return this.months === other.months;
+			return false;
+		},
+
+		__lt__: function(other)
+		{
+			if (ul4._fu_ismonthdelta(other))
+				return this.months < other.months;
+			throw "unorderable types: " + ul4._fu_type(this) + "() >=< " + ul4._fu_type(other) + "()";
+		},
+
+		__neg__: function()
+		{
+			return ul4.MonthDelta.create(-this.months);
+		},
+
+		__add__: function(other)
 		{
 			if (ul4._fu_ismonthdelta(other))
 				return ul4.MonthDelta.create(this.months + other.months);
-			throw ul._fu_type(this) + " + " + this._fu_type(this) + " not supported";
+			throw ul._fu_type(this) + " + " + this._fu_type(other) + " not supported";
 		},
 
+		__sub__: function(other)
+		{
+			if (ul4._fu_ismonthdelta(other))
+				return ul4.MonthDelta.create(this.months - other.months);
+			throw ul._fu_type(this) + " - " + this._fu_type(other) + " not supported";
+		}
 	}
 );
 
@@ -4060,7 +4261,7 @@ ul4.Template = ul4._inherit(
 		{
 			return ul4on.loads(string);
 		},
-		__istemplate__: true // used by ``istemplate()``
+		__type__: "template" // used by ``istemplate()``
 	}
 );
 
