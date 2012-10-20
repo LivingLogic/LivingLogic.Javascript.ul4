@@ -2910,10 +2910,31 @@ ul4.TimeDelta = ul4._inherit(
 			return ul4.TimeDelta.create(-this.days, -this.seconds, -this.microseconds);
 		},
 
+		_add: function(date, days, seconds, microseconds)
+		{
+			var year = date.getFullYear();
+			var month = date.getMonth();
+			var day = date.getDate() + days;
+			var hour = date.getHours();
+			var minute = date.getMinutes();
+			var second = date.getSeconds() + seconds;
+			var millisecond = date.getMilliseconds() + microseconds/1000;
+			return new Date(year, month, day, hour, minute, second, millisecond);
+		},
+
 		__add__: function(other)
 		{
 			if (ul4._fu_istimedelta(other))
 				return ul4.TimeDelta.create(this.days + other.days, this.seconds + other.seconds, this.microseconds + other.microseconds);
+			else if (ul4._fu_isdate(other))
+				return this._add(other, this.days, this.seconds, this.microseconds);
+			throw ul._fu_type(this) + " + " + this._fu_type(other) + " not supported";
+		},
+
+		__radd__: function(other)
+		{
+			if (ul4._fu_isdate(other))
+				return this._add(other, this.days, this.seconds, this.microseconds);
 			throw ul._fu_type(this) + " + " + this._fu_type(other) + " not supported";
 		},
 
@@ -2921,6 +2942,8 @@ ul4.TimeDelta = ul4._inherit(
 		{
 			if (ul4._fu_istimedelta(other))
 				return ul4.TimeDelta.create(this.days - other.days, this.seconds - other.seconds, this.microseconds - other.microseconds);
+			else if (ul4._fu_isdate(other))
+				return this._add(other, -this.days, -this.seconds, -this.microseconds);
 			throw ul._fu_type(this) + " - " + this._fu_type(other) + " not supported";
 		}
 	}
@@ -2980,10 +3003,38 @@ ul4.MonthDelta = ul4._inherit(
 			return ul4.MonthDelta.create(-this.months);
 		},
 
+		_add: function(date, months)
+		{
+			var year = date.getFullYear() + Math.floor(months/12);
+			var month = ul4._op_mod(date.getMonth() + months, 12);
+			var day = date.getDate();
+			var hour = date.getHours();
+			var minute = date.getMinutes();
+			var second = date.getSeconds();
+			var millisecond = date.getMilliseconds();
+
+			while (true)
+			{
+				var result = new Date(year, month, day, hour, minute, second, millisecond);
+				if (result.getMonth() === month)
+					return result;
+				--day;
+			}
+		},
+
 		__add__: function(other)
 		{
 			if (ul4._fu_ismonthdelta(other))
 				return ul4.MonthDelta.create(this.months + other.months);
+			else if (ul4._fu_isdate(other))
+				return this._add(other, this.months);
+			throw ul._fu_type(this) + " + " + this._fu_type(other) + " not supported";
+		},
+
+		__radd__: function(other)
+		{
+			if (ul4._fu_isdate(other))
+				return this._add(other, this.months);
 			throw ul._fu_type(this) + " + " + this._fu_type(other) + " not supported";
 		},
 
@@ -2991,6 +3042,8 @@ ul4.MonthDelta = ul4._inherit(
 		{
 			if (ul4._fu_ismonthdelta(other))
 				return ul4.MonthDelta.create(this.months - other.months);
+			else if (ul4._fu_isdate(other))
+				return this._add(other, -this.months);
 			throw ul._fu_type(this) + " - " + this._fu_type(other) + " not supported";
 		}
 	}
