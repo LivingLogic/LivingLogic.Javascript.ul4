@@ -315,25 +315,8 @@ var ul4 = {
 				throw "index " + this._fu_repr(orgkey) + " out of range";
 			return container[key];
 		}
-		else if (this._fu_iscolor(container)) // test this before the generic object test
-		{
-			var orgkey = key;
-			if (key < 0)
-				key += 4;
-			switch (key)
-			{
-				case 0:
-					return container.r;
-				case 1:
-					return container.g;
-				case 2:
-					return container.b;
-				case 3:
-					return container.a;
-				default:
-					throw "index " + this._fu_repr(orgkey) + " out of range";
-			}
-		}
+		else if (container !== null && typeof(container.__getitem__) === "function") // test this before the generic object test
+			return container.__getitem__(key);
 		else if (Object.prototype.toString.call(container) === "[object Object]")
 		{
 			var result = container[key];
@@ -2704,6 +2687,26 @@ ul4.Color = ul4._inherit(
 					return "#" + r[0] + g[0] + b[0];
 				else
 					return "#" + r + g + b;
+			}
+		},
+
+		__getitem__: function(key)
+		{
+			var orgkey = key;
+			if (key < 0)
+				key += 4;
+			switch (key)
+			{
+				case 0:
+					return this.r;
+				case 1:
+					return this.g;
+				case 2:
+					return this.b;
+				case 3:
+					return this.a;
+				default:
+					throw "index " + ul4._fu_repr(orgkey) + " out of range";
 			}
 		},
 
