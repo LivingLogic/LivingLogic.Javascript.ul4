@@ -2942,9 +2942,32 @@ ul4.TimeDelta = ul4._inherit(
 		{
 			if (ul4._fu_istimedelta(other))
 				return ul4.TimeDelta.create(this.days - other.days, this.seconds - other.seconds, this.microseconds - other.microseconds);
-			else if (ul4._fu_isdate(other))
+			throw ul._fu_type(this) + " - " + this._fu_type(other) + " not supported";
+		},
+
+		__rsub__: function(other)
+		{
+			if (ul4._fu_isdate(other))
 				return this._add(other, -this.days, -this.seconds, -this.microseconds);
 			throw ul._fu_type(this) + " - " + this._fu_type(other) + " not supported";
+		},
+
+		__mul__: function(other)
+		{
+			if (typeof(other) === "number")
+			{
+				return ul4.TimeDelta.create(this.days * other, this.seconds * other, this.microseconds * other);
+			}
+			throw ul._fu_type(this) + " * " + this._fu_type(other) + " not supported";
+		},
+
+		__rmul__: function(other)
+		{
+			if (typeof(other) === "number")
+			{
+				return ul4.TimeDelta.create(this.days * other, this.seconds * other, this.microseconds * other);
+			}
+			throw ul._fu_type(this) + " * " + this._fu_type(other) + " not supported";
 		}
 	}
 );
@@ -3005,8 +3028,8 @@ ul4.MonthDelta = ul4._inherit(
 
 		_add: function(date, months)
 		{
-			var year = date.getFullYear() + Math.floor(months/12);
-			var month = ul4._op_mod(date.getMonth() + months, 12);
+			var year = date.getFullYear();
+			var month = date.getMonth() + months;
 			var day = date.getDate();
 			var hour = date.getHours();
 			var minute = date.getMinutes();
@@ -3015,8 +3038,10 @@ ul4.MonthDelta = ul4._inherit(
 
 			while (true)
 			{
+				// As the month might be out of bounds, we have to find out, what the real target month is
+				var targetmonth = new Date(year, month, 1, hour, minute, second, millisecond).getMonth();
 				var result = new Date(year, month, day, hour, minute, second, millisecond);
-				if (result.getMonth() === month)
+				if (result.getMonth() === targetmonth)
 					return result;
 				--day;
 			}
@@ -3042,9 +3067,28 @@ ul4.MonthDelta = ul4._inherit(
 		{
 			if (ul4._fu_ismonthdelta(other))
 				return ul4.MonthDelta.create(this.months - other.months);
-			else if (ul4._fu_isdate(other))
+			throw ul._fu_type(this) + " - " + this._fu_type(other) + " not supported";
+		},
+
+		__rsub__: function(other)
+		{
+			if (ul4._fu_isdate(other))
 				return this._add(other, -this.months);
 			throw ul._fu_type(this) + " - " + this._fu_type(other) + " not supported";
+		},
+
+		__mul__: function(other)
+		{
+			if (typeof(other) === "number")
+				return ul4.MonthDelta.create(this.months * Math.floor(other));
+			throw ul._fu_type(this) + " * " + this._fu_type(other) + " not supported";
+		},
+
+		__rmul__: function(other)
+		{
+			if (typeof(other) === "number")
+				return ul4.MonthDelta.create(this.months * Math.floor(other));
+			throw ul._fu_type(this) + " * " + this._fu_type(other) + " not supported";
 		}
 	}
 );
