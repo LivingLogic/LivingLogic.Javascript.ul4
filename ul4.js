@@ -2968,6 +2968,15 @@ ul4.TimeDelta = ul4._inherit(
 				return ul4.TimeDelta.create(this.days * other, this.seconds * other, this.microseconds * other);
 			}
 			throw ul._fu_type(this) + " * " + this._fu_type(other) + " not supported";
+		},
+
+		__truediv__: function(other)
+		{
+			if (typeof(other) === "number")
+			{
+				return ul4.TimeDelta.create(this.days / other, this.seconds / other, this.microseconds / other);
+			}
+			throw ul._fu_type(this) + " / " + this._fu_type(other) + " not supported";
 		}
 	}
 );
@@ -3089,6 +3098,13 @@ ul4.MonthDelta = ul4._inherit(
 			if (typeof(other) === "number")
 				return ul4.MonthDelta.create(this.months * Math.floor(other));
 			throw ul._fu_type(this) + " * " + this._fu_type(other) + " not supported";
+		},
+
+		__floordiv__: function(other)
+		{
+			if (typeof(other) === "number")
+				return ul4.MonthDelta.create(Math.floor(this.months / other));
+			throw ul._fu_type(this) + " / " + this._fu_type(other) + " not supported";
 		}
 	}
 );
