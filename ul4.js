@@ -28,7 +28,7 @@
 
 /*jslint vars: true */
 var ul4 = {
-	version: "19",
+	version: "20",
 
 	// REs for parsing JSON
 	_rvalidchars: /^[\],:{}\s]*$/,
@@ -3274,7 +3274,7 @@ ul4.LoadFalse = ul4._inherit(
 	}
 );
 
-ul4.LoadConst = ul4._inherit(
+ul4.Const = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, value)
@@ -3295,16 +3295,6 @@ ul4.LoadConst = ul4._inherit(
 		precedence: 11
 	}
 );
-
-ul4.LoadInt = ul4._inherit(ul4.LoadConst);
-
-ul4.LoadFloat = ul4._inherit(ul4.LoadConst);
-
-ul4.LoadStr = ul4._inherit(ul4.LoadConst);
-
-ul4.LoadColor = ul4._inherit(ul4.LoadConst);
-
-ul4.LoadDate = ul4._inherit(ul4.LoadConst);
 
 ul4.List = ul4._inherit(
 	ul4.AST,
@@ -4389,14 +4379,7 @@ ul4.Template = ul4._inherit(
 	};
 	register("location", ul4.Location);
 	register("text", ul4.Text);
-	register("none", ul4.LoadNone);
-	register("false", ul4.LoadFalse);
-	register("true", ul4.LoadTrue);
-	register("int", ul4.LoadInt);
-	register("float", ul4.LoadFloat);
-	register("str", ul4.LoadStr);
-	register("color", ul4.LoadColor);
-	register("date", ul4.LoadDate);
+	register("const", ul4.Const);
 	register("list", ul4.List);
 	register("listcomp", ul4.ListComp);
 	register("dict", ul4.Dict);
