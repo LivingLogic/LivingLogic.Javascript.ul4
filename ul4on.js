@@ -134,7 +134,11 @@ var ul4on = {
 				this.write(obj.a.toString(16));
 			}
 			else if (ul4._fu_isdate(obj))
-				this.write(ul4._fu_format(obj, "t%Y%m%d%H%M%S%f"));
+				this.write(ul4._fu_format(obj, "z%Y%m%d%H%M%S%f"));
+			else if (ul4._fu_istimedelta(obj))
+				this.write("t" + obj.days + "|" + obj.seconds + "|" + obj.microseconds + "|");
+			else if (ul4._fu_ismonthdelta(obj))
+				this.write("m" + obj.months + "|");
 			else if (obj.__id__ && obj.ul4onname && obj.ul4ondump)
 			{
 				var index = this._ids2index[obj.__id__];
@@ -276,11 +280,23 @@ var ul4on = {
 					if (typecode === "C")
 						this.backrefs.push(result);
 					return result;
-				case "t":
-				case "T":
+				case "z":
+				case "Z":
 					result = this.read(20);
 					result = new Date(parseInt(result.substring(0, 4)), parseInt(result.substring(4, 6)) - 1, parseInt(result.substring(6, 8)), parseInt(result.substring(8, 10)), parseInt(result.substring(10, 12)), parseInt(result.substring(12, 14)), parseInt(result.substring(14, 17)));
+					if (typecode === "Z")
+						this.backrefs.push(result);
+					return result;
+				case "t":
+				case "T":
+					result = ul4.TimeDelta.create(this.readnumber(), this.readnumber(), this.readnumber());
 					if (typecode === "T")
+						this.backrefs.push(result);
+					return result;
+				case "m":
+				case "M":
+					result = ul4.MonthDelta.create(this.readnumber());
+					if (typecode === "M")
 						this.backrefs.push(result);
 					return result;
 				case "l":
