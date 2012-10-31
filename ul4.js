@@ -311,19 +311,12 @@ var ul4 = {
 			var orgkey = key;
 			if (key < 0)
 				key += container.length;
-			if (key < 0 || key >= container.length)
-				throw "index " + this._fu_repr(orgkey) + " out of range";
 			return container[key];
 		}
 		else if (container !== null && typeof(container.__getitem__) === "function") // test this before the generic object test
 			return container.__getitem__(key);
 		else if (Object.prototype.toString.call(container) === "[object Object]")
-		{
-			var result = container[key];
-			if (typeof(result) === "undefined")
-				throw "key " + this._fu_repr(key) + " not found";
-			return result;
-		}
+			return container[key];
 		throw "getitem() needs a sequence or dict";
 	},
 
@@ -338,6 +331,22 @@ var ul4 = {
 	},
 
 	// Functions with the ``_fu_`` prefix implement UL4 functions
+
+	// Check if ``obj`` is undefined
+	_fu_isundefined: function(obj)
+	{
+		ul4._checkfuncargs("isundefined", arguments, 1);
+
+		return typeof(obj) === "undefined";
+	},
+
+	// Check if ``obj`` is *not* undefined
+	_fu_isdefined: function(obj)
+	{
+		ul4._checkfuncargs("isdefined", arguments, 1);
+
+		return typeof(obj) !== "undefined";
+	},
 
 	// Check if ``obj`` is ``None``
 	_fu_isnone: function(obj)
@@ -2706,7 +2715,7 @@ ul4.Color = ul4._inherit(
 				case 3:
 					return this.a;
 				default:
-					throw "index " + ul4._fu_repr(orgkey) + " out of range";
+					return undefined;
 			}
 		},
 
@@ -3470,7 +3479,7 @@ ul4.GenExpr = ul4._inherit(
 	}
 );
 
-ul4.LoadVar = ul4._inherit(
+ul4.Var = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, name)
@@ -4385,7 +4394,7 @@ ul4.Template = ul4._inherit(
 	register("dict", ul4.Dict);
 	register("dictcomp", ul4.DictComp);
 	register("genexpr", ul4.GenExpr);
-	register("var", ul4.LoadVar);
+	register("var", ul4.Var);
 	register("not", ul4.Not);
 	register("neg", ul4.Neg);
 	register("print", ul4.Print);
