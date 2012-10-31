@@ -1230,6 +1230,8 @@ var ul4 = {
 
 		if (obj === null)
 			return "null";
+		else if (typeof(obj) === "undefined")
+			return "{}.undefined";
 		else if (obj === false)
 			return "false";
 		else if (obj === true)
@@ -1273,6 +1275,14 @@ var ul4 = {
 		else if (this._fu_isdate(obj))
 		{
 			return "new Date(" + obj.getFullYear() + ", " + obj.getMonth() + ", " + obj.getDate() + ", " + obj.getHours() + ", " + obj.getMinutes() + ", " + obj.getSeconds() + ", " + obj.getMilliseconds() + ")";
+		}
+		else if (this._fu_istimedelta(obj))
+		{
+			return "ul4.TimeDelta.create(" + obj.days + ", " + obj.seconds + ", " + obj.microseconds + ")";
+		}
+		else if (this._fu_ismonthdelta(obj))
+		{
+			return "ul4.MonthDelta.create(" + obj.months + ")";
 		}
 		else if (this._fu_iscolor(obj))
 		{
