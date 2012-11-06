@@ -1979,6 +1979,18 @@ var ul4 = {
 		return result;
 	},
 
+	_me_values: function(obj)
+	{
+		ul4._checkmethargs("values", arguments.length, 0);
+		if (!this._fu_isdict(obj))
+			throw "values() requires a dict";
+
+		var result = [];
+		for (var key in obj)
+			result.push(obj[key]);
+		return result;
+	},
+
 	_me_join: function(sep, container)
 	{
 		ul4._checkmethargs("join", arguments.length, 1);
