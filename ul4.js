@@ -725,6 +725,31 @@ var ul4 = {
 	{
 		ul4._checkfuncargs("format", arguments, 2, 3);
 
+
+		if (typeof(lang) === "undefined" || lang === null)
+			lang = "en";
+		else
+		{
+			lang = lang.toLowerCase();
+			if (typeof(translations[lang]) === "undefined")
+			{
+				lang = lang.split(/_/)[0];
+				if (typeof(translations[lang]) === "undefined")
+					lang = "en";
+			}
+		}
+		if (this._fu_isdate(obj))
+			return this._fu_format_date(obj, format, lang);
+		else if (this._fu_isint(obj))
+			return this._fu_format_int(obj, format, lang);
+		else if (obj === true)
+			return this._fu_format_int(1, format, lang);
+		else if (obj === false)
+			return this._fu_format_int(0, format, lang);
+	},
+
+	_fu_format_date: function(obj, format, lang)
+	{
 		var translations = {
 			de: {
 				ms: ["Jan", "Feb", "M\u00e4r", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
@@ -915,120 +940,255 @@ var ul4 = {
 				Xf: "%H\u6642%M\u5206%S\u79d2",
 				cf: "%Y\u5e74%B%d\u65e5 %H\u6642%M\u5206%S\u79d2",
 			}
-		}
+		};
 
-		if (typeof(lang) === "undefined" || lang === null)
-			lang = "en";
-		else
-		{
-			lang = lang.toLowerCase();
-			if (typeof(translations[lang]) === "undefined")
-			{
-				lang = lang.split(/_/)[0];
-				if (typeof(translations[lang]) === "undefined")
-					lang = "en";
-			}
-		}
 		var translation = translations[lang];
 
 		var firstday;
 
-		if (this._fu_isdate(obj))
+		var result = [];
+		var inspec = false;
+		for (var i in format)
 		{
-			var result = [];
-			var inspec = false;
-			for (var i in format)
+			var c = format[i];
+			if (inspec)
 			{
-				var c = format[i];
-				if (inspec)
+				switch (c)
 				{
-					switch (c)
-					{
-						case "a":
-							c = translation.ws[obj.getDay()];
-							break;
-						case "A":
-							c = translation.wl[obj.getDay()];
-							break;
-						case "b":
-							c = translation.ms[obj.getMonth()];
-							break;
-						case "B":
-							c = translation.ml[obj.getMonth()];
-							break;
-						case "c":
-							c = ul4._fu_format(obj, translation.cf, lang);
-							break;
-						case "d":
-							c = this._lpad(obj.getDate(), "0", 2);
-							break;
-						case "f":
-							c = this._lpad(obj.getMilliseconds(), "0", 3) + "000";
-							break;
-						case "H":
-							c = this._lpad(obj.getHours(), "0", 2);
-							break;
-						case "I":
-							c = this._lpad(((obj.getHours()-1) % 12)+1, "0", 2);
-							break;
-						case "j":
-							c = this._lpad(this._me_yearday(obj), "0", 3);
-							break;
-						case "m":
-							c = this._lpad(obj.getMonth()+1, "0", 2);
-							break;
-						case "M":
-							c = this._lpad(obj.getMinutes(), "0", 2);
-							break;
-						case "p":
-							c = obj.getHours() < 12 ? "AM" : "PM";
-							break;
-						case "S":
-							c = this._lpad(obj.getSeconds(), "0", 2);
-							break;
-						case "U":
-							c = this._lpad(ul4._me_week(obj, 6), "0", 2);
-							break;
-						case "w":
-							c = obj.getDay();
-							break;
-						case "W":
-							c = this._lpad(ul4._me_week(obj, 0), "0", 2);
-							break;
-						case "x":
-							c = ul4._fu_format(obj, translation.xf, lang);
-							break;
-						case "X":
-							c = ul4._fu_format(obj, translation.Xf, lang);
-							break;
-						case "y":
-							c = (obj.getFullYear() % 100).toString();
-							break;
-						case "Y":
-							c = obj.getFullYear().toString();
-							break;
-						case "z":
-							// UTC offset in the form +HHMM or -HHMM
-							c = "";
-							break;
-						case "Z":
-							// Time zone name
-							c = "";
-							break;
-					}
-					result.push(c);
-					inspec = false;
+					case "a":
+						c = translation.ws[obj.getDay()];
+						break;
+					case "A":
+						c = translation.wl[obj.getDay()];
+						break;
+					case "b":
+						c = translation.ms[obj.getMonth()];
+						break;
+					case "B":
+						c = translation.ml[obj.getMonth()];
+						break;
+					case "c":
+						c = ul4._fu_format(obj, translation.cf, lang);
+						break;
+					case "d":
+						c = this._lpad(obj.getDate(), "0", 2);
+						break;
+					case "f":
+						c = this._lpad(obj.getMilliseconds(), "0", 3) + "000";
+						break;
+					case "H":
+						c = this._lpad(obj.getHours(), "0", 2);
+						break;
+					case "I":
+						c = this._lpad(((obj.getHours()-1) % 12)+1, "0", 2);
+						break;
+					case "j":
+						c = this._lpad(this._me_yearday(obj), "0", 3);
+						break;
+					case "m":
+						c = this._lpad(obj.getMonth()+1, "0", 2);
+						break;
+					case "M":
+						c = this._lpad(obj.getMinutes(), "0", 2);
+						break;
+					case "p":
+						c = obj.getHours() < 12 ? "AM" : "PM";
+						break;
+					case "S":
+						c = this._lpad(obj.getSeconds(), "0", 2);
+						break;
+					case "U":
+						c = this._lpad(ul4._me_week(obj, 6), "0", 2);
+						break;
+					case "w":
+						c = obj.getDay();
+						break;
+					case "W":
+						c = this._lpad(ul4._me_week(obj, 0), "0", 2);
+						break;
+					case "x":
+						c = ul4._fu_format(obj, translation.xf, lang);
+						break;
+					case "X":
+						c = ul4._fu_format(obj, translation.Xf, lang);
+						break;
+					case "y":
+						c = (obj.getFullYear() % 100).toString();
+						break;
+					case "Y":
+						c = obj.getFullYear().toString();
+						break;
+					case "z":
+						// UTC offset in the form +HHMM or -HHMM
+						c = "";
+						break;
+					case "Z":
+						// Time zone name
+						c = "";
+						break;
 				}
+				result.push(c);
+				inspec = false;
+			}
+			else
+			{
+				if (c == "%")
+					inspec = true;
 				else
+					result.push(c);
+			}
+		}
+		return result.join("");
+	},
+
+	_fu_format_int: function(obj, format, lang)
+	{
+		var work = format;
+
+		// Defaults
+		var fill = ' ';
+		var align = '>'; // '<', '>', '=' or '^'
+		var sign = '-'; // '+', '-' or ' '
+		var alternate = false;
+		var minimumwidth = 0;
+		var type = 'd'; // 'b', 'c', 'd', 'o', 'x', 'X' or 'n'
+
+		// Determine output type
+		if (/[bcdoxXn]$/.test(work))
+		{
+			type = work.substring(work.length-1);
+			work = work.substring(0, work.length-1);
+		}
+
+		// Extract minimum width
+		if (/\d+$/.test(work))
+		{
+			var newwork = work.replace(/\d+$/, "");
+			var minimumwidthStr = work.substring(newwork.length);
+			if (/^0/.test(minimumwidthStr))
+			{
+				align = '=';
+				fill = '0';
+			}
+			work = newwork;
+			minimumwidth = parseInt(minimumwidthStr);
+		}
+
+		// Alternate form?
+		if (/#$/.test(work))
+		{
+			alternate = true;
+			work = work.substring(0, work.length-1);
+		}
+
+		// Determine sign
+		if (/[+ -]$/.test(work))
+		{
+			if (type == 'c')
+				throw "sign not allowed for integer format type 'c'";
+			sign = work.substring(work.length-1);
+			work = work.substring(0, work.length-1);
+		}
+
+		// Extract fill and align char
+		if (work.length >= 3)
+			throw "illegal integer format string " + this._fu_repr(format);
+		else if (work.length == 2)
+		{
+			if (/[<>=^]$/.test(work))
+			{
+				align = work[1];
+				fill = work[0];
+			}
+			else
+				throw "illegal integer format string " + this._fu_repr(format);
+		}
+		else if (work.length == 1)
+		{
+			if (/^[<>=^]$/.test(work))
+				align = work;
+			else
+				throw "illegal integer format string " + this._fu_repr(format);
+		}
+
+		// Basic number formatting
+		var neg = obj < 0;
+
+		if (neg)
+			obj = -obj;
+
+		var output;
+		switch (type)
+		{
+			case 'b':
+				output = obj.toString(2);
+				break;
+			case 'c':
+				if (neg || obj > 65535)
+					throw "value out of bounds for c format";
+				output = String.fromCharCode(obj);
+				break;
+			case 'd':
+				output = obj.toString();
+				break;
+			case 'o':
+				output = obj.toString(8);
+				break;
+			case 'x':
+				output = obj.toString(16);
+				break;
+			case 'X':
+				output = obj.toString(16).toUpperCase();
+				break;
+			case 'n':
+				// FIXME: locale formatting
+				output = obj.toString();
+				break;
+		}
+
+		// The rest of the formatting
+		if (align === '=')
+		{
+			if (neg || sign !== '-')
+				--minimumwidth;
+			if (alternate && (type === 'b' || type === 'o' || type === 'x' || type === 'X'))
+				minimumwidth -= 2;
+
+			if (output.length < minimumwidth)
+				output = this._str_repeat(fill, minimumwidth-output.length) + output;
+
+			if (alternate && (type === 'b' || type === 'o' || type === 'x' || type === 'X'))
+				output = "0" + type + output;
+
+			if (neg)
+				output = "-" + output;
+			else if (sign != '-')
+				output = sign + output;
+		}
+		else
+		{
+			if (alternate && (type == 'b' || type == 'o' || type == 'x' || type == 'X'))
+				output = "0" + type + output;
+			if (neg)
+				output = "-" + output;
+			else if (sign != '-')
+				output = sign + output;
+			if (output.length < minimumwidth)
+			{
+				if (align == '<')
+					output = output + this._str_repeat(fill, minimumwidth-output.length);
+				else if (align == '>')
+					output = this._str_repeat(fill, minimumwidth-output.length) + output;
+				else // if (align == '^')
 				{
-					if (c == "%")
-						inspec = true;
-					else
-						result.push(c);
+					var pad = minimumwidth - output.length;
+					var padBefore = Math.floor(pad/2);
+					var padAfter = pad-padBefore;
+					output = this._str_repeat(fill, padBefore) + output + this._str_repeat(fill, padAfter);
 				}
 			}
-			return result.join("");
 		}
+		return output;
 	},
 
 	// Convert ``obj`` to a string and escape the characters ``&``, ``<``, ``>``, ``'`` and ``"`` with their XML character/entity reference
