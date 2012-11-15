@@ -94,8 +94,6 @@ var ul4on = {
 		{
 			if (obj === null)
 				this.write("n");
-			else if (typeof(obj) == "undefined")
-				this.write("u");
 			else if (typeof(obj) == "boolean")
 				this.write(obj ? "bT" : "bF");
 			else if (typeof(obj) == "number")
@@ -248,12 +246,6 @@ var ul4on = {
 					if (typecode === "N")
 						this.backrefs.push(null);
 					return null;
-				case "u":
-				case "U":
-					var undefined = {}.undefined;
-					if (typecode === "U")
-						this.backrefs.push(undefined);
-					return undefined;
 				case "b":
 				case "B":
 					result = this.readchar();
