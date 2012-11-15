@@ -104,7 +104,7 @@ var ul4on = {
 			else if (typeof(obj) == "string")
 			{
 				var index = this._strings2index[obj];
-				if (typeof(index) != "undefined")
+				if (typeof(index) !== "undefined")
 				{
 					this.write("^");
 					this.writenumber(index);

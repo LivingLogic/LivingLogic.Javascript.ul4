@@ -28,7 +28,7 @@
 
 /*jslint vars: true */
 var ul4 = {
-	version: "20",
+	version: "21",
 
 	// REs for parsing JSON
 	_rvalidchars: /^[\],:{}\s]*$/,
@@ -783,11 +783,11 @@ var ul4 = {
 	{
 		ul4._checkfuncargs("format", arguments, 2, 3);
 
-
 		if (typeof(lang) === "undefined" || lang === null)
 			lang = "en";
 		else
 		{
+			var translations = {de: null, en: null, fr: null, es: null, it: null, da: null, sv: null, nl: null, pt: null, cs: null, sk: null, pl: null, hr: null, sr: null, ro: null, hu: null, tr: null, ru: null, zh: null, ko: null, ja: null};
 			lang = lang.toLowerCase();
 			if (typeof(translations[lang]) === "undefined")
 			{
@@ -3370,7 +3370,7 @@ ul4.Location = ul4._inherit(
 			location.startcode = startcode;
 			location.endcode = endcode;
 			// Unfortunately Javascript doesn't have what other languages call properties, so we must create real attributes here
-			if (typeof(source) != "undefined")
+			if (typeof(source) !== "undefined")
 			{
 				location.tag = source.substring(starttag, endtag);
 				location.code = source.substring(startcode, endcode);
@@ -3409,11 +3409,9 @@ ul4.Location = ul4._inherit(
 ul4.AST = ul4._inherit(
 	ul4.Proto,
 	{
-		create: function(location)
+		create: function()
 		{
-			var ast = ul4._clone(this);
-			ast.location = location;
-			return ast;
+			return ul4._clone(this);
 		},
 		_name: function()
 		{
@@ -3455,79 +3453,16 @@ ul4.AST = ul4._inherit(
 		precedence: null,
 		associative: true,
 		// used in ul4ondump/ul4ondump to automatically dump these attributes
-		_ul4onattrs: ["location"]
-	}
-);
-
-ul4.Text = ul4._inherit(
-	ul4.AST,
-	{
-		text: function()
-		{
-			return this.location.source.substring(this.location.startcode, this.location.endcode);
-		},
-		formatjs: function(indent)
-		{
-			return this._line(indent, "out.push(" + ul4._fu_asjson(this.text()) + ");");
-		},
-		format: function(indent)
-		{
-			return this._line(indent, "text " + ul4._fu_repr(this.text()));
-		}
-	}
-);
-
-ul4.LoadNone = ul4._inherit(
-	ul4.AST,
-	{
-		formatjs: function(indent)
-		{
-			return "null";
-		},
-		format: function(indent)
-		{
-			return "None";
-		},
-		precedence: 11
-	}
-);
-
-ul4.LoadTrue = ul4._inherit(
-	ul4.AST,
-	{
-		formatjs: function(indent)
-		{
-			return "true";
-		},
-		format: function(indent)
-		{
-			return "True";
-		},
-		precedence: 11
-	}
-);
-
-ul4.LoadFalse = ul4._inherit(
-	ul4.AST,
-	{
-		formatjs: function(indent)
-		{
-			return "false";
-		},
-		format: function(indent)
-		{
-			return "False";
-		},
-		precedence: 11
+		_ul4onattrs: []
 	}
 );
 
 ul4.Const = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, value)
+		create: function(value)
 		{
-			var constant = ul4.AST.create.call(this, location);
+			var constant = ul4.AST.create.call(this);
 			constant.value = value;
 			return constant;
 		},
@@ -3547,9 +3482,9 @@ ul4.Const = ul4._inherit(
 ul4.List = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location)
+		create: function()
 		{
-			var list = ul4.AST.create.call(this, location);
+			var list = ul4.AST.create.call(this);
 			list.items = [];
 			return list;
 		},
@@ -3575,9 +3510,9 @@ ul4.List = ul4._inherit(
 ul4.ListComp = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, item, varname, container, condition)
+		create: function(item, varname, container, condition)
 		{
-			var listcomp = ul4.AST.create.call(this, location);
+			var listcomp = ul4.AST.create.call(this);
 			listcomp.item = item;
 			listcomp.varname = varname;
 			listcomp.container = container;
@@ -3605,9 +3540,9 @@ ul4.ListComp = ul4._inherit(
 ul4.Dict = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location)
+		create: function()
 		{
-			var dict = ul4.AST.create.call(this, location);
+			var dict = ul4.AST.create.call(this);
 			dict.items = [];
 			return dict;
 		},
@@ -3645,9 +3580,9 @@ ul4.Dict = ul4._inherit(
 ul4.DictComp = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, key, value, varname, container, condition)
+		create: function(key, value, varname, container, condition)
 		{
-			var listcomp = ul4.AST.create.call(this, location);
+			var listcomp = ul4.AST.create.call(this);
 			listcomp.key = key;
 			listcomp.value = value;
 			listcomp.varname = varname;
@@ -3676,9 +3611,9 @@ ul4.DictComp = ul4._inherit(
 ul4.GenExpr = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, item, varname, container, condition)
+		create: function(item, varname, container, condition)
 		{
-			var genexp = ul4.AST.create.call(this, location);
+			var genexp = ul4.AST.create.call(this);
 			genexp.item = item;
 			genexp.varname = varname;
 			genexp.container = container;
@@ -3721,9 +3656,9 @@ ul4.GenExpr = ul4._inherit(
 ul4.Var = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, name)
+		create: function(name)
 		{
-			var variable = ul4.AST.create.call(this, location);
+			var variable = ul4.AST.create.call(this);
 			variable.name = name;
 			return variable;
 		},
@@ -3743,9 +3678,9 @@ ul4.Var = ul4._inherit(
 ul4.Unary = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, obj)
+		create: function(obj)
 		{
-			var unary = ul4.AST.create.call(this, location);
+			var unary = ul4.AST.create.call(this);
 			unary.obj = obj;
 			return unary;
 		},
@@ -3779,8 +3714,52 @@ ul4.Not = ul4._inherit(
 	}
 );
 
+ul4.Tag = ul4._inherit(
+	ul4.AST,
+	{
+		create: function(location)
+		{
+			var tag = ul4.AST.create.call(this);
+			tag.location = location;
+			return tag;
+		},
+		_ul4onattrs: ul4.AST._ul4onattrs.concat(["location"])
+	}
+);
+
+ul4.Text = ul4._inherit(
+	ul4.Tag,
+	{
+		text: function()
+		{
+			return this.location.source.substring(this.location.startcode, this.location.endcode);
+		},
+		formatjs: function(indent)
+		{
+			return this._line(indent, "out.push(" + ul4._fu_asjson(this.text()) + ");");
+		},
+		format: function(indent)
+		{
+			return this._line(indent, "text " + ul4._fu_repr(this.text()));
+		}
+	}
+);
+
+ul4.UnaryTag = ul4._inherit(
+	ul4.Tag,
+	{
+		create: function(location, obj)
+		{
+			var unarytag = ul4.Tag.create.call(this, location);
+			unarytag.obj = obj;
+			return unarytag;
+		},
+		_ul4onattrs: ul4.Tag._ul4onattrs.concat(["obj"]),
+	}
+);
+
 ul4.Print = ul4._inherit(
-	ul4.Unary,
+	ul4.UnaryTag,
 	{
 		formatjs: function(indent)
 		{
@@ -3794,7 +3773,7 @@ ul4.Print = ul4._inherit(
 );
 
 ul4.PrintX = ul4._inherit(
-	ul4.Unary,
+	ul4.UnaryTag,
 	{
 		formatjs: function(indent)
 		{
@@ -3810,9 +3789,9 @@ ul4.PrintX = ul4._inherit(
 ul4.Binary = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, obj1, obj2)
+		create: function(obj1, obj2)
 		{
-			var binary = ul4.AST.create.call(this, location);
+			var binary = ul4.AST.create.call(this);
 			binary.obj1 = obj1;
 			binary.obj2 = obj2;
 			return binary;
@@ -4036,9 +4015,9 @@ ul4.Or = ul4._inherit(
 ul4.GetAttr = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, obj, attrname)
+		create: function(obj, attrname)
 		{
-			var getattr = ul4.AST.create.call(this, location);
+			var getattr = ul4.AST.create.call(this);
 			getattr.obj = obj;
 			getattr.attrname = attrname;
 			return getattr;
@@ -4060,9 +4039,9 @@ ul4.GetAttr = ul4._inherit(
 ul4.CallFunc = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, funcname, args)
+		create: function(funcname, args)
 		{
-			var callfunc = ul4.AST.create.call(this, location);
+			var callfunc = ul4.AST.create.call(this);
 			callfunc.funcname = funcname;
 			callfunc.args = args;
 			return callfunc;
@@ -4100,9 +4079,9 @@ ul4.CallFunc = ul4._inherit(
 ul4.GetSlice = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, obj, index1, index2)
+		create: function(obj, index1, index2)
 		{
-			var getslice = ul4.AST.create.call(this, location);
+			var getslice = ul4.AST.create.call(this);
 			getslice.obj = obj;
 			getslice.index1 = index1;
 			getslice.index2 = index2;
@@ -4125,9 +4104,9 @@ ul4.GetSlice = ul4._inherit(
 ul4.CallMeth = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, methname, obj, args)
+		create: function(methname, obj, args)
 		{
-			var callfunc = ul4.AST.create.call(this, location);
+			var callfunc = ul4.AST.create.call(this);
 			callfunc.methname = methname;
 			callfunc.obj = obj;
 			callfunc.args = args;
@@ -4156,9 +4135,9 @@ ul4.CallMeth = ul4._inherit(
 ul4.CallMethKeywords = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, methname, obj, args)
+		create: function(methname, obj, args)
 		{
-			var callfunc = ul4.AST.create.call(this, location);
+			var callfunc = ul4.AST.create.call(this);
 			callfunc.methname = methname;
 			callfunc.obj = obj;
 			callfunc.args = args;
@@ -4202,7 +4181,7 @@ ul4.CallMethKeywords = ul4._inherit(
 );
 
 ul4.Render = ul4._inherit(
-	ul4.Unary,
+	ul4.UnaryTag,
 	{
 		format: function(indent)
 		{
@@ -4219,16 +4198,16 @@ ul4.Render = ul4._inherit(
 );
 
 ul4.ChangeVar = ul4._inherit(
-	ul4.AST,
+	ul4.Tag,
 	{
 		create: function(location, varname, value)
 		{
-			var changevar = ul4.AST.create.call(this, location);
+			var changevar = ul4.Tag.create.call(this, location);
 			changevar.varname = varname;
 			changevar.value = value;
 			return changevar;
 		},
-		_ul4onattrs: ul4.AST._ul4onattrs.concat(["varname", "value"])
+		_ul4onattrs: ul4.Tag._ul4onattrs.concat(["varname", "value"])
 	}
 );
 
@@ -4336,41 +4315,20 @@ ul4.ModVar = ul4._inherit(
 	}
 );
 
-ul4.DelVar = ul4._inherit(
-	ul4.AST,
-	{
-		create: function(location, varname)
-		{
-			var delvar = ul4.AST.create.call(this, location);
-			delvar.varname = varname;
-			return delvar;
-		},
-		_ul4onattrs: ul4.AST._ul4onattrs.concat(["varname"]),
-		format: function(indent)
-		{
-			return this._line(indent, "del " + this.varname);
-		},
-		formatjs: function(indent)
-		{
-			return this._line(indent, "vars[" + ul4._fu_asjson(this.varname) + "] = null;");
-		}
-	}
-);
-
 ul4.Block = ul4._inherit(
-	ul4.AST,
+	ul4.Tag,
 	{
 		create: function(location)
 		{
-			var block = ul4.AST.create.call(this, location);
+			var block = ul4.Tag.create.call(this, location);
 			block.endlocation = null;
 			block.content = [];
 			return block;
 		},
-		_ul4onattrs: ul4.AST._ul4onattrs.concat(["endlocation", "content"]),
+		_ul4onattrs: ul4.Tag._ul4onattrs.concat(["endlocation", "content"]),
 		_add2template: function(template)
 		{
-			ul4.AST._add2template.call(this, template);
+			ul4.Tag._add2template.call(this, template);
 			for (var i in this.content)
 				this.content[i]._add2template(template);
 		},
@@ -4429,7 +4387,7 @@ ul4.For = ul4._inherit(
 );
 
 ul4.Break = ul4._inherit(
-	ul4.AST,
+	ul4.Tag,
 	{
 		formatjs: function(indent)
 		{
@@ -4443,7 +4401,7 @@ ul4.Break = ul4._inherit(
 );
 
 ul4.Continue = ul4._inherit(
-	ul4.AST,
+	ul4.Tag,
 	{
 		formatjs: function(indent)
 		{
@@ -4668,7 +4626,6 @@ ul4.Template = ul4._inherit(
 	register("truedivvar", ul4.TrueDivVar);
 	register("floordivvar", ul4.FloorDivVar);
 	register("modvar", ul4.ModVar);
-	register("delvar", ul4.DelVar);
 	register("for", ul4.For);
 	register("break", ul4.Break);
 	register("continue", ul4.Continue);
