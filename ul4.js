@@ -651,6 +651,64 @@ var ul4 = {
 		throw "list() requires an iterable";
 	},
 
+	// Return whether any of the items in ``obj`` are true
+	_fu_any: function(obj)
+	{
+		ul4._checkfuncargs("any", arguments, 1);
+
+		if (typeof(obj) == "string")
+		{
+			for (var i = 0; i < obj.length; ++i)
+			{
+				if (obj[i] !== '\x00')
+					return true;
+			}
+			return false;
+		}
+		else
+		{
+			var iter = this._iter(obj);
+
+			for (;;)
+			{
+				var item = iter();
+				if (item === null)
+					return false;
+				if (this._fu_bool(item[0]))
+					return true;
+			}
+		}
+	},
+
+	// Return whether all of the items in ``obj`` are true
+	_fu_all: function(obj)
+	{
+		ul4._checkfuncargs("any", arguments, 1);
+
+		if (typeof(obj) == "string")
+		{
+			for (var i = 0; i < obj.length; ++i)
+			{
+				if (obj[i] === '\x00')
+					return false;
+			}
+			return true;
+		}
+		else
+		{
+			var iter = this._iter(obj);
+
+			for (;;)
+			{
+				var item = iter();
+				if (item === null)
+					return true;
+				if (!this._fu_bool(item[0]))
+					return false;
+			}
+		}
+	},
+
 	// Return the length of ``obj``
 	_fu_len: function(obj)
 	{
@@ -1063,14 +1121,13 @@ var ul4 = {
 		// Extract minimum width
 		if (/\d+$/.test(work))
 		{
-			var newwork = work.replace(/\d+$/, "");
-			var minimumwidthStr = work.substring(newwork.length);
+			var minimumwidthStr = /\d+$/.exec(work);
+			work = work.replace(/\d+$/, "");
 			if (/^0/.test(minimumwidthStr))
 			{
 				align = '=';
 				fill = '0';
 			}
-			work = newwork;
 			minimumwidth = parseInt(minimumwidthStr);
 		}
 
