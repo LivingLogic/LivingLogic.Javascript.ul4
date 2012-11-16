@@ -2599,7 +2599,7 @@ var ul4 = {
 			{
 				if (i)
 					v.push(", ");
-				v.push(formatnestedname(varname[i]));
+				v.push(this.formatnestedname(varname[i]));
 			}
 			v.push(")");
 			return v.join("");
