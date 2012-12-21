@@ -1756,6 +1756,8 @@ var ul4 = {
 	{
 		ul4._checkfuncargs("abs", arguments, 1);
 
+		if (obj !== null && typeof(obj.__abs__) === "function")
+			return obj.__abs__();
 		return Math.abs(obj);
 	},
 
@@ -3129,6 +3131,11 @@ ul4.TimeDelta = ul4._inherit(
 			return this.days !== 0 || this.seconds !== 0 || this.microseconds !== 0;
 		},
 
+		__abs__: function()
+		{
+			return this.days < 0 ? ul4.TimeDelta.create(-this.days, -this.seconds, -this.microseconds) : this;
+		},
+
 		__eq__: function(other)
 		{
 			if (ul4._fu_istimedelta(other))
@@ -3262,6 +3269,11 @@ ul4.MonthDelta = ul4._inherit(
 		__bool__: function()
 		{
 			return this.months !== 0;
+		},
+
+		__abs__: function()
+		{
+			return this.months < 0 ? ul4.MonthDelta.create(-this.months) : this;
 		},
 
 		__eq__: function(other)
