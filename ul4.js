@@ -167,6 +167,8 @@ var ul4 = {
 		{
 			return container.indexOf(obj) !== -1;
 		}
+		else if (container !== null && typeof(container.__contains__) === "function") // test this before the generic object test
+			return container.__contains__(obj);
 		else if (this._fu_isdict(container))
 		{
 			for (var key in container)
@@ -1883,7 +1885,7 @@ var ul4 = {
 	{
 		if (arguments.length < 2 || arguments.length > 3)
 			throw "function get() requires 1-2 arguments, " + (arguments.length-1) + " given";
-		var result = vars[varname];
+		var result = vars.__getitem__(varname);
 		if (typeof(result) === "undefined")
 			result = defaultvalue;
 		if (typeof(result) === "undefined")
@@ -1896,6 +1898,13 @@ var ul4 = {
 		if (arguments.length > 1)
 			throw "function vars() requires 0 arguments, " + (arguments.length-1) + " given";
 		return vars;
+	},
+
+	_fu_allvars: function(allvars)
+	{
+		if (arguments.length > 1)
+			throw "function allvars() requires 0 arguments, " + (arguments.length-1) + " given";
+		return allvars;
 	},
 
 	// Functions with the ``_me_`` prefix implement UL4 methods
@@ -2884,6 +2893,32 @@ ul4.Proto = {
 	}
 };
 
+ul4.ChainMap = ul4._inherit(
+	ul4.Proto,
+	{
+		create: function(obj1, obj2)
+		{
+			var m = ul4._clone(this);
+			m.obj1 = obj1;
+			m.obj2 = obj2;
+			return m;
+		},
+
+		__getitem__: function(key)
+		{
+			var value = this.obj1[key];
+			if (typeof(value) === "undefined")
+				value = this.obj2[key];
+			return value;
+		},
+
+		__contains__: function(key)
+		{
+			return (typeof(this.obj1[key]) !== "undefined") || (typeof(this.obj2[key]) !== "undefined");
+		}
+	}
+);
+
 ul4.Color = ul4._inherit(
 	ul4.Proto,
 	{
@@ -3651,7 +3686,7 @@ ul4.GenExpr = ul4._inherit(
 								v.push("if(ul4._fu_bool(" + this.condition.formatjs(indent) + "))");
 							v.push("break;");
 						v.push("}");
-						v.push("return[" + this.item.formatjs(indent) + "];");
+						v.push("return [" + this.item.formatjs(indent) + "];");
 					v.push("})");
 				v.push("})(" + this.container.formatjs(indent) + ")");
 			v.push(")");
@@ -3677,7 +3712,7 @@ ul4.Var = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["name"]),
 		formatjs: function(indent)
 		{
-			return "vars[" + ul4._fu_asjson(this.name) + "]";
+			return "allvars.__getitem__(" + ul4._fu_asjson(this.name) + ")";
 		},
 		format: function(indent)
 		{
@@ -4061,12 +4096,19 @@ ul4.CallFunc = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["funcname", "args"]),
 		formatjs: function(indent)
 		{
-			if (this.funcname === "vars" || this.funcname === "get")
+			if (this.funcname === "vars")
 			{
 				var v = [];
 				for (var i in this.args)
 					v.push(", " + this.args[i].formatjs(indent));
 				return "ul4._fu_" + this.funcname + "(vars" + v.join("") + ")";
+			}
+			if (this.funcname === "allvars" || this.funcname === "get")
+			{
+				var v = [];
+				for (var i in this.args)
+					v.push(", " + this.args[i].formatjs(indent));
+				return "ul4._fu_" + this.funcname + "(allvars" + v.join("") + ")";
 			}
 			else
 			{
@@ -4130,7 +4172,10 @@ ul4.CallMeth = ul4._inherit(
 			var v = [this.obj.formatjs(indent)];
 			for (var i in this.args)
 				v.push(this.args[i].formatjs(indent));
+			if (this.methname === "render")
+				return "out.push.apply(out, " + this.obj.formatjs(indent) + ".render())";
 			return "ul4._me_" + this.methname + "(" + v.join(", ") + ")";
+
 		},
 		format: function(indent)
 		{
@@ -4201,7 +4246,7 @@ ul4.Render = ul4._inherit(
 		},
 		formatjs: function(indent)
 		{
-			if (this.obj.isa(ul4.CallMeth) || this.obj.isa(ul4.CallMethKeywords) && this.obj.methname === "render")
+			if ((this.obj.isa(ul4.CallMeth) || this.obj.isa(ul4.CallMethKeywords)) && this.obj.methname === "render")
 				return this._line(indent, this.obj.formatjs(indent));
 			else
 				return this._line(indent, "out.push(ul4._fu_str(" + this.obj.formatjs(indent) + "))");
@@ -4563,6 +4608,7 @@ ul4.Template = ul4._inherit(
 				v.push(this._line(0, "(function(self, vars)"));
 				v.push(this._line(0, "{"));
 				v.push(this._line(1, "var out = [];"));
+				v.push(this._line(1, "var allvars = ul4.ChainMap.create(vars, {self: self});"));
 				v.push(this._formatjs_content(1));
 				v.push(this._line(1, "return out;"));
 				v.push(this._line(0, "})"));
