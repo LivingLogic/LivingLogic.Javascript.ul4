@@ -2906,9 +2906,9 @@ ul4.ChainMap = ul4._inherit(
 
 		__getitem__: function(key)
 		{
-			var value = this.obj1[key];
+			var value = ul4._op_getitem(this.obj1, key);
 			if (typeof(value) === "undefined")
-				value = this.obj2[key];
+				value = ul4._op_getitem(this.obj2, key);
 			return value;
 		},
 
@@ -4585,7 +4585,7 @@ ul4.Template = ul4._inherit(
 		},
 		formatjs: function(indent)
 		{
-			return this._line(indent, "vars[" + ul4._fu_asjson(this.name) + "] = self._getast(" + this.__id__ + ");");
+			return this._line(indent, "vars[" + ul4._fu_asjson(this.name) + "] = ul4.TemplateClosure.create(self._getast(" + this.__id__ + "), vars);");
 		},
 		format: function(indent)
 		{
@@ -4632,6 +4632,42 @@ ul4.Template = ul4._inherit(
 			return ul4on.loads(string);
 		},
 		__type__: "template" // used by ``istemplate()``
+	}
+);
+
+ul4.TemplateClosure = ul4._inherit(
+	ul4.Proto,
+	{
+		create: function(template, vars)
+		{
+			var closure = ul4._clone(this);
+			closure.template = template;
+			var frozenvars = {};
+			for (var key in vars)
+				frozenvars[key] = vars[key];
+			closure.vars = frozenvars;
+			// Copy over the required attribute from the template
+			closure.name = template.name;
+			closure.location = template.location;
+			closure.endlocation = template.endlocation;
+			closure.source = template.source;
+			closure.startdelim = template.startdelim;
+			closure.enddelim = template.enddelim;
+			closure.content = template.content;
+			return closure;
+		},
+
+		render: function(vars)
+		{
+			console.log(vars);
+			console.log(this.vars);
+			return this.template.render(ul4.ChainMap.create(vars || {}, this.vars));
+		},
+
+		renders: function(vars)
+		{
+			return this.render(vars).join("");
+		}
 	}
 );
 
