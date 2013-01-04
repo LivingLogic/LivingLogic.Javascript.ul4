@@ -4659,8 +4659,6 @@ ul4.TemplateClosure = ul4._inherit(
 
 		render: function(vars)
 		{
-			console.log(vars);
-			console.log(this.vars);
 			return this.template.render(ul4.ChainMap.create(vars || {}, this.vars));
 		},
 
