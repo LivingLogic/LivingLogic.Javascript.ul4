@@ -4667,7 +4667,9 @@ ul4.TemplateClosure = ul4._inherit(
 		renders: function(vars)
 		{
 			return this.render(vars).join("");
-		}
+		},
+
+		__type__: "template" // used by ``istemplate()``
 	}
 );
 
