@@ -28,7 +28,7 @@
 
 /*jslint vars: true */
 var ul4 = {
-	version: "22",
+	version: "23",
 
 	// REs for parsing JSON
 	_rvalidchars: /^[\],:{}\s]*$/,
@@ -4140,9 +4140,16 @@ ul4.Tag = ul4._inherit(
 ul4.Text = ul4._inherit(
 	ul4.Tag,
 	{
+		create: function(location, text)
+		{
+			var t = ul4.Tag.create.call(this, location);
+			t._text = text;
+			return t;
+		},
+		_ul4onattrs: ul4.Tag._ul4onattrs.concat(["_text"]),
 		text: function()
 		{
-			return this.location.source.substring(this.location.startcode, this.location.endcode);
+			return this._text !== null ? this._text : this.location.source.substring(this.location.startcode, this.location.endcode);
 		},
 		formatjs: function(indent)
 		{
@@ -4919,12 +4926,13 @@ ul4.Else = ul4._inherit(
 ul4.Template = ul4._inherit(
 	ul4.Block,
 	{
-		create: function(location, source, name, startdelim, enddelim)
+		create: function(location, source, name, keepws, startdelim, enddelim)
 		{
 			var template = ul4.Block.create.call(this, location);
 			template.endlocation = null;
 			template.source = source;
 			template.name = name;
+			template.keepws = keepws;
 			template.startdelim = startdelim;
 			template.enddelim = enddelim;
 			template._jssource = null;
@@ -4937,6 +4945,7 @@ ul4.Template = ul4._inherit(
 			encoder.dump(ul4.version);
 			encoder.dump(this.source);
 			encoder.dump(this.name);
+			encoder.dump(this.keepws);
 			encoder.dump(this.startdelim);
 			encoder.dump(this.enddelim);
 			ul4.Block.ul4ondump.call(this, encoder);
@@ -4948,6 +4957,7 @@ ul4.Template = ul4._inherit(
 				throw "invalid version, expected " + ul4.version + ", got " + version;
 			this.source = decoder.load();
 			this.name = decoder.load();
+			this.keepws = decoder.load();
 			this.startdelim = decoder.load();
 			this.enddelim = decoder.load();
 			ul4.Block.ul4onload.call(this, decoder);
