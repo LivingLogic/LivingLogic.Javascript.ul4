@@ -3835,19 +3835,15 @@ ul4.AST = ul4._inherit(
 		_formatop: function(op)
 		{
 			if (op.precedence < this.precedence)
-				return "(" + op.format(0) + ")";
+				return "(" + op.format(0, true) + ")";
 			else if (op.precedence === this.precedence && (op.ul4onname !== this.ul4onname || !this.associative))
-				return "(" + op.format(0) + ")";
+				return "(" + op.format(0, true) + ")";
 			else
-				return op.format(0);
+				return op.format(0, true);
 		},
 		_add2template: function(template)
 		{
 			template._asts[this.__id__] = this;
-		},
-		toString: function()
-		{
-			return this.format(0);
 		},
 		ul4ondump: function(encoder)
 		{
@@ -3877,11 +3873,11 @@ ul4.Const = ul4._inherit(
 			return constant;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["value"]),
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			return ul4._fu_asjson(this.value);
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return ul4._fu_repr(this.value);
 		},
@@ -3899,18 +3895,18 @@ ul4.List = ul4._inherit(
 			return list;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["items"]),
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			var v = [];
 			for (var i in this.items)
-				v.push(this.items[i].formatjs(indent));
+				v.push(this.items[i].formatjs(indent, keepws));
 			return "[" + v.join(", ") + "]";
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			var v = [];
 			for (var i in this.items)
-				v.push(this.items[i].format(indent));
+				v.push(this.items[i].format(indent, keepws));
 			return "[" + v.join(", ") + "]";
 		},
 		precedence: 11
@@ -3930,18 +3926,18 @@ ul4.ListComp = ul4._inherit(
 			return listcomp;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["item", "varname", "container", "condition"]),
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
-			var result = "(function(){var result=[];for(var iter=ul4._iter(" + this.container.formatjs(indent) + ");;){var item=iter();if(item===null)break;";
+			var result = "(function(){var result=[];for(var iter=ul4._iter(" + this.container.formatjs(indent, keepws) + ");;){var item=iter();if(item===null)break;";
 			result += "ul4._unpackvariable(vars, " + ul4._fu_asjson(this.varname) + ", item[0]);";
 			if (this.condition !== null)
-				result += "if(ul4._fu_bool(" + this.condition.formatjs(indent) + "))";
-			result += "result.push(" + this.item.formatjs(indent) + ");}return result;})()"
+				result += "if(ul4._fu_bool(" + this.condition.formatjs(indent, keepws) + "))";
+			result += "result.push(" + this.item.formatjs(indent, keepws) + ");}return result;})()"
 			return result;
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return "[ " + this.item.format(indent) + " for " + ul4.formatnestedname(this.varname) + " in " + this.container.format(indent) + (this.condition !== null ? " if " + this.condition.format(indent) : "") + " ]";
+			return "[ " + this.item.format(indent, keepws) + " for " + ul4.formatnestedname(this.varname) + " in " + this.container.format(indent, keepws) + (this.condition !== null ? " if " + this.condition.format(indent, keepws) : "") + " ]";
 		},
 		precedence: 11
 	}
@@ -3957,29 +3953,29 @@ ul4.Dict = ul4._inherit(
 			return dict;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["items"]),
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			var v = [];
 			for (var i in this.items)
 			{
 				var item = this.items[i];
 				if (item.length == 2)
-					v.push("[" + item[0].formatjs(indent) + ", " + item[1].formatjs(indent) + "]");
+					v.push("[" + item[0].formatjs(indent, keepws) + ", " + item[1].formatjs(indent, keepws) + "]");
 				else
-					v.push("[" + item[0].formatjs(indent) + "]");
+					v.push("[" + item[0].formatjs(indent, keepws) + "]");
 			}
 			return "ul4._makedict(" + v.join(", ") + ")";
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			var v = [];
 			for (var i in this.items)
 			{
 				var item = this.items[i];
 				if (item.length == 2)
-					v.push(item[0].format(indent) + ": " + item[1].format(indent));
+					v.push(item[0].format(indent, keepws) + ": " + item[1].format(indent, keepws));
 				else
-					v.push("**" + item[0].format(indent));
+					v.push("**" + item[0].format(indent, keepws));
 			}
 			return "{" + v.join(", ") + "}";
 		},
@@ -4001,18 +3997,18 @@ ul4.DictComp = ul4._inherit(
 			return listcomp;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["key", "value", "varname", "container", "condition"]),
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
-			var result = "(function(){var result={};for(var iter=ul4._iter(" + this.container.formatjs(indent) + ");;){var item=iter();if(item===null)break;";
-			result += "ul4._unpackvariable(vars, " + ul4._fu_asjson(this.varname) + ", item[0]);";
+			var result = "(function(){var result={};for(var iter=ul4._iter(" + this.container.formatjs(indent, keepws) + ");;){var item=iter();if(item===null)break;";
+			result += "ul4._unpackvariable(vars, " + ul4._fu_asjson(this.varname, keepws) + ", item[0]);";
 			if (this.condition !== null)
-				result += "if(ul4._fu_bool(" + this.condition.formatjs(indent) + "))";
-			result += "result[" + this.key.formatjs(indent) + "]=" + this.value.formatjs(indent) + ";}return result;})()";
+				result += "if(ul4._fu_bool(" + this.condition.formatjs(indent, keepws) + "))";
+			result += "result[" + this.key.formatjs(indent, keepws) + "]=" + this.value.formatjs(indent, keepws) + ";}return result;})()";
 			return result;
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return "{ " + this.key.format(indent) + " : " + this.value.format(indent) + " for " + ul4.formatnestedname(this.varname) + " in " + this.container.format(indent) + (this.condition !== null ? " if " + this.condition.format(indent) : "") + " }";
+			return "{ " + this.key.format(indent, keepws) + " : " + this.value.format(indent, keepws) + " for " + ul4.formatnestedname(this.varname) + " in " + this.container.format(indent, keepws) + (this.condition !== null ? " if " + this.condition.format(indent, keepws) : "") + " }";
 		},
 		precedence: 11
 	}
@@ -4031,7 +4027,7 @@ ul4.GenExpr = ul4._inherit(
 			return genexp;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["item", "varname", "container", "condition"]),
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			var v = [];
 			v.push("ul4._markiter(");
@@ -4046,18 +4042,18 @@ ul4.GenExpr = ul4._inherit(
 								v.push("return null;");
 							v.push("ul4._unpackvariable(vars, " + ul4._fu_asjson(this.varname) + ", item[0]);");
 							if (this.condition !== null)
-								v.push("if(ul4._fu_bool(" + this.condition.formatjs(indent) + "))");
+								v.push("if(ul4._fu_bool(" + this.condition.formatjs(indent, keepws) + "))");
 							v.push("break;");
 						v.push("}");
-						v.push("return [" + this.item.formatjs(indent) + "];");
+						v.push("return [" + this.item.formatjs(indent, keepws) + "];");
 					v.push("})");
-				v.push("})(" + this.container.formatjs(indent) + ")");
+				v.push("})(" + this.container.formatjs(indent, keepws) + ")");
 			v.push(")");
 			return v.join("");
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return "( " + this.item.format(indent) + " for " + ul4.formatnestedname(this.varname) + " in " + this.container.format(indent) + (this.condition !== null ? " if " + this.condition.format(indent) : "") + " )";
+			return "( " + this.item.format(indent, keepws) + " for " + ul4.formatnestedname(this.varname) + " in " + this.container.format(indent, keepws) + (this.condition !== null ? " if " + this.condition.format(indent, keepws) : "") + " )";
 		},
 		precedence: 11
 	}
@@ -4073,11 +4069,11 @@ ul4.Var = ul4._inherit(
 			return variable;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["name"]),
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			return "vars[" + ul4._fu_asjson(this.name) + "]";
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this.name;
 		},
@@ -4095,9 +4091,9 @@ ul4.Unary = ul4._inherit(
 			return unary;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["obj"]),
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
-			return "ul4._op_" + this._name() + "(" + this.obj.formatjs(indent) + ")";
+			return "ul4._op_" + this._name() + "(" + this.obj.formatjs(indent, keepws) + ")";
 		}
 	}
 );
@@ -4105,7 +4101,7 @@ ul4.Unary = ul4._inherit(
 ul4.Neg = ul4._inherit(
 	ul4.Unary,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return "-" + this._formatop(this.obj);
 		},
@@ -4116,7 +4112,7 @@ ul4.Neg = ul4._inherit(
 ul4.Not = ul4._inherit(
 	ul4.Unary,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return "not " + this._formatop(this.obj);
 		},
@@ -4140,24 +4136,20 @@ ul4.Tag = ul4._inherit(
 ul4.Text = ul4._inherit(
 	ul4.Tag,
 	{
-		create: function(location, text)
+		text: function(keepws)
 		{
-			var t = ul4.Tag.create.call(this, location);
-			t._text = text;
-			return t;
+			var text = this.location.source.substring(this.location.startcode, this.location.endcode);
+			if (!keepws)
+				text = text.replace(/\r\n/g, "\n").replace(/\n[ \t]*/g, "");
+			return text;
 		},
-		_ul4onattrs: ul4.Tag._ul4onattrs.concat(["_text"]),
-		text: function()
-		{
-			return this._text !== null ? this._text : this.location.source.substring(this.location.startcode, this.location.endcode);
-		},
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			return this._line(indent, "out.push(" + ul4._fu_asjson(this.text()) + ");");
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return this._line(indent, "text " + ul4._fu_repr(this.text()));
+			return this._line(indent, "text " + ul4._fu_repr(this.text(keepws)));
 		}
 	}
 );
@@ -4178,13 +4170,13 @@ ul4.UnaryTag = ul4._inherit(
 ul4.Print = ul4._inherit(
 	ul4.UnaryTag,
 	{
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
-			return this._line(indent, "out.push(ul4._fu_str(" + this.obj.formatjs(indent) + "));");
+			return this._line(indent, "out.push(ul4._fu_str(" + this.obj.formatjs(indent, keepws) + "));");
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return this._line(indent, "print " + this.obj.format(indent));
+			return this._line(indent, "print " + this.obj.format(indent, keepws));
 		}
 	}
 );
@@ -4192,13 +4184,13 @@ ul4.Print = ul4._inherit(
 ul4.PrintX = ul4._inherit(
 	ul4.UnaryTag,
 	{
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
-			return this._line(indent, "out.push(ul4._fu_xmlescape(" + this.obj.formatjs(indent) + "));");
+			return this._line(indent, "out.push(ul4._fu_xmlescape(" + this.obj.formatjs(indent, keepws) + "));");
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return this._line(indent, "printx " + this.obj.format(indent));
+			return this._line(indent, "printx " + this.obj.format(indent, keepws));
 		}
 	}
 );
@@ -4214,9 +4206,9 @@ ul4.Binary = ul4._inherit(
 			return binary;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["obj1", "obj2"]),
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
-			return "ul4._op_" + this._name() + "(" + this.obj1.formatjs(indent) + ", " + this.obj2.formatjs(indent) + ")";
+			return "ul4._op_" + this._name() + "(" + this.obj1.formatjs(indent, keepws) + ", " + this.obj2.formatjs(indent, keepws) + ")";
 		}
 	}
 );
@@ -4224,9 +4216,9 @@ ul4.Binary = ul4._inherit(
 ul4.GetItem = ul4._inherit(
 	ul4.Binary,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return this._formatop(this.obj1) + "[" + this.obj2.format(0) + "]";
+			return this._formatop(this.obj1) + "[" + this.obj2.format(indent, keepws) + "]";
 		},
 		precedence: 9,
 		associative: false
@@ -4236,7 +4228,7 @@ ul4.GetItem = ul4._inherit(
 ul4.EQ = ul4._inherit(
 	ul4.Binary,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._formatop(this.obj1) + " == " + this._formatop(this.obj2);
 		},
@@ -4248,7 +4240,7 @@ ul4.EQ = ul4._inherit(
 ul4.NE = ul4._inherit(
 	ul4.Binary,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._formatop(this.obj1) + " != " + this._formatop(this.obj2);
 		},
@@ -4260,7 +4252,7 @@ ul4.NE = ul4._inherit(
 ul4.LT = ul4._inherit(
 	ul4.Binary,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._formatop(this.obj1) + " < " + this._formatop(this.obj2);
 		},
@@ -4272,7 +4264,7 @@ ul4.LT = ul4._inherit(
 ul4.LE = ul4._inherit(
 	ul4.Binary,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._formatop(this.obj1) + " <= " + this._formatop(this.obj2);
 		},
@@ -4284,7 +4276,7 @@ ul4.LE = ul4._inherit(
 ul4.GT = ul4._inherit(
 	ul4.Binary,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._formatop(this.obj1) + " > " + this._formatop(this.obj2);
 		},
@@ -4296,7 +4288,7 @@ ul4.GT = ul4._inherit(
 ul4.GE = ul4._inherit(
 	ul4.Binary,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._formatop(this.obj1) + " >= " + this._formatop(this.obj2);
 		},
@@ -4308,7 +4300,7 @@ ul4.GE = ul4._inherit(
 ul4.Contains = ul4._inherit(
 	ul4.Binary,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._formatop(this.obj1) + " in " + this._formatop(this.obj2);
 		},
@@ -4320,7 +4312,7 @@ ul4.Contains = ul4._inherit(
 ul4.NotContains = ul4._inherit(
 	ul4.Binary,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._formatop(this.obj1) + " not in " + this._formatop(this.obj2);
 		},
@@ -4332,7 +4324,7 @@ ul4.NotContains = ul4._inherit(
 ul4.Add = ul4._inherit(
 	ul4.Binary,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._formatop(this.obj1) + " + " + this._formatop(this.obj2);
 		},
@@ -4343,7 +4335,7 @@ ul4.Add = ul4._inherit(
 ul4.Sub = ul4._inherit(
 	ul4.Binary,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._formatop(this.obj1) + " - " + this._formatop(this.obj2);
 		},
@@ -4355,7 +4347,7 @@ ul4.Sub = ul4._inherit(
 ul4.Mul = ul4._inherit(
 	ul4.Binary,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._formatop(this.obj1) + " * " + this._formatop(this.obj2);
 		},
@@ -4366,7 +4358,7 @@ ul4.Mul = ul4._inherit(
 ul4.FloorDiv = ul4._inherit(
 	ul4.Binary,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._formatop(this.obj1) + " // " + this._formatop(this.obj2);
 		},
@@ -4378,7 +4370,7 @@ ul4.FloorDiv = ul4._inherit(
 ul4.TrueDiv = ul4._inherit(
 	ul4.Binary,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._formatop(this.obj1) + " / " + this._formatop(this.obj2);
 		},
@@ -4390,7 +4382,7 @@ ul4.TrueDiv = ul4._inherit(
 ul4.Mod = ul4._inherit(
 	ul4.Binary,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._formatop(this.obj1) + " % " + this._formatop(this.obj2);
 		},
@@ -4402,11 +4394,11 @@ ul4.Mod = ul4._inherit(
 ul4.And = ul4._inherit(
 	ul4.Binary,
 	{
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
-			return "(function(){var obj1=" + this.obj1.formatjs(indent) + "; return (!ul4._fu_bool(obj1)) ? obj1 : " + this.obj2.formatjs(indent) + ";})()";
+			return "(function(){var obj1=" + this.obj1.formatjs(indent, keepws) + "; return (!ul4._fu_bool(obj1)) ? obj1 : " + this.obj2.formatjs(indent, keepws) + ";})()";
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._formatop(this.obj1) + " and " + this._formatop(this.obj2);
 		},
@@ -4417,11 +4409,11 @@ ul4.And = ul4._inherit(
 ul4.Or = ul4._inherit(
 	ul4.Binary,
 	{
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
-			return "(function(){var obj1=" + this.obj1.formatjs(indent) + "; return ul4._fu_bool(obj1) ? obj1 : " + this.obj2.formatjs(indent) + ";})()";
+			return "(function(){var obj1=" + this.obj1.formatjs(indent, keepws) + "; return ul4._fu_bool(obj1) ? obj1 : " + this.obj2.formatjs(indent, keepws) + ";})()";
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._formatop(this.obj1) + " or " + this._formatop(this.obj2);
 		},
@@ -4440,11 +4432,11 @@ ul4.GetAttr = ul4._inherit(
 			return getattr;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["obj", "attrname"]),
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
-			return "ul4._op_getitem(" + this.obj.formatjs(indent) + ", " + ul4._fu_repr(this.attrname) + ")";
+			return "ul4._op_getitem(" + this.obj.formatjs(indent, keepws) + ", " + ul4._fu_repr(this.attrname, keepws) + ")";
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._formatop(this.obj) + "." + this.attrname;
 		},
@@ -4467,7 +4459,7 @@ ul4.CallFunc = ul4._inherit(
 			return callfunc;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["funcname", "args", "kwargs", "remargs", "remkwargs"]),
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			var contextargs = "[]";
 			if (this.funcname === "vars" || this.funcname === "get")
@@ -4475,43 +4467,43 @@ ul4.CallFunc = ul4._inherit(
 
 			var args = [];
 			for (var i in this.args)
-				args.push(this.args[i].formatjs(indent));
+				args.push(this.args[i].formatjs(indent, keepws));
 			var argsstring = "[" + args.join(", ") + "]";
 
 			if (this.remargs !== null)
-				argsstring += ".concat(" + this.remargs.formatjs(indent) + ")";
+				argsstring += ".concat(" + this.remargs.formatjs(indent, keepws) + ")";
 
 			var kwargs = [];
 			for (var i in this.kwargs)
-				kwargs.push(ul4._fu_asjson(this.kwargs[i][0]) + ": " + this.kwargs[i][1].formatjs(indent));
+				kwargs.push(ul4._fu_asjson(this.kwargs[i][0]) + ": " + this.kwargs[i][1].formatjs(indent, keepws));
 
 			var kwargsstring;
 			if (kwargs.length)
 			{
 				kwargsstring = "{" + kwargs.join(", ") + "}";
 				if (this.remkwargs !== null)
-					kwargsstring = "ul4._extend(" + kwargsstring + ", " + this.remkwargs.formatjs(indent) + ")";
+					kwargsstring = "ul4._extend(" + kwargsstring + ", " + this.remkwargs.formatjs(indent, keepws) + ")";
 			}
 			else
 			{
 				if (this.remkwargs !== null)
-					kwargsstring = this.remkwargs.formatjs(indent);
+					kwargsstring = this.remkwargs.formatjs(indent, keepws);
 				else
 					kwargsstring = "{}";
 			}
 			return "ul4._callfunc(ul4._fu_" + this.funcname + ", " + contextargs + ", " + argsstring + ", " + kwargsstring + ")";
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			var v = [];
 			for (var i in this.args)
-				v.push(this.args[i].format(indent));
+				v.push(this.args[i].format(indent, keepws));
 			for (var i in this.kwargs)
-				v.push(this.kwargs[i][0] + "=" + this.kwargs[i][1].format(indent));
+				v.push(this.kwargs[i][0] + "=" + this.kwargs[i][1].format(indent, keepws));
 			if (this.remargs !== null)
-				v.push("*" + this.remargs.format(indent));
+				v.push("*" + this.remargs.format(indent, keepws));
 			if (this.remkwargs !== null)
-				v.push("**" + this.remkwargs.format(indent));
+				v.push("**" + this.remkwargs.format(indent, keepws));
 			return this.funcname + "(" + v.join(", ") + ")";
 		},
 		precedence: 10,
@@ -4531,13 +4523,13 @@ ul4.GetSlice = ul4._inherit(
 			return getslice;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["obj", "index1", "index2"]),
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return this._formatop(this.obj) + "[" + (this.index1 !== null ? this.index1.format(indent) : "") + ":" + (this.index2 !== null ? this.index2.format(indent) : "") + "]";
+			return this._formatop(this.obj) + "[" + (this.index1 !== null ? this.index1.format(indent, keepws) : "") + ":" + (this.index2 !== null ? this.index2.format(indent, keepws) : "") + "]";
 		},
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
-			return "ul4._op_getslice(" + this.obj.formatjs(indent) + ", " + (this.index1 !== null ? this.index1.formatjs(indent) : "null") + ", " + (this.index2 !== null ? this.index2.formatjs(indent) : "null") + ")";
+			return "ul4._op_getslice(" + this.obj.formatjs(indent, keepws) + ", " + (this.index1 !== null ? this.index1.formatjs(indent, keepws) : "null") + ", " + (this.index2 !== null ? this.index2.formatjs(indent, keepws) : "null") + ")";
 		},
 		precedence: 8,
 		associative: false
@@ -4559,9 +4551,9 @@ ul4.CallMeth = ul4._inherit(
 			return callmeth;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["methname", "obj", "args", "kwargs", "remargs", "remkwargs"]),
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
-			var contextargs = this.obj.formatjs(indent);
+			var contextargs = this.obj.formatjs(indent, keepws);
 			if (this.methname === "render" || this.methname === "renders")
 				contextargs = "[stack, " + contextargs + "]";
 			else
@@ -4569,43 +4561,43 @@ ul4.CallMeth = ul4._inherit(
 
 			var args = [];
 			for (var i in this.args)
-				args.push(this.args[i].formatjs(indent));
+				args.push(this.args[i].formatjs(indent, keepws));
 			var argsstring = "[" + args.join(", ") + "]";
 
 			if (this.remargs !== null)
-				argsstring += ".concat(" + this.remargs.formatjs(indent) + ")";
+				argsstring += ".concat(" + this.remargs.formatjs(indent, keepws) + ")";
 
 			var kwargs = [];
 			for (var i in this.kwargs)
-				kwargs.push(ul4._fu_asjson(this.kwargs[i][0]) + ": " + this.kwargs[i][1].formatjs(indent));
+				kwargs.push(ul4._fu_asjson(this.kwargs[i][0]) + ": " + this.kwargs[i][1].formatjs(indent, keepws));
 
 			var kwargsstring;
 			if (kwargs.length)
 			{
 				kwargsstring = "{" + kwargs.join(", ") + "}";
 				if (this.remkwargs !== null)
-					kwargsstring = "ul4._extend(" + kwargsstring + ", " + this.remkwargs.formatjs(indent) + ")";
+					kwargsstring = "ul4._extend(" + kwargsstring + ", " + this.remkwargs.formatjs(indent, keepws) + ")";
 			}
 			else
 			{
 				if (this.remkwargs !== null)
-					kwargsstring = this.remkwargs.formatjs(indent);
+					kwargsstring = this.remkwargs.formatjs(indent, keepws);
 				else
 					kwargsstring = "{}";
 			}
 			return "ul4._callfunc(ul4._me_" + this.methname + ", " + contextargs + ", " + argsstring + ", " + kwargsstring + ")";
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			var v = [];
 			for (var i in this.args)
-				v.push(this.args[i].format(indent));
+				v.push(this.args[i].format(indent, keepws));
 			for (var i in this.kwargs)
-				v.push(this.kwargs[i][0] + "=" + this.kwargs[i][1].format(indent));
+				v.push(this.kwargs[i][0] + "=" + this.kwargs[i][1].format(indent, keepws));
 			if (this.remargs !== null)
-				v.push("*" + this.remargs.format(indent));
+				v.push("*" + this.remargs.format(indent, keepws));
 			if (this.remkwargs !== null)
-				v.push("**" + this.remkwargs.format(indent));
+				v.push("**" + this.remkwargs.format(indent, keepws));
 			return this._formatop(this.obj) + "." + this.methname + "(" + v.join(", ") + ")";
 		},
 		precedence: 10,
@@ -4616,16 +4608,16 @@ ul4.CallMeth = ul4._inherit(
 ul4.Render = ul4._inherit(
 	ul4.UnaryTag,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return this._line(indent, "render " + this.obj.format(indent));
+			return this._line(indent, "render " + this.obj.format(indent, keepws));
 		},
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			if (this.obj.isa(ul4.CallMeth) && this.obj.methname === "render")
-				return this._line(indent, "out.push.apply(out, " + this.obj.formatjs(indent) + ");");
+				return this._line(indent, "out.push.apply(out, " + this.obj.formatjs(indent, keepws) + ");");
 			else
-				return this._line(indent, "out.push(ul4._fu_str(" + this.obj.formatjs(indent) + "));");
+				return this._line(indent, "out.push(ul4._fu_str(" + this.obj.formatjs(indent, keepws) + "));");
 		}
 	}
 );
@@ -4647,13 +4639,13 @@ ul4.ChangeVar = ul4._inherit(
 ul4.StoreVar = ul4._inherit(
 	ul4.ChangeVar,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return this._line(indent, ul4.formatnestedname(this.varname) + " = " + this.value.format(indent));
+			return this._line(indent, ul4.formatnestedname(this.varname) + " = " + this.value.format(indent, keepws));
 		},
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
-			return this._line(indent, "ul4._unpackvariable(vars, " + ul4._fu_asjson(this.varname) + ", " + this.value.formatjs(indent) + ");");
+			return this._line(indent, "ul4._unpackvariable(vars, " + ul4._fu_asjson(this.varname) + ", " + this.value.formatjs(indent, keepws) + ");");
 		}
 	}
 );
@@ -4661,14 +4653,14 @@ ul4.StoreVar = ul4._inherit(
 ul4.AddVar = ul4._inherit(
 	ul4.ChangeVar,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return this._line(indent, this.varname + " += " + this.value.format(indent));
+			return this._line(indent, this.varname + " += " + this.value.format(indent, keepws));
 		},
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			var varname = ul4._fu_asjson(this.varname);
-			return this._line(indent, "vars[" + varname + "] = ul4._op_add(vars[" + varname + "], " + this.value.formatjs(indent) + ");");
+			return this._line(indent, "vars[" + varname + "] = ul4._op_add(vars[" + varname + "], " + this.value.formatjs(indent, keepws) + ");");
 		}
 	}
 );
@@ -4676,14 +4668,14 @@ ul4.AddVar = ul4._inherit(
 ul4.SubVar = ul4._inherit(
 	ul4.ChangeVar,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return this._line(indent, this.varname + " -= " + this.value.format(indent));
+			return this._line(indent, this.varname + " -= " + this.value.format(indent, keepws));
 		},
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			var varname = ul4._fu_asjson(this.varname);
-			return this._line(indent, "vars[" + varname + "] = ul4._op_sub(vars[" + varname + "], " + this.value.formatjs(indent) + ");");
+			return this._line(indent, "vars[" + varname + "] = ul4._op_sub(vars[" + varname + "], " + this.value.formatjs(indent, keepws) + ");");
 		}
 	}
 );
@@ -4691,14 +4683,14 @@ ul4.SubVar = ul4._inherit(
 ul4.MulVar = ul4._inherit(
 	ul4.ChangeVar,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return this._line(indent, this.varname + " *= " + this.value.format(indent));
+			return this._line(indent, this.varname + " *= " + this.value.format(indent, keepws));
 		},
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			var varname = ul4._fu_asjson(this.varname);
-			return this._line(indent, "vars[" + varname + "] = ul4._op_mul(vars[" + varname + "], " + this.value.formatjs(indent) + ");");
+			return this._line(indent, "vars[" + varname + "] = ul4._op_mul(vars[" + varname + "], " + this.value.formatjs(indent, keepws) + ");");
 		}
 	}
 );
@@ -4706,14 +4698,14 @@ ul4.MulVar = ul4._inherit(
 ul4.TrueDivVar = ul4._inherit(
 	ul4.ChangeVar,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return this._line(indent, this.varname + " /= " + this.value.format(indent));
+			return this._line(indent, this.varname + " /= " + this.value.format(indent, keepws));
 		},
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			var varname = ul4._fu_asjson(this.varname);
-			return this._line(indent, "vars[" + varname + "] = ul4._op_truediv(vars[" + varname + "], " + this.value.formatjs(indent) + ");");
+			return this._line(indent, "vars[" + varname + "] = ul4._op_truediv(vars[" + varname + "], " + this.value.formatjs(indent, keepws) + ");");
 		}
 	}
 );
@@ -4721,14 +4713,14 @@ ul4.TrueDivVar = ul4._inherit(
 ul4.FloorDivVar = ul4._inherit(
 	ul4.ChangeVar,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return this._line(indent, this.varname + " //= " + this.value.format(indent));
+			return this._line(indent, this.varname + " //= " + this.value.format(indent, keepws));
 		},
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			var varname = ul4._fu_asjson(this.varname);
-			return this._line(indent, "vars[" + varname + "] = ul4._op_floordiv(vars[" + varname + "], " + this.value.formatjs(indent) + ");");
+			return this._line(indent, "vars[" + varname + "] = ul4._op_floordiv(vars[" + varname + "], " + this.value.formatjs(indent, keepws) + ");");
 		}
 	}
 );
@@ -4736,14 +4728,14 @@ ul4.FloorDivVar = ul4._inherit(
 ul4.ModVar = ul4._inherit(
 	ul4.ChangeVar,
 	{
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return this._line(indent, this.varname + " %= " + this.value.format(indent));
+			return this._line(indent, this.varname + " %= " + this.value.format(indent, keepws));
 		},
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			var varname = ul4._fu_asjson(this.varname);
-			return this._line(indent, "vars[" + varname + "] = ul4._op_mod(vars[" + varname + "], " + this.value.formatjs(indent) + ");");
+			return this._line(indent, "vars[" + varname + "] = ul4._op_mod(vars[" + varname + "], " + this.value.formatjs(indent, keepws) + ");");
 		}
 	}
 );
@@ -4765,20 +4757,20 @@ ul4.Block = ul4._inherit(
 			for (var i in this.content)
 				this.content[i]._add2template(template);
 		},
-		_formatjs_content: function(indent)
+		_formatjs_content: function(indent, keepws)
 		{
 			var v = [];
 			for (var i in this.content)
-				v.push(this.content[i].formatjs(indent));
+				v.push(this.content[i].formatjs(indent, keepws));
 			return v.join("");
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			var v = [];
 			v.push(this._line(indent, "{"));
 			++indent;
 			for (var i in this.content)
-				v.push(this.content[i].format(indent));
+				v.push(this.content[i].format(indent, keepws));
 			--indent;
 			v.push(this._line(indent, "}"));
 			return v.join("");
@@ -4797,24 +4789,24 @@ ul4.For = ul4._inherit(
 			return for_;
 		},
 		_ul4onattrs: ul4.Block._ul4onattrs.concat(["varname", "container"]),
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			var v = [];
-			v.push(this._line(indent, "for (var iter" + this.__id__ + " = ul4._iter(" + this.container.formatjs(indent) + ");;)"));
+			v.push(this._line(indent, "for (var iter" + this.__id__ + " = ul4._iter(" + this.container.formatjs(indent, keepws) + ");;)"));
 			v.push(this._line(indent, "{"));
 			++indent;
 			v.push(this._line(indent, "var item" + this.__id__ + " = iter" + this.__id__ + "();"));
 			v.push(this._line(indent, "if (item" + this.__id__ + " === null)"));
 			v.push(this._line(indent+1, "break;"));
 			v.push(this._line(indent, "ul4._unpackvariable(vars, " + ul4._fu_asjson(this.varname) + ", item" + this.__id__ + "[0]);"));
-			v.push(this._formatjs_content(indent));
+			v.push(this._formatjs_content(indent, keepws));
 			--indent;
 			v.push(this._line(indent, "}"));
 			return v.join("");
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return this._line(indent, "for " + ul4.formatnestedname(this.varname) + " in " + this.container.format(indent)) + ul4.Block.format.call(this, indent);
+			return this._line(indent, "for " + ul4.formatnestedname(this.varname) + " in " + this.container.format(indent, keepws)) + ul4.Block.format.call(this, indent, keepws);
 		}
 	}
 );
@@ -4822,11 +4814,11 @@ ul4.For = ul4._inherit(
 ul4.Break = ul4._inherit(
 	ul4.Tag,
 	{
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			return this._line(indent, "break;");
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._line(indent, "break");
 		}
@@ -4836,11 +4828,11 @@ ul4.Break = ul4._inherit(
 ul4.Continue = ul4._inherit(
 	ul4.Tag,
 	{
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			return this._line(indent, "continue;");
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			return this._line(indent, "continue");
 		}
@@ -4850,15 +4842,15 @@ ul4.Continue = ul4._inherit(
 ul4.IfElIfElse = ul4._inherit(
 	ul4.Block,
 	{
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
-			return this._formatjs_content(indent);
+			return this._formatjs_content(indent, keepws);
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
 			var v = [];
 			for (var i in this.content)
-				v.push(this.content[i].format(indent));
+				v.push(this.content[i].format(indent, keepws));
 			return v.join("");
 		}
 	}
@@ -4874,18 +4866,18 @@ ul4.ConditionalBlock = ul4._inherit(
 			return block;
 		},
 		_ul4onattrs: ul4.Block._ul4onattrs.concat(["condition"]),
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			var v = [];
-			v.push(this._line(indent, this._sourcejs + " (ul4._fu_bool(" + this.condition.formatjs(indent) + "))"));
+			v.push(this._line(indent, this._sourcejs + " (ul4._fu_bool(" + this.condition.formatjs(indent, keepws) + "))"));
 			v.push(this._line(indent, "{"));
-			v.push(this._formatjs_content(indent+1));
+			v.push(this._formatjs_content(indent+1, keepws));
 			v.push(this._line(indent, "}"));
 			return v.join("");
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return this._line(indent, this._name() + " " + this.condition.format(indent)) + ul4.Block.format.call(this, indent);
+			return this._line(indent, this._name() + " " + this.condition.format(indent, keepws)) + ul4.Block.format.call(this, indent);
 		}
 	}
 );
@@ -4907,18 +4899,18 @@ ul4.ElIf = ul4._inherit(
 ul4.Else = ul4._inherit(
 	ul4.Block,
 	{
-		formatjs: function(indent)
+		formatjs: function(indent, keepws)
 		{
 			var v = [];
 			v.push(this._line(indent, "else"));
 			v.push(this._line(indent, "{"));
-			v.push(this._formatjs_content(indent+1));
+			v.push(this._formatjs_content(indent+1, keepws));
 			v.push(this._line(indent, "}"));
 			return v.join("");
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return this._line(indent, "else") + ul4.Block.format.call(this, indent);
+			return this._line(indent, "else") + ul4.Block.format.call(this, indent, keepws);
 		}
 	}
 );
@@ -4962,13 +4954,17 @@ ul4.Template = ul4._inherit(
 			this.enddelim = decoder.load();
 			ul4.Block.ul4onload.call(this, decoder);
 		},
-		formatjs: function(indent)
+		toString: function()
+		{
+			return this.format(0, this.keepws);
+		},
+		formatjs: function(indent, keepws)
 		{
 			return this._line(indent, "vars[" + ul4._fu_asjson(this.name) + "] = ul4.TemplateClosure.create(self._getast(" + this.__id__ + "), vars);");
 		},
-		format: function(indent)
+		format: function(indent, keepws)
 		{
-			return this._line(indent, "def " + (this.name !== null ? this.name : "unnamed")) + ul4.Block.format.call(this, indent);
+			return this._line(indent, "def " + (this.name !== null ? this.name : "unnamed")) + ul4.Block.format.call(this, indent, keepws);
 		},
 		_getast: function(id)
 		{
@@ -4987,7 +4983,7 @@ ul4.Template = ul4._inherit(
 				v.push(this._line(0, "(function(self, vars)"));
 				v.push(this._line(0, "{"));
 				v.push(this._line(1, "var out = [];"));
-				v.push(this._formatjs_content(1));
+				v.push(this._formatjs_content(1, this.keepws));
 				v.push(this._line(1, "return out;"));
 				v.push(this._line(0, "})"));
 				this._jssource = v.join("");
