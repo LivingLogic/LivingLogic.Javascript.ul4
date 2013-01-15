@@ -4140,12 +4140,12 @@ ul4.Text = ul4._inherit(
 		{
 			var text = this.location.source.substring(this.location.startcode, this.location.endcode);
 			if (!keepws)
-				text = text.replace(/\r\n/g, "\n").replace(/\n[ \t]*/g, "");
+				text = text.replace(/\r?\n[ \t]*|^[ \t]+/g, "");
 			return text;
 		},
 		formatjs: function(indent, keepws)
 		{
-			return this._line(indent, "out.push(" + ul4._fu_asjson(this.text()) + ");");
+			return this._line(indent, "out.push(" + ul4._fu_asjson(this.text(keepws)) + ");");
 		},
 		format: function(indent, keepws)
 		{
