@@ -117,7 +117,7 @@ var ul4on = {
 					this.write(obj);
 				}
 			}
-			else if (ul4._fu_iscolor(obj))
+			else if (ul4._iscolor(obj))
 			{
 				this.write("c", obj.length);
 				if (obj.r < 0x10)
@@ -133,11 +133,11 @@ var ul4on = {
 					this.write("0");
 				this.write(obj.a.toString(16));
 			}
-			else if (ul4._fu_isdate(obj))
-				this.write(ul4._fu_format(obj, "z%Y%m%d%H%M%S%f"));
-			else if (ul4._fu_istimedelta(obj))
+			else if (ul4._isdate(obj))
+				this.write(ul4._format(obj, "z%Y%m%d%H%M%S%f"));
+			else if (ul4._istimedelta(obj))
 				this.write("t" + obj.days + "|" + obj.seconds + "|" + obj.microseconds + "|");
-			else if (ul4._fu_ismonthdelta(obj))
+			else if (ul4._ismonthdelta(obj))
 				this.write("m" + obj.months + "|");
 			else if (obj.__id__ && obj.ul4onname && obj.ul4ondump)
 			{
@@ -155,14 +155,14 @@ var ul4on = {
 					obj.ul4ondump(this);
 				}
 			}
-			else if (ul4._fu_islist(obj))
+			else if (ul4._islist(obj))
 			{
 				this.write("l");
 				for (var i in obj)
 					this.dump(obj[i]);
 				this.write("]");
 			}
-			else if (ul4._fu_isdict(obj))
+			else if (ul4._isdict(obj))
 			{
 				this.write("d");
 				for (var key in obj)
@@ -224,7 +224,7 @@ var ul4on = {
 				{
 					var result = parseFloat(value);
 					if (result == NaN)
-						throw "invalid number, got " + ul4._fu_repr("value") + " at position " + this.pos;
+						throw "invalid number, got " + ul4._repr("value") + " at position " + this.pos;
 					return result;
 				}
 				else
@@ -254,7 +254,7 @@ var ul4on = {
 					else if (result === "F")
 						result = false;
 					else
-						throw "wrong value for boolean, expected " + ul4._fu_repr("T") + " or " + ul4._fu_repr("F") + ", got " + ul4._fu_repr(result) + " at position " + this.pos;
+						throw "wrong value for boolean, expected " + ul4._repr("T") + " or " + ul4._repr("F") + ", got " + ul4._repr(result) + " at position " + this.pos;
 					if (typecode === "B")
 						this.backrefs.push(result);
 					return result;
@@ -340,14 +340,14 @@ var ul4on = {
 					var name = this.load();
 					var proto = ul4on._registry[name];
 					if (typeof(proto) === "undefined")
-						throw "can't load object of type " + ul4._fu_repr(name);
+						throw "can't load object of type " + ul4._repr(name);
 					result = proto();
 					if (typecode === "O")
 						this.backrefs[oldpos] = result;
 					result.ul4onload(this);
 					return result;
 				default:
-					throw "unknown typecode " + ul4._fu_repr(typecode) + " at position " + this.pos;
+					throw "unknown typecode " + ul4._repr(typecode) + " at position " + this.pos;
 			}
 		}
 	}
