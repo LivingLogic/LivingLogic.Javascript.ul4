@@ -1192,7 +1192,7 @@ ul4._asjson = function(obj)
 ul4._fromjson = function(string)
 {
 	// The following is from jQuery's parseJSON function
-	string = ul4._me_strip(string, null);
+	string = ul4._strip(string, null);
 	if (typeof(window) !== "undefined" && window.JSON && window.JSON.parse)
 		return window.JSON.parse(string);
 	if (ul4._rvalidchars.test(string.replace(ul4._rvalidescape, "@").replace(ul4._rvalidtokens, "]").replace(ul4._rvalidbraces, "")))
@@ -1447,7 +1447,7 @@ ul4._format_date = function(obj, fmt, lang)
 					c = this._lpad(((obj.getHours()-1) % 12)+1, "0", 2);
 					break;
 				case "j":
-					c = this._lpad(this._me_yearday(obj), "0", 3);
+					c = this._lpad(this._yearday(obj), "0", 3);
 					break;
 				case "m":
 					c = this._lpad(obj.getMonth()+1, "0", 2);
@@ -1462,13 +1462,13 @@ ul4._format_date = function(obj, fmt, lang)
 					c = this._lpad(obj.getSeconds(), "0", 2);
 					break;
 				case "U":
-					c = this._lpad(ul4._me_week(obj, 6), "0", 2);
+					c = this._lpad(ul4._week(obj, 6), "0", 2);
 					break;
 				case "w":
 					c = obj.getDay();
 					break;
 				case "W":
-					c = this._lpad(ul4._me_week(obj, 0), "0", 2);
+					c = this._lpad(ul4._week(obj, 0), "0", 2);
 					break;
 				case "x":
 					c = ul4._format(obj, translation.xf, lang);
@@ -3077,7 +3077,7 @@ ul4.CallMeth = ul4._inherit(
 				else
 					kwargsstring = "{}";
 			}
-			return "ul4._callfunc(ul4._me_" + this.methname + ", vars, stack, " + this.obj.formatjs(indent, keepws) + ", " + argsstring + ", " + kwargsstring + ")";
+			return "ul4._callfunc(ul4.methods." + this.methname + ", vars, stack, " + this.obj.formatjs(indent, keepws) + ", " + argsstring + ", " + kwargsstring + ")";
 		},
 		format: function(indent, keepws)
 		{
@@ -4023,11 +4023,15 @@ ul4._hsv = function(h, s, v, a)
 	}
 };
 
-ul4._get = function(vars, varname, defaultvalue)
+// Return the item with the key ``name`` from the dict ``vars``. If ``vars`` doesn't have this key, return ``defaultvalue``
+ul4._get = function(vars, name, defaultvalue)
 {
-	var result = vars[varname];
+	if (!this._isdict(vars))
+		throw "get() requires a dict";
+
+	var result = vars[name];
 	if (typeof(result) === "undefined")
-		result = defaultvalue;
+		return defaultvalue;
 	return result;
 };
 
@@ -4117,794 +4121,630 @@ ul4.functions = {
 	randchoice: ul4._signature("randchoice", ["sequence"], 0, ul4._randchoice)
 };
 
-// Functions with the ``_me_`` prefix implement UL4 methods
-ul4._me_replace = ul4._signature(
-	"replace",
-	["old", "new", ["count", null]],
-	4,
-	function(string, old, new_, count)
-	{
-		if (count === null)
-			count = string.length;
+// Functions implementing UL4 methods
+ul4._replace = function(string, old, new_, count)
+{
+	if (count === null)
+		count = string.length;
 
-		var result = [];
-		while (string.length)
+	var result = [];
+	while (string.length)
+	{
+		var pos = string.indexOf(old);
+		if (pos === -1 || !count--)
 		{
-			var pos = string.indexOf(old);
-			if (pos === -1 || !count--)
-			{
-				result.push(string);
-				break;
-			}
-			result.push(string.substr(0, pos));
-			result.push(new_);
-			string = string.substr(pos + old.length);
+			result.push(string);
+			break;
 		}
-		return result.join("");
+		result.push(string.substr(0, pos));
+		result.push(new_);
+		string = string.substr(pos + old.length);
 	}
-);
+	return result.join("");
+};
 
-ul4._me_strip = ul4._signature(
-	"strip",
-	[["chars", null]],
-	4,
-	function(string, chars)
+ul4._strip = function(string, chars)
+{
+	if (typeof(string) !== "string")
+		throw "strip() requires a string";
+	if (chars === null)
+		chars = " \r\n\t";
+	else if (typeof(chars) !== "string")
+		throw "strip() requires two strings";
+
+	while (string && chars.indexOf(string[0]) >= 0)
+		string = string.substr(1);
+	while (string && chars.indexOf(string[string.length-1]) >= 0)
+		string = string.substr(0, string.length-1);
+	return string;
+};
+
+ul4._lstrip = function(string, chars)
+{
+	if (typeof(string) !== "string")
+		throw "lstrip() requires a string";
+	if (chars === null)
+		chars = " \r\n\t";
+	else if (typeof(chars) !== "string")
+		throw "lstrip() requires two strings";
+
+	while (string && chars.indexOf(string[0]) >= 0)
+		string = string.substr(1);
+	return string;
+};
+
+ul4._rstrip = function(string, chars)
+{
+	if (typeof(string) !== "string")
+		throw "rstrip() requires a string";
+	if (chars === null)
+		chars = " \r\n\t";
+	else if (typeof(chars) !== "string")
+		throw "rstrip() requires two strings";
+
+	while (string && chars.indexOf(string[string.length-1]) >= 0)
+		string = string.substr(0, string.length-1);
+	return string;
+};
+
+ul4._split = function(string, sep, count)
+{
+	if (typeof(string) !== "string")
+		throw "split() requires a string";
+	else if (sep !== null && typeof(sep) !== "string")
+		throw "split() requires a string";
+
+	if (count === null)
 	{
-		if (typeof(string) !== "string")
-			throw "strip() requires a string";
-		if (chars === null)
-			chars = " \r\n\t";
-		else if (typeof(chars) !== "string")
-			throw "strip() requires two strings";
-
-		while (string && chars.indexOf(string[0]) >= 0)
-			string = string.substr(1);
-		while (string && chars.indexOf(string[string.length-1]) >= 0)
-			string = string.substr(0, string.length-1);
-		return string;
-	}
-);
-
-ul4._me_lstrip = ul4._signature(
-	"lstrip",
-	[["chars", null]],
-	4,
-	function(string, chars)
-	{
-		if (typeof(string) !== "string")
-			throw "lstrip() requires a string";
-		if (chars === null)
-			chars = " \r\n\t";
-		else if (typeof(chars) !== "string")
-			throw "lstrip() requires two strings";
-
-		while (string && chars.indexOf(string[0]) >= 0)
-			string = string.substr(1);
-		return string;
-	}
-);
-
-ul4._me_rstrip = ul4._signature(
-	"rstrip",
-	[["chars", null]],
-	4,
-	function(string, chars)
-	{
-		if (typeof(string) !== "string")
-			throw "rstrip() requires a string";
-		if (chars === null)
-			chars = " \r\n\t";
-		else if (typeof(chars) !== "string")
-			throw "rstrip() requires two strings";
-
-		while (string && chars.indexOf(string[string.length-1]) >= 0)
-			string = string.substr(0, string.length-1);
-		return string;
-	}
-);
-
-ul4._me_split = ul4._signature(
-	"split",
-	[["sep", null], ["count", null]],
-	4,
-	function(string, sep, count)
-	{
-		if (typeof(string) !== "string")
-			throw "split() requires a string";
-		else if (sep !== null && typeof(sep) !== "string")
-			throw "split() requires a string";
-
-		if (count === null)
+		var result = string.split(sep !== null ? sep : /[ \n\r\t]+/);
+		if (sep === null)
 		{
-			var result = string.split(sep !== null ? sep : /[ \n\r\t]+/);
-			if (sep === null)
+			if (result.length && !result[0].length)
+				result.splice(0, 1);
+			if (result.length && !result[result.length-1].length)
+				result.splice(-1);
+		}
+		return result;
+	}
+	else
+	{
+		if (sep !== null)
+		{
+			var result = [];
+			while (string.length)
 			{
-				if (result.length && !result[0].length)
-					result.splice(0, 1);
-				if (result.length && !result[result.length-1].length)
-					result.splice(-1);
+				var pos = string.indexOf(sep);
+				if (pos === -1 || !count--)
+				{
+					result.push(string);
+					break;
+				}
+				result.push(string.substr(0, pos));
+				string = string.substr(pos + sep.length);
 			}
 			return result;
 		}
 		else
 		{
-			if (sep !== null)
+			var result = [];
+			while (string.length)
 			{
-				var result = [];
-				while (string.length)
-				{
-					var pos = string.indexOf(sep);
-					if (pos === -1 || !count--)
-					{
-						result.push(string);
-						break;
-					}
-					result.push(string.substr(0, pos));
-					string = string.substr(pos + sep.length);
-				}
-				return result;
+				string = this._lstrip(string, null);
+				var part;
+				if (!count--)
+				 	part = string; // Take the rest of the string
+				else
+					part = string.split(/[ \n\r\t]+/, 1)[0];
+				if (part.length)
+					result.push(part);
+				string = string.substr(part.length);
 			}
-			else
-			{
-				var result = [];
-				while (string.length)
-				{
-					string = this._me_lstrip(string, null);
-					var part;
-					if (!count--)
-					 	part = string; // Take the rest of the string
-					else
-						part = string.split(/[ \n\r\t]+/, 1)[0];
-					if (part.length)
-						result.push(part);
-					string = string.substr(part.length);
-				}
-				return result;
-			}
+			return result;
 		}
 	}
-);
+};
 
-ul4._me_rsplit = ul4._signature(
-	"rsplit",
-	[["sep", null], ["count", null]],
-	4,
-	function(string, sep, count)
+ul4._rsplit = function(string, sep, count)
+{
+	if (typeof(string) !== "string")
+		throw "rsplit() requires a string as first argument";
+	else if (sep !== null && typeof(sep) !== "string")
+		throw "rsplit() requires a string as second argument";
+
+	if (count === null)
 	{
-		if (typeof(string) !== "string")
-			throw "rsplit() requires a string as first argument";
-		else if (sep !== null && typeof(sep) !== "string")
-			throw "rsplit() requires a string as second argument";
-
-		if (count === null)
+		var result = string.split(sep !== null ? sep : /[ \n\r\t]+/);
+		if (sep === null)
 		{
-			var result = string.split(sep !== null ? sep : /[ \n\r\t]+/);
-			if (sep === null)
+			if (result.length && !result[0].length)
+				result.splice(0, 1);
+			if (result.length && !result[result.length-1].length)
+				result.splice(-1);
+		}
+		return result;
+	}
+	else
+	{
+		if (sep !== null)
+		{
+			var result = [];
+			while (string.length)
 			{
-				if (result.length && !result[0].length)
-					result.splice(0, 1);
-				if (result.length && !result[result.length-1].length)
-					result.splice(-1);
+				var pos = string.lastIndexOf(sep);
+				if (pos === -1 || !count--)
+				{
+					result.unshift(string);
+					break;
+				}
+				result.unshift(string.substr(pos+sep.length));
+				string = string.substr(0, pos);
 			}
 			return result;
 		}
 		else
 		{
-			if (sep !== null)
+			var result = [];
+			while (string.length)
 			{
-				var result = [];
-				while (string.length)
+				string = this._rstrip(string, null, null);
+				var part;
+				if (!count--)
+				 	part = string; // Take the rest of the string
+				else
 				{
-					var pos = string.lastIndexOf(sep);
-					if (pos === -1 || !count--)
-					{
-						result.unshift(string);
-						break;
-					}
-					result.unshift(string.substr(pos+sep.length));
-					string = string.substr(0, pos);
+					part = string.split(/[ \n\r\t]+/);
+					part = part[part.length-1];
 				}
-				return result;
+				if (part.length)
+					result.unshift(part);
+				string = string.substr(0, string.length-part.length);
 			}
-			else
-			{
-				var result = [];
-				while (string.length)
-				{
-					string = this._me_rstrip(string, null, null);
-					var part;
-					if (!count--)
-					 	part = string; // Take the rest of the string
-					else
-					{
-						part = string.split(/[ \n\r\t]+/);
-						part = part[part.length-1];
-					}
-					if (part.length)
-						result.unshift(part);
-					string = string.substr(0, string.length-part.length);
-				}
-				return result;
-			}
+			return result;
 		}
 	}
-);
+};
 
-ul4._me_find = ul4._signature(
-	"find",
-	["sub", ["start", null], ["end", null]],
-	4,
-	function(obj, sub, start, end)
+ul4._find = function(obj, sub, start, end)
+{
+	if (start < 0)
+		start += obj.length;
+	if (start < 0)
+		start = 0;
+	if (start === null)
+		start = 0;
+	if (end === null)
+		end = obj.length;
+
+	if (start !== 0 || end !== obj.length)
 	{
-		if (start < 0)
-			start += obj.length;
-		if (start < 0)
-			start = 0;
-		if (start === null)
-			start = 0;
-		if (end === null)
-			end = obj.length;
-
-		if (start !== 0 || end !== obj.length)
-		{
-			if (typeof(obj) == "string")
-				obj = obj.substring(start, end);
-			else
-				obj = obj.slice(start, end);
-		}
-		var result = obj.indexOf(sub);
-		if (result !== -1)
-			result += start;
-		return result;
-	}
-);
-
-ul4._me_rfind = ul4._signature(
-	"rfind",
-	["sub", ["start", null], ["end", null]],
-	4,
-	function(obj, sub, start, end)
-	{
-		if (start < 0)
-			start += obj.length;
-		if (start < 0)
-			start = 0;
-		if (start === null)
-			start = 0;
-		if (end === null)
-			end = obj.length;
-
-		if (start !== 0 || end !== obj.length)
-		{
-			if (typeof(obj) == "string")
-				obj = obj.substring(start, end);
-			else
-				obj = obj.slice(start, end);
-		}
-		var result = obj.lastIndexOf(sub);
-		if (result !== -1)
-			result += start;
-		return result;
-	}
-);
-
-ul4._me_lower = ul4._signature(
-	"lower",
-	[],
-	4,
-	function(obj)
-	{
-		if (typeof(obj) != "string")
-			throw "lower() requires a string";
-
-		return obj.toLowerCase();
-	}
-);
-
-ul4._me_upper = ul4._signature(
-	"upper",
-	[],
-	4,
-	function(obj)
-	{
-		if (typeof(obj) != "string")
-			throw "upper() requires a string";
-
-		return obj.toUpperCase();
-	}
-);
-
-ul4._me_capitalize = ul4._signature(
-	"capitalize",
-	[],
-	4,
-	function(obj)
-	{
-		if (typeof(obj) != "string")
-			throw "capitalize() requires a string";
-
-		if (obj.length)
-			obj = obj[0].toUpperCase() + obj.slice(1).toLowerCase();
-		return obj;
-	}
-);
-
-ul4._me_get = ul4._signature(
-	"get",
-	["key", ["default", null]],
-	4,
-	function(container, key, default_)
-	{
-		if (!this._isdict(container))
-			throw "get() requires a dict";
-
-		var result = container[key];
-		if (typeof(result) === "undefined")
-			return default_;
-		return result;
-	}
-);
-
-ul4._me_items = ul4._signature(
-	"items",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._isdict(obj))
-			throw "items() requires a dict";
-
-		var result = [];
-		for (var key in obj)
-			result.push([key, obj[key]]);
-		return result;
-	}
-);
-
-ul4._me_values = ul4._signature(
-	"values",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._isdict(obj))
-			throw "values() requires a dict";
-
-		var result = [];
-		for (var key in obj)
-			result.push(obj[key]);
-		return result;
-	}
-);
-
-ul4._me_join = ul4._signature(
-	"join",
-	["iterable"],
-	4,
-	function(sep, iterable)
-	{
-		if (typeof(sep) !== "string")
-			throw "join() requires a string";
-
-		var resultlist = [];
-		for (var iter = ul4._iter(iterable);;)
-		{
-			var item = iter();
-			if (item === null)
-				break;
-			resultlist.push(item[0]);
-		}
-		return resultlist.join(sep);
-	}
-);
-
-ul4._me_startswith = ul4._signature(
-	"startswith",
-	["prefix"],
-	4,
-	function(string, prefix)
-	{
-		if (typeof(string) !== "string" || typeof(prefix) !== "string")
-			throw "startswith() requires two strings";
-
-		return string.substr(0, prefix.length) === prefix;
-	}
-);
-
-ul4._me_endswith = ul4._signature(
-	"endswith",
-	["suffix"],
-	4,
-	function(string, suffix)
-	{
-		if (typeof(string) !== "string" || typeof(suffix) !== "string")
-			throw "endswith() requires two strings";
-
-		return string.substr(string.length-suffix.length) === suffix;
-	}
-);
-
-ul4._me_isoformat = ul4._signature(
-	"isoformat",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._isdate(obj))
-			throw "isoformat() requires a date";
-
-		var result = obj.getFullYear() + "-" + this._lpad((obj.getMonth()+1).toString(), "0", 2) + "-" + this._lpad(obj.getDate().toString(), "0", 2);
-		var hour = obj.getHours();
-		var minute = obj.getMinutes();
-		var second = obj.getSeconds();
-		var ms = obj.getMilliseconds();
-		if (hour || minute || second || ms)
-		{
-			result += "T" + this._lpad(hour.toString(), "0", 2) + ":" + this._lpad(minute.toString(), "0", 2) + ":" + this._lpad(second.toString(), "0", 2);
-			if (ms)
-				result += "." + this._lpad(ms.toString(), "0", 3) + "000";
-		}
-		return result;
-	}
-);
-
-ul4._me_mimeformat = ul4._signature(
-	"mimeformat",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._isdate(obj))
-			throw "mimeformat() requires a date";
-
-		var weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-		var monthname = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-		return weekdayname[this._me_weekday(obj)] + ", " + this._lpad(obj.getDate(), "0", 2) + " " + monthname[obj.getMonth()] + " " + obj.getFullYear() + " " + this._lpad(obj.getHours(), "0", 2) + ":" + this._lpad(obj.getMinutes(), "0", 2) + ":" + this._lpad(obj.getSeconds(), "0", 2) + " GMT";
-	}
-);
-
-ul4._me_year = ul4._signature(
-	"year",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._isdate(obj))
-			throw "year() requires a date";
-
-		return obj.getFullYear();
-	}
-);
-
-ul4._me_month = ul4._signature(
-	"month",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._isdate(obj))
-			throw "month() requires a date";
-
-		return obj.getMonth()+1;
-	}
-);
-
-ul4._me_day = ul4._signature(
-	"day",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._isdate(obj))
-			throw "day() requires a date";
-
-		return obj.getDate();
-	}
-);
-
-ul4._me_hour = ul4._signature(
-	"hour",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._isdate(obj))
-			throw "hour() requires a date";
-
-		return obj.getHours();
-	}
-);
-
-ul4._me_minute = ul4._signature(
-	"minute",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._isdate(obj))
-			throw "minute() requires a date";
-
-		return obj.getMinutes();
-	}
-);
-
-ul4._me_second = ul4._signature(
-	"second",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._isdate(obj))
-			throw "second() requires a date";
-
-		return obj.getSeconds();
-	}
-);
-
-ul4._me_microsecond = ul4._signature(
-	"microsecond",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._isdate(obj))
-			throw "micosecond() requires a date";
-
-		return obj.getMilliseconds() * 1000;
-	}
-);
-
-ul4._me_weekday = ul4._signature(
-	"weekday",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._isdate(obj))
-			throw "weekday() requires a date";
-
-		var d = obj.getDay();
-		return d ? d-1 : 6;
-	}
-);
-
-ul4._me_week = ul4._signature(
-	"week",
-	[["firstweekday", null]],
-	4,
-	function(obj, firstweekday)
-	{
-		if (firstweekday === null)
-			firstweekday = 0;
+		if (typeof(obj) == "string")
+			obj = obj.substring(start, end);
 		else
-			firstweekday %= 7;
-
-		var yearday = ul4._me_yearday(obj)+6;
-		var jan1 = new Date(obj.getFullYear(), 0, 1);
-		var jan1weekday = jan1.getDay();
-		if (--jan1weekday < 0)
-			jan1weekday = 6;
-
-		while (jan1weekday != firstweekday)
-		{
-			--yearday;
-			if (++jan1weekday == 7)
-				jan1weekday = 0;
-		}
-		return Math.floor(yearday/7);
+			obj = obj.slice(start, end);
 	}
-);
+	var result = obj.indexOf(sub);
+	if (result !== -1)
+		result += start;
+	return result;
+};
+
+ul4._rfind = function(obj, sub, start, end)
+{
+	if (start < 0)
+		start += obj.length;
+	if (start < 0)
+		start = 0;
+	if (start === null)
+		start = 0;
+	if (end === null)
+		end = obj.length;
+
+	if (start !== 0 || end !== obj.length)
+	{
+		if (typeof(obj) == "string")
+			obj = obj.substring(start, end);
+		else
+			obj = obj.slice(start, end);
+	}
+	var result = obj.lastIndexOf(sub);
+	if (result !== -1)
+		result += start;
+	return result;
+};
+
+ul4._lower = function(obj)
+{
+	if (typeof(obj) != "string")
+		throw "lower() requires a string";
+
+	return obj.toLowerCase();
+};
+
+ul4._upper = function(obj)
+{
+	if (typeof(obj) != "string")
+		throw "upper() requires a string";
+
+	return obj.toUpperCase();
+};
+
+ul4._capitalize = function(obj)
+{
+	if (typeof(obj) != "string")
+		throw "capitalize() requires a string";
+
+	if (obj.length)
+		obj = obj[0].toUpperCase() + obj.slice(1).toLowerCase();
+	return obj;
+};
+
+ul4._items = function(obj)
+{
+	if (!this._isdict(obj))
+		throw "items() requires a dict";
+
+	var result = [];
+	for (var key in obj)
+		result.push([key, obj[key]]);
+	return result;
+};
+
+ul4._values = function(obj)
+{
+	if (!this._isdict(obj))
+		throw "values() requires a dict";
+
+	var result = [];
+	for (var key in obj)
+		result.push(obj[key]);
+	return result;
+};
+
+ul4._join = function(sep, iterable)
+{
+	if (typeof(sep) !== "string")
+		throw "join() requires a string";
+
+	var resultlist = [];
+	for (var iter = ul4._iter(iterable);;)
+	{
+		var item = iter();
+		if (item === null)
+			break;
+		resultlist.push(item[0]);
+	}
+	return resultlist.join(sep);
+};
+
+ul4._startswith = function(string, prefix)
+{
+	if (typeof(string) !== "string" || typeof(prefix) !== "string")
+		throw "startswith() requires two strings";
+
+	return string.substr(0, prefix.length) === prefix;
+};
+
+ul4._endswith = function(string, suffix)
+{
+	if (typeof(string) !== "string" || typeof(suffix) !== "string")
+		throw "endswith() requires two strings";
+
+	return string.substr(string.length-suffix.length) === suffix;
+};
+
+ul4._isoformat = function(obj)
+{
+	if (!this._isdate(obj))
+		throw "isoformat() requires a date";
+
+	var result = obj.getFullYear() + "-" + this._lpad((obj.getMonth()+1).toString(), "0", 2) + "-" + this._lpad(obj.getDate().toString(), "0", 2);
+	var hour = obj.getHours();
+	var minute = obj.getMinutes();
+	var second = obj.getSeconds();
+	var ms = obj.getMilliseconds();
+	if (hour || minute || second || ms)
+	{
+		result += "T" + this._lpad(hour.toString(), "0", 2) + ":" + this._lpad(minute.toString(), "0", 2) + ":" + this._lpad(second.toString(), "0", 2);
+		if (ms)
+			result += "." + this._lpad(ms.toString(), "0", 3) + "000";
+	}
+	return result;
+};
+
+ul4._mimeformat = function(obj)
+{
+	if (!this._isdate(obj))
+		throw "mimeformat() requires a date";
+
+	var weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+	var monthname = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+	return weekdayname[this._weekday(obj)] + ", " + this._lpad(obj.getDate(), "0", 2) + " " + monthname[obj.getMonth()] + " " + obj.getFullYear() + " " + this._lpad(obj.getHours(), "0", 2) + ":" + this._lpad(obj.getMinutes(), "0", 2) + ":" + this._lpad(obj.getSeconds(), "0", 2) + " GMT";
+};
+
+ul4._year = function(obj)
+{
+	if (!this._isdate(obj))
+		throw "year() requires a date";
+
+	return obj.getFullYear();
+};
+
+ul4._month = function(obj)
+{
+	if (!this._isdate(obj))
+		throw "month() requires a date";
+
+	return obj.getMonth()+1;
+};
+
+ul4._day = function(obj)
+{
+	if (!this._isdate(obj))
+		throw "day() requires a date";
+
+	return obj.getDate();
+};
+
+ul4._hour = function(obj)
+{
+	if (!this._isdate(obj))
+		throw "hour() requires a date";
+
+	return obj.getHours();
+};
+
+ul4._minute = function(obj)
+{
+	if (!this._isdate(obj))
+		throw "minute() requires a date";
+
+	return obj.getMinutes();
+};
+
+ul4._second = function(obj)
+{
+	if (!this._isdate(obj))
+		throw "second() requires a date";
+
+	return obj.getSeconds();
+};
+
+ul4._microsecond = function(obj)
+{
+	if (!this._isdate(obj))
+		throw "micosecond() requires a date";
+
+	return obj.getMilliseconds() * 1000;
+};
+
+ul4._weekday = function(obj)
+{
+	if (!this._isdate(obj))
+		throw "weekday() requires a date";
+
+	var d = obj.getDay();
+	return d ? d-1 : 6;
+};
+
+ul4._week = function(obj, firstweekday)
+{
+	if (firstweekday === null)
+		firstweekday = 0;
+	else
+		firstweekday %= 7;
+
+	var yearday = ul4._yearday(obj)+6;
+	var jan1 = new Date(obj.getFullYear(), 0, 1);
+	var jan1weekday = jan1.getDay();
+	if (--jan1weekday < 0)
+		jan1weekday = 6;
+
+	while (jan1weekday != firstweekday)
+	{
+		--yearday;
+		if (++jan1weekday == 7)
+			jan1weekday = 0;
+	}
+	return Math.floor(yearday/7);
+};
 
 ul4._isleap = function(obj)
 {
 	return new Date(obj.getFullYear(), 1, 29).getMonth() === 1;
 };
 
-ul4._me_yearday = ul4._signature(
-	"yearday",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._isdate(obj))
-			throw "yearday() requires a date";
+ul4._yearday = function(obj)
+{
+	if (!this._isdate(obj))
+		throw "yearday() requires a date";
 
-		var leap = this._isleap(obj) ? 1 : 0;
-		var day = obj.getDate();
-		switch (obj.getMonth())
-		{
-			case 0:
-				return day;
-			case 1:
-				return 31 + day;
-			case 2:
-				return 31 + 28 + leap + day;
-			case 3:
-				return 31 + 28 + leap + 31 + day;
-			case 4:
-				return 31 + 28 + leap + 31 + 30 + day;
-			case 5:
-				return 31 + 28 + leap + 31 + 30 + 31 + day;
-			case 6:
-				return 31 + 28 + leap + 31 + 30 + 31 + 30 + day;
-			case 7:
-				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + day;
-			case 8:
-				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + day;
-			case 9:
-				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + day;
-			case 10:
-				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + day;
-			case 11:
-				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30 + day;
-		}
-	}
-);
-
-ul4._me_render = ul4._signature(
-	"render",
-	["**vars"],
-	6,
-	function(stack, obj, vars)
+	var leap = this._isleap(obj) ? 1 : 0;
+	var day = obj.getDate();
+	switch (obj.getMonth())
 	{
-		return obj._render(stack, vars);
+		case 0:
+			return day;
+		case 1:
+			return 31 + day;
+		case 2:
+			return 31 + 28 + leap + day;
+		case 3:
+			return 31 + 28 + leap + 31 + day;
+		case 4:
+			return 31 + 28 + leap + 31 + 30 + day;
+		case 5:
+			return 31 + 28 + leap + 31 + 30 + 31 + day;
+		case 6:
+			return 31 + 28 + leap + 31 + 30 + 31 + 30 + day;
+		case 7:
+			return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + day;
+		case 8:
+			return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + day;
+		case 9:
+			return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + day;
+		case 10:
+			return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + day;
+		case 11:
+			return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30 + day;
 	}
-);
+};
 
-ul4._me_renders = ul4._signature(
-	"renders",
-	["**vars"],
-	6,
-	function(stack, obj, vars)
-	{
-		return obj._render(stack, vars).join("");
-	}
-);
+// Return the item with the key ``key`` from the dict ``container``. If ``container`` doesn't have this key, return ``defaultvalue``
+ul4._mget = function(container, key, defaultvalue)
+{
+	if (!this._isdict(container))
+		throw "get() requires a dict";
+
+	var result = container[key];
+	if (typeof(result) === "undefined")
+		return defaultvalue;
+	return result;
+};
+
+ul4._render = function(stack, obj, vars)
+{
+	return obj._render(stack, vars);
+};
+
+ul4._renders = function(stack, obj, vars)
+{
+	return obj._render(stack, vars).join("");
+};
 
 // Color methods
-ul4._me_r = ul4._signature(
-	"r",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._iscolor(obj))
-			throw "r() requires a color";
+ul4._r = function(obj)
+{
+	if (!this._iscolor(obj))
+		throw "r() requires a color";
 
-		return obj.r;
-	}
-);
+	return obj.r;
+};
 
-ul4._me_g = ul4._signature(
-	"g",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._iscolor(obj))
-			throw "g() requires a color";
+ul4._g = function(obj)
+{
+	if (!this._iscolor(obj))
+		throw "g() requires a color";
 
-		return obj.g;
-	}
-);
+	return obj.g;
+};
 
-ul4._me_b = ul4._signature(
-	"b",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._iscolor(obj))
-			throw "b() requires a color";
+ul4._b = function(obj)
+{
+	if (!this._iscolor(obj))
+		throw "b() requires a color";
 
-		return obj.b;
-	}
-);
+	return obj.b;
+};
 
-ul4._me_a = ul4._signature(
-	"a",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._iscolor(obj))
-			throw "a() requires a color";
+ul4._a = function(obj)
+{
+	if (!this._iscolor(obj))
+		throw "a() requires a color";
 
-		return obj.a;
-	}
-);
+	return obj.a;
+};
 
-ul4._me_lum = ul4._signature(
-	"lum",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._iscolor(obj))
-			throw "lum() requires a color";
+ul4._lum = function(obj)
+{
+	if (!this._iscolor(obj))
+		throw "lum() requires a color";
 
-		return obj.lum();
-	}
-);
+	return obj.lum();
+};
 
-ul4._me_hls = ul4._signature(
-	"hls",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._iscolor(obj))
-			throw "hls() requires a color";
+ul4._mhls = function(obj)
+{
+	if (!this._iscolor(obj))
+		throw "hls() requires a color";
 
-		return obj.hls();
-	}
-);
+	return obj.hls();
+};
 
-ul4._me_hlsa = ul4._signature(
-	"hlsa",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._iscolor(obj))
-			throw "hlsa() requires a color";
+ul4._mhlsa = function(obj)
+{
+	if (!this._iscolor(obj))
+		throw "hlsa() requires a color";
 
-		return obj.hlsa();
-	}
-);
+	return obj.hlsa();
+};
 
-ul4._me_hsv = ul4._signature(
-	"hsv",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._iscolor(obj))
-			throw "hsv() requires a color";
+ul4._mhsv = function(obj)
+{
+	if (!this._iscolor(obj))
+		throw "hsv() requires a color";
 
-		return obj.hsv();
-	}
-);
+	return obj.hsv();
+};
 
-ul4._me_hsva = ul4._signature(
-	"hsva",
-	[],
-	4,
-	function(obj)
-	{
-		if (!this._iscolor(obj))
-			throw "hsva() requires a color";
+ul4._mhsva = function(obj)
+{
+	if (!this._iscolor(obj))
+		throw "hsva() requires a color";
 
-		return obj.hsva();
-	}
-);
+	return obj.hsva();
+};
 
-ul4._me_witha = ul4._signature(
-	"witha",
-	["a"],
-	4,
-	function(obj, a)
-	{
-		if (!this._iscolor(obj))
-			throw "witha() requires a color";
+ul4._witha = function(obj, a)
+{
+	if (!this._iscolor(obj))
+		throw "witha() requires a color";
 
-		return obj.witha(a);
-	}
-);
+	return obj.witha(a);
+};
 
-ul4._me_withlum = ul4._signature(
-	"withlum",
-	["lum"],
-	4,
-	function(obj, lum)
-	{
-		if (!this._iscolor(obj))
-			throw "withlum() requires a color";
+ul4._withlum = function(obj, lum)
+{
+	if (!this._iscolor(obj))
+		throw "withlum() requires a color";
 
-		return obj.withlum(lum);
-	}
-);
+	return obj.withlum(lum);
+};
+
+ul4.methods = {
+	replace: ul4._signature("replace", ["old", "new", ["count", null]], 4, ul4._replace),
+	strip: ul4._signature("strip", [["chars", null]], 4, ul4._strip),
+	lstrip: ul4._signature("lstrip", [["chars", null]], 4, ul4._lstrip),
+	rstrip: ul4._signature("rstrip", [["chars", null]], 4, ul4._rstrip),
+	split: ul4._signature("split", [["sep", null], ["count", null]], 4, ul4._split),
+	rsplit: ul4._signature("rsplit", [["sep", null], ["count", null]], 4, ul4._rsplit),
+	find: ul4._signature("find", ["sub", ["start", null], ["end", null]], 4, ul4._find),
+	rfind: ul4._signature("rfind", ["sub", ["start", null], ["end", null]], 4, ul4._rfind),
+	lower: ul4._signature("lower", [], 4, ul4._lower),
+	upper: ul4._signature("upper", [], 4, ul4._upper),
+	capitalize: ul4._signature("capitalize", [], 4, ul4._capitalize),
+	get: ul4._signature("get", ["key", ["default", null]], 4, ul4._mget),
+	items: ul4._signature("items", [], 4, ul4._items),
+	values: ul4._signature("values", [], 4, ul4._values),
+	join: ul4._signature("join", ["iterable"], 4, ul4._join),
+	startswith: ul4._signature("startswith", ["prefix"], 4, ul4._startswith),
+	endswith: ul4._signature("endswith", ["suffix"], 4, ul4._endswith),
+	isoformat: ul4._signature("isoformat", [], 4, ul4._isoformat),
+	mimeformat: ul4._signature("mimeformat", [], 4, ul4._mimeformat),
+	year: ul4._signature("year", [], 4, ul4._year),
+	month: ul4._signature("month", [], 4, ul4._month),
+	day: ul4._signature("day", [], 4, ul4._day),
+	hour: ul4._signature("hour", [], 4, ul4._hour),
+	minute: ul4._signature("minute", [], 4, ul4._minute),
+	second: ul4._signature("second", [], 4, ul4._second),
+	microsecond: ul4._signature("microsecond", [], 4, ul4._microsecond),
+	weekday: ul4._signature("weekday", [], 4, ul4._weekday),
+	week: ul4._signature("week", [["firstweekday", null]], 4, ul4._week),
+	yearday: ul4._signature("yearday", [], 4, ul4._yearday),
+	render: ul4._signature("render", ["**vars"], 6, ul4._render),
+	renders: ul4._signature("renders", ["**vars"], 6, ul4._renders),
+	r: ul4._signature("r", [], 4, ul4._r),
+	g: ul4._signature("g", [], 4, ul4._g),
+	b: ul4._signature("b", [], 4, ul4._b),
+	a: ul4._signature("a", [], 4, ul4._a),
+	lum: ul4._signature("lum", [], 4, ul4._lum),
+	hls: ul4._signature("hls", [], 4, ul4._mhls),
+	hlsa: ul4._signature("hlsa", [], 4, ul4._mhlsa),
+	hsv: ul4._signature("hsv", [], 4, ul4._mhsv),
+	hsva: ul4._signature("hsva", [], 4, ul4._mhsva),
+	witha: ul4._signature("witha", ["a"], 4, ul4._witha),
+	withlum: ul4._signature("withlum", ["lum"], 4, ul4._withlum),
+};
 
 (function(){
 	var register = function(name, object)
