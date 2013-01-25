@@ -64,17 +64,6 @@ ul4._extend = function(obj, attrs)
 	return obj;
 };
 
-// Adds attributes from on object to another and returns it
-ul4._extendflat = function(obj, attrs)
-{
-	for (var name in attrs)
-	{
-		if (attrs.hasOwnProperty(name))
-			obj[name] = attrs[name];
-	}
-	return obj;
-};
-
 // Clone an object and extend it
 ul4._inherit = function(baseobj, attrs)
 {
