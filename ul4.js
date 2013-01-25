@@ -40,11 +40,17 @@ var ul4 = {
 /// Helper functions
 
 // Crockford style object creation
-ul4._clone = function(obj)
+ul4._simpleclone = function(obj)
 {
 	function F(){};
 	F.prototype = obj;
 	var result = new F();
+	return result;
+};
+
+ul4._clone = function(obj)
+{
+	var result = this._simpleclone(obj);
 	result.__prototype__ = obj;
 	result.__id__ = ul4.Proto._nextid++;
 	return result;
@@ -75,11 +81,16 @@ ul4._inherit = function(baseobj, attrs)
 	return this._extend(ul4._clone(baseobj), attrs);
 };
 
+ul4._simpleinherit = function(baseobj, attrs)
+{
+	return this._extend(ul4._simpleclone(baseobj), attrs);
+};
+
 // Add name and signature to a function/method
-ul4._signature = function(name, args, flags, f)
+ul4._signature = function(name, args, ismethod, f)
 {
 	f._ul4_name = name;
-	f._ul4_flags = flags;
+	f._ul4_ismethod = ismethod;
 	f._ul4_remargs = null;
 	f._ul4_remkwargs = null;
 	f._ul4_args = [];
@@ -171,16 +182,76 @@ ul4._makeargarray = function(f, args, kwargs)
 	return realargs;
 }
 
-ul4._callfunc = function(f, vars, stack, obj, args, kwargs)
+ul4._callfunc = function(f, args, kwargs)
 {
-	var contextargs = [];
-	if (f._ul4_flags & 0x1)
-		contextargs.push(vars);
-	if (f._ul4_flags & 0x2)
-		contextargs.push(stack);
-	if (f._ul4_flags & 0x4)
-		contextargs.push(obj);
-	return f.apply(ul4, contextargs.concat(ul4._makeargarray(f, args, kwargs)));
+	if (f.__type__ == "function")
+	{
+		if (args.length > 0)
+			throw f.name + "() doesn't support positional arguments";
+		return f.call(kwargs);
+	}
+	else
+	{
+		return f.apply(ul4, ul4._makeargarray(f, args, kwargs));
+	}
+};
+
+ul4._callmeth = function(f, obj, args, kwargs)
+{
+	return f.apply(ul4, [obj].concat(ul4._makeargarray(f, args, kwargs)));
+};
+
+ul4._keys = function(dict)
+{
+	var r = []
+	for (var key in dict)
+		r.push(key);
+	return r;
+}
+
+ul4._getvar = function(vars, name, self)
+{
+	var result = vars[name];
+	if (typeof(result) === "undefined")
+		result = (name === "self") ? self : ul4.functions[name];
+	return result;
+};
+
+ul4._setvar = function(vars, name, value)
+{
+	if (name === "self")
+		throw "can't assign to self";
+	vars[name] = value;
+};
+
+ul4._unpackvar = function(vars, varname, item)
+{
+	if (typeof(varname) === "string")
+		this._setvar(vars, varname, item);
+	else
+	{
+		var iter = this._iter(item);
+
+		for (var i = 0;;++i)
+		{
+			var nextitem = iter();
+
+			if (nextitem !== null)
+			{
+				if (i < varname.length)
+					this._unpackvar(vars, varname[i], nextitem[0]);
+				else
+					throw "mismatched variable unpacking: " + varname.length + " varnames, >" + i + " items";
+			}
+			else
+			{
+				if (i === varname.length)
+					break;
+				else
+					throw "mismatched variable unpacking: " + varname.length + " varnames, " + (i+1) + " items";
+			}
+		}
+	}
 };
 
 // Functions with the ``_op_`` prefix implement UL4 opcodes
@@ -537,36 +608,6 @@ ul4.formatnestedname = function(varname)
 		}
 		v.push(")");
 		return v.join("");
-	}
-};
-
-ul4._unpackvariable = function(vars, varname, item)
-{
-	if (typeof(varname) === "string")
-		vars[varname] = item;
-	else
-	{
-		var iter = this._iter(item);
-
-		for (var i = 0;;++i)
-		{
-			var nextitem = iter();
-
-			if (nextitem !== null)
-			{
-				if (i < varname.length)
-					this._unpackvariable(vars, varname[i], nextitem[0]);
-				else
-					throw "mismatched variable unpacking: " + varname.length + " varnames, >" + i + " items";
-			}
-			else
-			{
-				if (i === varname.length)
-					break;
-				else
-					throw "mismatched variable unpacking: " + varname.length + " varnames, " + (i+1) + " items";
-			}
-		}
 	}
 };
 
@@ -1050,7 +1091,7 @@ ul4._istemplate = function(obj)
 // Check if ``obj`` is a function
 ul4._isfunction = function(obj)
 {
-	return typeof(obj) === "function";
+	return typeof(obj) === "function" || (Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "function");
 };
 
 // Check if ``obj`` is a list
@@ -2431,7 +2472,7 @@ ul4.ListComp = ul4._inherit(
 		formatjs: function(indent, keepws)
 		{
 			var result = "(function(){var result=[];for(var iter=ul4._iter(" + this.container.formatjs(indent, keepws) + ");;){var item=iter();if(item===null)break;";
-			result += "ul4._unpackvariable(vars, " + ul4._asjson(this.varname) + ", item[0]);";
+			result += "ul4._unpackvar(vars, " + ul4._asjson(this.varname) + ", item[0]);";
 			if (this.condition !== null)
 				result += "if(ul4._bool(" + this.condition.formatjs(indent, keepws) + "))";
 			result += "result.push(" + this.item.formatjs(indent, keepws) + ");}return result;})()"
@@ -2502,7 +2543,7 @@ ul4.DictComp = ul4._inherit(
 		formatjs: function(indent, keepws)
 		{
 			var result = "(function(){var result={};for(var iter=ul4._iter(" + this.container.formatjs(indent, keepws) + ");;){var item=iter();if(item===null)break;";
-			result += "ul4._unpackvariable(vars, " + ul4._asjson(this.varname, keepws) + ", item[0]);";
+			result += "ul4._unpackvar(vars, " + ul4._asjson(this.varname, keepws) + ", item[0]);";
 			if (this.condition !== null)
 				result += "if(ul4._bool(" + this.condition.formatjs(indent, keepws) + "))";
 			result += "result[" + this.key.formatjs(indent, keepws) + "]=" + this.value.formatjs(indent, keepws) + ";}return result;})()";
@@ -2542,7 +2583,7 @@ ul4.GenExpr = ul4._inherit(
 							v.push("item = iter();");
 							v.push("if(item===null)");
 								v.push("return null;");
-							v.push("ul4._unpackvariable(vars, " + ul4._asjson(this.varname) + ", item[0]);");
+							v.push("ul4._unpackvar(vars, " + ul4._asjson(this.varname) + ", item[0]);");
 							if (this.condition !== null)
 								v.push("if(ul4._bool(" + this.condition.formatjs(indent, keepws) + "))");
 							v.push("break;");
@@ -2573,7 +2614,7 @@ ul4.Var = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["name"]),
 		formatjs: function(indent, keepws)
 		{
-			return "vars[" + ul4._asjson(this.name) + "]";
+			return "ul4._getvar(vars, " + ul4._asjson(this.name) + ", self)";
 		},
 		format: function(indent, keepws)
 		{
@@ -2666,6 +2707,20 @@ ul4.UnaryTag = ul4._inherit(
 			return unarytag;
 		},
 		_ul4onattrs: ul4.Tag._ul4onattrs.concat(["obj"]),
+	}
+);
+
+ul4.Return = ul4._inherit(
+	ul4.UnaryTag,
+	{
+		formatjs: function(indent, keepws)
+		{
+			return this._line(indent, "return " + this.obj.formatjs(indent, keepws) + ";");
+		},
+		format: function(indent, keepws)
+		{
+			return this._line(indent, "return " + this.obj.format(indent, keepws));
+		}
 	}
 );
 
@@ -2989,7 +3044,7 @@ ul4.CallFunc = ul4._inherit(
 				else
 					kwargsstring = "{}";
 			}
-			return "ul4._callfunc(" + this.obj.formatjs(indent, keepws) + ", vars, stack, null, " + argsstring + ", " + kwargsstring + ")";
+			return "ul4._callfunc(" + this.obj.formatjs(indent, keepws) + ", " + argsstring + ", " + kwargsstring + ")";
 		},
 		format: function(indent, keepws)
 		{
@@ -3002,7 +3057,7 @@ ul4.CallFunc = ul4._inherit(
 				v.push("*" + this.remargs.format(indent, keepws));
 			if (this.remkwargs !== null)
 				v.push("**" + this.remkwargs.format(indent, keepws));
-			return this.funcname + "(" + v.join(", ") + ")";
+			return this.obj.format(indent, keepws) + "(" + v.join(", ") + ")";
 		},
 		precedence: 10,
 		associative: false
@@ -3077,7 +3132,7 @@ ul4.CallMeth = ul4._inherit(
 				else
 					kwargsstring = "{}";
 			}
-			return "ul4._callfunc(ul4.methods." + this.methname + ", vars, stack, " + this.obj.formatjs(indent, keepws) + ", " + argsstring + ", " + kwargsstring + ")";
+			return "ul4._callmeth(ul4.methods." + this.methname + ", " + this.obj.formatjs(indent, keepws) + ", " + argsstring + ", " + kwargsstring + ")";
 		},
 		format: function(indent, keepws)
 		{
@@ -3137,7 +3192,7 @@ ul4.StoreVar = ul4._inherit(
 		},
 		formatjs: function(indent, keepws)
 		{
-			return this._line(indent, "ul4._unpackvariable(vars, " + ul4._asjson(this.varname) + ", " + this.value.formatjs(indent, keepws) + ");");
+			return this._line(indent, "ul4._unpackvar(vars, " + ul4._asjson(this.varname) + ", " + this.value.formatjs(indent, keepws) + ");");
 		}
 	}
 );
@@ -3152,7 +3207,7 @@ ul4.AddVar = ul4._inherit(
 		formatjs: function(indent, keepws)
 		{
 			var varname = ul4._asjson(this.varname);
-			return this._line(indent, "vars[" + varname + "] = ul4._op_add(vars[" + varname + "], " + this.value.formatjs(indent, keepws) + ");");
+			return this._line(indent, "ul4._setvar(vars, " + varname + ", ul4._op_add(ul4._getvar(vars, " + varname + ", self), " + this.value.formatjs(indent, keepws) + "));");
 		}
 	}
 );
@@ -3167,7 +3222,7 @@ ul4.SubVar = ul4._inherit(
 		formatjs: function(indent, keepws)
 		{
 			var varname = ul4._asjson(this.varname);
-			return this._line(indent, "vars[" + varname + "] = ul4._op_sub(vars[" + varname + "], " + this.value.formatjs(indent, keepws) + ");");
+			return this._line(indent, "ul4._setvar(vars, " + varname + ", ul4._op_sub(ul4._getvar(vars, " + varname + ", self), " + this.value.formatjs(indent, keepws) + "));");
 		}
 	}
 );
@@ -3182,7 +3237,7 @@ ul4.MulVar = ul4._inherit(
 		formatjs: function(indent, keepws)
 		{
 			var varname = ul4._asjson(this.varname);
-			return this._line(indent, "vars[" + varname + "] = ul4._op_mul(vars[" + varname + "], " + this.value.formatjs(indent, keepws) + ");");
+			return this._line(indent, "ul4._setvar(vars, " + varname + ", ul4._op_mul(ul4._getvar(vars, " + varname + ", self), " + this.value.formatjs(indent, keepws) + "));");
 		}
 	}
 );
@@ -3197,7 +3252,7 @@ ul4.TrueDivVar = ul4._inherit(
 		formatjs: function(indent, keepws)
 		{
 			var varname = ul4._asjson(this.varname);
-			return this._line(indent, "vars[" + varname + "] = ul4._op_truediv(vars[" + varname + "], " + this.value.formatjs(indent, keepws) + ");");
+			return this._line(indent, "ul4._setvar(vars, " + varname + ", ul4._op_truediv(ul4._getvar(vars, " + varname + ", self), " + this.value.formatjs(indent, keepws) + "));");
 		}
 	}
 );
@@ -3212,7 +3267,7 @@ ul4.FloorDivVar = ul4._inherit(
 		formatjs: function(indent, keepws)
 		{
 			var varname = ul4._asjson(this.varname);
-			return this._line(indent, "vars[" + varname + "] = ul4._op_floordiv(vars[" + varname + "], " + this.value.formatjs(indent, keepws) + ");");
+			return this._line(indent, "ul4._setvar(vars, " + varname + ", ul4._op_floordiv(ul4._getvar(vars, " + varname + ", self), " + this.value.formatjs(indent, keepws) + "));");
 		}
 	}
 );
@@ -3227,7 +3282,7 @@ ul4.ModVar = ul4._inherit(
 		formatjs: function(indent, keepws)
 		{
 			var varname = ul4._asjson(this.varname);
-			return this._line(indent, "vars[" + varname + "] = ul4._op_mod(vars[" + varname + "], " + this.value.formatjs(indent, keepws) + ");");
+			return this._line(indent, "ul4._setvar(vars, " + varname + ", ul4._op_mod(ul4._getvar(vars, " + varname + ", self), " + this.value.formatjs(indent, keepws) + "));");
 		}
 	}
 );
@@ -3290,7 +3345,7 @@ ul4.For = ul4._inherit(
 			v.push(this._line(indent, "var item" + this.__id__ + " = iter" + this.__id__ + "();"));
 			v.push(this._line(indent, "if (item" + this.__id__ + " === null)"));
 			v.push(this._line(indent+1, "break;"));
-			v.push(this._line(indent, "ul4._unpackvariable(vars, " + ul4._asjson(this.varname) + ", item" + this.__id__ + "[0]);"));
+			v.push(this._line(indent, "ul4._unpackvar(vars, " + ul4._asjson(this.varname) + ", item" + this.__id__ + "[0]);"));
 			v.push(this._formatjs_content(indent, keepws));
 			--indent;
 			v.push(this._line(indent, "}"));
@@ -3407,22 +3462,22 @@ ul4.Else = ul4._inherit(
 	}
 );
 
-ul4.Template = ul4._inherit(
+ul4.Code = ul4._inherit(
 	ul4.Block,
 	{
 		create: function(location, source, name, keepws, startdelim, enddelim)
 		{
-			var template = ul4.Block.create.call(this, location);
-			template.endlocation = null;
-			template.source = source;
-			template.name = name;
-			template.keepws = keepws;
-			template.startdelim = startdelim;
-			template.enddelim = enddelim;
-			template._jssource = null;
-			template._jsfunction = null;
-			template._asts = null;
-			return template;
+			var code = ul4.Block.create.call(this, location);
+			code.endlocation = null;
+			code.source = source;
+			code.name = name;
+			code.keepws = keepws;
+			code.startdelim = startdelim;
+			code.enddelim = enddelim;
+			code._jssource = null;
+			code._jsfunction = null;
+			code._asts = null;
+			return code;
 		},
 		ul4ondump: function(encoder)
 		{
@@ -3450,14 +3505,6 @@ ul4.Template = ul4._inherit(
 		{
 			return this.format(0, this.keepws);
 		},
-		formatjs: function(indent, keepws)
-		{
-			return this._line(indent, "vars[" + ul4._asjson(this.name) + "] = ul4.TemplateClosure.create(self._getast(" + this.__id__ + "), vars);");
-		},
-		format: function(indent, keepws)
-		{
-			return this._line(indent, "def " + (this.name !== null ? this.name : "unnamed")) + ul4.Block.format.call(this, indent, keepws);
-		},
 		_getast: function(id)
 		{
 			if (this._asts === null)
@@ -3467,6 +3514,24 @@ ul4.Template = ul4._inherit(
 			}
 			return this._asts[id];
 		},
+		loads: function(string)
+		{
+			return ul4on.loads(string);
+		},
+	}
+);
+
+ul4.Template = ul4._inherit(
+	ul4.Code,
+	{
+		formatjs: function(indent, keepws)
+		{
+			return this._line(indent, "ul4._setvar(vars, " + ul4._asjson(this.name) + ", ul4.TemplateClosure.create(self._getast(" + this.__id__ + "), vars));");
+		},
+		format: function(indent, keepws)
+		{
+			return this._line(indent, "template " + (this.name !== null ? this.name : "unnamed")) + ul4.Block.format.call(this, indent, keepws);
+		},
 		jssource: function()
 		{
 			if (this._jssource === null)
@@ -3474,6 +3539,7 @@ ul4.Template = ul4._inherit(
 				var v = [];
 				v.push(this._line(0, "(function(self, vars)"));
 				v.push(this._line(0, "{"));
+				v.push(this._line(1, "vars = ul4._clone(vars);")); // variables assignments shouldn't be visible in the parent
 				v.push(this._line(1, "var out = [];"));
 				v.push(this._formatjs_content(1, this.keepws));
 				v.push(this._line(1, "return out;"));
@@ -3482,61 +3548,104 @@ ul4.Template = ul4._inherit(
 			}
 			return this._jssource;
 		},
-		_render: function(stack, vars)
+		_render: function(vars)
 		{
-			stack.push(this);
 			if (this._jsfunction === null)
 				this._jsfunction = eval(this.jssource());
-			var result = this._jsfunction(this, vars);
-			stack.pop();
-			return result;
+			return this._jsfunction(this, vars);
 		},
-
 		render: function(vars)
 		{
-			var stack = [];
-			vars = ul4._inherit(ul4._inherit(ul4.functions, {stack: stack}), vars || {});
-			return this._render(stack, vars);
+			return this._render(vars || {});
 		},
 		renders: function(vars)
 		{
 			return this.render(vars).join("");
 		},
-		loads: function(string)
-		{
-			return ul4on.loads(string);
-		},
 		__type__: "template" // used by ``istemplate()``
 	}
 );
 
-ul4.TemplateClosure = ul4._inherit(
+
+ul4.Closure = ul4._inherit(
 	ul4.Proto,
 	{
-		create: function(template, vars)
+		create: function(code, vars)
 		{
 			var closure = ul4._clone(this);
-			closure.template = template;
-			// Store a frozen copy of the current values of the parent template
-			// (but inherit those from the clone of the variables of the parents parent (which were already frozen))
-			closure.vars = ul4._extendflat(ul4._clone(vars.__prototype__), vars);
-			// Copy over the required attribute from the template
-			closure.name = template.name;
-			closure.location = template.location;
-			closure.endlocation = template.endlocation;
-			closure.source = template.source;
-			closure.startdelim = template.startdelim;
-			closure.enddelim = template.enddelim;
-			closure.content = template.content;
+			closure.code = code;
+			// Store a frozen copy of the current values of the parent template/function
+			closure.vars = ul4._extend({}, vars);
+			// Copy over the required attribute from the template/function
+			closure.name = code.name;
+			closure.location = code.location;
+			closure.endlocation = code.endlocation;
+			closure.source = code.source;
+			closure.startdelim = code.startdelim;
+			closure.enddelim = code.enddelim;
+			closure.content = code.content;
 			return closure;
-		},
+		}
+	}
+);
 
-		_render: function(stack, vars)
+ul4.TemplateClosure = ul4._inherit(
+	ul4.Closure,
+	{
+		_render: function(vars)
 		{
-			return this.template._render(stack, ul4._inherit(this.vars, vars));
+			return this.code._render(ul4._simpleinherit(this.vars, vars));
 		},
 
 		__type__: "template" // used by ``istemplate()``
+	}
+);
+
+ul4.Function = ul4._inherit(
+	ul4.Code,
+	{
+		jssource: function()
+		{
+			if (this._jssource === null)
+			{
+				var v = [];
+				v.push(this._line(0, "(function(self, vars)"));
+				v.push(this._line(0, "{"));
+				v.push(this._line(1, "vars = ul4._simpleclone(vars);")); // variables assignments shouldn't be visible in the parent
+				v.push(this._formatjs_content(1, this.keepws));
+				v.push(this._line(1, "return null;"));
+				v.push(this._line(0, "})"));
+				this._jssource = v.join("");
+			}
+			return this._jssource;
+		},
+		call: function(vars)
+		{
+			if (this._jsfunction === null)
+				this._jsfunction = eval(this.jssource());
+			return this._jsfunction(this, vars || {});
+		},
+		formatjs: function(indent, keepws)
+		{
+			return this._line(indent, "ul4._setvar(vars, " + ul4._asjson(this.name) + ", ul4.FunctionClosure.create(self._getast(" + this.__id__ + "), vars));");
+		},
+		format: function(indent, keepws)
+		{
+			return this._line(indent, "function " + (this.name !== null ? this.name : "unnamed")) + ul4.Block.format.call(this, indent, keepws);
+		},
+		__type__: "function" // used by ``isfunction()``
+	}
+);
+
+ul4.FunctionClosure = ul4._inherit(
+	ul4.Closure,
+	{
+		call: function(vars)
+		{
+			return this.code.call(ul4._simpleinherit(this.vars, vars));
+		},
+
+		__type__: "function" // used by ``isfunction()``
 	}
 );
 
@@ -4023,21 +4132,16 @@ ul4._hsv = function(h, s, v, a)
 	}
 };
 
-// Return the item with the key ``name`` from the dict ``vars``. If ``vars`` doesn't have this key, return ``defaultvalue``
-ul4._get = function(vars, name, defaultvalue)
+// Return the item with the key ``key`` from the dict ``container``. If ``container`` doesn't have this key, return ``defaultvalue``
+ul4._get = function(container, key, defaultvalue)
 {
-	if (!this._isdict(vars))
+	if (!this._isdict(container))
 		throw "get() requires a dict";
 
-	var result = vars[name];
+	var result = container[key];
 	if (typeof(result) === "undefined")
 		return defaultvalue;
 	return result;
-};
-
-ul4._vars = function(vars)
-{
-	return vars;
 };
 
 // Return a ``Date`` object for the current time
@@ -4088,8 +4192,6 @@ ul4.functions = {
 	fromul4on: ul4._signature("fromul4on", ["string"], 0, ul4._fromul4on),
 	now: ul4._signature("now", [], 0, ul4._now),
 	utcnow: ul4._signature("utcnow", [], 0, ul4._utcnow),
-	vars: ul4._signature("vars", [], 1, ul4._vars),
-	get: ul4._signature("get", ["name", ["default", null]], 1, ul4._get),
 	enumerate: ul4._signature("enumerate", ["iterable", ["start", 0]], 0, ul4._enumerate),
 	isfirst: ul4._signature("isfirst", ["iterable"], 0, ul4._isfirst),
 	islast: ul4._signature("islast", ["iterable"], 0, ul4._islast),
@@ -4590,26 +4692,14 @@ ul4._yearday = function(obj)
 	}
 };
 
-// Return the item with the key ``key`` from the dict ``container``. If ``container`` doesn't have this key, return ``defaultvalue``
-ul4._mget = function(container, key, defaultvalue)
+ul4._render = function(obj, vars)
 {
-	if (!this._isdict(container))
-		throw "get() requires a dict";
-
-	var result = container[key];
-	if (typeof(result) === "undefined")
-		return defaultvalue;
-	return result;
+	return obj._render(vars);
 };
 
-ul4._render = function(stack, obj, vars)
+ul4._renders = function(obj, vars)
 {
-	return obj._render(stack, vars);
-};
-
-ul4._renders = function(stack, obj, vars)
-{
-	return obj._render(stack, vars).join("");
+	return obj._render(vars).join("");
 };
 
 // Color methods
@@ -4702,48 +4792,48 @@ ul4._withlum = function(obj, lum)
 };
 
 ul4.methods = {
-	replace: ul4._signature("replace", ["old", "new", ["count", null]], 4, ul4._replace),
-	strip: ul4._signature("strip", [["chars", null]], 4, ul4._strip),
-	lstrip: ul4._signature("lstrip", [["chars", null]], 4, ul4._lstrip),
-	rstrip: ul4._signature("rstrip", [["chars", null]], 4, ul4._rstrip),
-	split: ul4._signature("split", [["sep", null], ["count", null]], 4, ul4._split),
-	rsplit: ul4._signature("rsplit", [["sep", null], ["count", null]], 4, ul4._rsplit),
-	find: ul4._signature("find", ["sub", ["start", null], ["end", null]], 4, ul4._find),
-	rfind: ul4._signature("rfind", ["sub", ["start", null], ["end", null]], 4, ul4._rfind),
-	lower: ul4._signature("lower", [], 4, ul4._lower),
-	upper: ul4._signature("upper", [], 4, ul4._upper),
-	capitalize: ul4._signature("capitalize", [], 4, ul4._capitalize),
-	get: ul4._signature("get", ["key", ["default", null]], 4, ul4._mget),
-	items: ul4._signature("items", [], 4, ul4._items),
-	values: ul4._signature("values", [], 4, ul4._values),
-	join: ul4._signature("join", ["iterable"], 4, ul4._join),
-	startswith: ul4._signature("startswith", ["prefix"], 4, ul4._startswith),
-	endswith: ul4._signature("endswith", ["suffix"], 4, ul4._endswith),
-	isoformat: ul4._signature("isoformat", [], 4, ul4._isoformat),
-	mimeformat: ul4._signature("mimeformat", [], 4, ul4._mimeformat),
-	year: ul4._signature("year", [], 4, ul4._year),
-	month: ul4._signature("month", [], 4, ul4._month),
-	day: ul4._signature("day", [], 4, ul4._day),
-	hour: ul4._signature("hour", [], 4, ul4._hour),
-	minute: ul4._signature("minute", [], 4, ul4._minute),
-	second: ul4._signature("second", [], 4, ul4._second),
-	microsecond: ul4._signature("microsecond", [], 4, ul4._microsecond),
-	weekday: ul4._signature("weekday", [], 4, ul4._weekday),
-	week: ul4._signature("week", [["firstweekday", null]], 4, ul4._week),
-	yearday: ul4._signature("yearday", [], 4, ul4._yearday),
-	render: ul4._signature("render", ["**vars"], 6, ul4._render),
-	renders: ul4._signature("renders", ["**vars"], 6, ul4._renders),
-	r: ul4._signature("r", [], 4, ul4._r),
-	g: ul4._signature("g", [], 4, ul4._g),
-	b: ul4._signature("b", [], 4, ul4._b),
-	a: ul4._signature("a", [], 4, ul4._a),
-	lum: ul4._signature("lum", [], 4, ul4._lum),
-	hls: ul4._signature("hls", [], 4, ul4._mhls),
-	hlsa: ul4._signature("hlsa", [], 4, ul4._mhlsa),
-	hsv: ul4._signature("hsv", [], 4, ul4._mhsv),
-	hsva: ul4._signature("hsva", [], 4, ul4._mhsva),
-	witha: ul4._signature("witha", ["a"], 4, ul4._witha),
-	withlum: ul4._signature("withlum", ["lum"], 4, ul4._withlum),
+	replace: ul4._signature("replace", ["old", "new", ["count", null]], 1, ul4._replace),
+	strip: ul4._signature("strip", [["chars", null]], 1, ul4._strip),
+	lstrip: ul4._signature("lstrip", [["chars", null]], 1, ul4._lstrip),
+	rstrip: ul4._signature("rstrip", [["chars", null]], 1, ul4._rstrip),
+	split: ul4._signature("split", [["sep", null], ["count", null]], 1, ul4._split),
+	rsplit: ul4._signature("rsplit", [["sep", null], ["count", null]], 1, ul4._rsplit),
+	find: ul4._signature("find", ["sub", ["start", null], ["end", null]], 1, ul4._find),
+	rfind: ul4._signature("rfind", ["sub", ["start", null], ["end", null]], 1, ul4._rfind),
+	lower: ul4._signature("lower", [], 1, ul4._lower),
+	upper: ul4._signature("upper", [], 1, ul4._upper),
+	capitalize: ul4._signature("capitalize", [], 1, ul4._capitalize),
+	get: ul4._signature("get", ["key", ["default", null]], 1, ul4._get),
+	items: ul4._signature("items", [], 1, ul4._items),
+	values: ul4._signature("values", [], 1, ul4._values),
+	join: ul4._signature("join", ["iterable"], 1, ul4._join),
+	startswith: ul4._signature("startswith", ["prefix"], 1, ul4._startswith),
+	endswith: ul4._signature("endswith", ["suffix"], 1, ul4._endswith),
+	isoformat: ul4._signature("isoformat", [], 1, ul4._isoformat),
+	mimeformat: ul4._signature("mimeformat", [], 1, ul4._mimeformat),
+	year: ul4._signature("year", [], 1, ul4._year),
+	month: ul4._signature("month", [], 1, ul4._month),
+	day: ul4._signature("day", [], 1, ul4._day),
+	hour: ul4._signature("hour", [], 1, ul4._hour),
+	minute: ul4._signature("minute", [], 1, ul4._minute),
+	second: ul4._signature("second", [], 1, ul4._second),
+	microsecond: ul4._signature("microsecond", [], 1, ul4._microsecond),
+	weekday: ul4._signature("weekday", [], 1, ul4._weekday),
+	week: ul4._signature("week", [["firstweekday", null]], 1, ul4._week),
+	yearday: ul4._signature("yearday", [], 1, ul4._yearday),
+	render: ul4._signature("render", ["**vars"], 1, ul4._render),
+	renders: ul4._signature("renders", ["**vars"], 1, ul4._renders),
+	r: ul4._signature("r", [], 1, ul4._r),
+	g: ul4._signature("g", [], 1, ul4._g),
+	b: ul4._signature("b", [], 1, ul4._b),
+	a: ul4._signature("a", [], 1, ul4._a),
+	lum: ul4._signature("lum", [], 1, ul4._lum),
+	hls: ul4._signature("hls", [], 1, ul4._mhls),
+	hlsa: ul4._signature("hlsa", [], 1, ul4._mhlsa),
+	hsv: ul4._signature("hsv", [], 1, ul4._mhsv),
+	hsva: ul4._signature("hsva", [], 1, ul4._mhsva),
+	witha: ul4._signature("witha", ["a"], 1, ul4._witha),
+	withlum: ul4._signature("withlum", ["lum"], 1, ul4._withlum),
 };
 
 (function(){
@@ -4763,6 +4853,7 @@ ul4.methods = {
 	register("var", ul4.Var);
 	register("not", ul4.Not);
 	register("neg", ul4.Neg);
+	register("return", ul4.Return);
 	register("print", ul4.Print);
 	register("printx", ul4.PrintX);
 	register("getitem", ul4.GetItem);
@@ -4802,4 +4893,5 @@ ul4.methods = {
 	register("elif", ul4.ElIf);
 	register("else", ul4.Else);
 	register("template", ul4.Template);
+	register("function", ul4.Function);
 })();
