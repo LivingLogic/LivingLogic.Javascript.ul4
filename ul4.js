@@ -198,11 +198,11 @@ ul4._keys = function(dict)
 	return r;
 }
 
-ul4._getvar = function(vars, name, self)
+ul4._getvar = function(vars, name)
 {
 	var result = vars[name];
 	if (typeof(result) === "undefined")
-		result = (name === "self") ? self : ul4.functions[name];
+		result = ul4.functions[name];
 	return result;
 };
 
@@ -2603,7 +2603,7 @@ ul4.Var = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["name"]),
 		formatjs: function(indent, keepws)
 		{
-			return "ul4._getvar(vars, " + ul4._asjson(this.name) + ", self)";
+			return "ul4._getvar(vars, " + ul4._asjson(this.name) + ")";
 		},
 		format: function(indent, keepws)
 		{
@@ -3196,7 +3196,7 @@ ul4.AddVar = ul4._inherit(
 		formatjs: function(indent, keepws)
 		{
 			var varname = ul4._asjson(this.varname);
-			return this._line(indent, "ul4._setvar(vars, " + varname + ", ul4._op_add(ul4._getvar(vars, " + varname + ", self), " + this.value.formatjs(indent, keepws) + "));");
+			return this._line(indent, "ul4._setvar(vars, " + varname + ", ul4._op_add(ul4._getvar(vars, " + varname + "), " + this.value.formatjs(indent, keepws) + "));");
 		}
 	}
 );
@@ -3211,7 +3211,7 @@ ul4.SubVar = ul4._inherit(
 		formatjs: function(indent, keepws)
 		{
 			var varname = ul4._asjson(this.varname);
-			return this._line(indent, "ul4._setvar(vars, " + varname + ", ul4._op_sub(ul4._getvar(vars, " + varname + ", self), " + this.value.formatjs(indent, keepws) + "));");
+			return this._line(indent, "ul4._setvar(vars, " + varname + ", ul4._op_sub(ul4._getvar(vars, " + varname + "), " + this.value.formatjs(indent, keepws) + "));");
 		}
 	}
 );
@@ -3226,7 +3226,7 @@ ul4.MulVar = ul4._inherit(
 		formatjs: function(indent, keepws)
 		{
 			var varname = ul4._asjson(this.varname);
-			return this._line(indent, "ul4._setvar(vars, " + varname + ", ul4._op_mul(ul4._getvar(vars, " + varname + ", self), " + this.value.formatjs(indent, keepws) + "));");
+			return this._line(indent, "ul4._setvar(vars, " + varname + ", ul4._op_mul(ul4._getvar(vars, " + varname + "), " + this.value.formatjs(indent, keepws) + "));");
 		}
 	}
 );
@@ -3241,7 +3241,7 @@ ul4.TrueDivVar = ul4._inherit(
 		formatjs: function(indent, keepws)
 		{
 			var varname = ul4._asjson(this.varname);
-			return this._line(indent, "ul4._setvar(vars, " + varname + ", ul4._op_truediv(ul4._getvar(vars, " + varname + ", self), " + this.value.formatjs(indent, keepws) + "));");
+			return this._line(indent, "ul4._setvar(vars, " + varname + ", ul4._op_truediv(ul4._getvar(vars, " + varname + "), " + this.value.formatjs(indent, keepws) + "));");
 		}
 	}
 );
@@ -3256,7 +3256,7 @@ ul4.FloorDivVar = ul4._inherit(
 		formatjs: function(indent, keepws)
 		{
 			var varname = ul4._asjson(this.varname);
-			return this._line(indent, "ul4._setvar(vars, " + varname + ", ul4._op_floordiv(ul4._getvar(vars, " + varname + ", self), " + this.value.formatjs(indent, keepws) + "));");
+			return this._line(indent, "ul4._setvar(vars, " + varname + ", ul4._op_floordiv(ul4._getvar(vars, " + varname + "), " + this.value.formatjs(indent, keepws) + "));");
 		}
 	}
 );
@@ -3271,7 +3271,7 @@ ul4.ModVar = ul4._inherit(
 		formatjs: function(indent, keepws)
 		{
 			var varname = ul4._asjson(this.varname);
-			return this._line(indent, "ul4._setvar(vars, " + varname + ", ul4._op_mod(ul4._getvar(vars, " + varname + ", self), " + this.value.formatjs(indent, keepws) + "));");
+			return this._line(indent, "ul4._setvar(vars, " + varname + ", ul4._op_mod(ul4._getvar(vars, " + varname + "), " + this.value.formatjs(indent, keepws) + "));");
 		}
 	}
 );
