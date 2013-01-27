@@ -930,6 +930,8 @@ ul4._type = function(obj)
 		return "none";
 	else if (obj === false || obj === true)
 		return "bool";
+	else if (typeof(obj) === "undefined")
+		return "undefined";
 	else if (typeof(obj) === "string")
 		return "str";
 	else if (typeof(obj) === "number")
@@ -946,6 +948,8 @@ ul4._type = function(obj)
 		return "dict";
 	else if (this._istemplate(obj))
 		return "template";
+	else if (this._isfunction(obj))
+		return "function";
 	return null;
 };
 
