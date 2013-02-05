@@ -2464,11 +2464,11 @@ ul4.ListComp = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["item", "varname", "container", "condition"]),
 		formatjs: function(indent, keepws)
 		{
-			var result = "(function(){var result=[];for(var iter=ul4._iter(" + this.container.formatjs(indent, keepws) + ");;){var item=iter();if(item===null)break;";
+			var result = "(function(vars){vars = ul4._simpleclone(vars); var result=[];for(var iter=ul4._iter(" + this.container.formatjs(indent, keepws) + ");;){var item=iter();if(item===null)break;";
 			result += "ul4._unpackvar(vars, " + ul4._asjson(this.varname) + ", item[0]);";
 			if (this.condition !== null)
 				result += "if(ul4._bool(" + this.condition.formatjs(indent, keepws) + "))";
-			result += "result.push(" + this.item.formatjs(indent, keepws) + ");}return result;})()"
+			result += "result.push(" + this.item.formatjs(indent, keepws) + ");}return result;})(vars)"
 			return result;
 		},
 		format: function(indent, keepws)
@@ -2535,11 +2535,11 @@ ul4.DictComp = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["key", "value", "varname", "container", "condition"]),
 		formatjs: function(indent, keepws)
 		{
-			var result = "(function(){var result={};for(var iter=ul4._iter(" + this.container.formatjs(indent, keepws) + ");;){var item=iter();if(item===null)break;";
+			var result = "(function(vars){vars=ul4._simpleclone(vars);var result={};for(var iter=ul4._iter(" + this.container.formatjs(indent, keepws) + ");;){var item=iter();if(item===null)break;";
 			result += "ul4._unpackvar(vars, " + ul4._asjson(this.varname, keepws) + ", item[0]);";
 			if (this.condition !== null)
 				result += "if(ul4._bool(" + this.condition.formatjs(indent, keepws) + "))";
-			result += "result[" + this.key.formatjs(indent, keepws) + "]=" + this.value.formatjs(indent, keepws) + ";}return result;})()";
+			result += "result[" + this.key.formatjs(indent, keepws) + "]=" + this.value.formatjs(indent, keepws) + ";}return result;})(vars)";
 			return result;
 		},
 		format: function(indent, keepws)
@@ -2567,7 +2567,8 @@ ul4.GenExpr = ul4._inherit(
 		{
 			var v = [];
 			v.push("ul4._markiter(");
-				v.push("(function(container){");
+				v.push("(function(vars, container){");
+					v.push("vars = ul4._simpleclone(vars);");
 					v.push("var iter=ul4._iter(container);");
 					v.push("return(function(){");
 						v.push("var item;");
@@ -2583,7 +2584,7 @@ ul4.GenExpr = ul4._inherit(
 						v.push("}");
 						v.push("return [" + this.item.formatjs(indent, keepws) + "];");
 					v.push("})");
-				v.push("})(" + this.container.formatjs(indent, keepws) + ")");
+				v.push("})(vars, " + this.container.formatjs(indent, keepws) + ")");
 			v.push(")");
 			return v.join("");
 		},
@@ -3532,7 +3533,7 @@ ul4.Template = ul4._inherit(
 				var v = [];
 				v.push(this._line(0, "(function(self, vars)"));
 				v.push(this._line(0, "{"));
-				v.push(this._line(1, "vars = ul4._clone(vars);")); // variables assignments shouldn't be visible in the parent
+				v.push(this._line(1, "vars = ul4._simpleclone(vars);")); // variables assignments shouldn't be visible in the parent
 				v.push(this._line(1, "var out = [];"));
 				v.push(this._formatjs_content(1, this.keepws));
 				v.push(this._line(1, "return out;"));
