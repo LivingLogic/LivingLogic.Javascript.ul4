@@ -2715,7 +2715,7 @@ ul4.Text = ul4._inherit(
 		{
 			var text = this.location.code;
 			if (!this.location.root.keepws)
-				text = text.replace(/\r?\n[ \t]*|^[ \t]+/g, "");
+				text = text.replace(/\r?\n\s*/g, "");
 			return text;
 		},
 		_jssource: function(out)
