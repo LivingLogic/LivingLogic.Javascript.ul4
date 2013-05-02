@@ -2519,10 +2519,16 @@ ul4.AST = ul4._inherit(
 		{
 			return ul4._op_mul("\t", indent) + line + "\n";
 		},
-		toString: function()
+		__str__: function()
 		{
 			var out = [];
 			this._str(out);
+			return ul4._formatsource(out);
+		},
+		__repr__: function()
+		{
+			var out = [];
+			this._repr(out);
 			return ul4._formatsource(out);
 		},
 		jssource: function()
@@ -2530,6 +2536,9 @@ ul4.AST = ul4._inherit(
 			var out = [];
 			this._jssource(out);
 			return ul4._formatsource(out);
+		},
+		_repr: function(out)
+		{
 		},
 		_str: function(out)
 		{
@@ -2567,6 +2576,12 @@ ul4.Const = ul4._inherit(
 			return constant;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["value"]),
+		_repr: function(out)
+		{
+			out.push("<Const value=");
+			out.push(ul4._repr(this.value));
+			out.push(">");
+		},
 		_jssource: function(out)
 		{
 			out.push(ul4._asjson(this.value));
@@ -2584,6 +2599,19 @@ ul4.List = ul4._inherit(
 			return list;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["items"]),
+		_repr: function(out)
+		{
+			out.push("<List");
+			out.push(null);
+			out.push(+1);
+			for (var i = 0; i < this.items.length; ++i)
+			{
+				this.items[i]._repr(out);
+				out.push(null);
+			}
+			out.push(-1);
+			out.push(">");
+		},
 		_jssource: function(out)
 		{
 			out.push("[");
@@ -2611,6 +2639,29 @@ ul4.ListComp = ul4._inherit(
 			return listcomp;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["item", "varname", "container", "condition"]),
+		_repr: function(out)
+		{
+			out.push("<ListComp");
+			out.push(null);
+			out.push(+1);
+			out.push("item=");
+			this.item._repr(out);
+			out.push(null);
+			out.push("varname=");
+			this.varname._repr(out);
+			out.push(null);
+			out.push("container=");
+			this.container._repr(out);
+			out.push(null);
+			if (condition !== null)
+			{
+				out.push("condition=");
+				this.condition._repr(out);
+				out.push(null);
+			}
+			out.push(-1);
+			out.push(">");
+		},
 		_jssource: function(out)
 		{
 			out.push("(function(vars){vars = ul4._simpleclone(vars); var result=[];for(var iter=ul4._iter(");
@@ -2642,6 +2693,21 @@ ul4.Dict = ul4._inherit(
 			return dict;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["items"]),
+		_repr: function(out)
+		{
+			out.push("<Dict");
+			out.push(null);
+			out.push(+1);
+			for (var i = 0; i < this.items.length; ++i)
+			{
+				this.items[i][0]._repr(out);
+				out.push("=");
+				this.items[i][1]._repr(out);
+				out.push(null);
+			}
+			out.push(-1);
+			out.push(">");
+		},
 		_jssource: function(out)
 		{
 			out.push("{");
@@ -2672,6 +2738,32 @@ ul4.DictComp = ul4._inherit(
 			return listcomp;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["key", "value", "varname", "container", "condition"]),
+		_repr: function(out)
+		{
+			out.push("<DictComp");
+			out.push(null);
+			out.push(+1);
+			out.push("key=");
+			this.key._repr(out);
+			out.push(null);
+			out.push("value=");
+			this.value._repr(out);
+			out.push(null);
+			out.push("varname=");
+			this.varname._repr(out);
+			out.push(null);
+			out.push("container=");
+			this.container._repr(out);
+			out.push(null);
+			if (condition !== null)
+			{
+				out.push("condition=");
+				this.condition._repr(out);
+				out.push(null);
+			}
+			out.push(-1);
+			out.push(">");
+		},
 		_jssource: function(out)
 		{
 			out.push("(function(vars){vars=ul4._simpleclone(vars);var result={};for(var iter=ul4._iter(");
@@ -2708,6 +2800,29 @@ ul4.GenExpr = ul4._inherit(
 			return genexp;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["item", "varname", "container", "condition"]),
+		_repr: function(out)
+		{
+			out.push("<GenExpr");
+			out.push(null);
+			out.push(+1);
+			out.push("item=");
+			this.item._repr(out);
+			out.push(null);
+			out.push("varname=");
+			this.varname._repr(out);
+			out.push(null);
+			out.push("container=");
+			this.container._repr(out);
+			out.push(null);
+			if (condition !== null)
+			{
+				out.push("condition=");
+				this.condition._repr(out);
+				out.push(null);
+			}
+			out.push(-1);
+			out.push(">");
+		},
 		_jssource: function(out)
 		{
 			out.push("ul4._markiter(");
@@ -2754,6 +2869,12 @@ ul4.Var = ul4._inherit(
 			return variable;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["name"]),
+		_repr: function(out)
+		{
+			out.push("<Var name=");
+			out.push(ul4._repr(this.name));
+			out.push(">");
+		},
 		_jssource: function(out)
 		{
 			out.push("ul4._getvar(vars, ");
@@ -2773,6 +2894,18 @@ ul4.Unary = ul4._inherit(
 			return unary;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["obj"]),
+		_repr: function(out)
+		{
+			out.push("<");
+			out.push(this.type);
+			out.push(null);
+			out.push(+1);
+			out.push("obj=");
+			this.obj._repr(out);
+			out.push(null);
+			out.push(-1);
+			out.push(">");
+		},
 		_jssource: function(out)
 		{
 			out.push("ul4._op_");
@@ -2808,6 +2941,12 @@ ul4.Text = ul4._inherit(
 		{
 			out.push("text ");
 			out.push(ul4._repr(this.text()));
+		},
+		_repr: function(out)
+		{
+			out.push("<Text ");
+			out.push(ul4._repr(this.text()));
+			out.push(">");
 		}
 	}
 );
@@ -2873,6 +3012,21 @@ ul4.Binary = ul4._inherit(
 			return binary;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["obj1", "obj2"]),
+		_repr: function(out)
+		{
+			out.push("<");
+			out.push(this.type);
+			out.push(null);
+			out.push(+1);
+			out.push("obj1=");
+			this.obj1._repr(out);
+			out.push(null);
+			out.push("obj2=");
+			this.obj2._repr(out);
+			out.push(null);
+			out.push(-1);
+			out.push(">");
+		},
 		_jssource: function(out)
 		{
 			out.push("ul4._op_");
@@ -2955,6 +3109,20 @@ ul4.GetAttr = ul4._inherit(
 			return getattr;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["obj", "attrname"]),
+		_repr: function(out)
+		{
+			out.push("<GetAttr");
+			out.push(null);
+			out.push(+1);
+			out.push("obj=");
+			this.obj1._repr(out);
+			out.push(null);
+			out.push("attrname=");
+			out.push(ul4._repr(this.attrname));
+			out.push(null);
+			out.push(-1);
+			out.push(">");
+		},
 		_jssource: function(out)
 		{
 			out.push("ul4._op_getitem(");
@@ -2980,6 +3148,41 @@ ul4.CallFunc = ul4._inherit(
 			return callfunc;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["obj", "args", "kwargs", "remargs", "remkwargs"]),
+		_repr: function(out)
+		{
+			out.push("<CallFunc");
+			out.push(null);
+			out.push(+1);
+			out.push("obj=");
+			this.obj1._repr(out);
+			out.push(null);
+			for (var i = 0; i < this.args.length; ++i)
+			{
+				this.args[i]._repr(out);
+				out.push(null);
+			}
+			for (var key in this.kwargs)
+			{
+				out.push(key);
+				out.push("=");
+				this.kwargs[key]._repr(out);
+				out.push(null);
+			}
+			if (this.remargs !== null)
+			{
+				out.push("*");
+				this.remargs._repr(out);
+				out.push(null);
+			}
+			if (this.remkwargs !== null)
+			{
+				out.push("**");
+				this.remkwargs._repr(out);
+				out.push(null);
+			}
+			out.push(-1);
+			out.push(">");
+		},
 		_jssource: function(out)
 		{
 			out.push("ul4._callfunc(");
@@ -3042,6 +3245,29 @@ ul4.GetSlice = ul4._inherit(
 			return getslice;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["obj", "index1", "index2"]),
+		_repr: function(out)
+		{
+			out.push("<GetSlice");
+			out.push(null);
+			out.push(+1);
+			out.push("obj=");
+			this.obj1._repr(out);
+			out.push(null);
+			if (this.index1 !== null)
+			{
+				out.push("index1=");
+				this.index1._repr(out);
+				out.push(null);
+			}
+			if (this.index2 !== null)
+			{
+				out.push("index2=");
+				this.index2._repr(out);
+				out.push(null);
+			}
+			out.push(-1);
+			out.push(">");
+		},
 		_jssource: function(out)
 		{
 			out.push("ul4._op_getslice(");
@@ -3076,6 +3302,44 @@ ul4.CallMeth = ul4._inherit(
 			return callmeth;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["methname", "obj", "args", "kwargs", "remargs", "remkwargs"]),
+		_repr: function(out)
+		{
+			out.push("<CallMeth");
+			out.push(null);
+			out.push(+1);
+			out.push("obj=");
+			this.obj1._repr(out);
+			out.push(null);
+			out.push("methname=");
+			out.push(ul4._repr(this.methname));
+			out.push(null);
+			for (var i = 0; i < this.args.length; ++i)
+			{
+				this.args[i]._repr(out);
+				out.push(null);
+			}
+			for (var key in this.kwargs)
+			{
+				out.push(key);
+				out.push("=");
+				this.kwargs[key]._repr(out);
+				out.push(null);
+			}
+			if (this.remargs !== null)
+			{
+				out.push("*");
+				this.remargs._repr(out);
+				out.push(null);
+			}
+			if (this.remkwargs !== null)
+			{
+				out.push("**");
+				this.remkwargs._repr(out);
+				out.push(null);
+			}
+			out.push(-1);
+			out.push(">");
+		},
 		_jssource: function(out)
 		{
 			out.push("ul4._callmeth(");
@@ -3140,7 +3404,20 @@ ul4.ChangeVar = ul4._inherit(
 			changevar.value = value;
 			return changevar;
 		},
-		_ul4onattrs: ul4.AST._ul4onattrs.concat(["varname", "value"])
+		_ul4onattrs: ul4.AST._ul4onattrs.concat(["varname", "value"]),
+		_repr: function(out)
+		{
+			out.push("<");
+			out.push(this.name)
+			out.push(null);
+			out.push(+1);
+			out.push("varname=");
+			out.push(ul4._repr(this.varname));
+			out.push(null);
+			out.push("value=");
+			this.value._repr(out);
+			out.push(null);
+		}
 	}
 );
 
@@ -3206,6 +3483,14 @@ ul4.Block = ul4._inherit(
 			for (var i = 0; i < this.content.length; ++i)
 				this.content[i]._add2template(template);
 		},
+		_repr: function(out)
+		{
+			for (var i = 0; i < this.content.length; ++i)
+			{
+				this.content[i]._repr(out);
+				out.push(null);
+			}
+		},
 		_jssource_content: function(out)
 		{
 			for (var i = 0; i < this.content.length; ++i)
@@ -3245,6 +3530,20 @@ ul4.For = ul4._inherit(
 			return for_;
 		},
 		_ul4onattrs: ul4.Block._ul4onattrs.concat(["varname", "container"]),
+		_repr: function(out)
+		{
+			out.push("<For");
+			out.push(null);
+			out.push(+1);
+			out.push("varname=");
+			out.push(ul4._repr(this.varname));
+			out.push(null);
+			out.push("container=");
+			this.container._repr(out);
+			ul4.Block._repr.call(this, out);
+			out.push(-1);
+			out.push(">");
+		},
 		_jssource: function(out)
 		{
 			out.push("for (var iter" + this.__id__ + " = ul4._iter(");
@@ -3292,6 +3591,10 @@ ul4.Break = ul4._inherit(
 		_str: function(out)
 		{
 			out.push("break");
+		},
+		_repr: function(out)
+		{
+			out.push("<Break>");
 		}
 	}
 );
@@ -3306,6 +3609,10 @@ ul4.Continue = ul4._inherit(
 		_str: function(out)
 		{
 			out.push("continue");
+		},
+		_repr: function(out)
+		{
+			out.push("<Continue>");
 		}
 	}
 );
@@ -3331,6 +3638,18 @@ ul4.ConditionalBlock = ul4._inherit(
 			return block;
 		},
 		_ul4onattrs: ul4.Block._ul4onattrs.concat(["condition"]),
+		_repr: function(out)
+		{
+			out.push("<");
+			out.push(this.type);
+			out.push(null);
+			out.push(+1);
+			out.push("condition=");
+			this.condition._repr(out);
+			ul4.Block._repr.call(this, out);
+			out.push(-1);
+			out.push(">");
+		},
 		_jssource: function(out)
 		{
 			out.push(this._sourcejs);
@@ -3367,6 +3686,15 @@ ul4.ElIf = ul4._inherit(ul4.ConditionalBlock, {_sourcejs: "else if"});
 ul4.Else = ul4._inherit(
 	ul4.Block,
 	{
+		_repr: function(out)
+		{
+			out.push("<Else");
+			out.push(null);
+			out.push(+1);
+			ul4.Block._repr.call(this, out);
+			out.push(-1);
+			out.push(">");
+		},
 		_jssource: function(out)
 		{
 			out.push("else");
@@ -3443,6 +3771,33 @@ ul4.Template = ul4._inherit(
 		_jssource: function(out)
 		{
 			out.push("ul4._setvar(vars, " + ul4._asjson(this.name) + ", ul4.TemplateClosure.create(self._getast(" + this.__id__ + "), vars))");
+		},
+		_repr: function(out)
+		{
+			out.push("<Template");
+			out.push(null);
+			out.push(+1);
+			out.push("name=");
+			out.push(ul4._repr(this.name));
+			out.push(null);
+			out.push("keepws=");
+			out.push(ul4._repr(this.keepws));
+			out.push(null);
+			if (this.startdelim !== "<?")
+			{
+				out.push("startdelim=");
+				out.push(ul4._repr(this.startdelim));
+				out.push(null);
+			}
+			if (this.enddelim !== "?>")
+			{
+				out.push("enddelim=");
+				out.push(ul4._repr(this.enddelim));
+				out.push(null);
+			}
+			ul4.Block._repr.call(this, out);
+			out.push(-1);
+			out.push(">");
 		},
 		_str: function(out)
 		{
@@ -4686,59 +5041,67 @@ ul4.methods = {
 };
 
 (function(){
-	var register = function(name, object)
+	var classes = [
+		"Location",
+		"Text",
+		"Const",
+		"List",
+		"ListComp",
+		"Dict",
+		"DictComp",
+		"GenExpr",
+		"Var",
+		"Not",
+		"Neg",
+		"Return",
+		"Print",
+		"PrintX",
+		"GetItem",
+		"EQ",
+		"NE",
+		"LT",
+		"LE",
+		"GT",
+		"GE",
+		"NotContains",
+		"Contains",
+		"Add",
+		"Sub",
+		"Mul",
+		"FloorDiv",
+		"TrueDiv",
+		"Mod",
+		"And",
+		"Or",
+		"GetSlice",
+		"GetAttr",
+		"CallFunc",
+		"CallMeth",
+		"StoreVar",
+		"AddVar",
+		"SubVar",
+		"MulVar",
+		"TrueDivVar",
+		"FloorDivVar",
+		"ModVar",
+		"For",
+		"Break",
+		"Continue",
+		"IfElIfElse",
+		"If",
+		"ElIf",
+		"Else",
+		"Template"
+	];
+
+	for (var i = 0; i < classes.length; ++i)
 	{
-		object.type = name;
-		ul4on.register("de.livinglogic.ul4." + name, object);
-	};
-	register("location", ul4.Location);
-	register("text", ul4.Text);
-	register("const", ul4.Const);
-	register("list", ul4.List);
-	register("listcomp", ul4.ListComp);
-	register("dict", ul4.Dict);
-	register("dictcomp", ul4.DictComp);
-	register("genexpr", ul4.GenExpr);
-	register("var", ul4.Var);
-	register("not", ul4.Not);
-	register("neg", ul4.Neg);
-	register("return", ul4.Return);
-	register("print", ul4.Print);
-	register("printx", ul4.PrintX);
-	register("getitem", ul4.GetItem);
-	register("eq", ul4.EQ);
-	register("ne", ul4.NE);
-	register("lt", ul4.LT);
-	register("le", ul4.LE);
-	register("gt", ul4.GT);
-	register("ge", ul4.GE);
-	register("notcontains", ul4.NotContains);
-	register("contains", ul4.Contains);
-	register("add", ul4.Add);
-	register("sub", ul4.Sub);
-	register("mul", ul4.Mul);
-	register("floordiv", ul4.FloorDiv);
-	register("truediv", ul4.TrueDiv);
-	register("mod", ul4.Mod);
-	register("and", ul4.And);
-	register("or", ul4.Or);
-	register("getslice", ul4.GetSlice);
-	register("getattr", ul4.GetAttr);
-	register("callfunc", ul4.CallFunc);
-	register("callmeth", ul4.CallMeth);
-	register("storevar", ul4.StoreVar);
-	register("addvar", ul4.AddVar);
-	register("subvar", ul4.SubVar);
-	register("mulvar", ul4.MulVar);
-	register("truedivvar", ul4.TrueDivVar);
-	register("floordivvar", ul4.FloorDivVar);
-	register("modvar", ul4.ModVar);
-	register("for", ul4.For);
-	register("break", ul4.Break);
-	register("continue", ul4.Continue);
-	register("ieie", ul4.IfElIfElse);
-	register("if", ul4.If);
-	register("elif", ul4.ElIf);
-	register("else", ul4.Else);
-	register("template", ul4.Template);
+		var name = classes[i];
+		var ul4onname = name.toLowerCase();
+		if (ul4onname === "ifelifelse")
+			ul4onname = "ieie";
+		var object = ul4[name];
+		object.type = classes[i];
+		ul4on.register("de.livinglogic.ul4." + ul4onname, object);
+	}
 })();
