@@ -143,7 +143,7 @@ ul4._makeargarray = function(f, args, kwargs)
 	}
 	else
 	{
-		// Put additial positional arguments in the call into the ``*`` argument (if there are none, this pushes an empty list)
+		// Put additional positional arguments in the call into the ``*`` argument (if there are none, this pushes an empty list)
 		realargs.push(args.slice(f._ul4_args.length));
 	}
 
