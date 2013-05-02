@@ -3966,7 +3966,7 @@ ul4.functions = {
 	str: ul4._signature("str", [["obj", ""]], false, ul4._str),
 	int: ul4._signature("int", [["obj", 0], ["base", null]], false, ul4._int),
 	float: ul4._signature("float", [["obj", 0.0]], false, ul4._float),
-	list: ul4._signature("list", ["obj"], false, ul4._list),
+	list: ul4._signature("list", ["iterable"], false, ul4._list),
 	bool: ul4._signature("bool", [["obj", false]], false, ul4._bool),
 	len: ul4._signature("len", ["sequence"], false, ul4._len),
 	type: ul4._signature("type", ["obj"], false, ul4._type),
