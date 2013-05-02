@@ -188,8 +188,9 @@ ul4._callfunc = function(f, out, args, kwargs)
 	}
 };
 
-ul4._callmeth = function(f, out, obj, args, kwargs)
+ul4._callmeth = function(methname, out, obj, args, kwargs)
 {
+	var f = ul4.methods[methname];
 	args = ul4._makeargarray(f, args, kwargs);
 	args = (f._ul4_needsout ? [out, obj] : [obj]).concat(args);
 	return f.apply(ul4, args);
@@ -2439,7 +2440,7 @@ ul4.AST = ul4._inherit(
 		{
 			return ul4._op_mul("\t", indent) + line + "\n";
 		},
-		toString: function()
+		format: function()
 		{
 			var out = [];
 			this._str(out);
@@ -2998,8 +2999,8 @@ ul4.CallMeth = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["methname", "obj", "args", "kwargs", "remargs", "remkwargs"]),
 		_jssource: function(out)
 		{
-			out.push("ul4._callmeth(ul4.methods.");
-			out.push(this.methname);
+			out.push("ul4._callmeth(");
+			out.push(ul4._asjson(this.methname));
 			out.push(", out, ");
 			this.obj._jssource(out);
 			out.push(", [");
