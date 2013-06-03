@@ -4081,6 +4081,69 @@ ul4._range = function(args)
 	return ul4._markiter(result);
 };
 
+// Return a iterable object returning a slice from the argument
+ul4._slice = function(args)
+{
+	var iterable, start, stop, step;
+	if (args.length < 2)
+		throw "required slice() argument missing";
+	else if (args.length > 4)
+		throw "slice() expects at most 4 positional arguments, " + args.length + " given";
+	else if (args.length == 2)
+	{
+		iterable = args[0];
+		start = 0;
+		stop = args[1];
+		step = 1;
+	}
+	else if (args.length == 3)
+	{
+		iterable = args[0];
+		start = args[1] !== null ? args[1] : 0;
+		stop = args[2];
+		step = 1;
+	}
+	else if (args.length == 4)
+	{
+		iterable = args[0];
+		start = args[1] !== null ? args[1] : 0;
+		stop = args[2];
+		step = args[3] !== null ? args[3] : 1;
+	}
+	var lower, higher;
+	if (start < 0)
+		throw "slice() requires a start argument >= 0";
+	if (stop < 0)
+		throw "slice() requires a stop argument >= 0";
+	if (step <= 0)
+		throw "slice() requires a step argument > 0";
+
+	iterable = ul4._iter(iterable);
+	var next = start, count = 0;
+	var result = function()
+	{
+		var result;
+		while (count < next)
+		{
+			result = iterable();
+			if (result === null)
+				return null;
+			++count;
+		}
+		if (stop !== null && count >= stop)
+			return null;
+		result = iterable();
+		if (result === null)
+			return null;
+		++count;
+		next += step;
+		if (stop !== null && next > stop)
+			next = stop;
+		return result;
+	};
+	return ul4._markiter(result);
+};
+
 // ``%`` escape unsafe characters in the string ``string``
 ul4._urlquote = function(string)
 {
@@ -4461,6 +4524,7 @@ ul4.functions = {
 	max: ul4.expose("max", ["*obj"], ul4._max),
 	sorted: ul4.expose("sorted", ["iterable"], ul4._sorted),
 	range: ul4.expose("range", ["*args"], ul4._range),
+	slice: ul4.expose("slice", ["*args"], ul4._slice),
 	urlquote: ul4.expose("urlquote", ["string"], ul4._urlquote),
 	urlunquote: ul4.expose("urlunquote", ["string"], ul4._urlunquote),
 	reversed: ul4.expose("reversed", ["sequence"], ul4._reversed),
