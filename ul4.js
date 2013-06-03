@@ -5101,7 +5101,7 @@ ul4.methods = {
 		if (ul4onname === "ifelifelse")
 			ul4onname = "ieie";
 		var object = ul4[name];
-		object.type = classes[i];
+		object.type = ul4onname;
 		ul4on.register("de.livinglogic.ul4." + ul4onname, object);
 	}
 })();
