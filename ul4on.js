@@ -119,26 +119,27 @@ var ul4on = {
 			}
 			else if (ul4._iscolor(obj))
 			{
-				this.write("c", obj.length);
-				if (obj.r < 0x10)
+				this.write("c");
+				var r = obj.r(), g = obj.g(), b = obj.b(), a = obj.a();
+				if (r < 0x10)
 					this.write("0");
-				this.write(obj.r.toString(16));
-				if (obj.g < 0x10)
+				this.write(r.toString(16));
+				if (g < 0x10)
 					this.write("0");
-				this.write(obj.g.toString(16));
-				if (obj.b < 0x10)
+				this.write(g.toString(16));
+				if (b < 0x10)
 					this.write("0");
-				this.write(obj.b.toString(16));
-				if (obj.a < 0x10)
+				this.write(b.toString(16));
+				if (a < 0x10)
 					this.write("0");
-				this.write(obj.a.toString(16));
+				this.write(a.toString(16));
 			}
 			else if (ul4._isdate(obj))
 				this.write(ul4._format(obj, "z%Y%m%d%H%M%S%f"));
 			else if (ul4._istimedelta(obj))
-				this.write("t" + obj.days + "|" + obj.seconds + "|" + obj.microseconds + "|");
+				this.write("t" + obj.days() + "|" + obj.seconds() + "|" + obj.microseconds() + "|");
 			else if (ul4._ismonthdelta(obj))
-				this.write("m" + obj.months + "|");
+				this.write("m" + obj.months() + "|");
 			else if (obj.__id__ && obj.ul4onname && obj.ul4ondump)
 			{
 				var index = this._ids2index[obj.__id__];
