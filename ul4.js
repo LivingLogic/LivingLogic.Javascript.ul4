@@ -4022,6 +4022,24 @@ ul4._max = function(obj)
 	}
 };
 
+// Return the of the values from the iterable starting with ``start`` (default ``0``)
+ul4._sum = function(iterable, start)
+{
+	if (typeof(start) === "undefined")
+		start = 0;
+
+	var iter = ul4._iter(iterable);
+
+	while (1)
+	{
+		var value = iter();
+		if (value === null)
+			break;
+		start += value[0];
+	}
+	return start;
+};
+
 // Return a sorted version of ``iterable``
 ul4._sorted = function(iterable)
 {
@@ -4522,6 +4540,7 @@ ul4.functions = {
 	bin: ul4.expose("bin", ["number"], ul4._bin),
 	min: ul4.expose("min", ["*obj"], ul4._min),
 	max: ul4.expose("max", ["*obj"], ul4._max),
+	sum: ul4.expose("sum", ["iterable", ["start", 0]], ul4._sum),
 	sorted: ul4.expose("sorted", ["iterable"], ul4._sorted),
 	range: ul4.expose("range", ["*args"], ul4._range),
 	slice: ul4.expose("slice", ["*args"], ul4._slice),
