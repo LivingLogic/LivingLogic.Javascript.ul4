@@ -4040,6 +4040,36 @@ ul4._sum = function(iterable, start)
 	return start;
 };
 
+// Return the first value produced by iterating through ``iterable`` (defaulting to ``defaultValue`` is the iterator is empty)
+ul4._first = function(iterable, defaultValue)
+{
+	if (typeof(defaultValue) === "undefined")
+		defaultValue = null;
+
+	var iter = ul4._iter(iterable);
+	var value = iter();
+	return (value !== null) ? defaultValue : value[0];
+};
+
+// Return the last value produced by iterating through ``iterable`` (defaulting to ``defaultValue`` is the iterator is empty)
+ul4._last = function(iterable, defaultValue)
+{
+	if (typeof(defaultValue) === "undefined")
+		defaultValue = null;
+
+	var iter = ul4._iter(iterable);
+
+	var value = defaultValue;
+	while (1)
+	{
+		var itervalue = iter();
+		if (itervalue === null)
+			break;
+		value = itervalue[0];
+	}
+	return value;
+};
+
 // Return a sorted version of ``iterable``
 ul4._sorted = function(iterable)
 {
@@ -4541,6 +4571,8 @@ ul4.functions = {
 	min: ul4.expose("min", ["*obj"], ul4._min),
 	max: ul4.expose("max", ["*obj"], ul4._max),
 	sum: ul4.expose("sum", ["iterable", ["start", 0]], ul4._sum),
+	first: ul4.expose("first", ["iterable", ["default", null]], ul4._first),
+	last: ul4.expose("last", ["iterable", ["default", null]], ul4._last),
 	sorted: ul4.expose("sorted", ["iterable"], ul4._sorted),
 	range: ul4.expose("range", ["*args"], ul4._range),
 	slice: ul4.expose("slice", ["*args"], ul4._slice),
