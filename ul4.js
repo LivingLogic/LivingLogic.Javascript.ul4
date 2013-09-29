@@ -28,7 +28,7 @@
 
 /*jslint vars: true */
 var ul4 = {
-	version: "25",
+	version: "26",
 
 	// REs for parsing JSON
 	_rvalidchars: /^[\],:{}\s]*$/,
@@ -104,7 +104,7 @@ ul4.expose = function(name, args, options, f)
 			f._ul4_remargs = argname.substr(1);
 		else
 		{
-			if (typeof(arg) != "string" && typeof(arg[1]) !== "undefined")
+			if (typeof(arg) !== "string" && typeof(arg[1]) !== "undefined")
 				f._ul4_args.push({name: argname, defaultValue: arg[1]});
 			else
 				f._ul4_args.push({name: argname});
@@ -179,7 +179,7 @@ ul4._makeargarray = function(f, args, kwargs)
 	return realargs;
 }
 
-ul4._callfunc = function(f, out, args, kwargs)
+ul4._call = function(f, out, args, kwargs)
 {
 	if (f.__type__ == "template")
 	{
@@ -552,6 +552,136 @@ ul4._op_ge = function(obj1, obj2)
 		else
 			return obj1 >= obj2;
 	}
+};
+
+// Attribute access
+ul4._op_getattr = function(object, attrname)
+{
+	if (typeof(object) === "string")
+	{
+		switch (attrname)
+		{
+			case "replace":
+				return ul4.expose("replace", ["old", "new", ["count", null]], function(obj, new_, count){ return ul4._replace(object, old, new_, count); });
+			case "strip":
+				return ul4.expose("strip", [["chars", null]], function(chars){ return ul4._strip(object, chars); });
+			case "lstrip":
+				return ul4.expose("lstrip", [["chars", null]], function(chars){ return ul4._lstrip(object, chars); });
+			case "rstrip":
+				return ul4.expose("rstrip", [["chars", null]], function(chars){ return ul4._rstrip(object, chars); });
+			case "split":
+				return ul4.expose("split", [["sep", null], ["count", null]], function(sep, count){ return ul4._split(object, sep, count); });
+			case "rsplit":
+				return ul4.expose("rsplit", [["sep", null], ["count", null]], function(sep, count){ return ul4._rsplit(object, sep, count); });
+			case "lower":
+				return ul4.expose("lower", [], function(){ return object.toLowerCase(); });
+			case "upper":
+				return ul4.expose("upper", [], function(){ return object.toUpperCase(); });
+			case "capitalize":
+				return ul4.expose("capitalize", [], function(){ return ul4._capitalize(object); });
+			case "join":
+				return ul4.expose("join", ["iterable"], function(iterable){ return ul4._join(object, iterable); });
+			case "startswith":
+				return ul4.expose("startswith", ["prefix"], function(prefix){ return ul4._startswith(object, prefix); });
+			case "endswith":
+				return ul4.expose("endswith", ["suffix"], function(suffix){ return ul4._endswith(object, suffix); });
+			default:
+				return ul4.undefined;
+		}
+	}
+	else if (ul4._islist(object))
+	{
+		switch (attrname)
+		{
+			case "append":
+				return ul4.expose("append", ["*items"], function(items){ return ul4._append(object, items); });
+			case "insert":
+				return ul4.expose("insert", ["pos", "*items"], function(pos, items){ return ul4._insert(object, pos, items); });
+			case "pop":
+				return ul4.expose("pop", [["pos", -1]], function(pop){ return ul4._pop(object, pos); });
+			case "find":
+				return ul4.expose("find", ["sub", ["start", null], ["end", null]], function(sub, start, end){ return ul4._find(object, sub, start, end); });
+			case "rfind":
+				return ul4.expose("rfind", ["sub", ["start", null], ["end", null]], function(sub, start, end){ return ul4._rfind(object, sub, start, end); });
+			default:
+				return ul4.undefined;
+		}
+	}
+	else if (ul4._isdate(object))
+	{
+		switch (attrname)
+		{
+			case "weekday":
+				return ul4.expose("weekday", [["firstweekday", null]], function(firstweekday){ return ul4._weekday(object, firstweekday); });
+			case "week":
+				return ul4.expose("week", [], function(){ return ul4._week(object); });
+			case "day":
+				return ul4.expose("day", [], function(){ return object.getDate(); });
+			case "month":
+				return ul4.expose("month", [], function(){ return object.getMonth()+1; });
+			case "year":
+				return ul4.expose("year", [], function(){ return object.getFullYear(); });
+			case "hour":
+				return ul4.expose("hour", [], function(){ return object.getHours(); });
+			case "minute":
+				return ul4.expose("minute", [], function(){ return object.getMinutes(); });
+			case "second":
+				return ul4.expose("second", [], function(){ return object.getSeconds(); });
+			case "microsecond":
+				return ul4.expose("microsecond", [], function(){ return object.getMilliseconds() * 1000; });
+			case "mimeformat":
+				return ul4.expose("mimeformat", [], function(){ return ul4._mimeformat(object); });
+			case "isoformat":
+				return ul4.expose("isoformat", [], function(){ return ul4._isoformat(object); });
+			case "yearday":
+				return ul4.expose("yearday", [], function(){ return ul4._yearday(object); });
+			default:
+				return ul4.undefined;
+		}
+	}
+	else if (ul4._ismonthdelta(object))
+	{
+		switch (attrname)
+		{
+			case "months":
+				return ul4.expose("months", [], function(){ return object._months; });
+			default:
+				return ul4.undefined;
+		}
+	}
+	else if (ul4._istimedelta(object))
+	{
+		switch (attrname)
+		{
+			case "days":
+				return ul4.expose("days", [], function(){ return object._days; });
+			case "seconds":
+				return ul4.expose("seconds", [], function(){ return object._seconds; });
+			case "microseconds":
+				return ul4.expose("microseconds", [], function(){ return object._microseconds; });
+			default:
+				return ul4.undefined;
+		}
+	}
+	else if (object && typeof(object.__getitem__) === "function") // test this before the generic object test
+		return object.__getitem__(attrname);
+	else if (Object.prototype.toString.call(object) === "[object Object]")
+	{
+		switch (attrname)
+		{
+			case "get":
+				return ul4.expose("get", ["key", ["default", null]], function(key, default_){ return ul4._get(object, key, default_); });
+			case "items":
+				return ul4.expose("items", [], function(){ return ul4._items(object); });
+			case "values":
+				return ul4.expose("values", [], function(){ return ul4._values(object); });
+			case "update":
+				return ul4.expose("update", ["*other", "**kwargs"], function(other, kwargs){ return ul4._update(object, other, kwargs); });
+			default:
+				return object[attrname];
+		}
+	}
+	throw "getattr() needs an object with attributes";
 };
 
 // Item access: dict[key], list[index], string[index], color[index]
@@ -3125,7 +3255,7 @@ ul4.GetAttr = ul4._inherit(
 		},
 		_jssource: function(out)
 		{
-			out.push("ul4._op_getitem(");
+			out.push("ul4._op_getattr(");
 			this.obj._jssource(out);
 			out.push(", ");
 			out.push(ul4._asjson(this.attrname));
@@ -3134,23 +3264,23 @@ ul4.GetAttr = ul4._inherit(
 	}
 );
 
-ul4.CallFunc = ul4._inherit(
+ul4.Call = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end, obj, args, kwargs, remargs, remkwargs)
 		{
-			var callfunc = ul4.AST.create.call(this, location, start, end);
-			callfunc.obj = obj;
-			callfunc.args = args;
-			callfunc.kwargs = kwargs;
-			callfunc.remargs = remargs;
-			callfunc.remkwargs = remkwargs;
-			return callfunc;
+			var call = ul4.AST.create.call(this, location, start, end);
+			call.obj = obj;
+			call.args = args;
+			call.kwargs = kwargs;
+			call.remargs = remargs;
+			call.remkwargs = remkwargs;
+			return call;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["obj", "args", "kwargs", "remargs", "remkwargs"]),
 		_repr: function(out)
 		{
-			out.push("<CallFunc");
+			out.push("<Call");
 			out.push(null);
 			out.push(+1);
 			out.push("obj=");
@@ -3185,7 +3315,7 @@ ul4.CallFunc = ul4._inherit(
 		},
 		_jssource: function(out)
 		{
-			out.push("ul4._callfunc(");
+			out.push("ul4._call(");
 			this.obj._jssource(out);
 			out.push(", out, [");
 
@@ -3397,22 +3527,22 @@ ul4.CallMeth = ul4._inherit(
 ul4.ChangeVar = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end, varname, value)
+		create: function(location, start, end, lvalue, value)
 		{
 			var changevar = ul4.AST.create.call(this, location, start, end);
-			changevar.varname = varname;
+			changevar.lvalue = lvalue;
 			changevar.value = value;
 			return changevar;
 		},
-		_ul4onattrs: ul4.AST._ul4onattrs.concat(["varname", "value"]),
+		_ul4onattrs: ul4.AST._ul4onattrs.concat(["lvalue", "value"]),
 		_repr: function(out)
 		{
 			out.push("<");
 			out.push(this.name)
 			out.push(null);
 			out.push(+1);
-			out.push("varname=");
-			out.push(ul4._repr(this.varname));
+			out.push("lvalue=");
+			this.value._repr(this.lvalue);
 			out.push(null);
 			out.push("value=");
 			this.value._repr(out);
@@ -3421,7 +3551,7 @@ ul4.ChangeVar = ul4._inherit(
 	}
 );
 
-ul4.StoreVar = ul4._inherit(
+ul4.SetVar = ul4._inherit(
 	ul4.ChangeVar,
 	{
 		_jssource: function(out)
@@ -4608,8 +4738,6 @@ ul4._replace = function(string, old, new_, count)
 
 ul4._strip = function(string, chars)
 {
-	if (typeof(string) !== "string")
-		throw "strip() requires a string";
 	if (chars === null)
 		chars = " \r\n\t";
 	else if (typeof(chars) !== "string")
@@ -4624,8 +4752,6 @@ ul4._strip = function(string, chars)
 
 ul4._lstrip = function(string, chars)
 {
-	if (typeof(string) !== "string")
-		throw "lstrip() requires a string";
 	if (chars === null)
 		chars = " \r\n\t";
 	else if (typeof(chars) !== "string")
@@ -4638,8 +4764,6 @@ ul4._lstrip = function(string, chars)
 
 ul4._rstrip = function(string, chars)
 {
-	if (typeof(string) !== "string")
-		throw "rstrip() requires a string";
 	if (chars === null)
 		chars = " \r\n\t";
 	else if (typeof(chars) !== "string")
@@ -4652,9 +4776,7 @@ ul4._rstrip = function(string, chars)
 
 ul4._split = function(string, sep, count)
 {
-	if (typeof(string) !== "string")
-		throw "split() requires a string";
-	else if (sep !== null && typeof(sep) !== "string")
+	if (sep !== null && typeof(sep) !== "string")
 		throw "split() requires a string";
 
 	if (count === null)
@@ -4709,9 +4831,7 @@ ul4._split = function(string, sep, count)
 
 ul4._rsplit = function(string, sep, count)
 {
-	if (typeof(string) !== "string")
-		throw "rsplit() requires a string as first argument";
-	else if (sep !== null && typeof(sep) !== "string")
+	if (sep !== null && typeof(sep) !== "string")
 		throw "rsplit() requires a string as second argument";
 
 	if (count === null)
@@ -4815,22 +4935,6 @@ ul4._rfind = function(obj, sub, start, end)
 	return result;
 };
 
-ul4._lower = function(obj)
-{
-	if (typeof(obj) != "string")
-		throw "lower() requires a string";
-
-	return obj.toLowerCase();
-};
-
-ul4._upper = function(obj)
-{
-	if (typeof(obj) != "string")
-		throw "upper() requires a string";
-
-	return obj.toUpperCase();
-};
-
 ul4._capitalize = function(obj)
 {
 	if (typeof(obj) != "string")
@@ -4865,9 +4969,6 @@ ul4._values = function(obj)
 
 ul4._join = function(sep, iterable)
 {
-	if (typeof(sep) !== "string")
-		throw "join() requires a string";
-
 	var resultlist = [];
 	for (var iter = ul4._iter(iterable);;)
 	{
@@ -4881,16 +4982,16 @@ ul4._join = function(sep, iterable)
 
 ul4._startswith = function(string, prefix)
 {
-	if (typeof(string) !== "string" || typeof(prefix) !== "string")
-		throw "startswith() requires two strings";
+	if (typeof(prefix) !== "string")
+		throw "startswith() argument must be string";
 
 	return string.substr(0, prefix.length) === prefix;
 };
 
 ul4._endswith = function(string, suffix)
 {
-	if (typeof(string) !== "string" || typeof(suffix) !== "string")
-		throw "endswith() requires two strings";
+	if (typeof(suffix) !== "string")
+		throw "endswith() argument must be string";
 
 	return string.substr(string.length-suffix.length) === suffix;
 };
@@ -4923,62 +5024,6 @@ ul4._mimeformat = function(obj)
 	var monthname = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 	return weekdayname[ul4._weekday(obj)] + ", " + ul4._lpad(obj.getDate(), "0", 2) + " " + monthname[obj.getMonth()] + " " + obj.getFullYear() + " " + ul4._lpad(obj.getHours(), "0", 2) + ":" + ul4._lpad(obj.getMinutes(), "0", 2) + ":" + ul4._lpad(obj.getSeconds(), "0", 2) + " GMT";
-};
-
-ul4._year = function(obj)
-{
-	if (!ul4._isdate(obj))
-		throw "year() requires a date";
-
-	return obj.getFullYear();
-};
-
-ul4._month = function(obj)
-{
-	if (!ul4._isdate(obj))
-		throw "month() requires a date";
-
-	return obj.getMonth()+1;
-};
-
-ul4._day = function(obj)
-{
-	if (!ul4._isdate(obj))
-		throw "day() requires a date";
-
-	return obj.getDate();
-};
-
-ul4._hour = function(obj)
-{
-	if (!ul4._isdate(obj))
-		throw "hour() requires a date";
-
-	return obj.getHours();
-};
-
-ul4._minute = function(obj)
-{
-	if (!ul4._isdate(obj))
-		throw "minute() requires a date";
-
-	return obj.getMinutes();
-};
-
-ul4._second = function(obj)
-{
-	if (!ul4._isdate(obj))
-		throw "second() requires a date";
-
-	return obj.getSeconds();
-};
-
-ul4._microsecond = function(obj)
-{
-	if (!ul4._isdate(obj))
-		throw "micosecond() requires a date";
-
-	return obj.getMilliseconds() * 1000;
 };
 
 ul4._weekday = function(obj)
@@ -5055,9 +5100,6 @@ ul4._yearday = function(obj)
 
 ul4._append = function(obj, items)
 {
-	if (!ul4._islist(obj))
-		throw "append() requires a list";
-
 	for (var i = 0; i < items.length; ++i)
 		obj.push(items[i]);
 	return null;
@@ -5065,9 +5107,6 @@ ul4._append = function(obj, items)
 
 ul4._insert = function(obj, pos, items)
 {
-	if (!ul4._islist(obj))
-		throw "insert() requires a list";
-
 	if (pos < 0)
 		pos += obj.length;
 
@@ -5078,9 +5117,6 @@ ul4._insert = function(obj, pos, items)
 
 ul4._pop = function(obj, pos)
 {
-	if (!ul4._islist(obj))
-		throw "pop() requires a list";
-
 	if (pos < 0)
 		pos += obj.length;
 
@@ -5091,9 +5127,6 @@ ul4._pop = function(obj, pos)
 
 ul4._update = function(obj, others, kwargs)
 {
-	if (!ul4._isdict(obj))
-		throw "update() requires a dict";
-
 	for (var i = 0; i < others.length; ++i)
 	{
 		var other = others[i];
@@ -5117,42 +5150,6 @@ ul4._update = function(obj, others, kwargs)
 	for (var key in kwargs)
 		obj[key] = kwargs[key];
 	return null;
-};
-
-ul4.methods = {
-	replace: ul4.expose("replace", ["old", "new", ["count", null]], {needsobj: true}, ul4._replace),
-	strip: ul4.expose("strip", [["chars", null]], {needsobj: true}, ul4._strip),
-	lstrip: ul4.expose("lstrip", [["chars", null]], {needsobj: true}, ul4._lstrip),
-	rstrip: ul4.expose("rstrip", [["chars", null]], {needsobj: true}, ul4._rstrip),
-	split: ul4.expose("split", [["sep", null], ["count", null]], {needsobj: true}, ul4._split),
-	rsplit: ul4.expose("rsplit", [["sep", null], ["count", null]], {needsobj: true}, ul4._rsplit),
-	find: ul4.expose("find", ["sub", ["start", null], ["end", null]], {needsobj: true}, ul4._find),
-	rfind: ul4.expose("rfind", ["sub", ["start", null], ["end", null]], {needsobj: true}, ul4._rfind),
-	lower: ul4.expose("lower", [], {needsobj: true}, ul4._lower),
-	upper: ul4.expose("upper", [], {needsobj: true}, ul4._upper),
-	capitalize: ul4.expose("capitalize", [], {needsobj: true}, ul4._capitalize),
-	get: ul4.expose("get", ["key", ["default", null]], {needsobj: true}, ul4._get),
-	items: ul4.expose("items", [], {needsobj: true}, ul4._items),
-	values: ul4.expose("values", [], {needsobj: true}, ul4._values),
-	join: ul4.expose("join", ["iterable"], {needsobj: true}, ul4._join),
-	startswith: ul4.expose("startswith", ["prefix"], {needsobj: true}, ul4._startswith),
-	endswith: ul4.expose("endswith", ["suffix"], {needsobj: true}, ul4._endswith),
-	isoformat: ul4.expose("isoformat", [], {needsobj: true}, ul4._isoformat),
-	mimeformat: ul4.expose("mimeformat", [], {needsobj: true}, ul4._mimeformat),
-	year: ul4.expose("year", [], {needsobj: true}, ul4._year),
-	month: ul4.expose("month", [], {needsobj: true}, ul4._month),
-	day: ul4.expose("day", [], {needsobj: true}, ul4._day),
-	hour: ul4.expose("hour", [], {needsobj: true}, ul4._hour),
-	minute: ul4.expose("minute", [], {needsobj: true}, ul4._minute),
-	second: ul4.expose("second", [], {needsobj: true}, ul4._second),
-	microsecond: ul4.expose("microsecond", [], {needsobj: true}, ul4._microsecond),
-	weekday: ul4.expose("weekday", [], {needsobj: true}, ul4._weekday),
-	week: ul4.expose("week", [["firstweekday", null]], {needsobj: true}, ul4._week),
-	yearday: ul4.expose("yearday", [], {needsobj: true}, ul4._yearday),
-	append: ul4.expose("append", ["*items"], {needsobj: true}, ul4._append),
-	insert: ul4.expose("insert", ["pos", "*items"], {needsobj: true}, ul4._insert),
-	pop: ul4.expose("pop", [["pos", -1]], {needsobj: true}, ul4._pop),
-	update: ul4.expose("update", ["*other", "**kwargs"], {needsobj: true}, ul4._update)
 };
 
 (function(){
@@ -5190,9 +5187,8 @@ ul4.methods = {
 		"Or",
 		"GetSlice",
 		"GetAttr",
-		"CallFunc",
-		"CallMeth",
-		"StoreVar",
+		"Call",
+		"SetVar",
 		"AddVar",
 		"SubVar",
 		"MulVar",
