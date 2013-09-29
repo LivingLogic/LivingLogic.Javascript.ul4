@@ -78,16 +78,15 @@ ul4._inherit = function(baseobj, attrs)
 };
 
 // Adds name and signature to a function/method and makes the method callable in templates
-ul4.expose = function(name, args, options, f)
+ul4.expose = function(name, args, needsout, f)
 {
 	if (typeof(f) === "undefined")
 	{
-		f = options;
-		options = {needsout: false, needsobj: false};
+		f = needsout;
+		needsout = false;
 	}
 	f._ul4_name = name;
-	f._ul4_needsout = options.needsout || false;
-	f._ul4_needsobj = options.needsobj || false;
+	f._ul4_needsout = needsout || false;
 	f._ul4_remargs = null;
 	f._ul4_remkwargs = null;
 	f._ul4_args = [];
@@ -207,10 +206,7 @@ ul4._callmeth = function(methname, out, obj, args, kwargs)
 	args = ul4._makeargarray(f, args, kwargs);
 	if (f._ul4_needsout)
 		args = [out].concat(args);
-	if (f._ul4_needsobj)
-		return f.apply(ul4, [obj].concat(args));
-	else
-		return f.apply(obj, args);
+	return f.apply(obj, args);
 };
 
 ul4._getvar = function(vars, name)
@@ -3955,7 +3951,7 @@ ul4.Template = ul4._inherit(
 			out.push(null);
 			return ul4._formatsource(out);
 		},
-		render: ul4.expose("render", ["**vars"], {needsout: true},
+		render: ul4.expose("render", ["**vars"], true,
 			function(out, vars)
 			{
 				if (this._jsfunction === null)
@@ -4003,7 +3999,7 @@ ul4.TemplateClosure = ul4._inherit(
 			closure.content = template.content;
 			return closure;
 		},
-		render: ul4.expose("render", ["**vars"], {needsout: true},
+		render: ul4.expose("render", ["**vars"], true,
 			function(out, vars)
 			{
 				this.template.render(out, ul4._simpleinherit(this.vars, vars));
@@ -4644,8 +4640,8 @@ ul4._utcnow = function()
 };
 
 ul4.functions = {
-	print: ul4.expose("print", ["*args"], {needsout: true}, ul4._print),
-	printx: ul4.expose("printx", ["*args"], {needsout: true}, ul4._printx),
+	print: ul4.expose("print", ["*args"], true, ul4._print),
+	printx: ul4.expose("printx", ["*args"], true, ul4._printx),
 	repr: ul4.expose("repr", ["obj"], ul4._repr),
 	str: ul4.expose("str", [["obj", ""]], ul4._str),
 	int: ul4.expose("int", [["obj", 0], ["base", null]], ul4._int),
