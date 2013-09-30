@@ -195,20 +195,6 @@ ul4._call = function(f, out, args, kwargs)
 	}
 };
 
-ul4._callmeth = function(methname, out, obj, args, kwargs)
-{
-	var f;
-	var needobj;
-	if (typeof(obj) === "object" && typeof(obj[methname]) === "function" && typeof(obj[methname]._ul4_name) === "string")
-		f = obj[methname];
-	else
-		f = ul4.methods[methname];
-	args = ul4._makeargarray(f, args, kwargs);
-	if (f._ul4_needsout)
-		args = [out].concat(args);
-	return f.apply(obj, args);
-};
-
 ul4._getvar = function(vars, name)
 {
 	var result = vars[name];
@@ -3409,113 +3395,6 @@ ul4.GetSlice = ul4._inherit(
 			else
 				out.push("null");
 			 out.push(")");
-		}
-	}
-);
-
-ul4.CallMeth = ul4._inherit(
-	ul4.AST,
-	{
-		create: function(location, start, end, methname, obj, args, kwargs, remargs, remkwargs)
-		{
-			var callmeth = ul4.AST.create.call(this, location, start, end);
-			callmeth.methname = methname;
-			callmeth.obj = obj;
-			callmeth.args = args;
-			callmeth.kwargs = kwargs;
-			callmeth.remargs = remargs;
-			callmeth.remkwargs = remkwargs;
-			return callmeth;
-		},
-		_ul4onattrs: ul4.AST._ul4onattrs.concat(["methname", "obj", "args", "kwargs", "remargs", "remkwargs"]),
-		_repr: function(out)
-		{
-			out.push("<CallMeth");
-			out.push(null);
-			out.push(+1);
-			out.push("obj=");
-			this.obj1._repr(out);
-			out.push(null);
-			out.push("methname=");
-			out.push(ul4._repr(this.methname));
-			out.push(null);
-			for (var i = 0; i < this.args.length; ++i)
-			{
-				this.args[i]._repr(out);
-				out.push(null);
-			}
-			for (var key in this.kwargs)
-			{
-				out.push(key);
-				out.push("=");
-				this.kwargs[key]._repr(out);
-				out.push(null);
-			}
-			if (this.remargs !== null)
-			{
-				out.push("*");
-				this.remargs._repr(out);
-				out.push(null);
-			}
-			if (this.remkwargs !== null)
-			{
-				out.push("**");
-				this.remkwargs._repr(out);
-				out.push(null);
-			}
-			out.push(-1);
-			out.push(">");
-		},
-		_jssource: function(out)
-		{
-			out.push("ul4._callmeth(");
-			out.push(ul4._asjson(this.methname));
-			out.push(", out, ");
-			this.obj._jssource(out);
-			out.push(", [");
-
-			var first = true;
-			var args = [];
-			for (var i = 0; i < this.args.length; ++i)
-			{
-				if (i)
-					out.push(", ");
-				this.args[i]._jssource(out);
-			}
-			out.push("]");
-
-			if (this.remargs !== null)
-			{
-				out.push(".concat(");
-				this.remargs._jssource(out);
-				out.push(")");
-			}
-
-			out.push(", ");
-
-			if (this.remkwargs !== null)
-				out.push("ul4._extend(");
-
-			out.push("{");
-			var first = true;
-			for (var i = 0; i < this.kwargs.length; ++i)
-			{
-				if (first)
-					first = false;
-				else
-					out.push(", ");
-				out.push(ul4._asjson(this.kwargs[i][0]));
-				out.push(": ");
-				this.kwargs[i][1]._jssource(out);
-			}
-			out.push("}");
-			if (this.remkwargs !== null)
-			{
-				out.push(", ");
-				this.remkwargs._jssource(out);
-				out.push(")");
-			}
-			out.push(")");
 		}
 	}
 );
