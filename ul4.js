@@ -3740,13 +3740,17 @@ ul4.Slice = ul4._inherit(
 		{
 			if (ul4._islist(container))
 			{
-				if (start < 0)
+				if (start === null)
+					start = 0;
+				else if (start < 0)
 					start += container.length;
 				if (start < 0)
 					start = 0;
 				else if (start > container.length)
 					start = container.length;
-				if (stop < 0)
+				if (stop === null)
+					stop = container.length;
+				else if (stop < 0)
 					stop += container.length;
 				if (stop < 0)
 					stop = 0;
