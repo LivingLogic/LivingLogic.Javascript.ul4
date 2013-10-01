@@ -416,6 +416,8 @@ ul4._repr = function(obj)
 		return "" + obj;
 	else if (ul4._isdate(obj))
 		return ul4._date_repr(obj);
+	else if (typeof(obj) === "undefined")
+		return "<undefined>";
 	else if (typeof(obj.__repr__) === "function")
 		return obj.__repr__();
 	else if (ul4._islist(obj))
@@ -2671,37 +2673,37 @@ ul4.Var = ul4._inherit(
 		{
 			if (name === "self")
 				throw "can't assign to self";
-			vars[name] = ul4.Add._do(vars[name], value);
+			vars[name] = ul4.Add._ido(vars[name], value);
 		},
 		_sub: function(vars, name, value)
 		{
 			if (name === "self")
 				throw "can't assign to self";
-			vars[name] = ul4.Sub._do(vars[name], value);
+			vars[name] = ul4.Sub._ido(vars[name], value);
 		},
 		_mul: function(vars, name, value)
 		{
 			if (name === "self")
 				throw "can't assign to self";
-			vars[name] = ul4.Mul._do(vars[name], value);
+			vars[name] = ul4.Mul._ido(vars[name], value);
 		},
 		_floordiv: function(vars, name, value)
 		{
 			if (name === "self")
 				throw "can't assign to self";
-			vars[name] = ul4.FloorDiv._do(vars[name], value);
+			vars[name] = ul4.FloorDiv._ido(vars[name], value);
 		},
 		_truediv: function(vars, name, value)
 		{
 			if (name === "self")
 				throw "can't assign to self";
-			vars[name] = ul4.TrueDiv._do(vars[name], value);
+			vars[name] = ul4.TrueDiv._ido(vars[name], value);
 		},
 		_mod: function(vars, name, value)
 		{
 			if (name === "self")
 				throw "can't assign to self";
-			vars[name] = ul4.Mod._do(vars[name], value);
+			vars[name] = ul4.Mod._ido(vars[name], value);
 		}
 	}
 );
@@ -2917,92 +2919,48 @@ ul4.GetItem = ul4._inherit(
 				return container.__getitem__(key);
 			else if (Object.prototype.toString.call(container) === "[object Object]")
 				return container[key];
-			throw "getitem() needs a sequence or dict";
+			else
+				throw "getitem() needs a sequence or dict";
 		},
 		_set: function(container, key, value)
 		{
-			if (container && typeof(container.__setitem__) === "function") // test this before the generic object test
-				container.__setitem__(key, value);
-			else
+			if (typeof(container) === "string" || ul4._islist(container))
+			{
+				var orgkey = key;
+				if (key < 0)
+					key += container.length;
 				container[key] = value;
+			}
+			else if (container && typeof(container.__setitem__) === "function") // test this before the generic object test
+				container.__setitem__(key, value);
+			else if (Object.prototype.toString.call(container) === "[object Object]")
+				container[key] = value;
+			else
+				throw "setitem() needs a sequence or dict";
 		},
 		_add: function(container, key, value)
 		{
-			var newvalue;
-			if (container && typeof(container.__getitem__) === "function") // test this before the generic object test
-				newvalue = container.__getitem__(key);
-			else
-				newvalue = container[key];
-			newvalue = ul4.Add._do(newvalue, value);
-			if (container && typeof(container.__setitem__) === "function") // test this before the generic object test
-				container.__setitem__(key, newvalue);
-			else
-				container[key] = newvalue;
+			this._set(container, key, ul4.Add._ido(this._get(container, key), value));
 		},
 		_sub: function(container, key, value)
 		{
-			var newvalue;
-			if (container && typeof(container.__getitem__) === "function") // test this before the generic object test
-				newvalue = container.__getitem__(key);
-			else
-				newvalue = container[key];
-			newvalue = ul4.Sub._do(newvalue, value);
-			if (container && typeof(container.__setitem__) === "function") // test this before the generic object test
-				container.__setitem__(key, newvalue);
-			else
-				container[key] = newvalue;
+			this._set(container, key, ul4.Sub._ido(this._get(container, key), value));
 		},
 		_mul: function(container, key, value)
 		{
-			var newvalue;
-			if (container && typeof(container.__getitem__) === "function") // test this before the generic object test
-				newvalue = container.__getitem__(key);
-			else
-				newvalue = container[key];
-			newvalue = ul4.Mul._do(newvalue, value);
-			if (container && typeof(container.__setitem__) === "function") // test this before the generic object test
-				container.__setitem__(key, newvalue);
-			else
-				container[key] = newvalue;
+			this._set(container, key, ul4.Mul._ido(this._get(container, key), value));
 		},
 		_floordiv: function(container, key, value)
 		{
-			var newvalue;
-			if (container && typeof(container.__getitem__) === "function") // test this before the generic object test
-				newvalue = container.__getitem__(key);
-			else
-				newvalue = container[key];
-			newvalue = ul4.FloorDiv._do(newvalue, value);
-			if (container && typeof(container.__setitem__) === "function") // test this before the generic object test
-				container.__setitem__(key, newvalue);
-			else
-				container[key] = newvalue;
+			this._set(container, key, ul4.FloorDiv._ido(this._get(container, key), value));
 		},
 		_truediv: function(container, key, value)
 		{
-			var newvalue;
-			if (container && typeof(container.__getitem__) === "function") // test this before the generic object test
-				newvalue = container.__getitem__(key);
-			else
-				newvalue = container[key];
-			newvalue = ul4.TrueDiv._do(newvalue, value);
-			if (container && typeof(container.__setitem__) === "function") // test this before the generic object test
-				container.__setitem__(key, newvalue);
-			else
-				container[key] = newvalue;
+			this._set(container, key, ul4.TrueDiv._ido(this._get(container, key), value));
 		},
 		_mod: function(container, key, value)
 		{
-			var newvalue;
-			if (container && typeof(container.__getitem__) === "function") // test this before the generic object test
-				newvalue = container.__getitem__(key);
-			else
-				newvalue = container[key];
-			newvalue = ul4.Mod._do(newvalue, value);
-			if (container && typeof(container.__setitem__) === "function") // test this before the generic object test
-				container.__setitem__(key, newvalue);
-			else
-				container[key] = newvalue;
+			this._set(container, key, ul4.Mod._ido(this._get(container, key), value));
 		}
 	}
 );
@@ -3217,6 +3175,16 @@ ul4.Add = ul4._inherit(
 			}
 			else
 				return obj1 + obj2;
+		},
+		_ido: function(obj1, obj2)
+		{
+			if (ul4._islist(obj1) && ul4._islist(obj2))
+			{
+				ul4._append(obj1, obj2);
+				return obj1;
+			}
+			else
+				return this._do(obj1, obj2);
 		}
 	}
 );
@@ -3234,6 +3202,10 @@ ul4.Sub = ul4._inherit(
 			if (obj1 === null || obj2 === null)
 				throw ul4._type(obj1) + " - " + ul4._type(obj2) + " not supported";
 			return obj1 - obj2;
+		},
+		_ido: function(obj1, obj2)
+		{
+			return this._do(obj1, obj2);
 		}
 	}
 );
@@ -3281,6 +3253,24 @@ ul4.Mul = ul4._inherit(
 				}
 			}
 			return obj1 * obj2;
+		},
+		_ido: function(obj1, obj2)
+		{
+			if (ul4._islist(obj1) && ul4._isint(obj2))
+			{
+				if (obj2 > 0)
+				{
+					var i = 0;
+					var targetsize = obj1.length * obj2;
+					while (obj1.length < targetsize)
+						obj1.push(obj1[i++])
+				}
+				else
+					obj1.splice(0, obj1.length);
+				return obj1;
+			}
+			else
+				return this._do(obj1, obj2);
 		}
 	}
 );
@@ -3298,6 +3288,10 @@ ul4.FloorDiv = ul4._inherit(
 			if (obj1 === null || obj2 === null)
 				throw ul4._type(obj1) + " // " + ul4._type(obj2) + " not supported";
 			return Math.floor(obj1 / obj2);
+		},
+		_ido: function(obj1, obj2)
+		{
+			return this._do(obj1, obj2);
 		}
 	}
 );
@@ -3315,6 +3309,10 @@ ul4.TrueDiv = ul4._inherit(
 			if (obj1 === null || obj2 === null)
 				throw ul4._type(obj1) + " / " + ul4._type(obj2) + " not supported";
 			return obj1 / obj2;
+		},
+		_ido: function(obj1, obj2)
+		{
+			return this._do(obj1, obj2);
 		}
 	}
 );
@@ -3335,6 +3333,10 @@ ul4.Mod = ul4._inherit(
 				--div;
 			}
 			return obj1 - div * obj2;
+		},
+		_ido: function(obj1, obj2)
+		{
+			return this._do(obj1, obj2);
 		}
 	}
 );
@@ -3498,8 +3500,6 @@ ul4.GetAttr = ul4._inherit(
 						return ul4.undefined;
 				}
 			}
-			else if (object && typeof(object.__getattr__) === "function") // test this before the generic object test
-				return object.__getattr__(attrname);
 			else if (Object.prototype.toString.call(object) === "[object Object]")
 			{
 				switch (attrname)
@@ -3513,38 +3513,44 @@ ul4.GetAttr = ul4._inherit(
 					case "update":
 						return ul4.expose("update", ["*other", "**kwargs"], function(other, kwargs){ return ul4._update(object, other, kwargs); });
 					default:
-						return object[attrname];
+						if (object && typeof(object.__getattr__) === "function") // test this before the generic object test
+							return object.__getattr__(attrname);
+						else
+							return object[attrname];
 				}
 			}
 			throw "GetAttr._get() needs an object with attributes";
 		},
 		_set: function(object, attrname, value)
 		{
-			object[attrname] = value;
+			if (object && typeof(object.__setattr__) === "function")
+				object.__setattr__(attrname, value);
+			else
+				object[attrname] = value;
 		},
 		_add: function(object, attrname, value)
 		{
-			object[attrname] = ul4.Add._do(object[attrname], value);
+			this._set(object, attrname, ul4.Add._ido(this._get(object, attrname), value));
 		},
 		_sub: function(object, attrname, value)
 		{
-			object[attrname] = ul4.Sub._do(object[attrname], value);
+			this._set(object, attrname, ul4.Sub._ido(this._get(object, attrname), value));
 		},
 		_mul: function(object, attrname, value)
 		{
-			object[attrname] = ul4.Mul._do(object[attrname], value);
+			this._set(object, attrname, ul4.Mul._ido(this._get(object, attrname), value));
 		},
 		_floordiv: function(object, attrname, value)
 		{
-			object[attrname] = ul4.FloorDiv._do(object[attrname], value);
+			this._set(object, attrname, ul4.FloorDiv._ido(this._get(object, attrname), value));
 		},
 		_truediv: function(object, attrname, value)
 		{
-			object[attrname] = ul4.TrueDiv._do(object[attrname], value);
+			this._set(object, attrname, ul4.TrueDiv._ido(this._get(object, attrname), value));
 		},
 		_mod: function(object, attrname, value)
 		{
-			object[attrname] = ul4.Mod._do(object[attrname], value);
+			this._set(object, attrname, ul4.Mod._ido(this._get(object, attrname), value));
 		}
 	}
 );
