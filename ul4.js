@@ -180,43 +180,42 @@ ul4._makeargarray = function(f, args, kwargs)
 
 ul4._call = function(f, out, args, kwargs)
 {
-	if (f.__type__ == "template")
-	{
-		if (args.length > 0)
-			throw f.name + "() doesn't support positional arguments";
-		return f.call(kwargs);
-	}
-	else
+	if (typeof(f) === "function")
 	{
 		args = ul4._makeargarray(f, args, kwargs);
 		if (f._ul4_needsout)
 			args = [out].concat(args);
 		return f.apply(ul4, args);
 	}
+	else if (f && typeof(f.__call__) === "function")
+	{
+		args = ul4._makeargarray(f.__call__, args, kwargs);
+		if (f.__call__._ul4_needsout)
+			args = [out].concat(args);
+		return f.__call__.apply(f, args); // Use the object as the function context.
+	}
+	else
+		throw ul4._repr(f) + " is not callable!";
 };
 
-ul4._getvar = function(vars, name)
+ul4._shape = function(value)
 {
-	var result = vars[name];
-	if (typeof(result) === "undefined")
-		result = ul4.functions[name];
-	return result;
-};
+	if (!ul4._islist(value))
+		return null;
+	var shape = [];
+	for (var i = 0; i < value.length; ++i)
+		shape.push(ul4._shape(value[i]));
+	return shape;
+}
 
-ul4._setvar = function(vars, name, value)
+ul4._unpackvar = function(value, shape)
 {
-	if (name === "self")
-		throw "can't assign to self";
-	vars[name] = value;
-};
-
-ul4._unpackvar = function(vars, varname, item)
-{
-	if (typeof(varname) === "string")
-		ul4._setvar(vars, varname, item);
+	if (shape === null)
+		return value;
 	else
 	{
-		var iter = ul4._iter(item);
+		var newvalue = [];
+		var iter = ul4._iter(value);
 
 		for (var i = 0;;++i)
 		{
@@ -224,19 +223,20 @@ ul4._unpackvar = function(vars, varname, item)
 
 			if (nextitem !== null)
 			{
-				if (i < varname.length)
-					ul4._unpackvar(vars, varname[i], nextitem[0]);
+				if (i < shape.length)
+					newvalue.push(ul4._unpackvar(nextitem[0], shape[i]));
 				else
-					throw "mismatched variable unpacking: " + varname.length + " varnames, >" + i + " items";
+					throw "mismatched variable unpacking: " + shape.length + " varnames, >" + i + " items";
 			}
 			else
 			{
-				if (i === varname.length)
+				if (i === shape.length)
 					break;
 				else
-					throw "mismatched variable unpacking: " + varname.length + " varnames, " + (i+1) + " items";
+					throw "mismatched variable unpacking: " + shape.length + " varnames, " + (i+1) + " items";
 			}
 		}
+		return newvalue;
 	}
 };
 
@@ -265,432 +265,6 @@ ul4._formatsource = function(out)
 	if (needlf)
 		finalout.push("\n");
 	return finalout.join("");
-};
-
-// Functions with the ``_op_`` prefix implement UL4 opcodes
-
-// Addition: num + num, string + string
-ul4._op_add = function(obj1, obj2)
-{
-	if (obj1 && typeof(obj1.__add__) === "function")
-		return obj1.__add__(obj2);
-	else if (obj2 && typeof(obj2.__radd__) === "function")
-		return obj2.__radd__(obj1);
-	if (obj1 === null || obj2 === null)
-		throw ul4._type(obj1) + " + " + ul4._type(obj2) + " not supported";
-	return obj1 + obj2;
-};
-
-// Substraction: num - num
-ul4._op_sub = function(obj1, obj2)
-{
-	if (obj2 && typeof(obj1.__sub__) === "function")
-		return obj1.__sub__(obj2);
-	else if (obj2 && typeof(obj2.__rsub__) === "function")
-		return obj2.__rsub__(obj1);
-	if (obj1 === null || obj2 === null)
-		throw ul4._type(obj1) + " - " + ul4._type(obj2) + " not supported";
-	return obj1 - obj2;
-};
-
-// Multiplication: num * num, int * str, str * int, int * list, list * int
-ul4._op_mul = function(obj1, obj2)
-{
-	if (obj1 && typeof(obj1.__mul__) === "function")
-		return obj1.__mul__(obj2);
-	else if (obj2 && typeof(obj2.__rmul__) === "function")
-		return obj2.__rmul__(obj1);
-	if (obj1 === null || obj2 === null)
-		throw ul4._type(obj1) + " * " + ul4._type(obj2) + " not supported";
-	else if (ul4._isint(obj1) || ul4._isbool(obj1))
-	{
-		if (typeof(obj2) === "string")
-		{
-			if (obj1 < 0)
-				throw "mul() repetition counter must be positive";
-			return ul4._str_repeat(obj2, obj1);
-		}
-		else if (ul4._islist(obj2))
-		{
-			if (obj1 < 0)
-				throw "mul() repetition counter must be positive";
-			return ul4._list_repeat(obj2, obj1);
-		}
-	}
-	else if (ul4._isint(obj2) || ul4._isbool(obj2))
-	{
-		if (typeof(obj1) === "string")
-		{
-			if (obj2 < 0)
-				throw "mul() repetition counter must be positive";
-			return ul4._str_repeat(obj1, obj2);
-		}
-		else if (ul4._islist(obj1))
-		{
-			if (obj2 < 0)
-				throw "mul() repetition counter must be positive";
-			return ul4._list_repeat(obj1, obj2);
-		}
-	}
-	return obj1 * obj2;
-};
-
-// Truncating division
-ul4._op_floordiv = function(obj1, obj2)
-{
-	if (obj1 && typeof(obj1.__floordiv__) === "function")
-		return obj1.__floordiv__(obj2);
-	else if (obj2 && typeof(obj2.__rfloordiv__) === "function")
-		return obj2.__rfloordiv__(obj1);
-	if (obj1 === null || obj2 === null)
-		throw ul4._type(obj1) + " // " + ul4._type(obj2) + " not supported";
-	return Math.floor(obj1 / obj2);
-};
-
-// "Real" division
-ul4._op_truediv = function(obj1, obj2)
-{
-	if (obj1 && typeof(obj1.__truediv__) === "function")
-		return obj1.__truediv__(obj2);
-	else if (obj2 && typeof(obj2.__rtruediv__) === "function")
-		return obj2.__rtruediv__(obj1);
-	if (obj1 === null || obj2 === null)
-		throw ul4._type(obj1) + " / " + ul4._type(obj2) + " not supported";
-	return obj1 / obj2;
-};
-
-// Modulo (this is non-trivial, because it follows the Python semantic of ``-5 % 2`` being ``1``)
-ul4._op_mod = function(obj1, obj2)
-{
-	var div = Math.floor(obj1 / obj2);
-	var mod = obj1 - div * obj2;
-
-	if (mod !== 0 && ((obj2 < 0 && mod > 0) || (obj2 > 0 && mod < 0)))
-	{
-		mod += obj2;
-		--div;
-	}
-	return obj1 - div * obj2;
-};
-
-// Negation
-ul4._op_neg = function(obj)
-{
-	if (obj !== null && typeof(obj.__neg__) === "function")
-		return obj.__neg__();
-	return -obj;
-};
-
-// Not
-ul4._op_not = function(obj)
-{
-	return !ul4._bool(obj);
-};
-
-// Containment test: string in string, obj in list, key in dict, value in rgb
-ul4._op_contains = function(obj, container)
-{
-	if (typeof(obj) === "string" && typeof(container) === "string")
-	{
-		return container.indexOf(obj) !== -1;
-	}
-	else if (ul4._islist(container))
-	{
-		return container.indexOf(obj) !== -1;
-	}
-	else if (container && typeof(container.__contains__) === "function") // test this before the generic object test
-		return container.__contains__(obj);
-	else if (ul4._isdict(container))
-	{
-		for (var key in container)
-		{
-			if (key === obj)
-				return true;
-		}
-		return false;
-	}
-	else if (ul4._iscolor(container))
-	{
-		return container._r === obj || container._g === obj || container._b === obj || container._a === obj;
-	}
-	throw "argument of type '" + ul4._type(container) + "' is not iterable";
-};
-
-// Inverted containment test
-ul4._op_notcontains = function(obj, container)
-{
-	return !ul4._op_contains(obj, container);
-};
-
-// Comparison operator ==
-ul4._op_eq = function(obj1, obj2)
-{
-	if (obj1 && typeof(obj1.__eq__) === "function")
-	{
-		if (obj2 && typeof(obj2.__eq__) === "function")
-			return obj1.__eq__(obj2);
-		else
-			return false;
-	}
-	else
-	{
-		if (obj2 && typeof(obj2.__eq__) === "function")
-			return false;
-		else
-			return obj1 === obj2;
-	}
-};
-
-// Comparison operator !=
-ul4._op_ne = function(obj1, obj2)
-{
-	if (obj1 && typeof(obj1.__ne__) === "function")
-	{
-		if (obj2 && typeof(obj2.__ne__) === "function")
-			return obj1.__ne__(obj2);
-		else
-			return true;
-	}
-	else
-	{
-		if (obj2 && typeof(obj2.__ne__) === "function")
-			return true;
-		else
-			return obj1 !== obj2;
-	}
-};
-
-// Comparison operator <
-ul4._op_lt = function(obj1, obj2)
-{
-	if (obj1 && typeof(obj1.__lt__) === "function")
-	{
-		if (obj2 && typeof(obj2.__lt__) === "function")
-			return obj1.__lt__(obj2);
-		else
-			throw "unorderable types: " + ul4._type(obj1) + "() < " + ul4._type(obj2) + "()";
-	}
-	else
-	{
-		if (obj2 && typeof(obj2.__lt__) === "function")
-			throw "unorderable types: " + ul4._type(obj1) + "() < " + ul4._type(obj2) + "()";
-		else
-			return obj1 < obj2;
-	}
-};
-
-// Comparison operator <=
-ul4._op_le = function(obj1, obj2)
-{
-	if (obj1 && typeof(obj1.__le__) === "function")
-	{
-		if (obj2 && typeof(obj2.__le__) === "function")
-			return obj1.__le__(obj2);
-		else
-			throw "unorderable types: " + ul4._type(obj1) + "() <= " + ul4._type(obj2) + "()";
-	}
-	else
-	{
-		if (obj2 && typeof(obj2.__lt__) === "function")
-			throw "unorderable types: " + ul4._type(obj1) + "() <= " + ul4._type(obj2) + "()";
-		else
-			return obj1 <= obj2;
-	}
-};
-
-// Comparison operator >
-ul4._op_gt = function(obj1, obj2)
-{
-	if (obj1 && typeof(obj1.__gt__) === "function")
-	{
-		if (obj2 && typeof(obj2.__gt__) === "function")
-			return obj1.__gt__(obj2);
-		else
-			throw "unorderable types: " + ul4._type(obj1) + "() > " + ul4._type(obj2) + "()";
-	}
-	else
-	{
-		if (obj2 && typeof(obj2.__lt__) === "function")
-			throw "unorderable types: " + ul4._type(obj1) + "() > " + ul4._type(obj2) + "()";
-		else
-			return obj1 > obj2;
-	}
-};
-
-// Comparison operator >=
-ul4._op_ge = function(obj1, obj2)
-{
-	if (obj1 && typeof(obj1.__ge__) === "function")
-	{
-		if (obj2 && typeof(obj2.__ge__) === "function")
-			return obj1.__ge__(obj2);
-		else
-			throw "unorderable types: " + ul4._type(obj1) + "() >= " + ul4._type(obj2) + "()";
-	}
-	else
-	{
-		if (obj2 && typeof(obj2.__lt__) === "function")
-			throw "unorderable types: " + ul4._type(obj1) + "() >= " + ul4._type(obj2) + "()";
-		else
-			return obj1 >= obj2;
-	}
-};
-
-// Attribute access
-ul4._op_getattr = function(object, attrname)
-{
-	if (typeof(object) === "string")
-	{
-		switch (attrname)
-		{
-			case "replace":
-				return ul4.expose("replace", ["old", "new", ["count", null]], function(obj, new_, count){ return ul4._replace(object, old, new_, count); });
-			case "strip":
-				return ul4.expose("strip", [["chars", null]], function(chars){ return ul4._strip(object, chars); });
-			case "lstrip":
-				return ul4.expose("lstrip", [["chars", null]], function(chars){ return ul4._lstrip(object, chars); });
-			case "rstrip":
-				return ul4.expose("rstrip", [["chars", null]], function(chars){ return ul4._rstrip(object, chars); });
-			case "split":
-				return ul4.expose("split", [["sep", null], ["count", null]], function(sep, count){ return ul4._split(object, sep, count); });
-			case "rsplit":
-				return ul4.expose("rsplit", [["sep", null], ["count", null]], function(sep, count){ return ul4._rsplit(object, sep, count); });
-			case "lower":
-				return ul4.expose("lower", [], function(){ return object.toLowerCase(); });
-			case "upper":
-				return ul4.expose("upper", [], function(){ return object.toUpperCase(); });
-			case "capitalize":
-				return ul4.expose("capitalize", [], function(){ return ul4._capitalize(object); });
-			case "join":
-				return ul4.expose("join", ["iterable"], function(iterable){ return ul4._join(object, iterable); });
-			case "startswith":
-				return ul4.expose("startswith", ["prefix"], function(prefix){ return ul4._startswith(object, prefix); });
-			case "endswith":
-				return ul4.expose("endswith", ["suffix"], function(suffix){ return ul4._endswith(object, suffix); });
-			default:
-				return ul4.undefined;
-		}
-	}
-	else if (ul4._islist(object))
-	{
-		switch (attrname)
-		{
-			case "append":
-				return ul4.expose("append", ["*items"], function(items){ return ul4._append(object, items); });
-			case "insert":
-				return ul4.expose("insert", ["pos", "*items"], function(pos, items){ return ul4._insert(object, pos, items); });
-			case "pop":
-				return ul4.expose("pop", [["pos", -1]], function(pop){ return ul4._pop(object, pos); });
-			case "find":
-				return ul4.expose("find", ["sub", ["start", null], ["end", null]], function(sub, start, end){ return ul4._find(object, sub, start, end); });
-			case "rfind":
-				return ul4.expose("rfind", ["sub", ["start", null], ["end", null]], function(sub, start, end){ return ul4._rfind(object, sub, start, end); });
-			default:
-				return ul4.undefined;
-		}
-	}
-	else if (ul4._isdate(object))
-	{
-		switch (attrname)
-		{
-			case "weekday":
-				return ul4.expose("weekday", [["firstweekday", null]], function(firstweekday){ return ul4._weekday(object, firstweekday); });
-			case "week":
-				return ul4.expose("week", [], function(){ return ul4._week(object); });
-			case "day":
-				return ul4.expose("day", [], function(){ return object.getDate(); });
-			case "month":
-				return ul4.expose("month", [], function(){ return object.getMonth()+1; });
-			case "year":
-				return ul4.expose("year", [], function(){ return object.getFullYear(); });
-			case "hour":
-				return ul4.expose("hour", [], function(){ return object.getHours(); });
-			case "minute":
-				return ul4.expose("minute", [], function(){ return object.getMinutes(); });
-			case "second":
-				return ul4.expose("second", [], function(){ return object.getSeconds(); });
-			case "microsecond":
-				return ul4.expose("microsecond", [], function(){ return object.getMilliseconds() * 1000; });
-			case "mimeformat":
-				return ul4.expose("mimeformat", [], function(){ return ul4._mimeformat(object); });
-			case "isoformat":
-				return ul4.expose("isoformat", [], function(){ return ul4._isoformat(object); });
-			case "yearday":
-				return ul4.expose("yearday", [], function(){ return ul4._yearday(object); });
-			default:
-				return ul4.undefined;
-		}
-	}
-	else if (ul4._ismonthdelta(object))
-	{
-		switch (attrname)
-		{
-			case "months":
-				return ul4.expose("months", [], function(){ return object._months; });
-			default:
-				return ul4.undefined;
-		}
-	}
-	else if (ul4._istimedelta(object))
-	{
-		switch (attrname)
-		{
-			case "days":
-				return ul4.expose("days", [], function(){ return object._days; });
-			case "seconds":
-				return ul4.expose("seconds", [], function(){ return object._seconds; });
-			case "microseconds":
-				return ul4.expose("microseconds", [], function(){ return object._microseconds; });
-			default:
-				return ul4.undefined;
-		}
-	}
-	else if (object && typeof(object.__getitem__) === "function") // test this before the generic object test
-		return object.__getitem__(attrname);
-	else if (Object.prototype.toString.call(object) === "[object Object]")
-	{
-		switch (attrname)
-		{
-			case "get":
-				return ul4.expose("get", ["key", ["default", null]], function(key, default_){ return ul4._get(object, key, default_); });
-			case "items":
-				return ul4.expose("items", [], function(){ return ul4._items(object); });
-			case "values":
-				return ul4.expose("values", [], function(){ return ul4._values(object); });
-			case "update":
-				return ul4.expose("update", ["*other", "**kwargs"], function(other, kwargs){ return ul4._update(object, other, kwargs); });
-			default:
-				return object[attrname];
-		}
-	}
-	throw "getattr() needs an object with attributes";
-};
-
-// Item access: dict[key], list[index], string[index], color[index]
-ul4._op_getitem = function(container, key)
-{
-	if (typeof(container) === "string" || ul4._islist(container))
-	{
-		var orgkey = key;
-		if (key < 0)
-			key += container.length;
-		return container[key];
-	}
-	else if (container && typeof(container.__getitem__) === "function") // test this before the generic object test
-		return container.__getitem__(key);
-	else if (Object.prototype.toString.call(container) === "[object Object]")
-		return container[key];
-	throw "getitem() needs a sequence or dict";
-};
-
-// List/String slicing: string[start:stop], list[start:stop]
-ul4._op_getslice = function(container, start, stop)
-{
-	if (typeof(start) === "undefined" || start === null)
-		start = 0;
-	if (typeof(stop) === "undefined" || stop === null)
-		stop = container.length;
-	return container.slice(start, stop);
 };
 
 // Return an iterator for ``obj``
@@ -731,27 +305,6 @@ ul4._markiter = function(f)
 {
 	f.__isiter__ = true;
 	return f;
-};
-
-ul4.formatnestedname = function(varname)
-{
-	if (typeof(varname) === "string")
-		return varname;
-	else if (varname.length == 1)
-		return "(" + this.formatnestedname(varname[0]) + ",)";
-	else
-	{
-		var v = [];
-		v.push("(");
-		for (var i = 0; i < varname.length; ++i)
-		{
-			if (i)
-				v.push(", ");
-			v.push(this.formatnestedname(varname[i]));
-		}
-		v.push(")");
-		return v.join("");
-	}
 };
 
 ul4._str_repr = function(str)
@@ -2033,6 +1586,42 @@ ul4.Color = ul4._inherit(
 			}
 		},
 
+		__getattr__: function(attrname)
+		{
+			var object = this;
+			switch (attrname)
+			{
+				case "r":
+					return ul4.expose("r", [], function(){ return object._r; });
+				case "g":
+					return ul4.expose("g", [], function(){ return object._g; });
+				case "b":
+					return ul4.expose("b", [], function(){ return object._b; });
+				case "a":
+					return ul4.expose("a", [], function(){ return object._a; });
+				case "lum":
+					return ul4.expose("lum", [], function(){ return object.lum(); });
+				case "hls":
+					return ul4.expose("hls", [], function(){ return object.hls(); });
+				case "hlsa":
+					return ul4.expose("hlsa", [], function(){ return object.hlsa(); });
+				case "hsv":
+					return ul4.expose("hsv", [], function(){ return object.hsv(); });
+				case "hsva":
+					return ul4.expose("hsva", [], function(){ return object.hsva(); });
+				case "witha":
+					return ul4.expose("witha", ["a"], function(a){ return object.witha(a); });
+				case "withlum":
+					return ul4.expose("withlum", ["lum"], function(lum){ return object.withlum(lum); });
+				case "abslum":
+					return ul4.expose("abslum", ["lum"], function(lum){ return object.abslum(lum); });
+				case "rellum":
+					return ul4.expose("rellum", ["lum"], function(lum){ return object.rellum(lum); });
+				default:
+					return ul4.undefined;
+			}
+		},
+
 		__getitem__: function(key)
 		{
 			var orgkey = key;
@@ -2201,9 +1790,9 @@ ul4.TimeDelta = ul4._inherit(
 
 			var total_microseconds = Math.floor((days * 86400 + seconds)*1000000 + microseconds);
 
-			microseconds = ul4._op_mod(total_microseconds, 1000000);
+			microseconds = ul4.Mod._do(total_microseconds, 1000000);
 			var total_seconds = Math.floor(total_microseconds / 1000000);
-			seconds = ul4._op_mod(total_seconds, 86400);
+			seconds = ul4.Mod._do(total_seconds, 86400);
 			days = Math.floor(total_seconds / 86400);
 			if (seconds < 0)
 			{
@@ -2387,26 +1976,36 @@ ul4.TimeDelta = ul4._inherit(
 			throw ul4._type(this) + " / " + ul4._type(other) + " not supported";
 		},
 
-		days: ul4.expose("days", [],
-			function()
+		__getattr__: function(attrname)
+		{
+			var object = this;
+			switch (attrname)
 			{
-				return this._days;
+				case "days":
+					return ul4.expose("days", [], function(){ return object._days; });
+				case "seconds":
+					return ul4.expose("seconds", [], function(){ return object._seconds; });
+				case "microseconds":
+					return ul4.expose("microseconds", [], function(){ return object._microseconds; });
+				default:
+					return ul4.undefined;
 			}
-		),
+		},
 
-		seconds: ul4.expose("seconds", [],
-			function()
-			{
-				return this._seconds;
-			}
-		),
+		days: function()
+		{
+			return this._days;
+		},
 
-		microseconds: ul4.expose("microseconds", [],
-			function()
-			{
-				return this._microseconds;
-			}
-		)
+		seconds: function()
+		{
+			return this._seconds;
+		},
+
+		microseconds: function()
+		{
+			return this._microseconds;
+		}
 	}
 );
 
@@ -2550,12 +2149,22 @@ ul4.MonthDelta = ul4._inherit(
 			throw ul4._type(this) + " / " + ul4._type(other) + " not supported";
 		},
 
-		months: ul4.expose("months", [],
-			function()
+		__getattr__: function(attrname)
+		{
+			var object = this;
+			switch (attrname)
 			{
-				return this._months;
+				case "months":
+					return ul4.expose("months", [], function(){ return object._months; });
+				default:
+					return ul4.undefined;
 			}
-		)
+		},
+
+		months: function()
+		{
+			return this._months;
+		}
 	}
 );
 
@@ -2622,15 +2231,6 @@ ul4.AST = ul4._inherit(
 			ast.end = end;
 			return ast;
 		},
-		_name: function()
-		{
-			var name = this.ul4onname.split(".");
-			return name[name.length-1];
-		},
-		_line: function(indent, line)
-		{
-			return ul4._op_mul("\t", indent) + line + "\n";
-		},
 		__str__: function()
 		{
 			var out = [];
@@ -2648,6 +2248,10 @@ ul4.AST = ul4._inherit(
 			var out = [];
 			this._jssource(out);
 			return ul4._formatsource(out);
+		},
+		_jssource_set: function(out, func, value)
+		{
+			throw "lvalue required";
 		},
 		_repr: function(out)
 		{
@@ -2670,9 +2274,10 @@ ul4.AST = ul4._inherit(
 			for (var i = 0; i < this._ul4onattrs.length; ++i)
 				this[this._ul4onattrs[i]] = decoder.load();
 		},
-		// used in ``format``/``_formatop`` to decide if we need brackets around an operator
-		precedence: null,
-		associative: true,
+		__setitem__: function(attrname, value)
+		{
+			throw "object is immutable";
+		},
 		// used in ul4ondump/ul4ondump to automatically dump these attributes
 		_ul4onattrs: ["location", "start", "end"]
 	}
@@ -2760,7 +2365,7 @@ ul4.ListComp = ul4._inherit(
 			this.item._repr(out);
 			out.push(null);
 			out.push("varname=");
-			this.varname._repr(out);
+			out.push(ul4._repr(this.varname));
 			out.push(null);
 			out.push("container=");
 			this.container._repr(out);
@@ -2779,9 +2384,11 @@ ul4.ListComp = ul4._inherit(
 			out.push("(function(vars){vars = ul4._simpleclone(vars); var result=[];for(var iter=ul4._iter(");
 			this.container._jssource(out);
 			out.push(");;){var item=iter();if(item===null)break;");
-			out.push("ul4._unpackvar(vars, ");
-			out.push(ul4._asjson(this.varname));
-			out.push(", item[0]);");
+			out.push("var value" + this.__id__ + " = ul4._unpackvar(item[0], ");
+			out.push(ul4._asjson(ul4._shape(this.varname)));
+			out.push(");");
+			out.push(null);
+			this._jssource_value(out, this.varname, "value" + this.__id__);
 			if (this.condition !== null)
 			{
 				out.push("if(ul4._bool(");
@@ -2791,6 +2398,20 @@ ul4.ListComp = ul4._inherit(
 			out.push("result.push(");
 			this.item._jssource(out);
 			out.push(");}return result;})(vars)");
+		},
+		_jssource_value: function(out, lvalue, value)
+		{
+			if (!ul4._islist(lvalue))
+			{
+				lvalue._jssource_set(out, "set", value);
+				out.push(";");
+				out.push(null);
+			}
+			else
+			{
+				for (var i = 0; i < lvalue.length; ++i)
+					this._jssource_value(out, lvalue[i], value + "[" + i + "]");
+			}
 		}
 	}
 );
@@ -2881,9 +2502,11 @@ ul4.DictComp = ul4._inherit(
 			out.push("(function(vars){vars=ul4._simpleclone(vars);var result={};for(var iter=ul4._iter(");
 			this.container._jssource(out);
 			out.push(");;){var item=iter();if(item===null)break;");
-			out.push("ul4._unpackvar(vars, ");
-			out.push(ul4._asjson(this.varname));
-			out.push(", item[0]);")
+			out.push("var value" + this.__id__ + " = ul4._unpackvar(item[0], ");
+			out.push(ul4._asjson(ul4._shape(this.varname)));
+			out.push(");");
+			out.push(null);
+			this._jssource_value(out, this.varname, "value" + this.__id__);
 			if (this.condition !== null)
 			{
 				out.push("if(ul4._bool(");
@@ -2895,6 +2518,20 @@ ul4.DictComp = ul4._inherit(
 			out.push("]=");
 			this.value._jssource(out);
 			out.push(";}return result;})(vars)");
+		},
+		_jssource_value: function(out, lvalue, value)
+		{
+			if (!ul4._islist(lvalue))
+			{
+				lvalue._jssource_set(out, "set", value);
+				out.push(";");
+				out.push(null);
+			}
+			else
+			{
+				for (var i = 0; i < lvalue.length; ++i)
+					this._jssource_value(out, lvalue[i], value + "[" + i + "]");
+			}
 		}
 	}
 );
@@ -2948,9 +2585,11 @@ ul4.GenExpr = ul4._inherit(
 							out.push("item = iter();");
 							out.push("if(item===null)");
 								out.push("return null;");
-							out.push("ul4._unpackvar(vars, ");
-							out.push(ul4._asjson(this.varname));
-							out.push(", item[0]);");
+							out.push("var value" + this.__id__ + " = ul4._unpackvar(item[0], ");
+							out.push(ul4._asjson(ul4._shape(this.varname)));
+							out.push(");");
+							out.push(null);
+							this._jssource_value(out, this.varname, "value" + this.__id__);
 							if (this.condition !== null)
 							{
 								out.push("if(ul4._bool(");
@@ -2967,6 +2606,20 @@ ul4.GenExpr = ul4._inherit(
 				this.container._jssource(out);
 				out.push(")");
 			out.push(")");
+		},
+		_jssource_value: function(out, lvalue, value)
+		{
+			if (!ul4._islist(lvalue))
+			{
+				lvalue._jssource_set(out, "set", value);
+				out.push(";");
+				out.push(null);
+			}
+			else
+			{
+				for (var i = 0; i < lvalue.length; ++i)
+					this._jssource_value(out, lvalue[i], value + "[" + i + "]");
+			}
 		}
 	}
 );
@@ -2989,9 +2642,66 @@ ul4.Var = ul4._inherit(
 		},
 		_jssource: function(out)
 		{
-			out.push("ul4._getvar(vars, ");
-			out.push(ul4._asjson(this.name))
+			out.push("ul4.Var._get(vars, ");
+			out.push(ul4._asjson(this.name));
 			out.push(")");
+		},
+		_jssource_set: function(out, func, value)
+		{
+			out.push("ul4.Var._" + func + "(vars, ");
+			out.push(ul4._asjson(this.name));
+			out.push(", ");
+			out.push(value);
+			out.push(")");
+		},
+		_get: function(vars, name)
+		{
+			var result = vars[name];
+			if (typeof(result) === "undefined")
+				result = ul4.functions[name];
+			return result;
+		},
+		_set: function(vars, name, value)
+		{
+			if (name === "self")
+				throw "can't assign to self";
+			vars[name] = value;
+		},
+		_add: function(vars, name, value)
+		{
+			if (name === "self")
+				throw "can't assign to self";
+			vars[name] = ul4.Add._do(vars[name], value);
+		},
+		_sub: function(vars, name, value)
+		{
+			if (name === "self")
+				throw "can't assign to self";
+			vars[name] = ul4.Sub._do(vars[name], value);
+		},
+		_mul: function(vars, name, value)
+		{
+			if (name === "self")
+				throw "can't assign to self";
+			vars[name] = ul4.Mul._do(vars[name], value);
+		},
+		_floordiv: function(vars, name, value)
+		{
+			if (name === "self")
+				throw "can't assign to self";
+			vars[name] = ul4.FloorDiv._do(vars[name], value);
+		},
+		_truediv: function(vars, name, value)
+		{
+			if (name === "self")
+				throw "can't assign to self";
+			vars[name] = ul4.TrueDiv._do(vars[name], value);
+		},
+		_mod: function(vars, name, value)
+		{
+			if (name === "self")
+				throw "can't assign to self";
+			vars[name] = ul4.Mod._do(vars[name], value);
 		}
 	}
 );
@@ -3009,7 +2719,7 @@ ul4.Unary = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<");
-			out.push(this.type);
+			out.push(this.name);
 			out.push(null);
 			out.push(+1);
 			out.push("obj=");
@@ -3020,18 +2730,38 @@ ul4.Unary = ul4._inherit(
 		},
 		_jssource: function(out)
 		{
-			out.push("ul4._op_");
-			out.push(this._name());
-			out.push("(");
+			out.push("ul4.");
+			out.push(this.name);
+			out.push("._do(");
 			this.obj._jssource(out);
 			out.push(")");
 		}
 	}
 );
 
-ul4.Neg = ul4._inherit(ul4.Unary, {});
+// Negation
+ul4.Neg = ul4._inherit(
+	ul4.Unary,
+	{
+		_do: function(obj)
+		{
+			if (obj !== null && typeof(obj.__neg__) === "function")
+				return obj.__neg__();
+			return -obj;
+		}
+	}
+);
 
-ul4.Not = ul4._inherit(ul4.Unary, {});
+// Not
+ul4.Not = ul4._inherit(
+	ul4.Unary,
+	{
+		_do: function(obj)
+		{
+			return !ul4._bool(obj);
+		}
+	}
+);
 
 ul4.Text = ul4._inherit(
 	ul4.AST,
@@ -3141,9 +2871,9 @@ ul4.Binary = ul4._inherit(
 		},
 		_jssource: function(out)
 		{
-			out.push("ul4._op_");
-			out.push(this._name());
-			out.push("(");
+			out.push("ul4.");
+			out.push(this.name);
+			out.push("._do(");
 			this.obj1._jssource(out);
 			out.push(", ");
 			this.obj2._jssource(out);
@@ -3152,35 +2882,462 @@ ul4.Binary = ul4._inherit(
 	}
 );
 
-ul4.GetItem = ul4._inherit(ul4.Binary, {});
+// Item access and assignment: dict[key], list[index], string[index], color[index]
+ul4.GetItem = ul4._inherit(
+	ul4.Binary,
+	{
+		_jssource: function(out)
+		{
+			out.push("ul4.GetItem._get(");
+			this.obj1._jssource(out);
+			out.push(", ");
+			this.obj2._jssource(out);
+			out.push(")");
+		},
+		_jssource_set: function(out, func, value)
+		{
+			out.push("ul4.GetItem._" + func + "(");
+			this.obj1._jssource(out);
+			out.push(", ");
+			this.obj2._jssource(out);
+			out.push(", ");
+			out.push(value);
+			out.push(")");
+		},
+		_get: function(container, key)
+		{
+			if (typeof(container) === "string" || ul4._islist(container))
+			{
+				var orgkey = key;
+				if (key < 0)
+					key += container.length;
+				return container[key];
+			}
+			else if (container && typeof(container.__getitem__) === "function") // test this before the generic object test
+				return container.__getitem__(key);
+			else if (Object.prototype.toString.call(container) === "[object Object]")
+				return container[key];
+			throw "getitem() needs a sequence or dict";
+		},
+		_set: function(container, key, value)
+		{
+			if (container && typeof(container.__setitem__) === "function") // test this before the generic object test
+				container.__setitem__(key, value);
+			else
+				container[key] = value;
+		},
+		_add: function(container, key, value)
+		{
+			var newvalue;
+			if (container && typeof(container.__getitem__) === "function") // test this before the generic object test
+				newvalue = container.__getitem__(key);
+			else
+				newvalue = container[key];
+			newvalue = ul4.Add._do(newvalue, value);
+			if (container && typeof(container.__setitem__) === "function") // test this before the generic object test
+				container.__setitem__(key, newvalue);
+			else
+				container[key] = newvalue;
+		},
+		_sub: function(container, key, value)
+		{
+			var newvalue;
+			if (container && typeof(container.__getitem__) === "function") // test this before the generic object test
+				newvalue = container.__getitem__(key);
+			else
+				newvalue = container[key];
+			newvalue = ul4.Sub._do(newvalue, value);
+			if (container && typeof(container.__setitem__) === "function") // test this before the generic object test
+				container.__setitem__(key, newvalue);
+			else
+				container[key] = newvalue;
+		},
+		_mul: function(container, key, value)
+		{
+			var newvalue;
+			if (container && typeof(container.__getitem__) === "function") // test this before the generic object test
+				newvalue = container.__getitem__(key);
+			else
+				newvalue = container[key];
+			newvalue = ul4.Mul._do(newvalue, value);
+			if (container && typeof(container.__setitem__) === "function") // test this before the generic object test
+				container.__setitem__(key, newvalue);
+			else
+				container[key] = newvalue;
+		},
+		_floordiv: function(container, key, value)
+		{
+			var newvalue;
+			if (container && typeof(container.__getitem__) === "function") // test this before the generic object test
+				newvalue = container.__getitem__(key);
+			else
+				newvalue = container[key];
+			newvalue = ul4.FloorDiv._do(newvalue, value);
+			if (container && typeof(container.__setitem__) === "function") // test this before the generic object test
+				container.__setitem__(key, newvalue);
+			else
+				container[key] = newvalue;
+		},
+		_truediv: function(container, key, value)
+		{
+			var newvalue;
+			if (container && typeof(container.__getitem__) === "function") // test this before the generic object test
+				newvalue = container.__getitem__(key);
+			else
+				newvalue = container[key];
+			newvalue = ul4.TrueDiv._do(newvalue, value);
+			if (container && typeof(container.__setitem__) === "function") // test this before the generic object test
+				container.__setitem__(key, newvalue);
+			else
+				container[key] = newvalue;
+		},
+		_mod: function(container, key, value)
+		{
+			var newvalue;
+			if (container && typeof(container.__getitem__) === "function") // test this before the generic object test
+				newvalue = container.__getitem__(key);
+			else
+				newvalue = container[key];
+			newvalue = ul4.Mod._do(newvalue, value);
+			if (container && typeof(container.__setitem__) === "function") // test this before the generic object test
+				container.__setitem__(key, newvalue);
+			else
+				container[key] = newvalue;
+		}
+	}
+);
 
-ul4.EQ = ul4._inherit(ul4.Binary, {});
+// Comparison operator ==
+ul4.EQ = ul4._inherit(
+	ul4.Binary,
+	{
+		_do: function(obj1, obj2)
+		{
+			if (obj1 && typeof(obj1.__eq__) === "function")
+			{
+				if (obj2 && typeof(obj2.__eq__) === "function")
+					return obj1.__eq__(obj2);
+				else
+					return false;
+			}
+			else
+			{
+				if (obj2 && typeof(obj2.__eq__) === "function")
+					return false;
+				else
+					return obj1 === obj2;
+			}
+		}
+	}
+);
 
-ul4.NE = ul4._inherit(ul4.Binary, {});
+// Comparison operator !=
+ul4.NE = ul4._inherit(
+	ul4.Binary,
+	{
+		_do: function(obj1, obj2)
+		{
+			if (obj1 && typeof(obj1.__ne__) === "function")
+			{
+				if (obj2 && typeof(obj2.__ne__) === "function")
+					return obj1.__ne__(obj2);
+				else
+					return true;
+			}
+			else
+			{
+				if (obj2 && typeof(obj2.__ne__) === "function")
+					return true;
+				else
+					return obj1 !== obj2;
+			}
+		}
+	}
+);
 
-ul4.LT = ul4._inherit(ul4.Binary, {});
+// Comparison operator <
+ul4.LT = ul4._inherit(
+	ul4.Binary,
+	{
+		_do: function(obj1, obj2)
+		{
+			if (obj1 && typeof(obj1.__lt__) === "function")
+			{
+				if (obj2 && typeof(obj2.__lt__) === "function")
+					return obj1.__lt__(obj2);
+				else
+					throw "unorderable types: " + ul4._type(obj1) + "() < " + ul4._type(obj2) + "()";
+			}
+			else
+			{
+				if (obj2 && typeof(obj2.__lt__) === "function")
+					throw "unorderable types: " + ul4._type(obj1) + "() < " + ul4._type(obj2) + "()";
+				else
+					return obj1 < obj2;
+			}
+		}
+	}
+);
 
-ul4.LE = ul4._inherit(ul4.Binary, {});
+// Comparison operator <=
+ul4.LE = ul4._inherit(
+	ul4.Binary,
+	{
+		_do: function(obj1, obj2)
+		{
+			if (obj1 && typeof(obj1.__le__) === "function")
+			{
+				if (obj2 && typeof(obj2.__le__) === "function")
+					return obj1.__le__(obj2);
+				else
+					throw "unorderable types: " + ul4._type(obj1) + "() <= " + ul4._type(obj2) + "()";
+			}
+			else
+			{
+				if (obj2 && typeof(obj2.__lt__) === "function")
+					throw "unorderable types: " + ul4._type(obj1) + "() <= " + ul4._type(obj2) + "()";
+				else
+					return obj1 <= obj2;
+			}
+		}
+	}
+);
 
-ul4.GT = ul4._inherit(ul4.Binary, {});
+// Comparison operator >
+ul4.GT = ul4._inherit(
+	ul4.Binary,
+	{
+		_do: function(obj1, obj2)
+		{
+			if (obj1 && typeof(obj1.__gt__) === "function")
+			{
+				if (obj2 && typeof(obj2.__gt__) === "function")
+					return obj1.__gt__(obj2);
+				else
+					throw "unorderable types: " + ul4._type(obj1) + "() > " + ul4._type(obj2) + "()";
+			}
+			else
+			{
+				if (obj2 && typeof(obj2.__lt__) === "function")
+					throw "unorderable types: " + ul4._type(obj1) + "() > " + ul4._type(obj2) + "()";
+				else
+					return obj1 > obj2;
+			}
+		}
+	}
+);
 
-ul4.GE = ul4._inherit(ul4.Binary, {});
+// Comparison operator >=
+ul4.GE = ul4._inherit(
+	ul4.Binary,
+	{
+		_do: function(obj1, obj2)
+		{
+			if (obj1 && typeof(obj1.__ge__) === "function")
+			{
+				if (obj2 && typeof(obj2.__ge__) === "function")
+					return obj1.__ge__(obj2);
+				else
+					throw "unorderable types: " + ul4._type(obj1) + "() >= " + ul4._type(obj2) + "()";
+			}
+			else
+			{
+				if (obj2 && typeof(obj2.__lt__) === "function")
+					throw "unorderable types: " + ul4._type(obj1) + "() >= " + ul4._type(obj2) + "()";
+				else
+					return obj1 >= obj2;
+			}
+		}
+	}
+);
 
-ul4.Contains = ul4._inherit(ul4.Binary, {});
+// Containment test: string in string, obj in list, key in dict, value in rgb
+ul4.Contains = ul4._inherit(
+	ul4.Binary,
+	{
+		_do: function(obj, container)
+		{
+			if (typeof(obj) === "string" && typeof(container) === "string")
+			{
+				return container.indexOf(obj) !== -1;
+			}
+			else if (ul4._islist(container))
+			{
+				return container.indexOf(obj) !== -1;
+			}
+			else if (container && typeof(container.__contains__) === "function") // test this before the generic object test
+				return container.__contains__(obj);
+			else if (ul4._isdict(container))
+			{
+				for (var key in container)
+				{
+					if (key === obj)
+						return true;
+				}
+				return false;
+			}
+			else if (ul4._iscolor(container))
+			{
+				return container._r === obj || container._g === obj || container._b === obj || container._a === obj;
+			}
+			throw "argument of type '" + ul4._type(container) + "' is not iterable";
+		}
+	}
+);
 
-ul4.NotContains = ul4._inherit(ul4.Binary, {});
+// Inverted containment test
+ul4.NotContains = ul4._inherit(
+	ul4.Binary,
+	{
+		_do: function(obj, container)
+		{
+			return !ul4.Contains._do(obj, container);
+		}
+	}
+);
 
-ul4.Add = ul4._inherit(ul4.Binary, {});
+// Addition: num + num, string + string
+ul4.Add = ul4._inherit(
+	ul4.Binary,
+	{
+		_do: function(obj1, obj2)
+		{
+			if (obj1 && typeof(obj1.__add__) === "function")
+				return obj1.__add__(obj2);
+			else if (obj2 && typeof(obj2.__radd__) === "function")
+				return obj2.__radd__(obj1);
+			if (obj1 === null || obj2 === null)
+				throw ul4._type(obj1) + " + " + ul4._type(obj2) + " not supported";
+			if (ul4._islist(obj1) && ul4._islist(obj2))
+			{
+				var result = [];
+				ul4._append(result, obj1);
+				ul4._append(result, obj2);
+				return result;
+			}
+			else
+				return obj1 + obj2;
+		}
+	}
+);
 
-ul4.Sub = ul4._inherit(ul4.Binary, {});
+// Substraction: num - num
+ul4.Sub = ul4._inherit(
+	ul4.Binary,
+	{
+		_do: function(obj1, obj2)
+		{
+			if (obj1 && typeof(obj1.__sub__) === "function")
+				return obj1.__sub__(obj2);
+			else if (obj2 && typeof(obj2.__rsub__) === "function")
+				return obj2.__rsub__(obj1);
+			if (obj1 === null || obj2 === null)
+				throw ul4._type(obj1) + " - " + ul4._type(obj2) + " not supported";
+			return obj1 - obj2;
+		}
+	}
+);
 
-ul4.Mul = ul4._inherit(ul4.Binary, {});
+// Multiplication: num * num, int * str, str * int, int * list, list * int
+ul4.Mul = ul4._inherit(
+	ul4.Binary,
+	{
+		_do: function(obj1, obj2)
+		{
+			if (obj1 && typeof(obj1.__mul__) === "function")
+				return obj1.__mul__(obj2);
+			else if (obj2 && typeof(obj2.__rmul__) === "function")
+				return obj2.__rmul__(obj1);
+			if (obj1 === null || obj2 === null)
+				throw ul4._type(obj1) + " * " + ul4._type(obj2) + " not supported";
+			else if (ul4._isint(obj1) || ul4._isbool(obj1))
+			{
+				if (typeof(obj2) === "string")
+				{
+					if (obj1 < 0)
+						throw "mul() repetition counter must be positive";
+					return ul4._str_repeat(obj2, obj1);
+				}
+				else if (ul4._islist(obj2))
+				{
+					if (obj1 < 0)
+						throw "mul() repetition counter must be positive";
+					return ul4._list_repeat(obj2, obj1);
+				}
+			}
+			else if (ul4._isint(obj2) || ul4._isbool(obj2))
+			{
+				if (typeof(obj1) === "string")
+				{
+					if (obj2 < 0)
+						throw "mul() repetition counter must be positive";
+					return ul4._str_repeat(obj1, obj2);
+				}
+				else if (ul4._islist(obj1))
+				{
+					if (obj2 < 0)
+						throw "mul() repetition counter must be positive";
+					return ul4._list_repeat(obj1, obj2);
+				}
+			}
+			return obj1 * obj2;
+		}
+	}
+);
 
-ul4.FloorDiv = ul4._inherit(ul4.Binary, {});
+// Truncating division
+ul4.FloorDiv = ul4._inherit(
+	ul4.Binary,
+	{
+		_do: function(obj1, obj2)
+		{
+			if (obj1 && typeof(obj1.__floordiv__) === "function")
+				return obj1.__floordiv__(obj2);
+			else if (obj2 && typeof(obj2.__rfloordiv__) === "function")
+				return obj2.__rfloordiv__(obj1);
+			if (obj1 === null || obj2 === null)
+				throw ul4._type(obj1) + " // " + ul4._type(obj2) + " not supported";
+			return Math.floor(obj1 / obj2);
+		}
+	}
+);
 
-ul4.TrueDiv = ul4._inherit(ul4.Binary, {});
+// "Real" division
+ul4.TrueDiv = ul4._inherit(
+	ul4.Binary,
+	{
+		_do: function(obj1, obj2)
+		{
+			if (obj1 && typeof(obj1.__truediv__) === "function")
+				return obj1.__truediv__(obj2);
+			else if (obj2 && typeof(obj2.__rtruediv__) === "function")
+				return obj2.__rtruediv__(obj1);
+			if (obj1 === null || obj2 === null)
+				throw ul4._type(obj1) + " / " + ul4._type(obj2) + " not supported";
+			return obj1 / obj2;
+		}
+	}
+);
 
-ul4.Mod = ul4._inherit(ul4.Binary, {});
+// Modulo
+ul4.Mod = ul4._inherit(
+	ul4.Binary,
+	{
+		// (this is non-trivial, because it follows the Python semantic of ``-5 % 2`` being ``1``)
+		_do: function(obj1, obj2)
+		{
+			var div = Math.floor(obj1 / obj2);
+			var mod = obj1 - div * obj2;
+
+			if (mod !== 0 && ((obj2 < 0 && mod > 0) || (obj2 > 0 && mod < 0)))
+			{
+				mod += obj2;
+				--div;
+			}
+			return obj1 - div * obj2;
+		}
+	}
+);
 
 ul4.And = ul4._inherit(
 	ul4.Binary,
@@ -3227,7 +3384,7 @@ ul4.GetAttr = ul4._inherit(
 			out.push(null);
 			out.push(+1);
 			out.push("obj=");
-			this.obj1._repr(out);
+			this.obj._repr(out);
 			out.push(null);
 			out.push("attrname=");
 			out.push(ul4._repr(this.attrname));
@@ -3237,11 +3394,157 @@ ul4.GetAttr = ul4._inherit(
 		},
 		_jssource: function(out)
 		{
-			out.push("ul4._op_getattr(");
+			out.push("ul4.GetAttr._get(");
 			this.obj._jssource(out);
 			out.push(", ");
 			out.push(ul4._asjson(this.attrname));
 			out.push(")");
+		},
+		_jssource_set: function(out, func, value)
+		{
+			out.push("ul4.GetAttr._" + func + "(");
+			this.obj._jssource(out);
+			out.push(", ");
+			out.push(ul4._asjson(this.attrname));
+			out.push(", ");
+			out.push(value);
+			out.push(")");
+		},
+		_get: function(object, attrname)
+		{
+			if (typeof(object) === "string")
+			{
+				switch (attrname)
+				{
+					case "find":
+						return ul4.expose("find", ["sub", ["start", null], ["end", null]], function(sub, start, end){ return ul4._find(object, sub, start, end); });
+					case "rfind":
+						return ul4.expose("rfind", ["sub", ["start", null], ["end", null]], function(sub, start, end){ return ul4._rfind(object, sub, start, end); });
+					case "replace":
+						return ul4.expose("replace", ["old", "new", ["count", null]], function(old, new_, count){ return ul4._replace(object, old, new_, count); });
+					case "strip":
+						return ul4.expose("strip", [["chars", null]], function(chars){ return ul4._strip(object, chars); });
+					case "lstrip":
+						return ul4.expose("lstrip", [["chars", null]], function(chars){ return ul4._lstrip(object, chars); });
+					case "rstrip":
+						return ul4.expose("rstrip", [["chars", null]], function(chars){ return ul4._rstrip(object, chars); });
+					case "split":
+						return ul4.expose("split", [["sep", null], ["count", null]], function(sep, count){ return ul4._split(object, sep, count); });
+					case "rsplit":
+						return ul4.expose("rsplit", [["sep", null], ["count", null]], function(sep, count){ return ul4._rsplit(object, sep, count); });
+					case "lower":
+						return ul4.expose("lower", [], function(){ return object.toLowerCase(); });
+					case "upper":
+						return ul4.expose("upper", [], function(){ return object.toUpperCase(); });
+					case "capitalize":
+						return ul4.expose("capitalize", [], function(){ return ul4._capitalize(object); });
+					case "join":
+						return ul4.expose("join", ["iterable"], function(iterable){ return ul4._join(object, iterable); });
+					case "startswith":
+						return ul4.expose("startswith", ["prefix"], function(prefix){ return ul4._startswith(object, prefix); });
+					case "endswith":
+						return ul4.expose("endswith", ["suffix"], function(suffix){ return ul4._endswith(object, suffix); });
+					default:
+						return ul4.undefined;
+				}
+			}
+			else if (ul4._islist(object))
+			{
+				switch (attrname)
+				{
+					case "append":
+						return ul4.expose("append", ["*items"], function(items){ return ul4._append(object, items); });
+					case "insert":
+						return ul4.expose("insert", ["pos", "*items"], function(pos, items){ return ul4._insert(object, pos, items); });
+					case "pop":
+						return ul4.expose("pop", [["pos", -1]], function(pos){ return ul4._pop(object, pos); });
+					case "find":
+						return ul4.expose("find", ["sub", ["start", null], ["end", null]], function(sub, start, end){ return ul4._find(object, sub, start, end); });
+					case "rfind":
+						return ul4.expose("rfind", ["sub", ["start", null], ["end", null]], function(sub, start, end){ return ul4._rfind(object, sub, start, end); });
+					default:
+						return ul4.undefined;
+				}
+			}
+			else if (ul4._isdate(object))
+			{
+				switch (attrname)
+				{
+					case "weekday":
+						return ul4.expose("weekday", [], function(){ return ul4._weekday(object); });
+					case "week":
+						return ul4.expose("week", [["firstweekday", null]], function(firstweekday){ return ul4._week(object, firstweekday); });
+					case "day":
+						return ul4.expose("day", [], function(){ return object.getDate(); });
+					case "month":
+						return ul4.expose("month", [], function(){ return object.getMonth()+1; });
+					case "year":
+						return ul4.expose("year", [], function(){ return object.getFullYear(); });
+					case "hour":
+						return ul4.expose("hour", [], function(){ return object.getHours(); });
+					case "minute":
+						return ul4.expose("minute", [], function(){ return object.getMinutes(); });
+					case "second":
+						return ul4.expose("second", [], function(){ return object.getSeconds(); });
+					case "microsecond":
+						return ul4.expose("microsecond", [], function(){ return object.getMilliseconds() * 1000; });
+					case "mimeformat":
+						return ul4.expose("mimeformat", [], function(){ return ul4._mimeformat(object); });
+					case "isoformat":
+						return ul4.expose("isoformat", [], function(){ return ul4._isoformat(object); });
+					case "yearday":
+						return ul4.expose("yearday", [], function(){ return ul4._yearday(object); });
+					default:
+						return ul4.undefined;
+				}
+			}
+			else if (object && typeof(object.__getattr__) === "function") // test this before the generic object test
+				return object.__getattr__(attrname);
+			else if (Object.prototype.toString.call(object) === "[object Object]")
+			{
+				switch (attrname)
+				{
+					case "get":
+						return ul4.expose("get", ["key", ["default", null]], function(key, default_){ return ul4._get(object, key, default_); });
+					case "items":
+						return ul4.expose("items", [], function(){ return ul4._items(object); });
+					case "values":
+						return ul4.expose("values", [], function(){ return ul4._values(object); });
+					case "update":
+						return ul4.expose("update", ["*other", "**kwargs"], function(other, kwargs){ return ul4._update(object, other, kwargs); });
+					default:
+						return object[attrname];
+				}
+			}
+			throw "GetAttr._get() needs an object with attributes";
+		},
+		_set: function(object, attrname, value)
+		{
+			object[attrname] = value;
+		},
+		_add: function(object, attrname, value)
+		{
+			object[attrname] = ul4.Add._do(object[attrname], value);
+		},
+		_sub: function(object, attrname, value)
+		{
+			object[attrname] = ul4.Sub._do(object[attrname], value);
+		},
+		_mul: function(object, attrname, value)
+		{
+			object[attrname] = ul4.Mul._do(object[attrname], value);
+		},
+		_floordiv: function(object, attrname, value)
+		{
+			object[attrname] = ul4.FloorDiv._do(object[attrname], value);
+		},
+		_truediv: function(object, attrname, value)
+		{
+			object[attrname] = ul4.TrueDiv._do(object[attrname], value);
+		},
+		_mod: function(object, attrname, value)
+		{
+			object[attrname] = ul4.Mod._do(object[attrname], value);
 		}
 	}
 );
@@ -3266,7 +3569,7 @@ ul4.Call = ul4._inherit(
 			out.push(null);
 			out.push(+1);
 			out.push("obj=");
-			this.obj1._repr(out);
+			this.obj._repr(out);
 			out.push(null);
 			for (var i = 0; i < this.args.length; ++i)
 			{
@@ -3345,6 +3648,7 @@ ul4.Call = ul4._inherit(
 	}
 );
 
+// List/String slicing: string[start:stop], list[start:stop]
 ul4.GetSlice = ul4._inherit(
 	ul4.AST,
 	{
@@ -3382,7 +3686,7 @@ ul4.GetSlice = ul4._inherit(
 		},
 		_jssource: function(out)
 		{
-			out.push("ul4._op_getslice(");
+			out.push("ul4.GetSlice._do(");
 			this.obj._jssource(out);
 			out.push(", ");
 			if (this.index1 !== null)
@@ -3395,6 +3699,14 @@ ul4.GetSlice = ul4._inherit(
 			else
 				out.push("null");
 			 out.push(")");
+		},
+		_do: function(container, start, stop)
+		{
+			if (typeof(start) === "undefined" || start === null)
+				start = 0;
+			if (typeof(stop) === "undefined" || stop === null)
+				stop = container.length;
+			return container.slice(start, stop);
 		}
 	}
 );
@@ -3413,63 +3725,60 @@ ul4.ChangeVar = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<");
-			out.push(this.name)
+			out.push(this.name);
 			out.push(null);
 			out.push(+1);
 			out.push("lvalue=");
-			this.value._repr(this.lvalue);
+			out.push(ul4._repr(this.lvalue));
 			out.push(null);
 			out.push("value=");
 			this.value._repr(out);
 			out.push(null);
-		}
-	}
-);
-
-ul4.SetVar = ul4._inherit(
-	ul4.ChangeVar,
-	{
+			out.push(-1);
+			out.push(">");
+		},
 		_jssource: function(out)
 		{
-			out.push("ul4._unpackvar(vars, ");
-			out.push(ul4._asjson(this.varname));
+			out.push("var value" + this.__id__ + " = ul4._unpackvar(");
+			this.value._jssource(out);
 			out.push(", ");
-			this.value._jssource(out);
-			out.push(")");
-		}
-	}
-);
-
-ul4.ModifyVar = ul4._inherit(
-	ul4.ChangeVar,
-	{
-		_jssource: function(out)
+			out.push(ul4._asjson(ul4._shape(this.lvalue)));
+			out.push(");");
+			out.push(null);
+			this._jssource_value(out, this.lvalue, "value" + this.__id__);
+		},
+		_jssource_value: function(out, lvalue, value)
 		{
-			var varname = ul4._asjson(this.varname);
-			out.push("ul4._setvar(vars, ");
-			out.push(varname);
-			out.push(", ul4._op_");
-			out.push(this._sourcejs);
-			out.push("(ul4._getvar(vars, ");
-			out.push(varname);
-			out.push("), ");
-			this.value._jssource(out);
-			out.push("))");
+			if (!ul4._islist(lvalue))
+			{
+				lvalue._jssource_set(out, this._func, value);
+				out.push(";");
+				out.push(null);
+			}
+			else
+			{
+				for (var i = 0; i < lvalue.length; ++i)
+					this._jssource_value(out, lvalue[i], value + "[" + i + "]");
+			}
 		}
 	}
 );
 
-ul4.AddVar = ul4._inherit(ul4.ModifyVar, { _sourcejs: "add" });
+ul4.SetVar = ul4._inherit(ul4.ChangeVar, { _func: "set" });
 
-ul4.SubVar = ul4._inherit(ul4.ModifyVar, { _sourcejs: "sub" });
+ul4.ModifyVar = ul4._inherit(ul4.ChangeVar, {});
 
-ul4.MulVar = ul4._inherit(ul4.ModifyVar, { _sourcejs: "mul" });
+ul4.AddVar = ul4._inherit(ul4.ModifyVar, { _func: "add" });
 
-ul4.TrueDivVar = ul4._inherit(ul4.ModifyVar, { _sourcejs: "truediv" });
+ul4.SubVar = ul4._inherit(ul4.ModifyVar, { _func: "sub" });
 
-ul4.FloorDivVar = ul4._inherit(ul4.ModifyVar, { _sourcejs: "floordiv" });
+ul4.MulVar = ul4._inherit(ul4.ModifyVar, { _func: "mul" });
 
-ul4.ModVar = ul4._inherit(ul4.ModifyVar, { _sourcejs: "mod" });
+ul4.TrueDivVar = ul4._inherit(ul4.ModifyVar, { _func: "truediv" });
+
+ul4.FloorDivVar = ul4._inherit(ul4.ModifyVar, { _func: "floordiv" });
+
+ul4.ModVar = ul4._inherit(ul4.ModifyVar, { _func: "mod" });
 
 ul4.Block = ul4._inherit(
 	ul4.AST,
@@ -3566,12 +3875,29 @@ ul4.For = ul4._inherit(
 			out.push("break;");
 			out.push(null);
 			out.push(-1);
-			out.push("ul4._unpackvar(vars, " + ul4._asjson(this.varname) + ", item" + this.__id__ + "[0]);");
+			out.push("var value" + this.__id__ + " = ul4._unpackvar(item" + this.__id__ + "[0], ");
+			out.push(ul4._asjson(ul4._shape(this.varname)));
+			out.push(");");
 			out.push(null);
+			this._jssource_value(out, this.varname, "value" + this.__id__);
 			this._jssource_content(out);
 			out.push(-1);
 			out.push("}");
 			out.push(null);
+		},
+		_jssource_value: function(out, lvalue, value)
+		{
+			if (!ul4._islist(lvalue))
+			{
+				lvalue._jssource_set(out, "set", value);
+				out.push(";");
+				out.push(null);
+			}
+			else
+			{
+				for (var i = 0; i < lvalue.length; ++i)
+					this._jssource_value(out, lvalue[i], value + "[" + i + "]");
+			}
 		},
 		_str: function(out)
 		{
@@ -3775,7 +4101,7 @@ ul4.Template = ul4._inherit(
 		},
 		_jssource: function(out)
 		{
-			out.push("ul4._setvar(vars, " + ul4._asjson(this.name) + ", ul4.TemplateClosure.create(self._getast(" + this.__id__ + "), vars))");
+			out.push("ul4.Var._set(vars, " + ul4._asjson(this.name) + ", ul4.TemplateClosure.create(self._getast(" + this.__id__ + "), vars))");
 		},
 		_repr: function(out)
 		{
@@ -3830,22 +4156,47 @@ ul4.Template = ul4._inherit(
 			out.push(null);
 			return ul4._formatsource(out);
 		},
-		render: ul4.expose("render", ["**vars"], true,
-			function(out, vars)
+		render: function(out, vars)
+		{
+			if (this._jsfunction === null)
+				this._jsfunction = eval(this._makesource());
+			this._jsfunction(this, out, vars || {});
+		},
+		renders: function(vars)
+		{
+			var out = []
+			this.render(out, vars);
+			return out.join("");
+		},
+		__getattr__: function(attrname)
+		{
+			var object = this;
+			switch (attrname)
 			{
-				if (this._jsfunction === null)
-					this._jsfunction = eval(this._makesource());
-				this._jsfunction(this, out, vars || {});
+				case "location":
+					return this.location;
+				case "endlocation":
+					return this.endlocation;
+				case "content":
+					return this.content;
+				case "source":
+					return this.source;
+				case "name":
+					return this.name;
+				case "keepws":
+					return this.keepws;
+				case "startdelim":
+					return this.startdelim;
+				case "enddelim":
+					return this.enddelim;
+				case "render":
+					return ul4.expose("render", ["**vars"], true, function(out, vars){ return object.render(out, vars); });
+				case "renders":
+					return ul4.expose("renders", ["**vars"], function(vars){ return object.renders(vars); });
+				default:
+					return ul4.undefined;
 			}
-		),
-		renders: ul4.expose("renders", ["**vars"],
-			function(vars)
-			{
-				var out = []
-				this.render(out, vars);
-				return out.join("");
-			}
-		),
+		},
 		call: function(vars)
 		{
 			if (this._jsfunction === null)
@@ -3853,6 +4204,7 @@ ul4.Template = ul4._inherit(
 			var out = [];
 			return this._jsfunction(this, out, vars || {});
 		},
+		__call__: ul4.expose(null, ["**vars"], function(vars){ return this.call(vars); }),
 		__type__: "template" // used by ``istemplate()``
 	}
 );
@@ -3878,22 +4230,32 @@ ul4.TemplateClosure = ul4._inherit(
 			closure.content = template.content;
 			return closure;
 		},
-		render: ul4.expose("render", ["**vars"], true,
-			function(out, vars)
-			{
-				this.template.render(out, ul4._simpleinherit(this.vars, vars));
-			}
-		),
-		renders: ul4.expose("renders", ["**vars"],
-			function(vars)
-			{
-				return this.template.renders(ul4._simpleinherit(this.vars, vars));
-			}
-		),
+		render: function(out, vars)
+		{
+			this.template.render(out, ul4._simpleinherit(this.vars, vars));
+		},
+		renders: function(vars)
+		{
+			return this.template.renders(ul4._simpleinherit(this.vars, vars));
+		},
 		call: function(vars)
 		{
 			return this.template.call(ul4._simpleinherit(this.vars, vars));
 		},
+		__getattr__: function(attrname)
+		{
+			var object = this;
+			switch (attrname)
+			{
+				case "render":
+					return ul4.expose("render", ["**vars"], true, function(out, vars){ return object.render(out, vars); });
+				case "renders":
+					return ul4.expose("renders", ["**vars"], function(vars){ return object.renders(vars); });
+				default:
+					return this.template.__getattr__(attrname);
+			}
+		},
+		__call__: ul4.expose(null, ["**vars"], function(vars){ return this.call(vars); }),
 		__type__: "template" // used by ``istemplate()``
 	}
 );
@@ -4045,7 +4407,7 @@ ul4._sum = function(iterable, start)
 	return start;
 };
 
-// Return the first value produced by iterating through ``iterable`` (defaulting to ``defaultValue`` is the iterator is empty)
+// Return the first value produced by iterating through ``iterable`` (defaulting to ``defaultValue`` if the iterator is empty)
 ul4._first = function(iterable, defaultValue)
 {
 	if (typeof(defaultValue) === "undefined")
@@ -4053,10 +4415,10 @@ ul4._first = function(iterable, defaultValue)
 
 	var iter = ul4._iter(iterable);
 	var value = iter();
-	return (value !== null) ? defaultValue : value[0];
+	return (value !== null) ? value[0] : defaultValue;
 };
 
-// Return the last value produced by iterating through ``iterable`` (defaulting to ``defaultValue`` is the iterator is empty)
+// Return the last value produced by iterating through ``iterable`` (defaulting to ``defaultValue`` if the iterator is empty)
 ul4._last = function(iterable, defaultValue)
 {
 	if (typeof(defaultValue) === "undefined")
@@ -4892,9 +5254,6 @@ ul4._isoformat = function(obj)
 
 ul4._mimeformat = function(obj)
 {
-	if (!ul4._isdate(obj))
-		throw "mimeformat() requires a date";
-
 	var weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 	var monthname = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -4903,9 +5262,6 @@ ul4._mimeformat = function(obj)
 
 ul4._weekday = function(obj)
 {
-	if (!ul4._isdate(obj))
-		throw "weekday() requires a date";
-
 	var d = obj.getDay();
 	return d ? d-1 : 6;
 };
@@ -4939,9 +5295,6 @@ ul4._isleap = function(obj)
 
 ul4._yearday = function(obj)
 {
-	if (!ul4._isdate(obj))
-		throw "yearday() requires a date";
-
 	var leap = ul4._isleap(obj) ? 1 : 0;
 	var day = obj.getDate();
 	switch (obj.getMonth())
@@ -5087,6 +5440,7 @@ ul4._update = function(obj, others, kwargs)
 		if (ul4onname === "ifelifelse")
 			ul4onname = "ieie";
 		var object = ul4[name];
+		object.name = name;
 		object.type = ul4onname;
 		ul4on.register("de.livinglogic.ul4." + ul4onname, object);
 	}
