@@ -5,14 +5,6 @@
  * Copyright 2012-2013 by LivingLogic AG, Bayreuth/Germany
  * Copyright 2012-2013 by Walter Dörwald
  *
- * This module provides functions for encoding and decoding a lightweight
- * machine-readable text-based format for serializing the object types supported
- * by UL4.
- *
- * It is extensible to allow encoding/decoding arbitrary instances (i.e. it is
- * basically a reimplementation of :mod:`pickle`, but with string input/output
- * instead of bytes and with an eye towards cross-plattform support).
- *
  * All Rights Reserved
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
