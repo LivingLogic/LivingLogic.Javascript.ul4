@@ -2,8 +2,8 @@
  * UL4 JavaScript Library
  * http://www.livinglogic.de/Python/ul4c/
  *
- * Copyright 2011-2012 by LivingLogic AG, Bayreuth/Germany
- * Copyright 2011-2012 by Walter Dörwald
+ * Copyright 2011-2013 by LivingLogic AG, Bayreuth/Germany
+ * Copyright 2011-2013 by Walter Dörwald
  *
  * All Rights Reserved
  *

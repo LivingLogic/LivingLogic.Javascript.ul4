@@ -2,8 +2,8 @@
  * UL4ON JavaScript Library
  * http://www.livinglogic.de/Python/ul4on/
  *
- * Copyright 2012 by LivingLogic AG, Bayreuth/Germany
- * Copyright 2012 by Walter Dörwald
+ * Copyright 2012-2013 by LivingLogic AG, Bayreuth/Germany
+ * Copyright 2012-2013 by Walter Dörwald
  *
  * This module provides functions for encoding and decoding a lightweight
  * machine-readable text-based format for serializing the object types supported
