@@ -1,4 +1,5 @@
 /*!
+
  * UL4 JavaScript Library
  * http://www.livinglogic.de/Python/ul4c/
  *
@@ -2885,12 +2886,12 @@ ul4.Binary = ul4._inherit(
 );
 
 // Item access and assignment: dict[key], list[index], string[index], color[index]
-ul4.GetItem = ul4._inherit(
+ul4.Item = ul4._inherit(
 	ul4.Binary,
 	{
 		_jssource: function(out)
 		{
-			out.push("ul4.GetItem._get(");
+			out.push("ul4.Item._get(");
 			this.obj1._jssource(out);
 			out.push(", ");
 			this.obj2._jssource(out);
@@ -2898,7 +2899,7 @@ ul4.GetItem = ul4._inherit(
 		},
 		_jssource_set: function(out, func, value)
 		{
-			out.push("ul4.GetItem._" + func + "(");
+			out.push("ul4.Item._" + func + "(");
 			this.obj1._jssource(out);
 			out.push(", ");
 			this.obj2._jssource(out);
@@ -3369,20 +3370,20 @@ ul4.Or = ul4._inherit(
 	}
 );
 
-ul4.GetAttr = ul4._inherit(
+ul4.Attr = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end, obj, attrname)
 		{
-			var getattr = ul4.AST.create.call(this, location, start, end);
-			getattr.obj = obj;
-			getattr.attrname = attrname;
-			return getattr;
+			var attr = ul4.AST.create.call(this, location, start, end);
+			attr.obj = obj;
+			attr.attrname = attrname;
+			return attr;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["obj", "attrname"]),
 		_repr: function(out)
 		{
-			out.push("<GetAttr");
+			out.push("<Attr");
 			out.push(null);
 			out.push(+1);
 			out.push("obj=");
@@ -3396,7 +3397,7 @@ ul4.GetAttr = ul4._inherit(
 		},
 		_jssource: function(out)
 		{
-			out.push("ul4.GetAttr._get(");
+			out.push("ul4.Attr._get(");
 			this.obj._jssource(out);
 			out.push(", ");
 			out.push(ul4._asjson(this.attrname));
@@ -3404,7 +3405,7 @@ ul4.GetAttr = ul4._inherit(
 		},
 		_jssource_set: function(out, func, value)
 		{
-			out.push("ul4.GetAttr._" + func + "(");
+			out.push("ul4.Attr._" + func + "(");
 			this.obj._jssource(out);
 			out.push(", ");
 			out.push(ul4._asjson(this.attrname));
@@ -3519,7 +3520,7 @@ ul4.GetAttr = ul4._inherit(
 							return object[attrname];
 				}
 			}
-			throw "GetAttr._get() needs an object with attributes";
+			throw "Attr._get() needs an object with attributes";
 		},
 		_set: function(object, attrname, value)
 		{
@@ -3654,8 +3655,8 @@ ul4.Call = ul4._inherit(
 	}
 );
 
-// List/String slicing: string[start:stop], list[start:stop]
-ul4.GetSlice = ul4._inherit(
+// List/String slicing access and assignment: string[start:stop], list[start:stop]
+ul4.Slice = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end, obj, index1, index2)
@@ -3669,7 +3670,7 @@ ul4.GetSlice = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["obj", "index1", "index2"]),
 		_repr: function(out)
 		{
-			out.push("<GetSlice");
+			out.push("<Slice");
 			out.push(null);
 			out.push(+1);
 			out.push("obj=");
@@ -3692,7 +3693,7 @@ ul4.GetSlice = ul4._inherit(
 		},
 		_jssource: function(out)
 		{
-			out.push("ul4.GetSlice._do(");
+			out.push("ul4.Slice._get(");
 			this.obj._jssource(out);
 			out.push(", ");
 			if (this.index1 !== null)
@@ -3706,13 +3707,64 @@ ul4.GetSlice = ul4._inherit(
 				out.push("null");
 			 out.push(")");
 		},
-		_do: function(container, start, stop)
+		_jssource_set: function(out, func, value)
+		{
+			if (func !== "set")
+				throw "augmented slice assignment is not supported!";
+
+			out.push("ul4.Slice._set(");
+			this.obj._jssource(out);
+			out.push(", ");
+			if (this.index1 !== null)
+				this.index1._jssource(out);
+			else
+				out.push("null");
+			out.push(", ");
+			if (this.index2 !== null)
+				this.index2._jssource(out);
+			else
+				out.push("null");
+			out.push(", ");
+			out.push(value);
+			out.push(")");
+		},
+		_get: function(container, start, stop)
 		{
 			if (typeof(start) === "undefined" || start === null)
 				start = 0;
 			if (typeof(stop) === "undefined" || stop === null)
 				stop = container.length;
 			return container.slice(start, stop);
+		},
+		_set: function(container, start, stop, value)
+		{
+			if (ul4._islist(container))
+			{
+				if (start < 0)
+					start += container.length;
+				if (start < 0)
+					start = 0;
+				else if (start > container.length)
+					start = container.length;
+				if (stop < 0)
+					stop += container.length;
+				if (stop < 0)
+					stop = 0;
+				else if (stop > container.length)
+					stop = container.length;
+				if (stop < start)
+					stop = start;
+				container.splice(start, stop-start); // Remove old element
+				for (var iter = ul4._iter(value);;)
+				{
+					var item = iter();
+					if (item === null)
+						break;
+					container.splice(start++, 0, item[0]);
+				}
+			}
+			else
+				throw "setslice() needs a list";
 		}
 	}
 );
@@ -5402,7 +5454,7 @@ ul4._update = function(obj, others, kwargs)
 		"Return",
 		"Print",
 		"PrintX",
-		"GetItem",
+		"Item",
 		"EQ",
 		"NE",
 		"LT",
@@ -5419,8 +5471,8 @@ ul4._update = function(obj, others, kwargs)
 		"Mod",
 		"And",
 		"Or",
-		"GetSlice",
-		"GetAttr",
+		"Slice",
+		"Attr",
 		"Call",
 		"SetVar",
 		"AddVar",
