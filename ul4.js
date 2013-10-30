@@ -4352,7 +4352,7 @@ ul4._csv = function(obj)
 	return obj;
 };
 
-// Return a string containing one charcter with the codepoint ``i``
+// Return a string containing one character with the codepoint ``i``
 ul4._chr = function(i)
 {
 	if (typeof(i) != "number")
