@@ -41,7 +41,7 @@ var ul4 = {
 /// Helper functions
 
 // Crockford style object creation
-ul4._simpleclone = function(obj)
+ul4._simpleclone = function(obj)	
 {
 	function F(){};
 	F.prototype = obj;
@@ -2766,6 +2766,50 @@ ul4.Not = ul4._inherit(
 	}
 );
 
+// If expression
+ul4.IfExpr = ul4._inherit(
+	ul4.AST,
+	{
+		create: function(location, start, end, objif, objcond, objelse)
+		{
+			var ifexpr = ul4.AST.create.call(this, location, start, end);
+			ifexpr.objif = objif;
+			ifexpr.objcond = objcond;
+			ifexpr.objelse = objelse;
+			return ifexpr;
+		},
+		_ul4onattrs: ul4.AST._ul4onattrs.concat(["objif", "objcond", "objelse"]),
+		_repr: function(out)
+		{
+			out.push("<");
+			out.push(this.name);
+			out.push(null);
+			out.push(+1);
+			out.push("objif=");
+			this.objif._repr(out);
+			out.push(null);
+			out.push("objcond=");
+			this.objcond._repr(out);
+			out.push(null);
+			out.push("objelse=");
+			this.objelse._repr(out);
+			out.push(null);
+			out.push(-1);
+			out.push(">");
+		},
+		_jssource: function(out)
+		{
+			out.push("(ul4._bool(");
+			this.objcond._jssource(out);
+			out.push(")?(");
+			this.objif._jssource(out);
+			out.push("):(");
+			this.objelse._jssource(out);
+			out.push("))");
+		}
+	}
+);
+
 ul4.Text = ul4._inherit(
 	ul4.AST,
 	{
@@ -5455,6 +5499,7 @@ ul4._update = function(obj, others, kwargs)
 		"Var",
 		"Not",
 		"Neg",
+		"IfExpr",
 		"Return",
 		"Print",
 		"PrintX",
