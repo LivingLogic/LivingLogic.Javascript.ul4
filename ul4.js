@@ -29,7 +29,7 @@
 
 /*jslint vars: true */
 var ul4 = {
-	version: "26",
+	version: "27",
 
 	// REs for parsing JSON
 	_rvalidchars: /^[\],:{}\s]*$/,
@@ -2767,7 +2767,7 @@ ul4.Not = ul4._inherit(
 );
 
 // If expression
-ul4.IfExpr = ul4._inherit(
+ul4.If = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end, objif, objcond, objelse)
@@ -3939,7 +3939,7 @@ ul4.Block = ul4._inherit(
 	}
 );
 
-ul4.For = ul4._inherit(
+ul4.ForBlock = ul4._inherit(
 	ul4.Block,
 	{
 		create: function(location, start, end, varname, container)
@@ -4054,7 +4054,7 @@ ul4.Continue = ul4._inherit(
 	}
 );
 
-ul4.IfElIfElse = ul4._inherit(
+ul4.CondBlock = ul4._inherit(
 	ul4.Block,
 	{
 		_jssource: function(out)
@@ -4116,11 +4116,11 @@ ul4.ConditionalBlock = ul4._inherit(
 	}
 );
 
-ul4.If = ul4._inherit(ul4.ConditionalBlock, {_sourcejs: "if"});
+ul4.IfBlock = ul4._inherit(ul4.ConditionalBlock, {_sourcejs: "if"});
 
-ul4.ElIf = ul4._inherit(ul4.ConditionalBlock, {_sourcejs: "else if"});
+ul4.ElIfBlock = ul4._inherit(ul4.ConditionalBlock, {_sourcejs: "else if"});
 
-ul4.Else = ul4._inherit(
+ul4.ElseBlock = ul4._inherit(
 	ul4.Block,
 	{
 		_repr: function(out)
@@ -5499,7 +5499,7 @@ ul4._update = function(obj, others, kwargs)
 		"Var",
 		"Not",
 		"Neg",
-		"IfExpr",
+		"If",
 		"Return",
 		"Print",
 		"PrintX",
@@ -5530,13 +5530,13 @@ ul4._update = function(obj, others, kwargs)
 		"TrueDivVar",
 		"FloorDivVar",
 		"ModVar",
-		"For",
+		"ForBlock",
 		"Break",
 		"Continue",
-		"IfElIfElse",
-		"If",
-		"ElIf",
-		"Else",
+		"CondBlock",
+		"IfBlock",
+		"ElIfBlock",
+		"ElseBlock",
 		"Template"
 	];
 
@@ -5544,8 +5544,6 @@ ul4._update = function(obj, others, kwargs)
 	{
 		var name = classes[i];
 		var ul4onname = name.toLowerCase();
-		if (ul4onname === "ifelifelse")
-			ul4onname = "ieie";
 		var object = ul4[name];
 		object.name = name;
 		object.type = ul4onname;
