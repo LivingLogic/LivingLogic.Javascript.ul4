@@ -2705,6 +2705,18 @@ ul4.Var = ul4._inherit(
 			if (name === "self")
 				throw "can't assign to self";
 			vars[name] = ul4.Mod._ido(vars[name], value);
+		},
+		_shiftleft: function(vars, name, value)
+		{
+			if (name === "self")
+				throw "can't assign to self";
+			vars[name] = ul4.ShiftLeft._ido(vars[name], value);
+		},
+		_shiftright: function(vars, name, value)
+		{
+			if (name === "self")
+				throw "can't assign to self";
+			vars[name] = ul4.ShiftRight._ido(vars[name], value);
 		}
 	}
 );
@@ -3006,6 +3018,14 @@ ul4.Item = ul4._inherit(
 		_mod: function(container, key, value)
 		{
 			this._set(container, key, ul4.Mod._ido(this._get(container, key), value));
+		},
+		_shiftleft: function(container, key, value)
+		{
+			this._set(container, key, ul4.ShiftLeft._ido(this._get(container, key), value));
+		},
+		_shiftright: function(container, key, value)
+		{
+			this._set(container, key, ul4.ShiftRight._ido(this._get(container, key), value));
 		}
 	}
 );
@@ -3386,6 +3406,60 @@ ul4.Mod = ul4._inherit(
 	}
 );
 
+// Bitwise left shift
+ul4.ShiftLeft = ul4._inherit(
+	ul4.Binary,
+	{
+		_do: function(obj1, obj2)
+		{
+			if (obj2 === false)
+				obj2 = 0;
+			else if (obj2 === true)
+				obj2 = 1;
+			if (obj2 < 0)
+				return ul4.ShiftRight._do(obj1, -obj2);
+			if (obj1 === false)
+				obj1 = 0;
+			else if (obj1 === true)
+				obj1 = 1;
+			while (obj2--)
+				obj1 *= 2;
+			return obj1;
+		},
+		_ido: function(obj1, obj2)
+		{
+			return this._do(obj1, obj2);
+		}
+	}
+);
+
+// Bitwise right shift
+ul4.ShiftRight = ul4._inherit(
+	ul4.Binary,
+	{
+		_do: function(obj1, obj2)
+		{
+			if (obj2 === false)
+				obj2 = 0;
+			else if (obj2 === true)
+				obj2 = 1;
+			if (obj2 < 0)
+				return ul4.ShiftLeft._do(obj1, -obj2);
+			if (obj1 === false)
+				obj1 = 0;
+			else if (obj1 === true)
+				obj1 = 1;
+			while (obj2--)
+				obj1 /= 2;
+			return Math.floor(obj1);
+		},
+		_ido: function(obj1, obj2)
+		{
+			return this._do(obj1, obj2);
+		}
+	}
+);
+
 ul4.And = ul4._inherit(
 	ul4.Binary,
 	{
@@ -3596,6 +3670,14 @@ ul4.Attr = ul4._inherit(
 		_mod: function(object, attrname, value)
 		{
 			this._set(object, attrname, ul4.Mod._ido(this._get(object, attrname), value));
+		},
+		_shiftleft: function(object, attrname, value)
+		{
+			this._set(object, attrname, ul4.ShiftLeft._ido(this._get(object, attrname), value));
+		},
+		_shiftright: function(object, attrname, value)
+		{
+			this._set(object, attrname, ul4.ShiftRight._ido(this._get(object, attrname), value));
 		}
 	}
 );
@@ -3885,6 +3967,10 @@ ul4.TrueDivVar = ul4._inherit(ul4.ModifyVar, { _func: "truediv" });
 ul4.FloorDivVar = ul4._inherit(ul4.ModifyVar, { _func: "floordiv" });
 
 ul4.ModVar = ul4._inherit(ul4.ModifyVar, { _func: "mod" });
+
+ul4.ShiftLeftVar = ul4._inherit(ul4.ModifyVar, { _func: "shiftleft" });
+
+ul4.ShiftRightVar = ul4._inherit(ul4.ModifyVar, { _func: "shiftright" });
 
 ul4.Block = ul4._inherit(
 	ul4.AST,
@@ -5518,6 +5604,8 @@ ul4._update = function(obj, others, kwargs)
 		"FloorDiv",
 		"TrueDiv",
 		"Mod",
+		"ShiftLeft",
+		"ShiftRight",
 		"And",
 		"Or",
 		"Slice",
@@ -5530,6 +5618,8 @@ ul4._update = function(obj, others, kwargs)
 		"TrueDivVar",
 		"FloorDivVar",
 		"ModVar",
+		"ShiftLeftVar",
+		"ShiftRightVar",
 		"ForBlock",
 		"Break",
 		"Continue",
