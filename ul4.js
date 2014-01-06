@@ -2767,6 +2767,17 @@ ul4.Neg = ul4._inherit(
 	}
 );
 
+// Bitwise not
+ul4.BitNot = ul4._inherit(
+	ul4.Unary,
+	{
+		_do: function(obj)
+		{
+			return -obj-1;
+		}
+	}
+);
+
 // Not
 ul4.Not = ul4._inherit(
 	ul4.Unary,
@@ -5585,6 +5596,7 @@ ul4._update = function(obj, others, kwargs)
 		"Var",
 		"Not",
 		"Neg",
+		"BitNot",
 		"If",
 		"Return",
 		"Print",
