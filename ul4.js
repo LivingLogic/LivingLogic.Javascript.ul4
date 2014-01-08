@@ -3471,6 +3471,63 @@ ul4.ShiftRight = ul4._inherit(
 	}
 );
 
+// Bitwise and
+ul4.BitAnd = ul4._inherit(
+	ul4.Binary,
+	{
+		_do: function(obj1, obj2)
+		{
+			if (obj2 === false)
+				obj2 = 0;
+			else if (obj2 === true)
+				obj2 = 1;
+			return obj1 & obj2;
+		},
+		_ido: function(obj1, obj2)
+		{
+			return this._do(obj1, obj2);
+		}
+	}
+);
+
+// Bitwise exclusive or
+ul4.BitXOr = ul4._inherit(
+	ul4.Binary,
+	{
+		_do: function(obj1, obj2)
+		{
+			if (obj2 === false)
+				obj2 = 0;
+			else if (obj2 === true)
+				obj2 = 1;
+			return obj1 ^ obj2;
+		},
+		_ido: function(obj1, obj2)
+		{
+			return this._do(obj1, obj2);
+		}
+	}
+);
+
+// Bitwise or
+ul4.BitOr = ul4._inherit(
+	ul4.Binary,
+	{
+		_do: function(obj1, obj2)
+		{
+			if (obj2 === false)
+				obj2 = 0;
+			else if (obj2 === true)
+				obj2 = 1;
+			return obj1 | obj2;
+		},
+		_ido: function(obj1, obj2)
+		{
+			return this._do(obj1, obj2);
+		}
+	}
+);
+
 ul4.And = ul4._inherit(
 	ul4.Binary,
 	{
@@ -5618,6 +5675,9 @@ ul4._update = function(obj, others, kwargs)
 		"Mod",
 		"ShiftLeft",
 		"ShiftRight",
+		"BitAnd",
+		"BitXOr",
+		"BitOr",
 		"And",
 		"Or",
 		"Slice",
