@@ -2649,9 +2649,19 @@ ul4.Var = ul4._inherit(
 			out.push(ul4._asjson(this.name));
 			out.push(")");
 		},
-		_jssource_set: function(out, func, value)
+		_jssource_set: function(out, value)
 		{
-			out.push("ul4.Var._" + func + "(vars, ");
+			out.push("ul4.Var._set(vars, ");
+			out.push(ul4._asjson(this.name));
+			out.push(", ");
+			out.push(value);
+			out.push(")");
+		},
+		_jssource_modify: function(out, operatorname, value)
+		{
+			out.push("ul4.Var._modify(ul4.");
+			out.push(operatorname);
+			out.push(", vars, ");
 			out.push(ul4._asjson(this.name));
 			out.push(", ");
 			out.push(value);
@@ -2670,71 +2680,11 @@ ul4.Var = ul4._inherit(
 				throw "can't assign to self";
 			vars[name] = value;
 		},
-		_add: function(vars, name, value)
+		_modify: function(operator, vars, name, value)
 		{
 			if (name === "self")
 				throw "can't assign to self";
-			vars[name] = ul4.Add._ido(vars[name], value);
-		},
-		_sub: function(vars, name, value)
-		{
-			if (name === "self")
-				throw "can't assign to self";
-			vars[name] = ul4.Sub._ido(vars[name], value);
-		},
-		_mul: function(vars, name, value)
-		{
-			if (name === "self")
-				throw "can't assign to self";
-			vars[name] = ul4.Mul._ido(vars[name], value);
-		},
-		_floordiv: function(vars, name, value)
-		{
-			if (name === "self")
-				throw "can't assign to self";
-			vars[name] = ul4.FloorDiv._ido(vars[name], value);
-		},
-		_truediv: function(vars, name, value)
-		{
-			if (name === "self")
-				throw "can't assign to self";
-			vars[name] = ul4.TrueDiv._ido(vars[name], value);
-		},
-		_mod: function(vars, name, value)
-		{
-			if (name === "self")
-				throw "can't assign to self";
-			vars[name] = ul4.Mod._ido(vars[name], value);
-		},
-		_shiftleft: function(vars, name, value)
-		{
-			if (name === "self")
-				throw "can't assign to self";
-			vars[name] = ul4.ShiftLeft._ido(vars[name], value);
-		},
-		_shiftright: function(vars, name, value)
-		{
-			if (name === "self")
-				throw "can't assign to self";
-			vars[name] = ul4.ShiftRight._ido(vars[name], value);
-		},
-		_bitand: function(vars, name, value)
-		{
-			if (name === "self")
-				throw "can't assign to self";
-			vars[name] = ul4.BitAnd._ido(vars[name], value);
-		},
-		_bitxor: function(vars, name, value)
-		{
-			if (name === "self")
-				throw "can't assign to self";
-			vars[name] = ul4.BitXOr._ido(vars[name], value);
-		},
-		_bitor: function(vars, name, value)
-		{
-			if (name === "self")
-				throw "can't assign to self";
-			vars[name] = ul4.BitOr._ido(vars[name], value);
+			vars[name] = operator._ido(vars[name], value);
 		}
 	}
 );
@@ -2982,9 +2932,21 @@ ul4.Item = ul4._inherit(
 			this.obj2._jssource(out);
 			out.push(")");
 		},
-		_jssource_set: function(out, func, value)
+		_jssource_set: function(out, value)
 		{
-			out.push("ul4.Item._" + func + "(");
+			out.push("ul4.Item._set(");
+			this.obj1._jssource(out);
+			out.push(", ");
+			this.obj2._jssource(out);
+			out.push(", ");
+			out.push(value);
+			out.push(")");
+		},
+		_jssource_modify: function(out, operatorname, value)
+		{
+			out.push("ul4.Item._modify(ul4.");
+			out.push(operatorname);
+			out.push(", ");
 			this.obj1._jssource(out);
 			out.push(", ");
 			this.obj2._jssource(out);
@@ -3024,49 +2986,9 @@ ul4.Item = ul4._inherit(
 			else
 				throw "setitem() needs a sequence or dict";
 		},
-		_add: function(container, key, value)
+		_modify: function(operator, container, key, value)
 		{
-			this._set(container, key, ul4.Add._ido(this._get(container, key), value));
-		},
-		_sub: function(container, key, value)
-		{
-			this._set(container, key, ul4.Sub._ido(this._get(container, key), value));
-		},
-		_mul: function(container, key, value)
-		{
-			this._set(container, key, ul4.Mul._ido(this._get(container, key), value));
-		},
-		_floordiv: function(container, key, value)
-		{
-			this._set(container, key, ul4.FloorDiv._ido(this._get(container, key), value));
-		},
-		_truediv: function(container, key, value)
-		{
-			this._set(container, key, ul4.TrueDiv._ido(this._get(container, key), value));
-		},
-		_mod: function(container, key, value)
-		{
-			this._set(container, key, ul4.Mod._ido(this._get(container, key), value));
-		},
-		_shiftleft: function(container, key, value)
-		{
-			this._set(container, key, ul4.ShiftLeft._ido(this._get(container, key), value));
-		},
-		_shiftright: function(container, key, value)
-		{
-			this._set(container, key, ul4.ShiftRight._ido(this._get(container, key), value));
-		},
-		_bitand: function(container, key, value)
-		{
-			this._set(container, key, ul4.BitAnd._ido(this._get(container, key), value));
-		},
-		_bitxor: function(container, key, value)
-		{
-			this._set(container, key, ul4.BitXOr._ido(this._get(container, key), value));
-		},
-		_bitor: function(container, key, value)
-		{
-			this._set(container, key, ul4.BitOr._ido(this._get(container, key), value));
+			this._set(container, key, operator._ido(this._get(container, key), value));
 		}
 	}
 );
@@ -3619,9 +3541,21 @@ ul4.Attr = ul4._inherit(
 			out.push(ul4._asjson(this.attrname));
 			out.push(")");
 		},
-		_jssource_set: function(out, func, value)
+		_jssource_set: function(out, value)
 		{
-			out.push("ul4.Attr._" + func + "(");
+			out.push("ul4.Attr._set(");
+			this.obj._jssource(out);
+			out.push(", ");
+			out.push(ul4._asjson(this.attrname));
+			out.push(", ");
+			out.push(value);
+			out.push(")");
+		},
+		_jssource_modify: function(out, operatorname, value)
+		{
+			out.push("ul4.Attr._modify(ul4.");
+			out.push(operator);
+			out.push(", ");
 			this.obj._jssource(out);
 			out.push(", ");
 			out.push(ul4._asjson(this.attrname));
@@ -3745,49 +3679,9 @@ ul4.Attr = ul4._inherit(
 			else
 				object[attrname] = value;
 		},
-		_add: function(object, attrname, value)
+		_modify: function(operator, object, attrname, value)
 		{
-			this._set(object, attrname, ul4.Add._ido(this._get(object, attrname), value));
-		},
-		_sub: function(object, attrname, value)
-		{
-			this._set(object, attrname, ul4.Sub._ido(this._get(object, attrname), value));
-		},
-		_mul: function(object, attrname, value)
-		{
-			this._set(object, attrname, ul4.Mul._ido(this._get(object, attrname), value));
-		},
-		_floordiv: function(object, attrname, value)
-		{
-			this._set(object, attrname, ul4.FloorDiv._ido(this._get(object, attrname), value));
-		},
-		_truediv: function(object, attrname, value)
-		{
-			this._set(object, attrname, ul4.TrueDiv._ido(this._get(object, attrname), value));
-		},
-		_mod: function(object, attrname, value)
-		{
-			this._set(object, attrname, ul4.Mod._ido(this._get(object, attrname), value));
-		},
-		_shiftleft: function(object, attrname, value)
-		{
-			this._set(object, attrname, ul4.ShiftLeft._ido(this._get(object, attrname), value));
-		},
-		_shiftright: function(object, attrname, value)
-		{
-			this._set(object, attrname, ul4.ShiftRight._ido(this._get(object, attrname), value));
-		},
-		_bitand: function(object, attrname, value)
-		{
-			this._set(object, attrname, ul4.BitAnd._ido(this._get(object, attrname), value));
-		},
-		_bitxor: function(object, attrname, value)
-		{
-			this._set(object, attrname, ul4.BitXOr._ido(this._get(object, attrname), value));
-		},
-		_bitor: function(object, attrname, value)
-		{
-			this._set(object, attrname, ul4.BitOr._ido(this._get(object, attrname), value));
+			this._set(object, attrname, operator._ido(this._get(object, attrname), value));
 		}
 	}
 );
@@ -3943,11 +3837,8 @@ ul4.Slice = ul4._inherit(
 				out.push("null");
 			 out.push(")");
 		},
-		_jssource_set: function(out, func, value)
+		_jssource_set: function(out, value)
 		{
-			if (func !== "set")
-				throw "augmented slice assignment is not supported!";
-
 			out.push("ul4.Slice._set(");
 			this.obj._jssource(out);
 			out.push(", ");
@@ -3963,6 +3854,10 @@ ul4.Slice = ul4._inherit(
 			out.push(", ");
 			out.push(value);
 			out.push(")");
+		},
+		_jssource_modify: function(out, operatorname, value)
+		{
+			throw "augmented slice assignment is not supported!";
 		},
 		_get: function(container, start, stop)
 		{
@@ -4009,7 +3904,7 @@ ul4.Slice = ul4._inherit(
 	}
 );
 
-ul4.ChangeVar = ul4._inherit(
+ul4.SetVar = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end, lvalue, value)
@@ -4049,7 +3944,7 @@ ul4.ChangeVar = ul4._inherit(
 		{
 			if (!ul4._islist(lvalue))
 			{
-				lvalue._jssource_set(out, this._func, value);
+				lvalue._jssource_set(out, value);
 				out.push(";");
 				out.push(null);
 			}
@@ -4062,31 +3957,46 @@ ul4.ChangeVar = ul4._inherit(
 	}
 );
 
-ul4.SetVar = ul4._inherit(ul4.ChangeVar, { _func: "set" });
+ul4.ModifyVar = ul4._inherit(
+	ul4.SetVar,
+	{
+		_jssource_value: function(out, lvalue, value)
+		{
+			if (!ul4._islist(lvalue))
+			{
+				lvalue._jssource_modify(out, this._operator, value);
+				out.push(";");
+				out.push(null);
+			}
+			else
+			{
+				for (var i = 0; i < lvalue.length; ++i)
+					this._jssource_value(out, lvalue[i], value + "[" + i + "]");
+			}
+		}
+});
 
-ul4.ModifyVar = ul4._inherit(ul4.ChangeVar, {});
+ul4.AddVar = ul4._inherit(ul4.ModifyVar, { _operator: "Add" });
 
-ul4.AddVar = ul4._inherit(ul4.ModifyVar, { _func: "add" });
+ul4.SubVar = ul4._inherit(ul4.ModifyVar, { _operator: "Sub" });
 
-ul4.SubVar = ul4._inherit(ul4.ModifyVar, { _func: "sub" });
+ul4.MulVar = ul4._inherit(ul4.ModifyVar, { _operator: "Mul" });
 
-ul4.MulVar = ul4._inherit(ul4.ModifyVar, { _func: "mul" });
+ul4.TrueDivVar = ul4._inherit(ul4.ModifyVar, { _operator: "TrueDiv" });
 
-ul4.TrueDivVar = ul4._inherit(ul4.ModifyVar, { _func: "truediv" });
+ul4.FloorDivVar = ul4._inherit(ul4.ModifyVar, { _operator: "FloorDiv" });
 
-ul4.FloorDivVar = ul4._inherit(ul4.ModifyVar, { _func: "floordiv" });
+ul4.ModVar = ul4._inherit(ul4.ModifyVar, { _operator: "Mod" });
 
-ul4.ModVar = ul4._inherit(ul4.ModifyVar, { _func: "mod" });
+ul4.ShiftLeftVar = ul4._inherit(ul4.ModifyVar, { _operator: "ShiftLeft" });
 
-ul4.ShiftLeftVar = ul4._inherit(ul4.ModifyVar, { _func: "shiftleft" });
+ul4.ShiftRightVar = ul4._inherit(ul4.ModifyVar, { _operator: "ShiftRight" });
 
-ul4.ShiftRightVar = ul4._inherit(ul4.ModifyVar, { _func: "shiftright" });
+ul4.BitAndVar = ul4._inherit(ul4.ModifyVar, { _operator: "BitAnd" });
 
-ul4.BitAndVar = ul4._inherit(ul4.ModifyVar, { _func: "bitand" });
+ul4.BitXOrVar = ul4._inherit(ul4.ModifyVar, { _operator: "BitXOr" });
 
-ul4.BitXOrVar = ul4._inherit(ul4.ModifyVar, { _func: "bitxor" });
-
-ul4.BitOrVar = ul4._inherit(ul4.ModifyVar, { _func: "bitor" });
+ul4.BitOrVar = ul4._inherit(ul4.ModifyVar, { _operator: "BitOr" });
 
 ul4.Block = ul4._inherit(
 	ul4.AST,
