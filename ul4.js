@@ -2717,6 +2717,24 @@ ul4.Var = ul4._inherit(
 			if (name === "self")
 				throw "can't assign to self";
 			vars[name] = ul4.ShiftRight._ido(vars[name], value);
+		},
+		_bitand: function(vars, name, value)
+		{
+			if (name === "self")
+				throw "can't assign to self";
+			vars[name] = ul4.BitAnd._ido(vars[name], value);
+		},
+		_bitxor: function(vars, name, value)
+		{
+			if (name === "self")
+				throw "can't assign to self";
+			vars[name] = ul4.BitXOr._ido(vars[name], value);
+		},
+		_bitor: function(vars, name, value)
+		{
+			if (name === "self")
+				throw "can't assign to self";
+			vars[name] = ul4.BitOr._ido(vars[name], value);
 		}
 	}
 );
@@ -3037,6 +3055,18 @@ ul4.Item = ul4._inherit(
 		_shiftright: function(container, key, value)
 		{
 			this._set(container, key, ul4.ShiftRight._ido(this._get(container, key), value));
+		},
+		_bitand: function(container, key, value)
+		{
+			this._set(container, key, ul4.BitAnd._ido(this._get(container, key), value));
+		},
+		_bitxor: function(container, key, value)
+		{
+			this._set(container, key, ul4.BitXOr._ido(this._get(container, key), value));
+		},
+		_bitor: function(container, key, value)
+		{
+			this._set(container, key, ul4.BitOr._ido(this._get(container, key), value));
 		}
 	}
 );
@@ -3746,6 +3776,18 @@ ul4.Attr = ul4._inherit(
 		_shiftright: function(object, attrname, value)
 		{
 			this._set(object, attrname, ul4.ShiftRight._ido(this._get(object, attrname), value));
+		},
+		_bitand: function(object, attrname, value)
+		{
+			this._set(object, attrname, ul4.BitAnd._ido(this._get(object, attrname), value));
+		},
+		_bitxor: function(object, attrname, value)
+		{
+			this._set(object, attrname, ul4.BitXOr._ido(this._get(object, attrname), value));
+		},
+		_bitor: function(object, attrname, value)
+		{
+			this._set(object, attrname, ul4.BitOr._ido(this._get(object, attrname), value));
 		}
 	}
 );
@@ -4039,6 +4081,12 @@ ul4.ModVar = ul4._inherit(ul4.ModifyVar, { _func: "mod" });
 ul4.ShiftLeftVar = ul4._inherit(ul4.ModifyVar, { _func: "shiftleft" });
 
 ul4.ShiftRightVar = ul4._inherit(ul4.ModifyVar, { _func: "shiftright" });
+
+ul4.BitAndVar = ul4._inherit(ul4.ModifyVar, { _func: "bitand" });
+
+ul4.BitXOrVar = ul4._inherit(ul4.ModifyVar, { _func: "bitxor" });
+
+ul4.BitOrVar = ul4._inherit(ul4.ModifyVar, { _func: "bitor" });
 
 ul4.Block = ul4._inherit(
 	ul4.AST,
@@ -5692,6 +5740,9 @@ ul4._update = function(obj, others, kwargs)
 		"ModVar",
 		"ShiftLeftVar",
 		"ShiftRightVar",
+		"BitAndVar",
+		"BitXOrVar",
+		"BitOrVar",
 		"ForBlock",
 		"Break",
 		"Continue",
