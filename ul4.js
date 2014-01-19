@@ -2252,7 +2252,7 @@ ul4.AST = ul4._inherit(
 			this._jssource(out);
 			return ul4._formatsource(out);
 		},
-		_jssource_set: function(out, func, value)
+		_jssource_set: function(out, value)
 		{
 			throw "lvalue required";
 		},
@@ -2406,7 +2406,7 @@ ul4.ListComp = ul4._inherit(
 		{
 			if (!ul4._islist(lvalue))
 			{
-				lvalue._jssource_set(out, "set", value);
+				lvalue._jssource_set(out, value);
 				out.push(";");
 				out.push(null);
 			}
@@ -2526,7 +2526,7 @@ ul4.DictComp = ul4._inherit(
 		{
 			if (!ul4._islist(lvalue))
 			{
-				lvalue._jssource_set(out, "set", value);
+				lvalue._jssource_set(out, value);
 				out.push(";");
 				out.push(null);
 			}
@@ -2614,7 +2614,7 @@ ul4.GenExpr = ul4._inherit(
 		{
 			if (!ul4._islist(lvalue))
 			{
-				lvalue._jssource_set(out, "set", value);
+				lvalue._jssource_set(out, value);
 				out.push(";");
 				out.push(null);
 			}
@@ -2958,10 +2958,22 @@ ul4.Item = ul4._inherit(
 		{
 			if (typeof(container) === "string" || ul4._islist(container))
 			{
-				var orgkey = key;
-				if (key < 0)
-					key += container.length;
-				return container[key];
+				if (typeof(key) === "object" && typeof(key.isa) === "function" && key.isa(ul4.slice))
+				{
+					var start = key.start, stop = key.stop;
+					if (typeof(start) === "undefined" || start === null)
+						start = 0;
+					if (typeof(stop) === "undefined" || stop === null)
+						stop = container.length;
+					return container.slice(start, stop);
+				}
+				else
+				{
+					var orgkey = key;
+					if (key < 0)
+						key += container.length;
+					return container[key];
+				}
 			}
 			else if (container && typeof(container.__getitem__) === "function") // test this before the generic object test
 				return container.__getitem__(key);
@@ -2972,12 +2984,45 @@ ul4.Item = ul4._inherit(
 		},
 		_set: function(container, key, value)
 		{
-			if (typeof(container) === "string" || ul4._islist(container))
+			if (ul4._islist(container))
 			{
-				var orgkey = key;
-				if (key < 0)
-					key += container.length;
-				container[key] = value;
+				if (typeof(key) === "object" && typeof(key.isa) === "function" && key.isa(ul4.slice))
+				{
+					var start = key.start, stop = key.stop;
+					if (start === null)
+						start = 0;
+					else if (start < 0)
+						start += container.length;
+					if (start < 0)
+						start = 0;
+					else if (start > container.length)
+						start = container.length;
+					if (stop === null)
+						stop = container.length;
+					else if (stop < 0)
+						stop += container.length;
+					if (stop < 0)
+						stop = 0;
+					else if (stop > container.length)
+						stop = container.length;
+					if (stop < start)
+						stop = start;
+					container.splice(start, stop-start); // Remove old element
+					for (var iter = ul4._iter(value);;)
+					{
+						var item = iter();
+						if (item === null)
+							break;
+						container.splice(start++, 0, item[0]);
+					}
+				}
+				else
+				{
+					var orgkey = key;
+					if (key < 0)
+						key += container.length;
+					container[key] = value;
+				}
 			}
 			else if (container && typeof(container.__setitem__) === "function") // test this before the generic object test
 				container.__setitem__(key, value);
@@ -3554,7 +3599,7 @@ ul4.Attr = ul4._inherit(
 		_jssource_modify: function(out, operatorname, value)
 		{
 			out.push("ul4.Attr._modify(ul4.");
-			out.push(operator);
+			out.push(operatorname);
 			out.push(", ");
 			this.obj._jssource(out);
 			out.push(", ");
@@ -3785,27 +3830,42 @@ ul4.Call = ul4._inherit(
 	}
 );
 
-// List/String slicing access and assignment: string[start:stop], list[start:stop]
+// Slice object
+ul4.slice = ul4._inherit(
+	ul4.Proto,
+	{
+		create: function(start, stop)
+		{
+			var slice = ul4._clone(this);
+			slice.start = start;
+			slice.stop = stop;
+			return slice;
+		},
+		__repr__: function()
+		{
+			return "slice(" + ul4._repr(this.start) + ", " + ul4._repr(this.stop) + ")";
+		}
+	}
+);
+
+
+// List/String slice
 ul4.Slice = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end, obj, index1, index2)
+		create: function(location, start, end, index1, index2)
 		{
-			var getslice = ul4.AST.create.call(this, location, start, end);
-			getslice.obj = obj;
-			getslice.index1 = index1;
-			getslice.index2 = index2;
-			return getslice;
+			var slice = ul4.AST.create.call(this, location, start, end);
+			slice.index1 = index1;
+			slice.index2 = index2;
+			return slice;
 		},
-		_ul4onattrs: ul4.AST._ul4onattrs.concat(["obj", "index1", "index2"]),
+		_ul4onattrs: ul4.AST._ul4onattrs.concat(["index1", "index2"]),
 		_repr: function(out)
 		{
 			out.push("<Slice");
 			out.push(null);
 			out.push(+1);
-			out.push("obj=");
-			this.obj1._repr(out);
-			out.push(null);
 			if (this.index1 !== null)
 			{
 				out.push("index1=");
@@ -3823,9 +3883,7 @@ ul4.Slice = ul4._inherit(
 		},
 		_jssource: function(out)
 		{
-			out.push("ul4.Slice._get(");
-			this.obj._jssource(out);
-			out.push(", ");
+			out.push("ul4.slice.create(");
 			if (this.index1 !== null)
 				this.index1._jssource(out);
 			else
@@ -3836,73 +3894,10 @@ ul4.Slice = ul4._inherit(
 			else
 				out.push("null");
 			 out.push(")");
-		},
-		_jssource_set: function(out, value)
-		{
-			out.push("ul4.Slice._set(");
-			this.obj._jssource(out);
-			out.push(", ");
-			if (this.index1 !== null)
-				this.index1._jssource(out);
-			else
-				out.push("null");
-			out.push(", ");
-			if (this.index2 !== null)
-				this.index2._jssource(out);
-			else
-				out.push("null");
-			out.push(", ");
-			out.push(value);
-			out.push(")");
-		},
-		_jssource_modify: function(out, operatorname, value)
-		{
-			throw "augmented slice assignment is not supported!";
-		},
-		_get: function(container, start, stop)
-		{
-			if (typeof(start) === "undefined" || start === null)
-				start = 0;
-			if (typeof(stop) === "undefined" || stop === null)
-				stop = container.length;
-			return container.slice(start, stop);
-		},
-		_set: function(container, start, stop, value)
-		{
-			if (ul4._islist(container))
-			{
-				if (start === null)
-					start = 0;
-				else if (start < 0)
-					start += container.length;
-				if (start < 0)
-					start = 0;
-				else if (start > container.length)
-					start = container.length;
-				if (stop === null)
-					stop = container.length;
-				else if (stop < 0)
-					stop += container.length;
-				if (stop < 0)
-					stop = 0;
-				else if (stop > container.length)
-					stop = container.length;
-				if (stop < start)
-					stop = start;
-				container.splice(start, stop-start); // Remove old element
-				for (var iter = ul4._iter(value);;)
-				{
-					var item = iter();
-					if (item === null)
-						break;
-					container.splice(start++, 0, item[0]);
-				}
-			}
-			else
-				throw "setslice() needs a list";
 		}
 	}
 );
+
 
 ul4.SetVar = ul4._inherit(
 	ul4.AST,
@@ -4107,7 +4102,7 @@ ul4.ForBlock = ul4._inherit(
 		{
 			if (!ul4._islist(lvalue))
 			{
-				lvalue._jssource_set(out, "set", value);
+				lvalue._jssource_set(out, value);
 				out.push(";");
 				out.push(null);
 			}
