@@ -132,6 +132,8 @@ var ul4on = {
 				this.write("t" + obj.days() + "|" + obj.seconds() + "|" + obj.microseconds() + "|");
 			else if (ul4._ismonthdelta(obj))
 				this.write("m" + obj.months() + "|");
+			else if (typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4.slice))
+				this.write("r" + (obj.start !== null ? obj.start : "") + "|" + (obj.stop !== null ? obj.stop : "") + "|");
 			else if (obj.__id__ && obj.ul4onname && obj.ul4ondump)
 			{
 				var index = this._ids2index[obj.__id__];
@@ -215,6 +217,8 @@ var ul4on = {
 				var c = this.readchar();
 				if (c === "|")
 				{
+					if (!value)
+						return null;
 					var result = parseFloat(value);
 					if (result == NaN)
 						throw "invalid number, got " + ul4._repr("value") + " at position " + this.pos;
@@ -284,6 +288,12 @@ var ul4on = {
 				case "T":
 					result = ul4.TimeDelta.create(this.readnumber(), this.readnumber(), this.readnumber());
 					if (typecode === "T")
+						this.backrefs.push(result);
+					return result;
+				case "r":
+				case "R":
+					result = ul4.slice.create(this.readnumber(), this.readnumber());
+					if (typecode === "R")
 						this.backrefs.push(result);
 					return result;
 				case "m":
