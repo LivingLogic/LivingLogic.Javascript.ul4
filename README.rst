@@ -17,9 +17,9 @@ Implementations
 Apart from the Javascript implementation (see ``ul4on.js`` and ``ul4.js``)
 there are implementations of UL4ON and UL4 for Python_, Java_ and PHP_.
 
-.. _Python: http://hg.livinglogic.de/LivingLogic.Python.xist/
-.. _Java: http://hg.livinglogic.de/LivingLogic.Java.ul4/
-.. _PHP: http://hg.livinglogic.de/LivingLogic.PHP.ul4/
+.. _Python: https://github.com/LivingLogic/LivingLogic.Python.xist
+.. _Java: https://github.com/LivingLogic/LivingLogic.Java.ul4
+.. _PHP: https://github.com/LivingLogic/LivingLogic.PHP.ul4
 
 
 Documentation
