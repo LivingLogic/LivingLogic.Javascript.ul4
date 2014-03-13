@@ -4125,6 +4125,54 @@ ul4.ForBlock = ul4._inherit(
 	}
 );
 
+ul4.WhileBlock = ul4._inherit(
+	ul4.Block,
+	{
+		create: function(location, start, end, condition)
+		{
+			var while_ = ul4.Block.create.call(this, location, start, end);
+			while_.condition = condition;
+			return while_;
+		},
+		_ul4onattrs: ul4.Block._ul4onattrs.concat(["condition"]),
+		_repr: function(out)
+		{
+			out.push("<While");
+			out.push(null);
+			out.push(+1);
+			out.push("condition=");
+			this.condition._repr(out);
+			ul4.Block._repr.call(this, out);
+			out.push(-1);
+			out.push(">");
+		},
+		_jssource: function(out)
+		{
+			out.push("while (ul4._bool(");
+			this.condition._jssource(out);
+			out.push("))");
+			out.push(null);
+			out.push("{");
+			out.push(null);
+			out.push(+1);
+			this._jssource_content(out);
+			out.push(-1);
+			out.push("}");
+			out.push(null);
+		},
+		_str: function(out)
+		{
+			out.push("while ");
+			ul4.AST._str.call(this, out);
+			out.push(":");
+			out.push(null);
+			out.push(+1);
+			ul4.Block._str.call(this, out);
+			out.push(-1);
+		}
+	}
+);
+
 ul4.Break = ul4._inherit(
 	ul4.AST,
 	{
@@ -5649,6 +5697,7 @@ ul4._update = function(obj, others, kwargs)
 		"BitXOrVar",
 		"BitOrVar",
 		"ForBlock",
+		"WhileBlock",
 		"Break",
 		"Continue",
 		"CondBlock",
