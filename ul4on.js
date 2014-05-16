@@ -2,8 +2,8 @@
  * UL4ON JavaScript Library
  * http://www.livinglogic.de/Python/ul4on/
  *
- * Copyright 2012-2013 by LivingLogic AG, Bayreuth/Germany
- * Copyright 2012-2013 by Walter Dörwald
+ * Copyright 2012-2014 by LivingLogic AG, Bayreuth/Germany
+ * Copyright 2012-2014 by Walter Dörwald
  *
  * All Rights Reserved
  *
@@ -27,6 +27,8 @@
  */
 var ul4on = {
 	_registry: {},
+
+	_havemap: (typeof(Map) !== "undefined"),
 
 	// Register the object ``obj`` under the name ``name`` with the UL4ON machinery
 	register: function(name, obj)
@@ -156,6 +158,15 @@ var ul4on = {
 				for (var i in obj)
 					this.dump(obj[i]);
 				this.write("]");
+			}
+			else if (ul4._ismap(obj))
+			{
+				this.write("d");
+				obj.forEach(function(value, key) {
+					this.dump(key);
+					this.dump(value);
+				}, this);
+				this.write("}");
 			}
 			else if (ul4._isdict(obj))
 			{
@@ -318,7 +329,7 @@ var ul4on = {
 					return result;
 				case "d":
 				case "D":
-					result = {};
+					result = ul4on._havemap ? new Map() : {};
 					if (typecode === "D")
 						this.backrefs.push(result);
 					for (;;)
@@ -329,7 +340,10 @@ var ul4on = {
 						this.backup();
 						var key = this.load();
 						var value = this.load();
-						result[key] = value;
+						if (ul4on._havemap)
+							result.set(key, value)
+						else
+							result[key] = value;
 					}
 					return result;
 				case "o":

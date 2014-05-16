@@ -3,8 +3,8 @@
  * UL4 JavaScript Library
  * http://www.livinglogic.de/Python/ul4c/
  *
- * Copyright 2011-2013 by LivingLogic AG, Bayreuth/Germany
- * Copyright 2011-2013 by Walter Dörwald
+ * Copyright 2011-2014 by LivingLogic AG, Bayreuth/Germany
+ * Copyright 2011-2014 by Walter Dörwald
  *
  * All Rights Reserved
  *
@@ -284,7 +284,22 @@ ul4._iter = function(obj)
 		return obj;
 	else if (obj !== null && typeof(obj.__iter__) === "function")
 		return obj.__iter__();
-	else if (ul4._isdict(obj))
+	else if (ul4._ismap(obj))
+	{
+		var keys = [];
+		obj.forEach(function(value, key){
+			keys.push(key);
+		});
+		var i = 0;
+		var result = function()
+		{
+			if (i >= keys.length)
+				return null;
+			return [keys[i++]];
+		};
+		return ul4._markiter(result);
+	}
+	else if (ul4._isobject(obj))
 	{
 		var keys = [];
 		for (var key in obj)
@@ -402,6 +417,41 @@ ul4._printx = function(out, args)
 	return null;
 };
 
+ul4._map_repr = function(obj)
+{
+	var v = [];
+	v.push("{");
+	var i = 0;
+	obj.forEach(function(value, key){
+		if (i++)
+			v.push(", ");
+		v.push(ul4._repr(key));
+		v.push(": ");
+		v.push(ul4._repr(value));
+	});
+	v.push("}");
+	return v.join("");
+};
+
+ul4._object_repr = function(obj)
+{
+	var v = [];
+	v.push("{");
+	var i = 0;
+	for (var key in obj)
+	{
+		if (!obj.hasOwnProperty(key))
+			continue;
+		if (i++)
+			v.push(", ");
+		v.push(ul4._repr(key));
+		v.push(": ");
+		v.push(ul4._repr(obj[key]));
+	}
+	v.push("}");
+	return v.join("");
+};
+
 // Return a string representation of ``obj``: This should be an object supported by UL4
 ul4._repr = function(obj)
 {
@@ -434,25 +484,10 @@ ul4._repr = function(obj)
 		v.push("]");
 		return v.join("");
 	}
-	else if (ul4._isdict(obj))
-	{
-		var v = [];
-		v.push("{");
-		var i = 0;
-		for (var key in obj)
-		{
-			if (!obj.hasOwnProperty(key))
-				continue;
-			if (i)
-				v.push(", ");
-			v.push(ul4._repr(key));
-			v.push(": ");
-			v.push(ul4._repr(obj[key]));
-			++i;
-		}
-		v.push("}");
-		return v.join("");
-	}
+	else if (ul4._ismap(obj))
+		return ul4._map_repr(obj);
+	else if (ul4._isobject(obj))
+		return ul4._object_repr(obj);
 	return "?";
 };
 
@@ -505,23 +540,10 @@ ul4._str = function(obj)
 	{
 		return obj.__str__();
 	}
-	else if (ul4._isdict(obj))
-	{
-		var v = [];
-		v.push("{");
-		var i = 0;
-		for (var key in obj)
-		{
-			if (i)
-				v.push(", ");
-			v.push(ul4._repr(key));
-			v.push(": ");
-			v.push(ul4._repr(obj[key]));
-			++i;
-		}
-		v.push("}");
-		return v.join("");
-	}
+	else if (ul4._ismap(obj))
+		return ul4._map_repr(obj);
+	else if (ul4._isobject(obj))
+		return ul4._object_repr(obj);
 	return "?";
 };
 
@@ -536,7 +558,9 @@ ul4._bool = function(obj)
 			return obj.__bool__();
 		if (ul4._islist(obj))
 			return obj.length !== 0;
-		else if (ul4._isdict(obj))
+		else if (ul4._ismap(obj))
+			return obj.size != 0;
+		else if (ul4._isobject(obj))
 		{
 			for (var key in obj)
 				return true;
@@ -631,7 +655,15 @@ ul4._list = function(obj)
 		}
 		return result;
 	}
-	else if (ul4._isdict(obj))
+	else if (ul4._ismap(obj))
+	{
+		var result = [];
+		obj.forEach(function(value, key){
+			result.push(key);
+		});
+		return result;
+	}
+	else if (ul4._isobject(obj))
 	{
 		var result = [];
 		for (var key in obj)
@@ -646,7 +678,9 @@ ul4._len = function(sequence)
 {
 	if (typeof(sequence) == "string" || ul4._islist(sequence))
 		return sequence.length;
-	else if (ul4._isdict(sequence))
+	else if (ul4._ismap(sequence))
+		return sequence.size;
+	else if (ul4._isobject(sequence))
 	{
 		var i = 0;
 		for (var key in sequence)
@@ -825,11 +859,26 @@ ul4._islist = function(obj)
 	return Object.prototype.toString.call(obj) == "[object Array]";
 };
 
-// Check if ``obj`` is a dict
-ul4._isdict = function(obj)
+// Check if ``obj`` is a JS object
+ul4._isobject = function(obj)
 {
 	return Object.prototype.toString.call(obj) == "[object Object]" && typeof(obj.__type__) === "undefined";
 };
+
+// Check if ``obj`` is a map
+ul4._ismap = function(obj)
+{
+	if (ul4on._havemap)
+		return obj !== null && typeof(obj) === "object" && typeof(obj.__proto__) === "object" && obj.__proto__ === Map.prototype;
+	return false;
+};
+
+// Check if ``obj`` is a dict (i.e. a normal Javascript object or a ``Map``)
+ul4._isdict = function(obj)
+{
+	return ul4._isobject(obj) || ul4._ismap(obj);
+};
+
 
 // Repeat string ``str`` ``rep`` times
 ul4._str_repeat = function(str, rep)
@@ -914,19 +963,33 @@ ul4._asjson = function(obj)
 		v.push("]");
 		return v.join("");
 	}
-	else if (ul4._isdict(obj))
+	else if (ul4._ismap(obj))
+	{
+		var v = [];
+		v.push("{");
+		var i = 0;
+		obj.forEach(function(value, key){
+			if (i++)
+				v.push(", ");
+			v.push(ul4._asjson(key));
+			v.push(": ");
+			v.push(ul4._asjson(value));
+		});
+		v.push("}");
+		return v.join("");
+	}
+	else if (ul4._isobject(obj))
 	{
 		var v = [];
 		v.push("{");
 		var i = 0;
 		for (var key in obj)
 		{
-			if (i)
+			if (i++)
 				v.push(", ");
 			v.push(ul4._asjson(key));
 			v.push(": ");
 			v.push(ul4._asjson(obj[key]));
-			++i;
 		}
 		v.push("}");
 		return v.join("");
@@ -2676,14 +2739,10 @@ ul4.Var = ul4._inherit(
 		},
 		_set: function(vars, name, value)
 		{
-			if (name === "self")
-				throw "can't assign to self";
 			vars[name] = value;
 		},
 		_modify: function(operator, vars, name, value)
 		{
-			if (name === "self")
-				throw "can't assign to self";
 			vars[name] = operator._ido(vars[name], value);
 		}
 	}
@@ -2977,6 +3036,8 @@ ul4.Item = ul4._inherit(
 			}
 			else if (container && typeof(container.__getitem__) === "function") // test this before the generic object test
 				return container.__getitem__(key);
+			else if (ul4._ismap(container))
+				return container.get(key);
 			else if (Object.prototype.toString.call(container) === "[object Object]")
 				return container[key];
 			else
@@ -3026,6 +3087,8 @@ ul4.Item = ul4._inherit(
 			}
 			else if (container && typeof(container.__setitem__) === "function") // test this before the generic object test
 				container.__setitem__(key, value);
+			else if (ul4._ismap(container))
+				container.set(key, value);
 			else if (Object.prototype.toString.call(container) === "[object Object]")
 				container[key] = value;
 			else
@@ -3198,7 +3261,9 @@ ul4.Contains = ul4._inherit(
 			}
 			else if (container && typeof(container.__contains__) === "function") // test this before the generic object test
 				return container.__contains__(obj);
-			else if (ul4._isdict(container))
+			else if (ul4._ismap(container))
+				return container.has(obj);
+			else if (ul4._isobject(container))
 			{
 				for (var key in container)
 				{
@@ -3696,6 +3761,22 @@ ul4.Attr = ul4._inherit(
 						return ul4.undefined;
 				}
 			}
+			else if (ul4._ismap(object))
+			{
+				switch (attrname)
+				{
+					case "get":
+						return ul4.expose("get", ["key", ["default", null]], function(key, default_){ return ul4._get(object, key, default_); });
+					case "items":
+						return ul4.expose("items", [], function(){ return ul4._items(object); });
+					case "values":
+						return ul4.expose("values", [], function(){ return ul4._values(object); });
+					case "update":
+						return ul4.expose("update", ["*other", "**kwargs"], function(other, kwargs){ return ul4._update(object, other, kwargs); });
+					default:
+						return object.get(attrname);
+				}
+			}
 			else if (Object.prototype.toString.call(object) === "[object Object]")
 			{
 				switch (attrname)
@@ -3719,10 +3800,14 @@ ul4.Attr = ul4._inherit(
 		},
 		_set: function(object, attrname, value)
 		{
-			if (object && typeof(object.__setattr__) === "function")
+			if (typeof(object) === "object" && typeof(object.__setattr__) === "function")
 				object.__setattr__(attrname, value);
-			else
+			else if (ul4._ismap(object))
+				object.set(attrname, value)
+			else if (ul4._isobject(object))
 				object[attrname] = value;
+			else
+				throw "Attr._set() needs an object with attributes";
 		},
 		_modify: function(operator, object, attrname, value)
 		{
@@ -5118,13 +5203,20 @@ ul4._hsv = function(h, s, v, a)
 // Return the item with the key ``key`` from the dict ``container``. If ``container`` doesn't have this key, return ``defaultvalue``
 ul4._get = function(container, key, defaultvalue)
 {
-	if (!ul4._isdict(container))
-		throw "get() requires a dict";
-
-	var result = container[key];
-	if (typeof(result) === "undefined")
+	if (ul4._ismap(container))
+	{
+		if (container.has(key))
+			return container.get(key);
 		return defaultvalue;
-	return result;
+	}
+	else if (ul4._isobject(container))
+	{
+		var result = container[key];
+		if (typeof(result) === "undefined")
+			return defaultvalue;
+		return result;
+	}
+	throw "get() requires a dict";
 };
 
 // Return a ``Date`` object for the current time
@@ -5445,24 +5537,42 @@ ul4._capitalize = function(obj)
 
 ul4._items = function(obj)
 {
-	if (!ul4._isdict(obj))
-		throw "items() requires a dict";
-
-	var result = [];
-	for (var key in obj)
-		result.push([key, obj[key]]);
-	return result;
+	if (ul4._ismap(obj))
+	{
+		var result = [];
+		obj.forEach(function(value, key){
+			result.push([key, value]);
+		});
+		return result;
+	}
+	else if (ul4._isobject(obj))
+	{
+		var result = [];
+		for (var key in obj)
+			result.push([key, obj[key]]);
+		return result;
+	}
+	throw "items() requires a dict";
 };
 
 ul4._values = function(obj)
 {
-	if (!ul4._isdict(obj))
-		throw "values() requires a dict";
-
-	var result = [];
-	for (var key in obj)
-		result.push(obj[key]);
-	return result;
+	if (ul4._ismap(obj))
+	{
+		var result = [];
+		obj.forEach(function(value, key){
+			result.push(value);
+		});
+		return result;
+	}
+	else if (ul4._isobject(obj))
+	{
+		var result = [];
+		for (var key in obj)
+			result.push(obj[key]);
+		return result;
+	}
+	throw "values() requires a dict";
 };
 
 ul4._join = function(sep, iterable)
@@ -5616,13 +5726,30 @@ ul4._pop = function(obj, pos)
 
 ul4._update = function(obj, others, kwargs)
 {
+	var set;
+	if (ul4._ismap(obj))
+		set = function(key, value){
+			obj.set(key, value);
+		};
+	else if (ul4._isobject(obj))
+		set = function(key, value){
+			obj[key] = value;
+		};
+	else
+		throw "_update() requires a dict";
 	for (var i = 0; i < others.length; ++i)
 	{
 		var other = others[i];
-		if (ul4._isdict(other))
+		if (ul4._ismap(other))
+		{
+			other.forEach(function(value, key){
+				set(key, value);
+			});
+		}
+		else if (ul4._isobject(other))
 		{
 			for (var key in other)
-				obj[key] = other[key];
+				set(key, other[key]);
 		}
 		else if (ul4._islist(other))
 		{
@@ -5637,7 +5764,7 @@ ul4._update = function(obj, others, kwargs)
 			throw "update() requires dicts or lists of (key, value) pairs";
 	}
 	for (var key in kwargs)
-		obj[key] = kwargs[key];
+		set(key, kwargs[key]);
 	return null;
 };
 
