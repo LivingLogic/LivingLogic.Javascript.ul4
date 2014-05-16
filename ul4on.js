@@ -28,7 +28,7 @@
 var ul4on = {
 	_registry: {},
 
-	_havemap: (typeof(Map) === "function" && typeof(Map.prototype.forEach) === "function"),
+	_havemap: (typeof(Map) === "function" && typeof(Map.prototype.forEach) === "function") && (new Map([[1, 2]]).size === 1),
 
 	// Register the object ``obj`` under the name ``name`` with the UL4ON machinery
 	register: function(name, obj)

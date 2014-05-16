@@ -115,6 +115,22 @@ ul4.expose = function(name, args, needsout, f)
 	return f;
 };
 
+// Convert a map to an object
+ul4._map2object = function(obj)
+{
+	if (ul4._ismap(obj))
+	{
+		var newobj = {};
+		obj.forEach(function(value, key){
+			if (typeof(key) !== "string")
+				throw "keys must be strings";
+			newobj[key] = value;
+		});
+		return newobj;
+	}
+	return obj;
+};
+
 // Create the argument array for calling the function ``f`` with the positional arguments ``args`` and the keyword arguments ``kwargs``
 ul4._makeargarray = function(f, args, kwargs)
 {
@@ -2511,34 +2527,18 @@ ul4.Dict = ul4._inherit(
 		{
 			if (ul4on._havemap)
 			{
-				if (new Map([[1,1]]).size)
+				out.push("new Map([");
+				for (var i = 0; i < this.items.length; ++i)
 				{
-					out.push("new Map([");
-					for (var i = 0; i < this.items.length; ++i)
-					{
-						if (i)
-							out.push(", ");
-						out.push("[");
-						this.items[i][0]._jssource(out);
+					if (i)
 						out.push(", ");
-						this.items[i][1]._jssource(out);
-						out.push("]");
-					}
-					out.push("])");
+					out.push("[");
+					this.items[i][0]._jssource(out);
+					out.push(", ");
+					this.items[i][1]._jssource(out);
+					out.push("]");
 				}
-				else
-				{
-					out.push("(function(){var result = new Map();")
-					for (var i = 0; i < this.items.length; ++i)
-					{
-						out.push("result.set(");
-						this.items[i][0]._jssource(out);
-						out.push(", ");
-						this.items[i][1]._jssource(out);
-						out.push(");");
-					}
-					out.push("return result;})()");
-				}
+				out.push("])");
 			}
 			else
 			{
@@ -3957,7 +3957,14 @@ ul4.Call = ul4._inherit(
 			if (this.remkwargs !== null)
 			{
 				out.push(", ");
-				this.remkwargs._jssource(out);
+				if (ul4on._havemap)
+				{
+					out.push("ul4._map2object(")
+					this.remkwargs._jssource(out);
+					out.push(")")
+				}
+				else
+					this.remkwargs._jssource(out);
 				out.push(")");
 			}
 			out.push(")");
@@ -5807,7 +5814,7 @@ ul4._update = function(obj, others, kwargs)
 			{
 				if (!ul4._islist(other[j]) || (other[j].length != 2))
 					throw "update() requires a dict or a list of (key, value) pairs";
-				obj[other[j][0]] = other[j][1];
+				set(other[j][0], other[j][1]);
 			}
 		}
 		else
