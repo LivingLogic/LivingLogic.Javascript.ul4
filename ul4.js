@@ -167,7 +167,7 @@ ul4._makeargarray = function(f, args, kwargs)
 	}
 	else
 	{
-		// Yes => Put the unknown ones into a dict and add that the the arguments array
+		// Yes => Put the unknown ones into a dict and add that to the arguments array
 		var remkwargs = {};
 		for (var key in kwargs)
 		{
@@ -2509,16 +2509,50 @@ ul4.Dict = ul4._inherit(
 		},
 		_jssource: function(out)
 		{
-			out.push("{");
-			for (var i = 0; i < this.items.length; ++i)
+			if (ul4on._havemap)
 			{
-				if (i)
-					out.push(", ");
-				this.items[i][0]._jssource(out);
-				out.push(": ");
-				this.items[i][1]._jssource(out);
+				if (new Map([[1,1]]).size)
+				{
+					out.push("new Map([");
+					for (var i = 0; i < this.items.length; ++i)
+					{
+						if (i)
+							out.push(", ");
+						out.push("[");
+						this.items[i][0]._jssource(out);
+						out.push(", ");
+						this.items[i][1]._jssource(out);
+						out.push("]");
+					}
+					out.push("])");
+				}
+				else
+				{
+					out.push("(function(){var result = new Map();")
+					for (var i = 0; i < this.items.length; ++i)
+					{
+						out.push("result.set(");
+						this.items[i][0]._jssource(out);
+						out.push(", ");
+						this.items[i][1]._jssource(out);
+						out.push(");");
+					}
+					out.push("return result;})()");
+				}
 			}
-			out.push("}");
+			else
+			{
+				out.push("{");
+				for (var i = 0; i < this.items.length; ++i)
+				{
+					if (i)
+						out.push(", ");
+					this.items[i][0]._jssource(out);
+					out.push(": ");
+					this.items[i][1]._jssource(out);
+				}
+				out.push("}");
+			}
 		}
 	}
 );
@@ -2565,7 +2599,12 @@ ul4.DictComp = ul4._inherit(
 		},
 		_jssource: function(out)
 		{
-			out.push("(function(vars){vars=ul4._simpleclone(vars);var result={};for(var iter=ul4._iter(");
+			out.push("(function(vars){vars=ul4._simpleclone(vars);var result=");
+			if (ul4on._havemap)
+				out.push("new Map()");
+			else
+				out.push("{}");
+			out.push(";for(var iter=ul4._iter(");
 			this.container._jssource(out);
 			out.push(");;){var item=iter();if(item===null)break;");
 			out.push("var value" + this.__id__ + " = ul4._unpackvar(item[0], ");
@@ -2579,10 +2618,21 @@ ul4.DictComp = ul4._inherit(
 				this.condition._jssource(out);
 				out.push("))");
 			}
-			out.push("result[");
-			this.key._jssource(out);
-			out.push("]=");
-			this.value._jssource(out);
+			if (ul4on._havemap)
+			{
+				out.push("result.set(");
+				this.key._jssource(out);
+				out.push(", ");
+				this.value._jssource(out);
+				out.push(")");
+			}
+			else
+			{
+				out.push("result[");
+				this.key._jssource(out);
+				out.push("]=");
+				this.value._jssource(out);
+			}
 			out.push(";}return result;})(vars)");
 		},
 		_jssource_value: function(out, lvalue, value)
@@ -4743,7 +4793,7 @@ ul4._sum = function(iterable, start)
 
 	var iter = ul4._iter(iterable);
 
-	while (1)
+	while (true)
 	{
 		var value = iter();
 		if (value === null)
@@ -5756,12 +5806,12 @@ ul4._update = function(obj, others, kwargs)
 			for (var j = 0; j < other.length; ++j)
 			{
 				if (!ul4._islist(other[j]) || (other[j].length != 2))
-					throw "update() requires dicts or lists of (key, value) pairs";
+					throw "update() requires a dict or a list of (key, value) pairs";
 				obj[other[j][0]] = other[j][1];
 			}
 		}
 		else
-			throw "update() requires dicts or lists of (key, value) pairs";
+			throw "update() requires a dict or a list of (key, value) pairs";
 	}
 	for (var key in kwargs)
 		set(key, kwargs[key]);
