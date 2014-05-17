@@ -263,9 +263,12 @@ ul4._formatsource = function(out)
 	var level = 0, needlf = false;
 	for (var i = 0; i < out.length; ++i)
 	{
-		if (out[i] === null)
+		if (typeof(out[i]) === "number")
+		{
+			level += out[i];
 			needlf = true;
-		else if (typeof(out[i]) === "string")
+		}
+		else
 		{
 			if (needlf)
 			{
@@ -276,8 +279,6 @@ ul4._formatsource = function(out)
 			}
 			finalout.push(out[i]);
 		}
-		else
-			level += out[i];
 	}
 	if (needlf)
 		finalout.push("\n");
@@ -2401,12 +2402,11 @@ ul4.List = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<List");
-			out.push(null);
 			out.push(+1);
 			for (var i = 0; i < this.items.length; ++i)
 			{
 				this.items[i]._repr(out);
-				out.push(null);
+				out.push(0);
 			}
 			out.push(-1);
 			out.push(">");
@@ -2441,22 +2441,21 @@ ul4.ListComp = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<ListComp");
-			out.push(null);
 			out.push(+1);
 			out.push("item=");
 			this.item._repr(out);
-			out.push(null);
+			out.push(0);
 			out.push("varname=");
 			out.push(ul4._repr(this.varname));
-			out.push(null);
+			out.push(0);
 			out.push("container=");
 			this.container._repr(out);
-			out.push(null);
+			out.push(0);
 			if (condition !== null)
 			{
 				out.push("condition=");
 				this.condition._repr(out);
-				out.push(null);
+				out.push(0);
 			}
 			out.push(-1);
 			out.push(">");
@@ -2469,7 +2468,7 @@ ul4.ListComp = ul4._inherit(
 			out.push("var value" + this.__id__ + " = ul4._unpackvar(item[0], ");
 			out.push(ul4._asjson(ul4._shape(this.varname)));
 			out.push(");");
-			out.push(null);
+			out.push(0);
 			this._jssource_value(out, this.varname, "value" + this.__id__);
 			if (this.condition !== null)
 			{
@@ -2487,7 +2486,7 @@ ul4.ListComp = ul4._inherit(
 			{
 				lvalue._jssource_set(out, value);
 				out.push(";");
-				out.push(null);
+				out.push(0);
 			}
 			else
 			{
@@ -2511,14 +2510,13 @@ ul4.Dict = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<Dict");
-			out.push(null);
 			out.push(+1);
 			for (var i = 0; i < this.items.length; ++i)
 			{
 				this.items[i][0]._repr(out);
 				out.push("=");
 				this.items[i][1]._repr(out);
-				out.push(null);
+				out.push(0);
 			}
 			out.push(-1);
 			out.push(">");
@@ -2574,25 +2572,24 @@ ul4.DictComp = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<DictComp");
-			out.push(null);
 			out.push(+1);
 			out.push("key=");
 			this.key._repr(out);
-			out.push(null);
+			out.push(0);
 			out.push("value=");
 			this.value._repr(out);
-			out.push(null);
+			out.push(0);
 			out.push("varname=");
 			this.varname._repr(out);
-			out.push(null);
+			out.push(0);
 			out.push("container=");
 			this.container._repr(out);
-			out.push(null);
+			out.push(0);
 			if (condition !== null)
 			{
 				out.push("condition=");
 				this.condition._repr(out);
-				out.push(null);
+				out.push(0);
 			}
 			out.push(-1);
 			out.push(">");
@@ -2610,7 +2607,7 @@ ul4.DictComp = ul4._inherit(
 			out.push("var value" + this.__id__ + " = ul4._unpackvar(item[0], ");
 			out.push(ul4._asjson(ul4._shape(this.varname)));
 			out.push(");");
-			out.push(null);
+			out.push(0);
 			this._jssource_value(out, this.varname, "value" + this.__id__);
 			if (this.condition !== null)
 			{
@@ -2641,7 +2638,7 @@ ul4.DictComp = ul4._inherit(
 			{
 				lvalue._jssource_set(out, value);
 				out.push(";");
-				out.push(null);
+				out.push(0);
 			}
 			else
 			{
@@ -2668,22 +2665,21 @@ ul4.GenExpr = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<GenExpr");
-			out.push(null);
 			out.push(+1);
 			out.push("item=");
 			this.item._repr(out);
-			out.push(null);
+			out.push(0);
 			out.push("varname=");
 			this.varname._repr(out);
-			out.push(null);
+			out.push(0);
 			out.push("container=");
 			this.container._repr(out);
-			out.push(null);
+			out.push(0);
 			if (condition !== null)
 			{
 				out.push("condition=");
 				this.condition._repr(out);
-				out.push(null);
+				out.push(0);
 			}
 			out.push(-1);
 			out.push(">");
@@ -2704,7 +2700,7 @@ ul4.GenExpr = ul4._inherit(
 							out.push("var value" + this.__id__ + " = ul4._unpackvar(item[0], ");
 							out.push(ul4._asjson(ul4._shape(this.varname)));
 							out.push(");");
-							out.push(null);
+							out.push(0);
 							this._jssource_value(out, this.varname, "value" + this.__id__);
 							if (this.condition !== null)
 							{
@@ -2729,7 +2725,7 @@ ul4.GenExpr = ul4._inherit(
 			{
 				lvalue._jssource_set(out, value);
 				out.push(";");
-				out.push(null);
+				out.push(0);
 			}
 			else
 			{
@@ -2812,11 +2808,9 @@ ul4.Unary = ul4._inherit(
 		{
 			out.push("<");
 			out.push(this.name);
-			out.push(null);
 			out.push(+1);
 			out.push("obj=");
 			this.obj._repr(out);
-			out.push(null);
 			out.push(-1);
 			out.push(">");
 		},
@@ -2883,17 +2877,15 @@ ul4.If = ul4._inherit(
 		{
 			out.push("<");
 			out.push(this.name);
-			out.push(null);
 			out.push(+1);
 			out.push("objif=");
 			this.objif._repr(out);
-			out.push(null);
+			out.push(0);
 			out.push("objcond=");
 			this.objcond._repr(out);
-			out.push(null);
+			out.push(0);
 			out.push("objelse=");
 			this.objelse._repr(out);
-			out.push(null);
 			out.push(-1);
 			out.push(">");
 		},
@@ -3005,14 +2997,12 @@ ul4.Binary = ul4._inherit(
 		{
 			out.push("<");
 			out.push(this.type);
-			out.push(null);
 			out.push(+1);
 			out.push("obj1=");
 			this.obj1._repr(out);
-			out.push(null);
+			out.push(0);
 			out.push("obj2=");
 			this.obj2._repr(out);
-			out.push(null);
 			out.push(-1);
 			out.push(">");
 		},
@@ -3682,14 +3672,12 @@ ul4.Attr = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<Attr");
-			out.push(null);
 			out.push(+1);
 			out.push("obj=");
 			this.obj._repr(out);
-			out.push(null);
+			out.push(0);
 			out.push("attrname=");
 			out.push(ul4._repr(this.attrname));
-			out.push(null);
 			out.push(-1);
 			out.push(">");
 		},
@@ -3883,34 +3871,33 @@ ul4.Call = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<Call");
-			out.push(null);
 			out.push(+1);
 			out.push("obj=");
 			this.obj._repr(out);
-			out.push(null);
+			out.push(0);
 			for (var i = 0; i < this.args.length; ++i)
 			{
 				this.args[i]._repr(out);
-				out.push(null);
+				out.push(0);
 			}
 			for (var key in this.kwargs)
 			{
 				out.push(key);
 				out.push("=");
 				this.kwargs[key]._repr(out);
-				out.push(null);
+				out.push(0);
 			}
 			if (this.remargs !== null)
 			{
 				out.push("*");
 				this.remargs._repr(out);
-				out.push(null);
+				out.push(0);
 			}
 			if (this.remkwargs !== null)
 			{
 				out.push("**");
 				this.remkwargs._repr(out);
-				out.push(null);
+				out.push(0);
 			}
 			out.push(-1);
 			out.push(">");
@@ -4006,19 +3993,18 @@ ul4.Slice = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<Slice");
-			out.push(null);
 			out.push(+1);
 			if (this.index1 !== null)
 			{
 				out.push("index1=");
 				this.index1._repr(out);
-				out.push(null);
+				out.push(0);
 			}
 			if (this.index2 !== null)
 			{
 				out.push("index2=");
 				this.index2._repr(out);
-				out.push(null);
+				out.push(0);
 			}
 			out.push(-1);
 			out.push(">");
@@ -4056,14 +4042,12 @@ ul4.SetVar = ul4._inherit(
 		{
 			out.push("<");
 			out.push(this.name);
-			out.push(null);
 			out.push(+1);
 			out.push("lvalue=");
 			out.push(ul4._repr(this.lvalue));
-			out.push(null);
+			out.push(0);
 			out.push("value=");
 			this.value._repr(out);
-			out.push(null);
 			out.push(-1);
 			out.push(">");
 		},
@@ -4074,7 +4058,7 @@ ul4.SetVar = ul4._inherit(
 			out.push(", ");
 			out.push(ul4._asjson(ul4._shape(this.lvalue)));
 			out.push(");");
-			out.push(null);
+			out.push(0);
 			this._jssource_value(out, this.lvalue, "value" + this.__id__);
 		},
 		_jssource_value: function(out, lvalue, value)
@@ -4083,7 +4067,7 @@ ul4.SetVar = ul4._inherit(
 			{
 				lvalue._jssource_set(out, value);
 				out.push(";");
-				out.push(null);
+				out.push(0);
 			}
 			else
 			{
@@ -4103,7 +4087,7 @@ ul4.ModifyVar = ul4._inherit(
 			{
 				lvalue._jssource_modify(out, this._operator, value);
 				out.push(";");
-				out.push(null);
+				out.push(0);
 			}
 			else
 			{
@@ -4157,7 +4141,7 @@ ul4.Block = ul4._inherit(
 			for (var i = 0; i < this.content.length; ++i)
 			{
 				this.content[i]._repr(out);
-				out.push(null);
+				out.push(0);
 			}
 		},
 		_jssource_content: function(out)
@@ -4166,7 +4150,7 @@ ul4.Block = ul4._inherit(
 			{
 				this.content[i]._jssource(out);
 				out.push(";");
-				out.push(null);
+				out.push(0);
 			}
 		},
 		_str: function(out)
@@ -4176,13 +4160,13 @@ ul4.Block = ul4._inherit(
 				for (var i = 0; i < this.content.length; ++i)
 				{
 					this.content[i]._str(out);
-					out.push(null);
+					out.push(0);
 				}
 			}
 			else
 			{
 				out.push("pass");
-				out.push(null);
+				out.push(0);
 			}
 		}
 	}
@@ -4202,13 +4186,13 @@ ul4.ForBlock = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<For");
-			out.push(null);
 			out.push(+1);
 			out.push("varname=");
 			out.push(ul4._repr(this.varname));
-			out.push(null);
+			out.push(0);
 			out.push("container=");
 			this.container._repr(out);
+			out.push(0);
 			ul4.Block._repr.call(this, out);
 			out.push(-1);
 			out.push(">");
@@ -4218,27 +4202,24 @@ ul4.ForBlock = ul4._inherit(
 			out.push("for (var iter" + this.__id__ + " = ul4._iter(");
 			this.container._jssource(out);
 			out.push(");;)");
-			out.push(null);
+			out.push(0);
 			out.push("{");
-			out.push(null);
 			out.push(+1);
 			out.push("var item" + this.__id__ + " = iter" + this.__id__ + "();");
-			out.push(null);
+			out.push(0);
 			out.push("if (item" + this.__id__ + " === null)");
-			out.push(null);
 			out.push(+1);
 			out.push("break;");
-			out.push(null);
 			out.push(-1);
 			out.push("var value" + this.__id__ + " = ul4._unpackvar(item" + this.__id__ + "[0], ");
 			out.push(ul4._asjson(ul4._shape(this.varname)));
 			out.push(");");
-			out.push(null);
+			out.push(0);
 			this._jssource_value(out, this.varname, "value" + this.__id__);
 			this._jssource_content(out);
 			out.push(-1);
 			out.push("}");
-			out.push(null);
+			out.push(0);
 		},
 		_jssource_value: function(out, lvalue, value)
 		{
@@ -4246,7 +4227,7 @@ ul4.ForBlock = ul4._inherit(
 			{
 				lvalue._jssource_set(out, value);
 				out.push(";");
-				out.push(null);
+				out.push(0);
 			}
 			else
 			{
@@ -4259,7 +4240,6 @@ ul4.ForBlock = ul4._inherit(
 			out.push("for ");
 			ul4.AST._str.call(this, out);
 			out.push(":");
-			out.push(null);
 			out.push(+1);
 			ul4.Block._str.call(this, out);
 			out.push(-1);
@@ -4280,7 +4260,6 @@ ul4.WhileBlock = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<While");
-			out.push(null);
 			out.push(+1);
 			out.push("condition=");
 			this.condition._repr(out);
@@ -4293,21 +4272,19 @@ ul4.WhileBlock = ul4._inherit(
 			out.push("while (ul4._bool(");
 			this.condition._jssource(out);
 			out.push("))");
-			out.push(null);
+			out.push(0);
 			out.push("{");
-			out.push(null);
 			out.push(+1);
 			this._jssource_content(out);
 			out.push(-1);
 			out.push("}");
-			out.push(null);
+			out.push(0);
 		},
 		_str: function(out)
 		{
 			out.push("while ");
 			ul4.AST._str.call(this, out);
 			out.push(":");
-			out.push(null);
 			out.push(+1);
 			ul4.Block._str.call(this, out);
 			out.push(-1);
@@ -4376,10 +4353,10 @@ ul4.ConditionalBlock = ul4._inherit(
 		{
 			out.push("<");
 			out.push(this.type);
-			out.push(null);
 			out.push(+1);
 			out.push("condition=");
 			this.condition._repr(out);
+			out.push(0);
 			ul4.Block._repr.call(this, out);
 			out.push(-1);
 			out.push(">");
@@ -4390,14 +4367,13 @@ ul4.ConditionalBlock = ul4._inherit(
 			out.push(" (ul4._bool(");
 			this.condition._jssource(out);
 			out.push("))");
-			out.push(null);
+			out.push(0);
 			out.push("{");
-			out.push(null);
 			out.push(+1);
 			this._jssource_content(out);
 			out.push(-1);
 			out.push("}");
-			out.push(null);
+			out.push(0);
 		},
 		_str: function(out)
 		{
@@ -4405,7 +4381,6 @@ ul4.ConditionalBlock = ul4._inherit(
 			out.push(" ");
 			ul4.AST._str.call(this, out);
 			out.push(":");
-			out.push(null);
 			out.push(+1);
 			ul4.Block._str.call(this, out);
 			out.push(-1);
@@ -4423,7 +4398,6 @@ ul4.ElseBlock = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<Else");
-			out.push(null);
 			out.push(+1);
 			ul4.Block._repr.call(this, out);
 			out.push(-1);
@@ -4432,19 +4406,17 @@ ul4.ElseBlock = ul4._inherit(
 		_jssource: function(out)
 		{
 			out.push("else");
-			out.push(null);
+			out.push(0);
 			out.push("{");
-			out.push(null);
 			out.push(+1);
 			this._jssource_content(out);
 			out.push(-1);
 			out.push("}");
-			out.push(null);
+			out.push(0);
 		},
 		_str: function(out)
 		{
 			out.push("else:");
-			out.push(null);
 			out.push(+1);
 			ul4.Block._str.call(this, out);
 			out.push(-1);
@@ -4509,25 +4481,24 @@ ul4.Template = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<Template");
-			out.push(null);
 			out.push(+1);
 			out.push("name=");
 			out.push(ul4._repr(this.name));
-			out.push(null);
+			out.push(0);
 			out.push("keepws=");
 			out.push(ul4._repr(this.keepws));
-			out.push(null);
+			out.push(0);
 			if (this.startdelim !== "<?")
 			{
 				out.push("startdelim=");
 				out.push(ul4._repr(this.startdelim));
-				out.push(null);
+				out.push(0);
 			}
 			if (this.enddelim !== "?>")
 			{
 				out.push("enddelim=");
 				out.push(ul4._repr(this.enddelim));
-				out.push(null);
+				out.push(0);
 			}
 			ul4.Block._repr.call(this, out);
 			out.push(-1);
@@ -4538,7 +4509,6 @@ ul4.Template = ul4._inherit(
 			out.push("def ");
 			out.push(this.name ? this.name : "unnamed");
 			out.push(":");
-			out.push(null);
 			out.push(+1);
 			ul4.Block._str.call(this, out);
 			out.push(-1);
@@ -4547,16 +4517,15 @@ ul4.Template = ul4._inherit(
 		{
 			var out = [];
 			out.push("(function(self, out, vars)");
-			out.push(null);
+			out.push(0);
 			out.push("{");
-			out.push(null);
 			out.push(+1);
 			out.push("vars = ul4._simpleclone(vars);"); // variables assignments shouldn't be visible in the parent
-			out.push(null);
+			out.push(0);
 			this._jssource_content(out);
 			out.push(-1);
 			out.push("})");
-			out.push(null);
+			out.push(0);
 			return ul4._formatsource(out);
 		},
 		render: function(out, vars)
