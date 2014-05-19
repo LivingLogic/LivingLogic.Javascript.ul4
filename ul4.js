@@ -236,21 +236,21 @@ ul4._unpackvar = function(value, shape)
 
 		for (var i = 0;;++i)
 		{
-			var nextitem = iter();
+			var item = iter.next();
 
-			if (nextitem !== null)
-			{
-				if (i < shape.length)
-					newvalue.push(ul4._unpackvar(nextitem[0], shape[i]));
-				else
-					throw "mismatched variable unpacking: " + shape.length + " varnames, >" + i + " items";
-			}
-			else
+			if (item.done)
 			{
 				if (i === shape.length)
 					break;
 				else
 					throw "mismatched variable unpacking: " + shape.length + " varnames, " + (i+1) + " items";
+			}
+			else
+			{
+				if (i < shape.length)
+					newvalue.push(ul4._unpackvar(item.value, shape[i]));
+				else
+					throw "mismatched variable unpacking: " + shape.length + " varnames, >" + i + " items";
 			}
 		}
 		return newvalue;
@@ -289,14 +289,18 @@ ul4._iter = function(obj)
 {
 	if (typeof(obj) === "string" || ul4._islist(obj))
 	{
-		var i = 0;
-		var result = function()
-		{
-			return (i < obj.length) ? [obj[i++]] : null;
+		return {
+			index: 0,
+			next: function()
+			{
+				if (this.index < obj.length)
+					return {value: obj[this.index++], done: false};
+				else
+					return {done: true};
+			}
 		};
-		return ul4._markiter(result);
 	}
-	else if (obj !== null && typeof(obj.__isiter__) !== "undefined")
+	else if (ul4._isiter(obj))
 		return obj;
 	else if (obj !== null && typeof(obj.__iter__) === "function")
 		return obj.__iter__();
@@ -306,37 +310,32 @@ ul4._iter = function(obj)
 		obj.forEach(function(value, key){
 			keys.push(key);
 		});
-		var i = 0;
-		var result = function()
-		{
-			if (i >= keys.length)
-				return null;
-			return [keys[i++]];
+		return {
+			index: 0,
+			next: function()
+			{
+				if (this.index >= keys.length)
+					return {done: true};
+				return {value: keys[this.index++], done: false};
+			}
 		};
-		return ul4._markiter(result);
 	}
 	else if (ul4._isobject(obj))
 	{
 		var keys = [];
 		for (var key in obj)
 			keys.push(key);
-		var i = 0;
-		var result = function()
-		{
-			if (i >= keys.length)
-				return null;
-			return [keys[i++]];
+		return {
+			index: 0,
+			next: function()
+			{
+				if (this.index >= keys.length)
+					return {done: true};
+				return {value: keys[this.index++], done: false};
+			}
 		};
-		return ul4._markiter(result);
 	}
 	throw "'" + ul4._type(obj) + "' object is not iterable";
-};
-
-// Mark a function as an iterator
-ul4._markiter = function(f)
-{
-	f.__isiter__ = true;
-	return f;
 };
 
 ul4._str_repr = function(str)
@@ -635,58 +634,16 @@ ul4._float = function(obj)
 // Convert ``obj`` to a list
 ul4._list = function(obj)
 {
-	if (typeof(obj) == "string" || ul4._islist(obj))
+	var iter = ul4._iter(obj);
+
+	var result = [];
+	for (;;)
 	{
-		var result = [];
-		for (var key in obj)
-			result.push(obj[key]);
-		return result;
+		var value = iter.next();
+		if (value.done)
+			return result;
+		result.push(value.value);
 	}
-	else if (ul4._iscolor(obj))
-	{
-		return [obj._r, obj._g, obj._b, obj._a];
-	}
-	else if (obj.__isiter__)
-	{
-		var result = [];
-		while (true)
-		{
-			var item = obj();
-			if (item === null)
-				break;
-			result.push(item[0]);
-		}
-		return result;
-	}
-	else if (typeof(obj.__iter__) == "function")
-	{
-		var iter = obj.__iter__();
-		var result = [];
-		while (true)
-		{
-			var item = iter();
-			if (item === null)
-				break;
-			result.push(item[0]);
-		}
-		return result;
-	}
-	else if (ul4._ismap(obj))
-	{
-		var result = [];
-		obj.forEach(function(value, key){
-			result.push(key);
-		});
-		return result;
-	}
-	else if (ul4._isobject(obj))
-	{
-		var result = [];
-		for (var key in obj)
-			result.push(key);
-		return result;
-	}
-	throw "list() requires an iterable";
 };
 
 // Return the length of ``sequence``
@@ -750,14 +707,12 @@ ul4._any = function(iterable)
 	}
 	else
 	{
-		var iter = ul4._iter(iterable);
-
-		for (;;)
+		for (var iter = ul4._iter(iterable);;)
 		{
-			var item = iter();
-			if (item === null)
+			var item = iter.next();
+			if (item.done)
 				return false;
-			if (ul4._bool(item[0]))
+			if (ul4._bool(item.value))
 				return true;
 		}
 	}
@@ -777,14 +732,12 @@ ul4._all = function(iterable)
 	}
 	else
 	{
-		var iter = ul4._iter(iterable);
-
-		for (;;)
+		for (var iter = ul4._iter(iterable);;)
 		{
-			var item = iter();
-			if (item === null)
+			var item = iter.next();
+			if (item.done)
 				return true;
-			if (!ul4._bool(item[0]))
+			if (!ul4._bool(item.value))
 				return false;
 		}
 	}
@@ -873,6 +826,12 @@ ul4._isfunction = function(obj)
 ul4._islist = function(obj)
 {
 	return Object.prototype.toString.call(obj) == "[object Array]";
+};
+
+// Check if ``obj`` is an iterator
+ul4._isiter = function(obj)
+{
+	return obj !== null && typeof(obj) === "object" && typeof(obj.next) === "function";
 };
 
 // Check if ``obj`` is a JS object
@@ -1666,6 +1625,38 @@ ul4.Color = ul4._inherit(
 				else
 					return "#" + r + g + b;
 			}
+		},
+
+		__iter__: function()
+		{
+			return {
+				obj: this,
+				index: 0,
+				next: function() {
+					if (this.index == 0)
+					{
+						++this.index;
+						return {value: this.obj._r, done: false};
+					}
+					else if (this.index == 1)
+					{
+						++this.index;
+						return {value: this.obj._g, done: false};
+					}
+					else if (this.index == 2)
+					{
+						++this.index;
+						return {value: this.obj._b, done: false};
+					}
+					else if (this.index == 3)
+					{
+						++this.index;
+						return {value: this.obj._a, done: false};
+					}
+					else
+						return {done: true};
+				}
+			};
 		},
 
 		__getattr__: function(attrname)
@@ -2465,8 +2456,8 @@ ul4.ListComp = ul4._inherit(
 		{
 			out.push("(function(vars){vars = ul4._simpleclone(vars); var result=[];for(var iter=ul4._iter(");
 			this.container._jssource(out);
-			out.push(");;){var item=iter();if(item===null)break;");
-			out.push("var value" + this.__id__ + " = ul4._unpackvar(item[0], ");
+			out.push(");;){var item=iter.next();if(item.done)break;");
+			out.push("var value" + this.__id__ + " = ul4._unpackvar(item.value, ");
 			out.push(ul4._asjson(ul4._shape(this.varname)));
 			out.push(");");
 			out.push(null);
@@ -2604,10 +2595,10 @@ ul4.DictComp = ul4._inherit(
 				out.push("new Map()");
 			else
 				out.push("{}");
-			out.push(";for(var iter=ul4._iter(");
+			out.push(";for(var iter = ul4._iter(");
 			this.container._jssource(out);
-			out.push(");;){var item=iter();if(item===null)break;");
-			out.push("var value" + this.__id__ + " = ul4._unpackvar(item[0], ");
+			out.push(");;){var item=iter.next();if(item.done)break;");
+			out.push("var value" + this.__id__ + " = ul4._unpackvar(item.value, ");
 			out.push(ul4._asjson(ul4._shape(this.varname)));
 			out.push(");");
 			out.push(null);
@@ -2690,37 +2681,35 @@ ul4.GenExpr = ul4._inherit(
 		},
 		_jssource: function(out)
 		{
-			out.push("ul4._markiter(");
-				out.push("(function(vars, container){");
-					out.push("vars = ul4._simpleclone(vars);");
-					out.push("var iter=ul4._iter(container);");
-					out.push("return(function(){");
-						out.push("var item;");
-						out.push("for (;;)");
-						out.push("{");
-							out.push("item = iter();");
-							out.push("if(item===null)");
-								out.push("return null;");
-							out.push("var value" + this.__id__ + " = ul4._unpackvar(item[0], ");
-							out.push(ul4._asjson(ul4._shape(this.varname)));
-							out.push(");");
-							out.push(null);
-							this._jssource_value(out, this.varname, "value" + this.__id__);
-							if (this.condition !== null)
-							{
-								out.push("if(ul4._bool(");
-								this.condition._jssource(out);
-								out.push("))");
-							}
-							out.push("break;");
-						out.push("}");
-						out.push("return [");
-						this.item._jssource(out);
-						out.push("];");
-					out.push("})");
-				out.push("})(vars, ");
-				this.container._jssource(out);
-				out.push(")");
+			out.push("(function(vars, container){");
+				out.push("vars = ul4._simpleclone(vars);");
+				out.push("var iter = ul4._iter(container);");
+				out.push("return {");
+					out.push("next: function(){");
+					out.push("for (;;)");
+					out.push("{");
+						out.push("var item = iter.next();");
+						out.push("if(item.done)");
+							out.push("return item;");
+						out.push("var value" + this.__id__ + " = ul4._unpackvar(item.value, ");
+						out.push(ul4._asjson(ul4._shape(this.varname)));
+						out.push(");");
+						out.push(null);
+						this._jssource_value(out, this.varname, "value" + this.__id__);
+						if (this.condition !== null)
+						{
+							out.push("if(ul4._bool(");
+							this.condition._jssource(out);
+							out.push("))");
+						}
+						out.push("break;");
+					out.push("}");
+					out.push("return {value: ");
+					this.item._jssource(out);
+					out.push(", done: false};");
+				out.push("}");
+			out.push("}})(vars, ");
+			this.container._jssource(out);
 			out.push(")");
 		},
 		_jssource_value: function(out, lvalue, value)
@@ -3121,10 +3110,10 @@ ul4.Item = ul4._inherit(
 					container.splice(start, stop-start); // Remove old element
 					for (var iter = ul4._iter(value);;)
 					{
-						var item = iter();
-						if (item === null)
+						var item = iter.next();
+						if (item.done)
 							break;
-						container.splice(start++, 0, item[0]);
+						container.splice(start++, 0, item.value);
 					}
 				}
 				else
@@ -4222,15 +4211,15 @@ ul4.ForBlock = ul4._inherit(
 			out.push("{");
 			out.push(null);
 			out.push(+1);
-			out.push("var item" + this.__id__ + " = iter" + this.__id__ + "();");
+			out.push("var item" + this.__id__ + " = iter" + this.__id__ + ".next();");
 			out.push(null);
-			out.push("if (item" + this.__id__ + " === null)");
+			out.push("if (item" + this.__id__ + ".done)");
 			out.push(null);
 			out.push(+1);
 			out.push("break;");
 			out.push(null);
 			out.push(-1);
-			out.push("var value" + this.__id__ + " = ul4._unpackvar(item" + this.__id__ + "[0], ");
+			out.push("var value" + this.__id__ + " = ul4._unpackvar(item" + this.__id__ + ".value, ");
 			out.push(ul4._asjson(ul4._shape(this.varname)));
 			out.push(");");
 			out.push(null);
@@ -4754,15 +4743,15 @@ ul4._min = function(obj)
 	var first = true;
 	while (true)
 	{
-		var item = iter();
-		if (item === null)
+		var item = iter.next();
+		if (item.done)
 		{
 			if (first)
 				throw "min() argument is an empty sequence!";
 			return result;
 		}
-		if (first || (item[0] < result))
-			result = item[0];
+		if (first || (item.value < result))
+			result = item.value;
 		first = false;
 	}
 };
@@ -4779,15 +4768,15 @@ ul4._max = function(obj)
 	var first = true;
 	while (true)
 	{
-		var item = iter();
-		if (item === null)
+		var item = iter.next();
+		if (item.done)
 		{
 			if (first)
 				throw "max() argument is an empty sequence!";
 			return result;
 		}
-		if (first || (item[0] > result))
-			result = item[0];
+		if (first || (item.value > result))
+			result = item.value;
 		first = false;
 	}
 };
@@ -4798,14 +4787,12 @@ ul4._sum = function(iterable, start)
 	if (typeof(start) === "undefined")
 		start = 0;
 
-	var iter = ul4._iter(iterable);
-
-	while (true)
+	for (var iter = ul4._iter(iterable);;)
 	{
-		var value = iter();
-		if (value === null)
+		var item = iter.next();
+		if (item.done)
 			break;
-		start += value[0];
+		start += item.value;
 	}
 	return start;
 };
@@ -4816,9 +4803,8 @@ ul4._first = function(iterable, defaultValue)
 	if (typeof(defaultValue) === "undefined")
 		defaultValue = null;
 
-	var iter = ul4._iter(iterable);
-	var value = iter();
-	return (value !== null) ? value[0] : defaultValue;
+	var item = ul4._iter(iterable).next();
+	return item.done ? defaultValue : item.value;
 };
 
 // Return the last value produced by iterating through ``iterable`` (defaulting to ``defaultValue`` if the iterator is empty)
@@ -4827,15 +4813,14 @@ ul4._last = function(iterable, defaultValue)
 	if (typeof(defaultValue) === "undefined")
 		defaultValue = null;
 
-	var iter = ul4._iter(iterable);
-
 	var value = defaultValue;
-	while (1)
+
+	for (var iter = ul4._iter(iterable);;)
 	{
-		var itervalue = iter();
-		if (itervalue === null)
+		var item = iter.next();
+		if (item.done)
 			break;
-		value = itervalue[0];
+		value = item.value;
 	}
 	return value;
 };
@@ -4889,14 +4874,15 @@ ul4._range = function(args)
 	}
 	var length = (lower < heigher) ? Math.floor((heigher - lower - 1)/Math.abs(step)) + 1 : 0;
 
-	var i = 0;
-	var result = function()
-	{
-		if (i >= length)
-			return null;
-		return [start + (i++) * step];
+	return {
+		index: 0,
+		next: function()
+		{
+			if (this.index >= length)
+				return {done: true};
+			return {value: start + (this.index++) * step, done: false};
+		}
 	};
-	return ul4._markiter(result);
 };
 
 // Return a iterable object returning a slice from the argument
@@ -4936,30 +4922,30 @@ ul4._slice = function(args)
 	if (step <= 0)
 		throw "slice() requires a step argument > 0";
 
-	iterable = ul4._iter(iterable);
 	var next = start, count = 0;
-	var result = function()
-	{
-		var result;
-		while (count < next)
-		{
-			result = iterable();
-			if (result === null)
-				return null;
+	return {
+		iter: ul4._iter(iterable),
+		next: function() {
+			var result;
+			while (count < next)
+			{
+				result = this.iter.next();
+				if (result.done)
+					return result;
+				++count;
+			}
+			if (stop !== null && count >= stop)
+				return {done: true};
+			result = this.iter.next();
+			if (result.done)
+				return result;
 			++count;
+			next += step;
+			if (stop !== null && next > stop)
+				next = stop;
+			return result;
 		}
-		if (stop !== null && count >= stop)
-			return null;
-		result = iterable();
-		if (result === null)
-			return null;
-		++count;
-		next += step;
-		if (stop !== null && next > stop)
-			next = stop;
-		return result;
 	};
-	return ul4._markiter(result);
 };
 
 // ``%`` escape unsafe characters in the string ``string``
@@ -4979,12 +4965,12 @@ ul4._reversed = function(sequence)
 {
 	if (typeof(sequence) != "string" && !ul4._islist(sequence)) // We don't have to materialize strings or lists
 		sequence = ul4._list(sequence);
-	var i = sequence.length-1;
-	var result = function()
-	{
-		return i >= 0 ? [sequence[i--]] : null;
+	return {
+		index: sequence.length-1,
+		next: function() {
+			return this.index >= 0 ? {value: sequence[this.index--], done: false} : {done: true};
+		}
 	};
-	return ul4._markiter(result);
 };
 
 // Returns a random number in the interval ``[0;1[``
@@ -5050,12 +5036,13 @@ ul4._enumerate = function(iterable, start)
 	if (typeof(start) === "undefined")
 		start = 0;
 
-	var iter = ul4._iter(iterable);
-	var i = start;
-	var result = function()
-	{
-		var inner = iter();
-		return inner !== null ? [[i++, inner[0]]] : null;
+	return {
+		iter: ul4._iter(iterable),
+		index: start,
+		next: function() {
+			var item = this.iter.next();
+			return item.done ? item : {value: [this.index++, item.value], done: false};
+		}
 	};
 	return ul4._markiter(result);
 };
@@ -5063,31 +5050,32 @@ ul4._enumerate = function(iterable, start)
 // Return an iterator over ``[isfirst, item]`` lists from the iterable object ``iterable`` (``isfirst`` is true for the first item, false otherwise)
 ul4._isfirst = function(iterable)
 {
-	var iter = ul4._iter(iterable);
-	var isfirst = true;
-	var result = function()
-	{
-		var inner = iter();
-		var result = inner !== null ? [[isfirst, inner[0]]] : null;
-		isfirst = false;
-		return result;
+	return {
+		iter: ul4._iter(iterable),
+		isfirst: true,
+		next: function() {
+			var item = this.iter.next();
+			var result = item.done ? item : {value: [this.isfirst, item.value], done: false};
+			this.isfirst = false;
+			return result;
+		}
 	};
-	return ul4._markiter(result);
 };
 
 // Return an iterator over ``[islast, item]`` lists from the iterable object ``iterable`` (``islast`` is true for the last item, false otherwise)
 ul4._islast = function(iterable)
 {
 	var iter = ul4._iter(iterable);
-	var lastitem = iter();
-	var result = function()
-	{
-		if (lastitem === null)
-			return null;
-		var inner = iter();
-		var result = [[inner === null, lastitem[0]]];
-		lastitem = inner;
-		return result;
+	var lastitem = iter.next();
+	return {
+		next: function() {
+			if (lastitem.done)
+				return lastitem;
+			var item = iter.next();
+			var result = {value: [item.done, lastitem.value], done: false};
+			lastitem = item;
+			return result;
+		}
 	};
 	return ul4._markiter(result);
 };
@@ -5097,16 +5085,17 @@ ul4._isfirstlast = function(iterable)
 {
 	var iter = ul4._iter(iterable);
 	var isfirst = true;
-	var lastitem = iter();
-	var result = function()
-	{
-		if (lastitem === null)
-			return null;
-		var inner = iter();
-		var result = [[isfirst, inner === null, lastitem[0]]];
-		lastitem = inner;
-		isfirst = false;
-		return result;
+	var lastitem = iter.next();
+	return {
+		next: function() {
+			if (lastitem.done)
+				return lastitem;
+			var item = iter.next();
+			var result = {value: [isfirst, item.done, lastitem.value], done: false};
+			lastitem = item;
+			isfirst = false;
+			return result;
+		}
 	};
 	return ul4._markiter(result);
 };
@@ -5117,16 +5106,17 @@ ul4._enumfl = function(iterable, start)
 	var iter = ul4._iter(iterable);
 	var i = start;
 	var isfirst = true;
-	var lastitem = iter();
-	var result = function()
-	{
-		if (lastitem === null)
-			return null;
-		var inner = iter();
-		var result = [[i++, isfirst, inner === null, lastitem[0]]];
-		lastitem = inner;
-		isfirst = false;
-		return result;
+	var lastitem = iter.next();
+	return {
+		next: function() {
+			if (lastitem.done)
+				return lastitem;
+			var item = iter.next();
+			var result = {value: [i++, isfirst, item.done, lastitem.value], done: false};
+			lastitem = item;
+			isfirst = false;
+			return result;
+		}
 	};
 	return ul4._markiter(result);
 };
@@ -5141,27 +5131,28 @@ ul4._zip = function(iterables)
 		for (var i = 0; i < iterables.length; ++i)
 			iters.push(ul4._iter(iterables[i]));
 
-		result = function()
-		{
-			var items = [];
-			for (var i = 0; i < iters.length; ++i)
-			{
-				var item = iters[i]();
-				if (item === null)
-					return null;
-				items.push(item[0]);
+		return {
+			next: function() {
+				var items = [];
+				for (var i = 0; i < iters.length; ++i)
+				{
+					var item = iters[i].next();
+					if (item.done)
+						return item;
+					items.push(item.value);
+				}
+				return {value: items, done: false};
 			}
-			return [items];
 		};
 	}
 	else
 	{
-		result = function()
-		{
-			return null;
-		}
+		return {
+			next: function() {
+				return {done: true};
+			}
+		};
 	}
-	return ul4._markiter(result);
 };
 
 // Return the absolute value for the number ``number``
@@ -5637,10 +5628,10 @@ ul4._join = function(sep, iterable)
 	var resultlist = [];
 	for (var iter = ul4._iter(iterable);;)
 	{
-		var item = iter();
-		if (item === null)
+		var item = iter.next();
+		if (item.done)
 			break;
-		resultlist.push(item[0]);
+		resultlist.push(item.value);
 	}
 	return resultlist.join(sep);
 };
