@@ -4999,6 +4999,20 @@ ul4._randchoice = function(sequence)
 	return sequence[Math.floor(Math.random() * sequence.length)];
 };
 
+// Round a number ``x`` to to ``digits`` decimal places (may be negative)
+ul4._round = function(x, digits)
+{
+	if (typeof(digits) === "undefined")
+		digits = 0;
+	if (digits)
+	{
+		var threshhold = Math.pow(10, digits);
+		return Math.round(x*threshhold)/threshhold;
+	}
+	else
+		return Math.round(x);
+
+}
 // Return an iterator over ``[index, item]`` lists from the iterable object ``iterable``. ``index`` starts at ``start`` (defaulting to 0)
 ul4._enumerate = function(iterable, start)
 {
@@ -5318,7 +5332,8 @@ ul4.functions = {
 	reversed: ul4.expose("reversed", ["sequence"], ul4._reversed),
 	random: ul4.expose("random", [], ul4._random),
 	randrange: ul4.expose("randrange", ["*args"], ul4._randrange),
-	randchoice: ul4.expose("randchoice", ["sequence"], ul4._randchoice)
+	randchoice: ul4.expose("randchoice", ["sequence"], ul4._randchoice),
+	round: ul4.expose("round", ["x", ["digits", 0]], ul4._round)
 };
 
 // Functions implementing UL4 methods
