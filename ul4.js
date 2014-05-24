@@ -3817,10 +3817,26 @@ ul4.Attr = ul4._inherit(
 					case "update":
 						return ul4.expose("update", ["*other", "**kwargs"], function(other, kwargs){ return ul4._update(object, other, kwargs); });
 					default:
+						var result;
 						if (object && typeof(object.__getattr__) === "function") // test this before the generic object test
-							return object.__getattr__(attrname);
+							result = object.__getattr__(attrname);
 						else
-							return object[attrname];
+							result = object[attrname];
+						if (typeof(result) === "function")
+						{
+							var realresult = function() {
+								return result.apply(object, arguments);
+							};
+							realresult._ul4_name = result._ul4_name;
+							realresult._ul4_needsout = result._ul4_needsout;
+							realresult._ul4_remargs = result._ul4_remargs;
+							realresult._ul4_remkwargs = result._ul4_remkwargs;
+							realresult._ul4_args = result._ul4_args;
+							realresult._ul4_argnames = result._ul4_argnames;
+							return realresult;
+						}
+						else
+							return result;
 				}
 			}
 			throw "Attr._get() needs an object with attributes";
