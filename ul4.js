@@ -4999,7 +4999,7 @@ ul4._randchoice = function(sequence)
 	return sequence[Math.floor(Math.random() * sequence.length)];
 };
 
-// Round a number ``x`` to to ``digits`` decimal places (may be negative)
+// Round a number ``x`` to ``digits`` decimal places (may be negative)
 ul4._round = function(x, digits)
 {
 	if (typeof(digits) === "undefined")
