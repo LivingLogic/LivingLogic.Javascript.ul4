@@ -41,7 +41,7 @@ var ul4 = {
 /// Helper functions
 
 // Crockford style object creation
-ul4._simpleclone = function(obj)	
+ul4._simpleclone = function(obj)
 {
 	function F(){};
 	F.prototype = obj;
