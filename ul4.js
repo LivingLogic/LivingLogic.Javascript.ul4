@@ -29,7 +29,7 @@
 
 /*jslint vars: true */
 var ul4 = {
-	version: "28",
+	version: "29",
 
 	// REs for parsing JSON
 	_rvalidchars: /^[\],:{}\s]*$/,
@@ -131,51 +131,76 @@ ul4._map2object = function(obj)
 	return obj;
 };
 
-// Create the argument array for calling the function ``f`` with the positional arguments ``args`` and the keyword arguments ``kwargs``
-ul4._makeargarray = function(f, args, kwargs)
+// Create the argument array for calling the function ``f`` with the arguments available from ``args``
+ul4._makeargarray = function(f, args)
 {
 	var realargs = [];
-	var remargs = null;
+	var realkwargs = {};
+
+	for (var i = 0; i < args.length; ++i)
+	{
+		var name = args[i][0];
+		var arg = args[i][1];
+		if (name === null)
+			realargs.push(arg);
+		else if (name === "*")
+			realargs = realargs.concat(arg);
+		else if (name === "**")
+		{
+			if (ul4._ismap(arg))
+			{
+				arg.forEach(function(value, key){
+					realkwargs[key] = value;
+				});
+			}
+			else
+				ul4._extend(realkwargs, arg);
+		}
+		else
+			realkwargs[name] = arg;
+	}
+
+	var finalargs = [];
 
 	for (var i = 0; i < f._ul4_args.length; ++i)
 	{
 		var arg = f._ul4_args[i];
 
-		if (typeof(kwargs[arg.name]) !== "undefined")
+		if (typeof(realkwargs[arg.name]) !== "undefined")
 		{
-			if (i < args.length)
+			if (i < realargs.length)
 				throw f._ul4_name + "() argument " + ul4._repr(arg.name) + " (position " + i + ") specified multiple times";
-			realargs.push(kwargs[arg.name]);
+			finalargs.push(realkwargs[arg.name]);
 		}
 		else
 		{
-			if (i < args.length)
-				realargs.push(args[i]);
+			if (i < realargs.length)
+				finalargs.push(realargs[i]);
 			else if (typeof(arg.defaultValue) === "undefined")
 				throw "required " + f._ul4_name + "() argument " + ul4._repr(arg.name) + " (position " + i + ") missing";
 			else
-				realargs.push(arg.defaultValue);
+				finalargs.push(arg.defaultValue);
 		}
 	}
 
-	// Do we accept additial positional arguments?
+	// Do we accept additional positional arguments?
 	if (f._ul4_remargs === null)
 	{
 		// No, but we have them -> complain
-		if (args.length > f._ul4_args.length)
-			throw f._ul4_name + "() expects at most " + f._ul4_args.length + " positional argument" + (f._ul4_args.length != 1 ? "s" : "") + ", " + args.length + " given";
+		if (realargs.length > f._ul4_args.length)
+			throw f._ul4_name + "() expects at most " + f._ul4_args.length + " positional argument" + (f._ul4_args.length != 1 ? "s" : "") + ", " + realargs.length + " given";
 	}
 	else
 	{
 		// Put additional positional arguments in the call into the ``*`` argument (if there are none, this pushes an empty list)
-		realargs.push(args.slice(f._ul4_args.length));
+		finalargs.push(realargs.slice(f._ul4_args.length));
 	}
 
 	// Do we accept arbitrary keyword arguments?
 	if (f._ul4_remkwargs === null)
 	{
 		// No => complain about unknown ones
-		for (var key in kwargs)
+		for (var key in realkwargs)
 		{
 			if (!f._ul4_argnames[key])
 				throw f._ul4_name + "() doesn't support an argument named " + ul4._repr(key);
@@ -185,28 +210,28 @@ ul4._makeargarray = function(f, args, kwargs)
 	{
 		// Yes => Put the unknown ones into a dict and add that to the arguments array
 		var remkwargs = {};
-		for (var key in kwargs)
+		for (var key in realkwargs)
 		{
 			if (!f._ul4_argnames[key])
-				remkwargs[key] = kwargs[key];
+				remkwargs[key] = realkwargs[key];
 		}
-		realargs.push(remkwargs);
+		finalargs.push(remkwargs);
 	}
-	return realargs;
+	return finalargs;
 }
 
-ul4._call = function(f, out, args, kwargs)
+ul4._call = function(f, out, args)
 {
 	if (typeof(f) === "function")
 	{
-		args = ul4._makeargarray(f, args, kwargs);
+		args = ul4._makeargarray(f, args);
 		if (f._ul4_needsout)
 			args = [out].concat(args);
 		return f.apply(ul4, args);
 	}
 	else if (f && typeof(f.__call__) === "function")
 	{
-		args = ul4._makeargarray(f.__call__, args, kwargs);
+		args = ul4._makeargarray(f.__call__, args);
 		if (f.__call__._ul4_needsout)
 			args = [out].concat(args);
 		return f.__call__.apply(f, args); // Use the object as the function context.
@@ -3862,17 +3887,14 @@ ul4.Attr = ul4._inherit(
 ul4.Call = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end, obj, args, kwargs, remargs, remkwargs)
+		create: function(location, start, end, obj, args)
 		{
 			var call = ul4.AST.create.call(this, location, start, end);
 			call.obj = obj;
 			call.args = args;
-			call.kwargs = kwargs;
-			call.remargs = remargs;
-			call.remkwargs = remkwargs;
 			return call;
 		},
-		_ul4onattrs: ul4.AST._ul4onattrs.concat(["obj", "args", "kwargs", "remargs", "remkwargs"]),
+		_ul4onattrs: ul4.AST._ul4onattrs.concat(["obj", "args"]),
 		_repr: function(out)
 		{
 			out.push("<Call");
@@ -3882,26 +3904,17 @@ ul4.Call = ul4._inherit(
 			out.push(0);
 			for (var i = 0; i < this.args.length; ++i)
 			{
-				this.args[i]._repr(out);
-				out.push(0);
-			}
-			for (var key in this.kwargs)
-			{
-				out.push(key);
-				out.push("=");
-				this.kwargs[key]._repr(out);
-				out.push(0);
-			}
-			if (this.remargs !== null)
-			{
-				out.push("*");
-				this.remargs._repr(out);
-				out.push(0);
-			}
-			if (this.remkwargs !== null)
-			{
-				out.push("**");
-				this.remkwargs._repr(out);
+				var name = this.args[i][0];
+				var arg = this.args[i][1];
+				if (name === null)
+					;
+				else if (name === "*")
+					out.push("*");
+				else if (name === "**")
+					out.push("**");
+				else
+					out.push(name + "=");
+				arg._repr(out);
 				out.push(0);
 			}
 			out.push(-1);
@@ -3917,48 +3930,13 @@ ul4.Call = ul4._inherit(
 			{
 				if (i)
 					out.push(", ");
-				this.args[i]._jssource(out);
+				out.push("[");
+				out.push(ul4._asjson(this.args[i][0]));
+				out.push(", ");
+				this.args[i][1]._jssource(out);
+				out.push("]");
 			}
 			out.push("]");
-
-			if (this.remargs !== null)
-			{
-				out.push(".concat(");
-				this.remargs._jssource(out);
-				out.push(")");
-			}
-
-			out.push(", ");
-
-			if (this.remkwargs !== null)
-				out.push("ul4._extend(");
-
-			out.push("{");
-			var first = true;
-			for (var i = 0; i < this.kwargs.length; ++i)
-			{
-				if (first)
-					first = false;
-				else
-					out.push(", ");
-				out.push(ul4._asjson(this.kwargs[i][0]));
-				out.push(": ");
-				this.kwargs[i][1]._jssource(out);
-			}
-			out.push("}");
-			if (this.remkwargs !== null)
-			{
-				out.push(", ");
-				if (ul4on._havemap)
-				{
-					out.push("ul4._map2object(")
-					this.remkwargs._jssource(out);
-					out.push(")")
-				}
-				else
-					this.remkwargs._jssource(out);
-				out.push(")");
-			}
 			out.push(")");
 		}
 	}
