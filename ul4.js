@@ -2541,7 +2541,7 @@ ul4.Dict = ul4._inherit(
 		{
 			if (ul4on._havemap)
 			{
-				out.push("new Map([");
+				out.push(ul4on._havemapconstructor ? "new Map([" : "ul4on._makemap(");
 				for (var i = 0; i < this.items.length; ++i)
 				{
 					if (i)
@@ -2552,7 +2552,7 @@ ul4.Dict = ul4._inherit(
 					this.items[i][1]._jssource(out);
 					out.push("]");
 				}
-				out.push("])");
+				out.push(ul4on._havemapconstructor ? "])" : ")");
 			}
 			else
 			{
