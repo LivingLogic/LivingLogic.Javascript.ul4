@@ -28,7 +28,33 @@
 var ul4on = {
 	_registry: {},
 
-	_havemap: (typeof(Map) === "function" && typeof(Map.prototype.forEach) === "function") && (new Map([[1, 2]]).size === 1),
+	_havemap: (typeof(Map) === "function" && typeof(Map.prototype.forEach) === "function"),
+
+	_havemapconstructor: (function(){
+		var works = false;
+		try
+		{
+			if (new Map([[1, 2]]).size == 1)
+				return true;
+		}
+		catch (error)
+		{
+		}
+		return false;
+	})(),
+
+	// Function used for making maps, when the Map constructor doesn't work
+	_makemap: function()
+	{
+		var map = new Map();
+
+		for (var i = 0; i < arguments.length; ++i)
+		{
+			var argument = arguments[i];
+			map.set(argument[0], argument[1]);
+		}
+		return map;
+	},
 
 	// Register the object ``obj`` under the name ``name`` with the UL4ON machinery
 	register: function(name, obj)
