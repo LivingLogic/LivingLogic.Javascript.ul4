@@ -43,6 +43,21 @@ var ul4on = {
 		return false;
 	})(),
 
+	_haveset: (typeof(Set) === "function" && typeof(Set.prototype.forEach) === "function"),
+
+	_havesetconstructor: (function(){
+		var works = false;
+		try
+		{
+			if (new Set([[1, 2]]).size == 1)
+				return true;
+		}
+		catch (error)
+		{
+		}
+		return false;
+	})(),
+
 	// Function used for making maps, when the Map constructor doesn't work
 	_makemap: function()
 	{
@@ -54,6 +69,18 @@ var ul4on = {
 			map.set(argument[0], argument[1]);
 		}
 		return map;
+	},
+
+	// Function used for making sets, when the Set constructor doesn't work
+	_makeset: function()
+	{
+		var set = this._haveset ? new Set() : ul4._Set.create();
+
+		for (var i = 0; i < arguments.length; ++i)
+		{
+			set.add(arguments[i]);
+		}
+		return set;
 	},
 
 	// Register the object ``obj`` under the name ``name`` with the UL4ON machinery
@@ -202,6 +229,14 @@ var ul4on = {
 					this.dump(key);
 					this.dump(obj[key]);
 				}
+				this.write("}");
+			}
+			else if (ul4._isset(obj))
+			{
+				this.write("y");
+				obj.forEach(function(value) {
+					this.dump(value);
+				}, this);
 				this.write("}");
 			}
 			else
@@ -370,6 +405,20 @@ var ul4on = {
 							result.set(key, value)
 						else
 							result[key] = value;
+					}
+					return result;
+				case "y":
+				case "Y":
+					result = ul4on._haveset ? new Set() : ul4._Set.create();
+					if (typecode === "Y")
+						this.backrefs.push(result);
+					for (;;)
+					{
+						typecode = this.readchar();
+						if (typecode === "}")
+							return result;
+						this.backup();
+						result.add(this.load());
 					}
 					return result;
 				case "o":

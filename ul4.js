@@ -29,7 +29,7 @@
 
 /*jslint vars: true */
 var ul4 = {
-	version: "29",
+	version: "30",
 
 	// REs for parsing JSON
 	_rvalidchars: /^[\],:{}\s]*$/,
@@ -346,6 +346,26 @@ ul4._iter = function(obj)
 			}
 		};
 	}
+	else if (ul4._isset(obj))
+	{
+		var values = [];
+		obj.forEach(function(value, key){
+			values.push(value);
+		});
+		return {
+			index: 0,
+			next: function()
+			{
+				if (this.index >= values.length)
+					return {done: true};
+				return {value: values[this.index++], done: false};
+			}
+		};
+	}
+	else if (ul4._isul4set(obj))
+	{
+		return ul4._iter(obj.items);
+	}
 	else if (ul4._isobject(obj))
 	{
 		var keys = [];
@@ -462,6 +482,7 @@ ul4._map_repr = function(obj)
 {
 	var v = [];
 	v.push("{");
+
 	var i = 0;
 	obj.forEach(function(value, key){
 		if (i++)
@@ -470,6 +491,40 @@ ul4._map_repr = function(obj)
 		v.push(": ");
 		v.push(ul4._repr(value));
 	});
+
+	v.push("}");
+	return v.join("");
+};
+
+ul4._list_repr = function(obj)
+{
+	var v = [];
+	v.push("[");
+	for (var i = 0; i < obj.length; ++i)
+	{
+		if (i !== 0)
+			v.push(", ");
+		v.push(ul4._repr(obj[i]));
+	}
+	v.push("]");
+	return v.join("");
+};
+
+ul4._set_repr = function(obj)
+{
+	var v = [];
+	v.push("{");
+	if (!obj.size)
+		v.push("/");
+	else
+	{
+		var i = 0;
+		obj.forEach(function(value, key){
+			if (i++)
+				v.push(", ");
+			v.push(ul4._repr(value));
+		});
+	}
 	v.push("}");
 	return v.join("");
 };
@@ -510,23 +565,14 @@ ul4._repr = function(obj)
 		return ul4._date_repr(obj);
 	else if (typeof(obj) === "undefined")
 		return "<undefined>";
-	else if (typeof(obj.__repr__) === "function")
+	else if (typeof(obj) === "object" && typeof(obj.__repr__) === "function")
 		return obj.__repr__();
 	else if (ul4._islist(obj))
-	{
-		var v = [];
-		v.push("[");
-		for (var i = 0; i < obj.length; ++i)
-		{
-			if (i !== 0)
-				v.push(", ");
-			v.push(ul4._repr(obj[i]));
-		}
-		v.push("]");
-		return v.join("");
-	}
+		return ul4._list_repr(obj);
 	else if (ul4._ismap(obj))
 		return ul4._map_repr(obj);
+	else if (ul4._isset(obj))
+		return ul4._set_repr(obj);
 	else if (ul4._isobject(obj))
 		return ul4._object_repr(obj);
 	return "?";
@@ -565,24 +611,15 @@ ul4._str = function(obj)
 	else if (ul4._isdate(obj))
 		return ul4._date_str(obj);
 	else if (ul4._islist(obj))
-	{
-		var v = [];
-		v.push("[");
-		for (var i = 0; i <obj.length; ++i)
-		{
-			if (i != 0)
-				v.push(", ");
-			v.push(ul4._repr(obj[i]));
-		}
-		v.push("]");
-		return v.join("");
-	}
-	else if (typeof(obj.__str__) === "function")
-	{
-		return obj.__str__();
-	}
+		return ul4._list_repr(obj);
+	else if (ul4._isset(obj))
+		return ul4._set_repr(obj);
 	else if (ul4._ismap(obj))
 		return ul4._map_repr(obj);
+	else if (typeof(obj) === "object" && typeof(obj.__str__) === "function")
+		return obj.__str__();
+	else if (typeof(obj) === "object" && typeof(obj.__repr__) === "function")
+			return obj.__repr__();
 	else if (ul4._isobject(obj))
 		return ul4._object_repr(obj);
 	return "?";
@@ -595,16 +632,20 @@ ul4._bool = function(obj)
 		return false;
 	else
 	{
-		if (typeof(obj.__bool__) === "function")
+		if (typeof(obj) === "object", typeof(obj.__bool__) === "function")
 			return obj.__bool__();
 		if (ul4._islist(obj))
 			return obj.length !== 0;
-		else if (ul4._ismap(obj))
+		else if (ul4._ismap(obj) || ul4._isset(obj))
 			return obj.size != 0;
 		else if (ul4._isobject(obj))
 		{
 			for (var key in obj)
+			{
+				if (!obj.hasOwnProperty(key))
+					continue;
 				return true;
+			}
 			return false;
 		}
 		return true;
@@ -672,12 +713,27 @@ ul4._list = function(obj)
 	}
 };
 
+// Convert ``obj`` to a set
+ul4._set = function(obj)
+{
+	var iter = ul4._iter(obj);
+
+	var result = ul4on._haveset ? new Set() : ul4._Set.create();
+	for (;;)
+	{
+		var value = iter.next();
+		if (value.done)
+			return result;
+		result.add(value.value);
+	}
+};
+
 // Return the length of ``sequence``
 ul4._len = function(sequence)
 {
 	if (typeof(sequence) == "string" || ul4._islist(sequence))
 		return sequence.length;
-	else if (ul4._ismap(sequence))
+	else if (ul4._ismap(sequence) || ul4._isset(sequence))
 		return sequence.size;
 	else if (ul4._isobject(sequence))
 	{
@@ -703,6 +759,8 @@ ul4._type = function(obj)
 		return Math.round(obj) == obj ? "int" : "float";
 	else if (ul4._islist(obj))
 		return "list";
+	else if (ul4._isset(obj))
+		return "set";
 	else if (ul4._isdate(obj))
 		return "date";
 	else if (typeof(obj.__type__) !== "undefined")
@@ -852,6 +910,17 @@ ul4._isfunction = function(obj)
 ul4._islist = function(obj)
 {
 	return Object.prototype.toString.call(obj) == "[object Array]";
+};
+
+// Check if ``obj`` is a set
+ul4._isset = function(obj)
+{
+	return Object.prototype.toString.call(obj) == "[object Set]";
+};
+
+ul4._isul4set = function(obj)
+{
+	return Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "set";
 };
 
 // Check if ``obj`` is an iterator
@@ -2665,6 +2734,118 @@ ul4.DictComp = ul4._inherit(
 	}
 );
 
+ul4.Set = ul4._inherit(
+	ul4.AST,
+	{
+		create: function(location, start, end)
+		{
+			var set = ul4.AST.create.call(this, location, start, end);
+			set.items = [];
+			return set;
+		},
+		_ul4onattrs: ul4.AST._ul4onattrs.concat(["items"]),
+		_repr: function(out)
+		{
+			out.push("<Set");
+			out.push(+1);
+			for (var i = 0; i < this.items.length; ++i)
+			{
+				this.items[i][0]._repr(out);
+				out.push("=");
+				this.items[i][1]._repr(out);
+				out.push(0);
+			}
+			out.push(-1);
+			out.push(">");
+		},
+		_jssource: function(out)
+		{
+			var mode = ul4on._haveset + ul4on._havesetconstructor;
+			out.push(["ul4._Set.create(", "ul4on._makeset(", "new Set(["][mode]);
+			for (var i = 0; i < this.items.length; ++i)
+			{
+				if (i)
+					out.push(", ");
+				this.items[i]._jssource(out);
+			}
+			out.push([")", ")", "])"][mode]);
+		}
+	}
+);
+
+ul4.SetComp = ul4._inherit(
+	ul4.AST,
+	{
+		create: function(location, start, end, item, varname, container, condition)
+		{
+			var setcomp = ul4.AST.create.call(this, location, start, end);
+			setcomp.item = item;
+			setcomp.container = container;
+			setcomp.condition = condition;
+			return setcomp;
+		},
+		_ul4onattrs: ul4.AST._ul4onattrs.concat(["item", "varname", "container", "condition"]),
+		_repr: function(out)
+		{
+			out.push("<SetComp");
+			out.push(+1);
+			out.push("item=");
+			this.item._repr(out);
+			out.push(0);
+			out.push("varname=");
+			this.varname._repr(out);
+			out.push(0);
+			out.push("container=");
+			this.container._repr(out);
+			out.push(0);
+			if (condition !== null)
+			{
+				out.push("condition=");
+				this.condition._repr(out);
+				out.push(0);
+			}
+			out.push(-1);
+			out.push(">");
+		},
+		_jssource: function(out)
+		{
+			out.push("(function(vars){vars=ul4._simpleclone(vars);var result=");
+			out.push(ul4on._haveset ? "new Set()" : "ul4._Set.create()");
+			out.push(";for(var iter = ul4._iter(");
+			this.container._jssource(out);
+			out.push(");;){var item=iter.next();if(item.done)break;");
+			out.push("var value" + this.__id__ + " = ul4._unpackvar(item.value, ");
+			out.push(ul4._asjson(ul4._shape(this.varname)));
+			out.push(");");
+			out.push(0);
+			this._jssource_value(out, this.varname, "value" + this.__id__);
+			if (this.condition !== null)
+			{
+				out.push("if(ul4._bool(");
+				this.condition._jssource(out);
+				out.push("))");
+			}
+			out.push("result.add(");
+			this.item._jssource(out);
+			out.push(");}return result;})(vars)");
+		},
+		_jssource_value: function(out, lvalue, value)
+		{
+			if (!ul4._islist(lvalue))
+			{
+				lvalue._jssource_set(out, value);
+				out.push(";");
+				out.push(0);
+			}
+			else
+			{
+				for (var i = 0; i < lvalue.length; ++i)
+					this._jssource_value(out, lvalue[i], value + "[" + i + "]");
+			}
+		}
+	}
+);
+
 ul4.GenExpr = ul4._inherit(
 	ul4.AST,
 	{
@@ -3315,7 +3496,7 @@ ul4.Contains = ul4._inherit(
 			}
 			else if (container && typeof(container.__contains__) === "function") // test this before the generic object test
 				return container.__contains__(obj);
-			else if (ul4._ismap(container))
+			else if (ul4._ismap(container) || ul4._isset(container))
 				return container.has(obj);
 			else if (ul4._isobject(container))
 			{
@@ -3827,6 +4008,16 @@ ul4.Attr = ul4._inherit(
 						return ul4.expose("update", ["*other", "**kwargs"], function(other, kwargs){ return ul4._update(object, other, kwargs); });
 					default:
 						return object.get(attrname);
+				}
+			}
+			else if (ul4._isset(object))
+			{
+				switch (attrname)
+				{
+					case "add":
+						return ul4.expose("add", ["*items"], function(items){ for (var i = 0; i < items.length; ++i) { object.add(items[i]); } } );
+					default:
+						return ul4.undefined;
 				}
 			}
 			else if (Object.prototype.toString.call(object) === "[object Object]")
@@ -5267,6 +5458,7 @@ ul4.functions = {
 	int: ul4.expose("int", [["obj", 0], ["base", null]], ul4._int),
 	float: ul4.expose("float", [["obj", 0.0]], ul4._float),
 	list: ul4.expose("list", [["iterable", []]], ul4._list),
+	set: ul4.expose("set", [["iterable", []]], ul4._set),
 	bool: ul4.expose("bool", [["obj", false]], ul4._bool),
 	len: ul4.expose("len", ["sequence"], ul4._len),
 	type: ul4.expose("type", ["obj"], ul4._type),
@@ -5288,6 +5480,7 @@ ul4.functions = {
 	istemplate: ul4.expose("istemplate", ["obj"], ul4._istemplate),
 	isfunction: ul4.expose("isfunction", ["obj"], ul4._isfunction),
 	islist: ul4.expose("islist", ["obj"], ul4._islist),
+	isset: ul4.expose("isset", ["obj"], ul4on._haveset ? ul4._isset : ul4._isul4set),
 	isdict: ul4.expose("isdict", ["obj"], ul4._isdict),
 	asjson: ul4.expose("asjson", ["obj"], ul4._asjson),
 	fromjson: ul4.expose("fromjson", ["string"], ul4._fromjson),
@@ -5804,6 +5997,8 @@ ul4._update = function(obj, others, kwargs)
 		"ListComp",
 		"Dict",
 		"DictComp",
+		"Set",
+		"SetComp",
 		"GenExpr",
 		"Var",
 		"Not",
@@ -5871,3 +6066,74 @@ ul4._update = function(obj, others, kwargs)
 		ul4on.register("de.livinglogic.ul4." + ul4onname, object);
 	}
 })();
+
+// When we don't have a real ``Set`` type, emulate one that supports strings
+ul4._Set = ul4._inherit(
+	ul4.Proto,
+	{
+		__type__: "set",
+
+		create: function()
+		{
+			var set = ul4._clone(this);
+			set.items = {};
+			set.add.apply(set, arguments);
+			return set;
+		},
+
+		add: function()
+		{
+			for (var i = 0; i < arguments.length; ++i)
+			{
+				this.items[arguments[i]] = true;
+			}
+		},
+
+		__getattr__: function(attrname)
+		{
+			var object = this;
+			switch (attrname)
+			{
+				case "add":
+					return ul4.expose("add", ["*items"], function(items){ object.add.apply(object, items); });
+				default:
+					return ul4.undefined;
+			}
+		},
+
+		__contains__: function(item)
+		{
+			return this.items[item] || false;
+		},
+
+		__bool__: function()
+		{
+			for (var item in this.items)
+			{
+				if (!this.items.hasOwnProperty(item))
+					continue;
+				return true;
+			}
+			return false;
+		},
+
+		__repr__: function()
+		{
+			var v = [];
+			v.push("{");
+			var i = 0;
+			for (var item in this.items)
+			{
+				if (!this.items.hasOwnProperty(item))
+					continue;
+				if (i++)
+					v.push(", ");
+				v.push(ul4._repr(item));
+			}
+			if (!i)
+				v.push("/");
+			v.push("}");
+			return v.join("");
+		}
+	}
+);
