@@ -241,7 +241,7 @@ var ul4on = {
 			}
 			else
 				throw "can't handle object";
-		},
+		}
 	},
 
 	// Helper "class" for decoding

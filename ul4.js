@@ -1121,7 +1121,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"],
 			xf: "%d.%m.%Y",
 			Xf: "%H:%M:%S",
-			cf: "%a %d %b %Y %H:%M:%S",
+			cf: "%a %d %b %Y %H:%M:%S"
 		},
 		en: {
 			ms: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
@@ -1130,7 +1130,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
 			xf: "%m/%d/%Y",
 			Xf: "%H:%M:%S",
-			cf: "%a %d %b %Y %I:%M:%S %p ",
+			cf: "%a %d %b %Y %I:%M:%S %p "
 		},
 		fr: {
 			ms: ["janv.", "f\u00e9vr.", "mars", "avril", "mai", "juin", "juil.", "ao\u00fbt", "sept.", "oct.", "nov.", "d\u00e9c."],
@@ -1139,7 +1139,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["dimanche", "lundi", "mardi", "mercredi", "jeudi", "vendredi", "samedi"],
 			xf: "%d/%m/%Y",
 			Xf: "%H:%M:%S",
-			cf: "%a %d %b %Y %H:%M:%S",
+			cf: "%a %d %b %Y %H:%M:%S"
 		},
 		es: {
 			ms: ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"],
@@ -1148,7 +1148,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["domingo", "lunes", "martes", "mi\u00e9rcoles", "jueves", "viernes", "s\u00e1bado"],
 			xf: "%d/%m/%y",
 			Xf: "%H:%M:%S",
-			cf: "%a %d %b %Y %H:%M:%S",
+			cf: "%a %d %b %Y %H:%M:%S"
 		},
 		it: {
 			ms: ["gen", "feb", "mar", "apr", "mag", "giu", "lug", "ago", "set", "ott", "nov", "dic"],
@@ -1157,7 +1157,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["domenica", "luned\u00ec", "marted\u00ec", "mercoled\u00ec", "gioved\u00ec", "venerd\u00ec", "sabato"],
 			xf: "%d/%m/%Y",
 			Xf: "%H:%M:%S",
-			cf: "%a %d %b %Y %H:%M:%S",
+			cf: "%a %d %b %Y %H:%M:%S"
 		},
 		da: {
 			ms: ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"],
@@ -1166,7 +1166,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["s\u00f8ndag", "mandag", "tirsdag", "onsdag", "torsdag", "fredag", "l\u00f8rdag"],
 			xf: "%d-%m-%Y",
 			Xf: "%H:%M:%S",
-			cf: "%a %d %b %Y %H:%M:%S",
+			cf: "%a %d %b %Y %H:%M:%S"
 		},
 		sv: {
 			ms: ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"],
@@ -1175,7 +1175,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["s\u00f6ndag", "m\u00e5ndag", "tisdag", "onsdag", "torsdag", "fredag", "l\u00f6rdag"],
 			xf: "%Y-%m-%d",
 			Xf: "%H.%M.%S",
-			cf: "%a %d %b %Y %H.%M.%S",
+			cf: "%a %d %b %Y %H.%M.%S"
 		},
 		nl: {
 			ms: ["jan", "feb", "mrt", "apr", "mei", "jun", "jul", "aug", "sep", "okt", "nov", "dec"],
@@ -1184,7 +1184,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["zondag", "maandag", "dinsdag", "woensdag", "donderdag", "vrijdag", "zaterdag"],
 			xf: "%d-%m-%y",
 			Xf: "%H:%M:%S",
-			cf: "%a %d %b %Y %H:%M:%S",
+			cf: "%a %d %b %Y %H:%M:%S"
 		},
 		pt: {
 			ms: ["Jan", "Fev", "Mar", "Abr", "Mai", "Jun", "Jul", "Ago", "Set", "Out", "Nov", "Dez"],
@@ -1193,7 +1193,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["Domingo", "Segunda", "Ter\u00e7a", "Quarta", "Quinta", "Sexta", "S\u00e1bado"],
 			xf: "%d-%m-%Y",
 			Xf: "%H:%M:%S",
-			cf: "%a %d %b %Y %H:%M:%S",
+			cf: "%a %d %b %Y %H:%M:%S"
 		},
 		cs: {
 			ms: ["led", "\u00fano", "b\u0159e", "dub", "kv\u011b", "\u010den", "\u010dec", "srp", "z\u00e1\u0159", "\u0159\u00edj", "lis", "pro"],
@@ -1202,7 +1202,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["Ned\u011ble", "Pond\u011bl\u00ed", "\u00dater\u00fd", "St\u0159eda", "\u010ctvrtek", "P\u00e1tek", "Sobota"],
 			xf: "%d.%m.%Y",
 			Xf: "%H:%M:%S",
-			cf: "%a\u00a0%d.\u00a0%B\u00a0%Y,\u00a0%H:%M:%S",
+			cf: "%a\u00a0%d.\u00a0%B\u00a0%Y,\u00a0%H:%M:%S"
 		},
 		sk: {
 			ms: ["jan", "feb", "mar", "apr", "m\u00e1j", "j\u00fan", "j\u00fal", "aug", "sep", "okt", "nov", "dec"],
@@ -1211,7 +1211,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["Nede\u013ea", "Pondelok", "Utorok", "Streda", "\u0160tvrtok", "Piatok", "Sobota"],
 			xf: "%d.%m.%Y",
 			Xf: "%H:%M:%S",
-			cf: "%a\u00a0%d.\u00a0%B\u00a0%Y,\u00a0%H:%M:%S",
+			cf: "%a\u00a0%d.\u00a0%B\u00a0%Y,\u00a0%H:%M:%S"
 		},
 		pl: {
 			ms: ["sty", "lut", "mar", "kwi", "maj", "cze", "lip", "sie", "wrz", "pa\u017a", "lis", "gru"],
@@ -1220,7 +1220,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["niedziela", "poniedzia\u0142ek", "wtorek", "\u015broda", "czwartek", "pi\u0105tek", "sobota"],
 			xf: "%d.%m.%Y",
 			Xf: "%H:%M:%S",
-			cf: "%a, %d %b %Y, %H:%M:%S",
+			cf: "%a, %d %b %Y, %H:%M:%S"
 		},
 		hr: {
 			ms: ["Sij", "Vel", "O\u017eu", "Tra", "Svi", "Lip", "Srp", "Kol", "Ruj", "Lis", "Stu", "Pro"],
@@ -1229,7 +1229,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["Nedjelja", "Ponedjeljak", "Utorak", "Srijeda", "\u010cetvrtak", "Petak", "Subota"],
 			xf: "%d.%m.%Y",
 			Xf: "%H:%M:%S",
-			cf: "%a %d %b %Y %H:%M:%S",
+			cf: "%a %d %b %Y %H:%M:%S"
 		},
 		sr: {
 			ms: ["\u0458\u0430\u043d", "\u0444\u0435\u0431", "\u043c\u0430\u0440", "\u0430\u043f\u0440", "\u043c\u0430\u0458", "\u0458\u0443\u043d", "\u0458\u0443\u043b", "\u0430\u0432\u0433", "\u0441\u0435\u043f", "\u043e\u043a\u0442", "\u043d\u043e\u0432", "\u0434\u0435\u0446"],
@@ -1238,7 +1238,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["\u043d\u0435\u0434\u0435\u0459\u0430", "\u043f\u043e\u043d\u0435\u0434\u0435\u0459\u0430\u043a", "\u0443\u0442\u043e\u0440\u0430\u043a", "\u0441\u0440\u0435\u0434\u0430", "\u0447\u0435\u0442\u0432\u0440\u0442\u0430\u043a", "\u043f\u0435\u0442\u0430\u043a", "\u0441\u0443\u0431\u043e\u0442\u0430"],
 			xf: "%d.%m.%Y.",
 			Xf: "%H:%M:%S",
-			cf: "%A, %d. %B %Y. %H:%M:%S",
+			cf: "%A, %d. %B %Y. %H:%M:%S"
 		},
 		ro: {
 			ms: ["ian", "feb", "mar", "apr", "mai", "iun", "iul", "aug", "sep", "oct", "nov", "dec"],
@@ -1247,7 +1247,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["duminic\u0103", "luni", "mar\u0163i", "miercuri", "joi", "vineri", "s\u00e2mb\u0103t\u0103"],
 			xf: "%d.%m.%Y",
 			Xf: "%H:%M:%S",
-			cf: "%a %d %b %Y %H:%M:%S",
+			cf: "%a %d %b %Y %H:%M:%S"
 		},
 		hu: {
 			ms: ["jan", "febr", "m\u00e1rc", "\u00e1pr", "m\u00e1j", "j\u00fan", "j\u00fal", "aug", "szept", "okt", "nov", "dec"],
@@ -1256,7 +1256,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["vas\u00e1rnap", "h\u00e9tf\u0151", "kedd", "szerda", "cs\u00fct\u00f6rt\u00f6k", "p\u00e9ntek", "szombat"],
 			xf: "%Y-%m-%d",
 			Xf: "%H.%M.%S",
-			cf: "%Y. %b. %d., %A, %H.%M.%S",
+			cf: "%Y. %b. %d., %A, %H.%M.%S"
 		},
 		tr: {
 			ms: ["Oca", "\u015eub", "Mar", "Nis", "May", "Haz", "Tem", "A\u011fu", "Eyl", "Eki", "Kas", "Ara"],
@@ -1265,7 +1265,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["Pazar", "Pazartesi", "Sal\u0131", "\u00c7ar\u015famba", "Per\u015fembe", "Cuma", "Cumartesi"],
 			xf: "%d-%m-%Y",
 			Xf: "%H:%M:%S",
-			cf: "%a %d %b %Y %H:%M:%S",
+			cf: "%a %d %b %Y %H:%M:%S"
 		},
 		ru: {
 			ms: ["\u042f\u043d\u0432", "\u0424\u0435\u0432", "\u041c\u0430\u0440", "\u0410\u043f\u0440", "\u041c\u0430\u0439", "\u0418\u044e\u043d", "\u0418\u044e\u043b", "\u0410\u0432\u0433", "\u0421\u0435\u043d", "\u041e\u043a\u0442", "\u041d\u043e\u044f", "\u0414\u0435\u043a"],
@@ -1274,7 +1274,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["\u0412\u043e\u0441\u043a\u0440\u0435\u0441\u0435\u043d\u044c\u0435", "\u041f\u043e\u043d\u0435\u0434\u0435\u043b\u044c\u043d\u0438\u043a", "\u0412\u0442\u043e\u0440\u043d\u0438\u043a", "\u0421\u0440\u0435\u0434\u0430", "\u0427\u0435\u0442\u0432\u0435\u0440\u0433", "\u041f\u044f\u0442\u043d\u0438\u0446\u0430", "\u0421\u0443\u0431\u0431\u043e\u0442\u0430"],
 			xf: "%d.%m.%Y",
 			Xf: "%H:%M:%S",
-			cf: "%a %d %b %Y %H:%M:%S",
+			cf: "%a %d %b %Y %H:%M:%S"
 		},
 		zh: {
 			ms: [" 1\u6708", " 2\u6708", " 3\u6708", " 4\u6708", " 5\u6708", " 6\u6708", " 7\u6708", " 8\u6708", " 9\u6708", "10\u6708", "11\u6708", "12\u6708"],
@@ -1283,7 +1283,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["\u661f\u671f\u65e5", "\u661f\u671f\u4e00", "\u661f\u671f\u4e8c", "\u661f\u671f\u4e09", "\u661f\u671f\u56db", "\u661f\u671f\u4e94", "\u661f\u671f\u516d"],
 			xf: "%Y\u5e74%b%d\u65e5",
 			Xf: "%H\u65f6%M\u5206%S\u79d2",
-			cf: "%Y\u5e74%b%d\u65e5 %A %H\u65f6%M\u5206%S\u79d2",
+			cf: "%Y\u5e74%b%d\u65e5 %A %H\u65f6%M\u5206%S\u79d2"
 		},
 		ko: {
 			ms: [" 1\uc6d4", " 2\uc6d4", " 3\uc6d4", " 4\uc6d4", " 5\uc6d4", " 6\uc6d4", " 7\uc6d4", " 8\uc6d4", " 9\uc6d4", "10\uc6d4", "11\uc6d4", "12\uc6d4"],
@@ -1292,7 +1292,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["\uc77c\uc694\uc77c", "\uc6d4\uc694\uc77c", "\ud654\uc694\uc77c", "\uc218\uc694\uc77c", "\ubaa9\uc694\uc77c", "\uae08\uc694\uc77c", "\ud1a0\uc694\uc77c"],
 			xf: "%Y\ub144 %B %d\uc77c",
 			Xf: "%H\uc2dc %M\ubd84 %S\ucd08",
-			cf: "%Y\ub144 %B %d\uc77c (%a) %p %I\uc2dc %M\ubd84 %S\ucd08",
+			cf: "%Y\ub144 %B %d\uc77c (%a) %p %I\uc2dc %M\ubd84 %S\ucd08"
 		},
 		ja: {
 			ms: [" 1\u6708", " 2\u6708", " 3\u6708", " 4\u6708", " 5\u6708", " 6\u6708", " 7\u6708", " 8\u6708", " 9\u6708", "10\u6708", "11\u6708", "12\u6708"],
@@ -1301,7 +1301,7 @@ ul4._format_date = function(obj, fmt, lang)
 			wl: ["\u65e5\u66dc\u65e5", "\u6708\u66dc\u65e5", "\u706b\u66dc\u65e5", "\u6c34\u66dc\u65e5", "\u6728\u66dc\u65e5", "\u91d1\u66dc\u65e5", "\u571f\u66dc\u65e5"],
 			xf: "%Y\u5e74%B%d\u65e5",
 			Xf: "%H\u6642%M\u5206%S\u79d2",
-			cf: "%Y\u5e74%B%d\u65e5 %H\u6642%M\u5206%S\u79d2",
+			cf: "%Y\u5e74%B%d\u65e5 %H\u6642%M\u5206%S\u79d2"
 		}
 	};
 
