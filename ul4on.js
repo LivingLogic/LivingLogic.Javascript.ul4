@@ -91,9 +91,9 @@ var ul4on = {
 	},
 
 	// Return a string that contains the object ``obj`` in the UL4ON serialization format
-	dumps: function(obj)
+	dumps: function(obj, indent)
 	{
-		var encoder = this.Encoder.create();
+		var encoder = this.Encoder.create(indent);
 		encoder.dump(obj);
 		return encoder.finish();
 	},
@@ -108,27 +108,45 @@ var ul4on = {
 	// Helper "class" for encoding
 	Encoder: {
 		// Create a new Encoder object
-		create: function()
+		create: function(indent)
 		{
 			var encoder = ul4._clone(this);
+			encoder.indent = indent || null;
 			encoder.data = [];
+			encoder._level = 0;
 			encoder._strings2index = {};
 			encoder._ids2index = {};
 			encoder._backrefs = 0;
 			return encoder;
 		},
 
-		// Write the string ``string`` to the buffer
-		write: function(string)
+		_line: function(line)
 		{
-			this.data.push(string);
-		},
+			var i, oldindent;
 
-		// Write the number ``number`` to the buffer
-		writenumber: function(number)
-		{
-			this.data.push("" + number);
-			this.data.push("|");
+			if (this.indent !== null)
+			{
+				for (i = 0; i < this._level; ++i)
+					this.data.push(this.indent);
+			}
+			else
+			{
+				if (this.data.length)
+					this.data.push(" ");
+			}
+			this.data.push(line);
+
+			if (arguments.length > 1)
+			{
+				oldindent = this.indent;
+				this.indent = null;
+				for (i = 1; i < arguments.length; ++i)
+					this.dump(arguments[i]);
+				this.indent = oldindent;
+			}
+
+			if (this.indent !== null)
+				this.data.push("\n");
 		},
 
 		// Returned the complete string written to the buffer
@@ -140,104 +158,95 @@ var ul4on = {
 		dump: function(obj)
 		{
 			if (obj === null)
-				this.write("n");
+				this._line("n");
 			else if (typeof(obj) == "boolean")
-				this.write(obj ? "bT" : "bF");
+				this._line(obj ? "bT" : "bF");
 			else if (typeof(obj) == "number")
 			{
-				this.write((Math.round(obj) == obj) ? "i" : "f");
-				this.writenumber(obj);
+				var type = (Math.round(obj) == obj) ? "i" : "f";
+				this._line(type + obj);
 			}
 			else if (typeof(obj) == "string")
 			{
 				var index = this._strings2index[obj];
 				if (typeof(index) !== "undefined")
 				{
-					this.write("^");
-					this.writenumber(index);
+					this._line("^" + index);
 				}
 				else
 				{
 					this._strings2index[obj] = this._backrefs++;
-					this.write("S");
-					this.writenumber(obj.length);
-					this.write(obj);
+					this._line("S" + ul4._str_repr(obj));
 				}
 			}
 			else if (ul4._iscolor(obj))
-			{
-				this.write("c");
-				var r = obj.r(), g = obj.g(), b = obj.b(), a = obj.a();
-				if (r < 0x10)
-					this.write("0");
-				this.write(r.toString(16));
-				if (g < 0x10)
-					this.write("0");
-				this.write(g.toString(16));
-				if (b < 0x10)
-					this.write("0");
-				this.write(b.toString(16));
-				if (a < 0x10)
-					this.write("0");
-				this.write(a.toString(16));
-			}
+				this._line("c", obj.r(), obj.g(), obj.b(), obj.a());
 			else if (ul4._isdate(obj))
-				this.write(ul4._format(obj, "z%Y%m%d%H%M%S%f"));
+				this._line("z", obj.getFullYear(), obj.getMonth()+1, obj.getDate(), obj.getHours(), obj.getMinutes(), obj.getSeconds(), obj.getMilliseconds() * 1000);
 			else if (ul4._istimedelta(obj))
-				this.write("t" + obj.days() + "|" + obj.seconds() + "|" + obj.microseconds() + "|");
+				this._line("t", obj.days(), obj.seconds(), obj.microseconds());
 			else if (ul4._ismonthdelta(obj))
-				this.write("m" + obj.months() + "|");
+				this._line("m", obj.months());
 			else if (typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4.slice))
-				this.write("r" + (obj.start !== null ? obj.start : "") + "|" + (obj.stop !== null ? obj.stop : "") + "|");
+				this._line("r", obj.start, obj.stop);
 			else if (obj.__id__ && obj.ul4onname && obj.ul4ondump)
 			{
 				var index = this._ids2index[obj.__id__];
 				if (typeof(index) != "undefined")
 				{
-					this.write("^");
-					this.writenumber(index);
+					this._line("^" + index);
 				}
 				else
 				{
 					this._ids2index[obj.__id__] = this._backrefs++;
-					this.write("O");
-					this.dump(obj.ul4onname);
+					this._line("O", obj.ul4onname);
+					++this._level;
 					obj.ul4ondump(this);
+					--this._level;
+					this._line(")");
 				}
 			}
 			else if (ul4._islist(obj))
 			{
-				this.write("l");
+				this._line("l");
+				++this._level;
 				for (var i in obj)
 					this.dump(obj[i]);
-				this.write("]");
+				--this._level;
+				this._line("]");
 			}
 			else if (ul4._ismap(obj))
 			{
-				this.write("d");
+				this._line("d");
+				++this._level;
 				obj.forEach(function(value, key) {
 					this.dump(key);
 					this.dump(value);
 				}, this);
-				this.write("}");
+				--this._level;
+				this._line("}");
 			}
 			else if (ul4._isdict(obj))
 			{
-				this.write("d");
+				this._line("d");
+				++this._level;
 				for (var key in obj)
 				{
 					this.dump(key);
 					this.dump(obj[key]);
 				}
-				this.write("}");
+				--this._level;
+				this._line("}");
 			}
 			else if (ul4._isset(obj))
 			{
-				this.write("y");
+				this._line("y");
+				++this._level;
 				obj.forEach(function(value) {
 					this.dump(value);
 				}, this);
-				this.write("}");
+				--this._level;
+				this._line("}");
 			}
 			else
 				throw "can't handle object";
@@ -264,6 +273,29 @@ var ul4on = {
 			return this.data.charAt(this.pos++);
 		},
 
+		// Read a character from the buffer (return null on eof)
+		readcharoreof: function()
+		{
+			if (this.pos >= this.data.length)
+				return null;
+			return this.data.charAt(this.pos++);
+		},
+
+		// Read next not-whitespace character from the buffer
+		readblackchar: function()
+		{
+			var re_white = /\s/;
+
+			for (;;)
+			{
+			if (this.pos >= this.data.length)
+				throw "UL4 decoder at EOF";
+				var c = this.data.charAt(this.pos++);
+				if (!c.match(re_white))
+					return c;
+			}
+		},
+
 		// Read ``size`` characters from the buffer
 		read: function(size)
 		{
@@ -283,28 +315,49 @@ var ul4on = {
 		// Read a number from the buffer
 		readnumber: function()
 		{
-			var value = "";
+			var re_digits = /[-+0123456789.eE]/, value = "";
 			for (;;)
 			{
-				var c = this.readchar();
-				if (c === "|")
+				var c = this.readcharoreof();
+				if (c !== null && c.match(re_digits))
+					value += c;
+				else
 				{
-					if (!value)
-						return null;
 					var result = parseFloat(value);
 					if (result == NaN)
 						throw "invalid number, got " + ul4._repr("value") + " at position " + this.pos;
 					return result;
 				}
-				else
-					value += c;
 			}
+		},
+
+		_beginfakeloading: function()
+		{
+			var oldpos = this.backrefs.length;
+			this.backrefs.push(null);
+			return oldpos;
+		},
+
+		_endfakeloading: function(oldpos, value)
+		{
+			this.backrefs[oldpos] = value;
+		},
+
+		_readescape: function(escapechar, length)
+		{
+			var chars = this.read(length);
+			if (chars.length != length)
+				throw "broken escape " + ul4._repr("\\" + escapechar + chars) + " at position " + this.pos;
+			var codepoint = parseInt(chars, 16);
+			if (isNaN(codepoint))
+				throw "broken escape " + ul4._repr("\\" + escapechar + chars) + " at position " + this.pos;
+			return String.fromCharCode(codepoint);
 		},
 
 		// Load the next object from the buffer
 		load: function()
 		{
-			var typecode = this.readchar();
+			var typecode = this.readblackchar();
 			var result;
 			switch (typecode)
 			{
@@ -323,7 +376,7 @@ var ul4on = {
 					else if (result === "F")
 						result = false;
 					else
-						throw "wrong value for boolean, expected " + ul4._repr("T") + " or " + ul4._repr("F") + ", got " + ul4._repr(result) + " at position " + this.pos;
+						throw "wrong value for boolean, expected 'T' or 'F', got " + ul4._repr(result) + " at position " + this.pos;
 					if (typecode === "B")
 						this.backrefs.push(result);
 					return result;
@@ -337,42 +390,97 @@ var ul4on = {
 					return result;
 				case "s":
 				case "S":
-					var size = this.readnumber();
-					result = this.read(size);
+					result = [];
+					var delimiter = this.readblackchar();
+					for (;;)
+					{
+						var c = this.readchar();
+						if (c == delimiter)
+							break;
+						if (c == "\\")
+						{
+							var c2 = this.readchar();
+							if (c2 == "\\")
+								result.push("\\");
+							else if (c2 == "n")
+								result.push("\n");
+							else if (c2 == "r")
+								result.push("\r");
+							else if (c2 == "t")
+								result.push("\t");
+							else if (c2 == "f")
+								result.push("\u000c");
+							else if (c2 == "b")
+								result.push("\u0008");
+							else if (c2 == "a")
+								result.push("\u0007");
+							else if (c2 == "'")
+								result.push("'");
+							else if (c2 == '"')
+								result.push('"');
+							else if (c2 == "x")
+								result.push(this._readescape("x", 2));
+							else if (c2 == "u")
+								result.push(this._readescape("u", 4));
+							else if (c2 == "U")
+								result.push(this._readescape("U", 8));
+							else
+								result.push("\\" + c2);
+						}
+						else
+							result.push(c);
+					}
+					result = result.join("");
 					if (typecode === "S")
 						this.backrefs.push(result);
 					return result;
 				case "c":
 				case "C":
-					result = this.read(8);
-					result = ul4.Color.create(parseInt(result.substring(0, 2), 16), parseInt(result.substring(2, 4), 16), parseInt(result.substring(4, 6), 16), parseInt(result.substring(6, 8), 16));
+					result = ul4.Color.create();
 					if (typecode === "C")
 						this.backrefs.push(result);
+					result._r = this.load(); 
+					result._g = this.load(); 
+					result._b = this.load(); 
+					result._a = this.load(); 
 					return result;
 				case "z":
 				case "Z":
-					result = this.read(20);
-					result = new Date(parseInt(result.substring(0, 4)), parseInt(result.substring(4, 6)) - 1, parseInt(result.substring(6, 8)), parseInt(result.substring(8, 10)), parseInt(result.substring(10, 12)), parseInt(result.substring(12, 14)), parseInt(result.substring(14, 17)));
+					result = new Date();
+					result.setFullYear(this.load());
+					result.setDate(1);
+					result.setMonth(this.load() - 1);
+					result.setDate(this.load());
+					result.setHours(this.load());
+					result.setMinutes(this.load());
+					result.setSeconds(this.load());
+					result.setMilliseconds(this.load()/1000);
 					if (typecode === "Z")
 						this.backrefs.push(result);
 					return result;
 				case "t":
 				case "T":
-					result = ul4.TimeDelta.create(this.readnumber(), this.readnumber(), this.readnumber());
+					result = ul4.TimeDelta.create();
+					result._days = this.load();
+					result._seconds = this.load();
+					result._microseconds = this.load();
 					if (typecode === "T")
 						this.backrefs.push(result);
 					return result;
 				case "r":
 				case "R":
-					result = ul4.slice.create(this.readnumber(), this.readnumber());
+					result = ul4.slice.create();
 					if (typecode === "R")
 						this.backrefs.push(result);
+					result.start = this.load();
+					result.stop = this.load();
 					return result;
 				case "m":
 				case "M":
-					result = ul4.MonthDelta.create(this.readnumber());
+					result = ul4.MonthDelta.create();
 					if (typecode === "M")
 						this.backrefs.push(result);
+					result._months = this.load();
 					return result;
 				case "l":
 				case "L":
@@ -381,7 +489,7 @@ var ul4on = {
 						this.backrefs.push(result);
 					for (;;)
 					{
-						typecode = this.readchar();
+						typecode = this.readblackchar();
 						if (typecode === "]")
 							return result;
 						this.backup();
@@ -395,14 +503,14 @@ var ul4on = {
 						this.backrefs.push(result);
 					for (;;)
 					{
-						typecode = this.readchar();
+						typecode = this.readblackchar();
 						if (typecode === "}")
 							return result;
 						this.backup();
 						var key = this.load();
 						var value = this.load();
 						if (ul4on._havemap)
-							result.set(key, value)
+							result.set(key, value);
 						else
 							result[key] = value;
 					}
@@ -414,7 +522,7 @@ var ul4on = {
 						this.backrefs.push(result);
 					for (;;)
 					{
-						typecode = this.readchar();
+						typecode = this.readblackchar();
 						if (typecode === "}")
 							return result;
 						this.backup();
@@ -423,20 +531,20 @@ var ul4on = {
 					return result;
 				case "o":
 				case "O":
-					var oldpos = null;
+					var oldpos;
 					if (typecode === "O")
-					{
-						oldpos = this.backrefs.length;
-						this.backrefs.push(null);
-					}
+						oldpos = this._beginfakeloading();
 					var name = this.load();
 					var proto = ul4on._registry[name];
 					if (typeof(proto) === "undefined")
 						throw "can't load object of type " + ul4._repr(name);
 					result = proto();
 					if (typecode === "O")
-						this.backrefs[oldpos] = result;
+						this._endfakeloading(oldpos, result);
 					result.ul4onload(this);
+					typecode = this.readblackchar();
+					if (typecode !== ")")
+						throw "object terminator ')' expected, got " + ul4._repr(typecode) + " at position " + this.pos;
 					return result;
 				default:
 					throw "unknown typecode " + ul4._repr(typecode) + " at position " + this.pos;
