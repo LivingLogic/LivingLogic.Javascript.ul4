@@ -78,43 +78,6 @@ ul4._inherit = function(baseobj, attrs)
 	return ul4._extend(ul4._clone(baseobj), attrs);
 };
 
-// Adds name and signature to a function/method and makes the method callable in templates
-ul4.expose = function(name, args, needsout, f)
-{
-	if (typeof(f) === "undefined")
-	{
-		f = needsout;
-		needsout = false;
-	}
-	f._ul4_name = name;
-	f._ul4_needsout = needsout || false;
-	f._ul4_remargs = null;
-	f._ul4_remkwargs = null;
-	f._ul4_args = [];
-	f._ul4_argnames = {};
-	for (var i = 0; i < args.length; ++i)
-	{
-		var arg = args[i];
-		var argname = arg;
-		if (typeof(argname) !== "string")
-			argname = argname[0];
-		if (argname.substr(0, 2) == "**")
-			f._ul4_remkwargs = argname.substr(2);
-		else if (argname.substr(0, 1) == "*")
-			f._ul4_remargs = argname.substr(1);
-		else
-		{
-			if (typeof(arg) !== "string" && typeof(arg[1]) !== "undefined")
-				f._ul4_args.push({name: argname, defaultValue: arg[1]});
-			else
-				f._ul4_args.push({name: argname});
-			f._ul4_argnames[argname] = true;
-		}
-	}
-
-	return f;
-};
-
 // Convert a map to an object
 ul4._map2object = function(obj)
 {
@@ -131,107 +94,18 @@ ul4._map2object = function(obj)
 	return obj;
 };
 
-// Create the argument array for calling the function ``f`` with the arguments available from ``args``
-ul4._makeargarray = function(f, args)
-{
-	var realargs = [];
-	var realkwargs = {};
-
-	for (var i = 0; i < args.length; ++i)
-	{
-		var name = args[i][0];
-		var arg = args[i][1];
-		if (name === null)
-			realargs.push(arg);
-		else if (name === "*")
-			realargs = realargs.concat(arg);
-		else if (name === "**")
-		{
-			if (ul4._ismap(arg))
-			{
-				arg.forEach(function(value, key){
-					realkwargs[key] = value;
-				});
-			}
-			else
-				ul4._extend(realkwargs, arg);
-		}
-		else
-			realkwargs[name] = arg;
-	}
-
-	var finalargs = [];
-
-	for (var i = 0; i < f._ul4_args.length; ++i)
-	{
-		var arg = f._ul4_args[i];
-
-		if (typeof(realkwargs[arg.name]) !== "undefined")
-		{
-			if (i < realargs.length)
-				throw f._ul4_name + "() argument " + ul4._repr(arg.name) + " (position " + i + ") specified multiple times";
-			finalargs.push(realkwargs[arg.name]);
-		}
-		else
-		{
-			if (i < realargs.length)
-				finalargs.push(realargs[i]);
-			else if (typeof(arg.defaultValue) === "undefined")
-				throw "required " + f._ul4_name + "() argument " + ul4._repr(arg.name) + " (position " + i + ") missing";
-			else
-				finalargs.push(arg.defaultValue);
-		}
-	}
-
-	// Do we accept additional positional arguments?
-	if (f._ul4_remargs === null)
-	{
-		// No, but we have them -> complain
-		if (realargs.length > f._ul4_args.length)
-			throw f._ul4_name + "() expects at most " + f._ul4_args.length + " positional argument" + (f._ul4_args.length != 1 ? "s" : "") + ", " + realargs.length + " given";
-	}
-	else
-	{
-		// Put additional positional arguments in the call into the ``*`` argument (if there are none, this pushes an empty list)
-		finalargs.push(realargs.slice(f._ul4_args.length));
-	}
-
-	// Do we accept arbitrary keyword arguments?
-	if (f._ul4_remkwargs === null)
-	{
-		// No => complain about unknown ones
-		for (var key in realkwargs)
-		{
-			if (!f._ul4_argnames[key])
-				throw f._ul4_name + "() doesn't support an argument named " + ul4._repr(key);
-		}
-	}
-	else
-	{
-		// Yes => Put the unknown ones into a dict and add that to the arguments array
-		var remkwargs = {};
-		for (var key in realkwargs)
-		{
-			if (!f._ul4_argnames[key])
-				remkwargs[key] = realkwargs[key];
-		}
-		finalargs.push(remkwargs);
-	}
-	return finalargs;
-}
-
 ul4._call = function(f, out, args)
 {
 	if (typeof(f) === "function")
 	{
-		args = ul4._makeargarray(f, args);
+		args = f._ul4_signature.bind(f._ul4_name, args);
 		if (f._ul4_needsout)
 			args = [out].concat(args);
 		return f.apply(ul4, args);
 	}
 	else if (f && typeof(f.__call__) === "function")
 	{
-		args = ul4._makeargarray(f.__call__, args);
+		args = f.__call__._ul4_signature.bind(f.__call__._ul4_name, args);
 		if (f.__call__._ul4_needsout)
 			args = [out].concat(args);
 		return f.__call__.apply(f, args); // Use the object as the function context.
@@ -1666,676 +1540,6 @@ ul4.Proto = {
 	}
 };
 
-ul4.Color = ul4._inherit(
-	ul4.Proto,
-	{
-		__type__: "color",
-
-		create: function(r, g, b, a)
-		{
-			var c = ul4._clone(this);
-			c._r = typeof(r) !== "undefined" ? r : 0;
-			c._g = typeof(g) !== "undefined" ? g : 0;
-			c._b = typeof(b) !== "undefined" ? b : 0;
-			c._a = typeof(a) !== "undefined" ? a : 255;
-			return c;
-		},
-
-		__repr__: function()
-		{
-			var r = ul4._lpad(this._r.toString(16), "0", 2);
-			var g = ul4._lpad(this._g.toString(16), "0", 2);
-			var b = ul4._lpad(this._b.toString(16), "0", 2);
-			var a = ul4._lpad(this._a.toString(16), "0", 2);
-			if (this._a !== 0xff)
-			{
-				if (r[0] === r[1] && g[0] === g[1] && b[0] === b[1] && a[0] === a[1])
-					return "#" + r[0] + g[0] + b[0] + a[0];
-				else
-					return "#" + r + g + b + a;
-			}
-			else
-			{
-				if (r[0] === r[1] && g[0] === g[1] && b[0] === b[1])
-					return "#" + r[0] + g[0] + b[0];
-				else
-					return "#" + r + g + b;
-			}
-		},
-
-		__str__: function()
-		{
-			if (this._a !== 0xff)
-			{
-				return "rgba(" + this._r + ", " + this._g + ", " + this._b + ", " + (this._a/255) + ")";
-			}
-			else
-			{
-				var r = ul4._lpad(this._r.toString(16), "0", 2);
-				var g = ul4._lpad(this._g.toString(16), "0", 2);
-				var b = ul4._lpad(this._b.toString(16), "0", 2);
-				var a = ul4._lpad(this._a.toString(16), "0", 2);
-				if (r[0] === r[1] && g[0] === g[1] && b[0] === b[1])
-					return "#" + r[0] + g[0] + b[0];
-				else
-					return "#" + r + g + b;
-			}
-		},
-
-		__iter__: function()
-		{
-			return {
-				obj: this,
-				index: 0,
-				next: function() {
-					if (this.index == 0)
-					{
-						++this.index;
-						return {value: this.obj._r, done: false};
-					}
-					else if (this.index == 1)
-					{
-						++this.index;
-						return {value: this.obj._g, done: false};
-					}
-					else if (this.index == 2)
-					{
-						++this.index;
-						return {value: this.obj._b, done: false};
-					}
-					else if (this.index == 3)
-					{
-						++this.index;
-						return {value: this.obj._a, done: false};
-					}
-					else
-						return {done: true};
-				}
-			};
-		},
-
-		__getattr__: function(attrname)
-		{
-			var object = this;
-			switch (attrname)
-			{
-				case "r":
-					return ul4.expose("r", [], function(){ return object._r; });
-				case "g":
-					return ul4.expose("g", [], function(){ return object._g; });
-				case "b":
-					return ul4.expose("b", [], function(){ return object._b; });
-				case "a":
-					return ul4.expose("a", [], function(){ return object._a; });
-				case "lum":
-					return ul4.expose("lum", [], function(){ return object.lum(); });
-				case "hls":
-					return ul4.expose("hls", [], function(){ return object.hls(); });
-				case "hlsa":
-					return ul4.expose("hlsa", [], function(){ return object.hlsa(); });
-				case "hsv":
-					return ul4.expose("hsv", [], function(){ return object.hsv(); });
-				case "hsva":
-					return ul4.expose("hsva", [], function(){ return object.hsva(); });
-				case "witha":
-					return ul4.expose("witha", ["a"], function(a){ return object.witha(a); });
-				case "withlum":
-					return ul4.expose("withlum", ["lum"], function(lum){ return object.withlum(lum); });
-				case "abslum":
-					return ul4.expose("abslum", ["lum"], function(lum){ return object.abslum(lum); });
-				case "rellum":
-					return ul4.expose("rellum", ["lum"], function(lum){ return object.rellum(lum); });
-				default:
-					return ul4.undefined;
-			}
-		},
-
-		__getitem__: function(key)
-		{
-			var orgkey = key;
-			if (key < 0)
-				key += 4;
-			switch (key)
-			{
-				case 0:
-					return this._r;
-				case 1:
-					return this._g;
-				case 2:
-					return this._b;
-				case 3:
-					return this._a;
-				default:
-					return undefined;
-			}
-		},
-
-		r: ul4.expose("r", [],
-			function()
-			{
-				return this._r;
-			}
-		),
-
-		g: ul4.expose("g", [],
-			function()
-			{
-				return this._g;
-			}
-		),
-
-		b: ul4.expose("b", [],
-			function()
-			{
-				return this._b;
-			}
-		),
-
-		a: ul4.expose("a", [],
-			function()
-			{
-				return this._a;
-			}
-		),
-
-		lum: ul4.expose("lum", [],
-			function()
-			{
-				return this.hls()[1];
-			}
-		),
-
-		hls: ul4.expose("hls", [],
-			function()
-			{
-				var r = this._r/255.0;
-				var g = this._g/255.0;
-				var b = this._b/255.0;
-				var maxc = Math.max(r, g, b);
-				var minc = Math.min(r, g, b);
-				var h, l, s;
-				var rc, gc, bc;
-
-				l = (minc+maxc)/2.0;
-				if (minc == maxc)
-					return [0.0, l, 0.0];
-				if (l <= 0.5)
-					s = (maxc-minc) / (maxc+minc);
-				else
-					s = (maxc-minc) / (2.0-maxc-minc);
-				rc = (maxc-r) / (maxc-minc);
-				gc = (maxc-g) / (maxc-minc);
-				bc = (maxc-b) / (maxc-minc);
-				if (r == maxc)
-					h = bc-gc;
-				else if (g == maxc)
-					h = 2.0+rc-bc;
-				else
-					h = 4.0+gc-rc;
-				h = (h/6.0) % 1.0;
-				return [h, l, s];
-			}
-		),
-
-		hlsa: ul4.expose("hlsa", [],
-			function()
-			{
-				var hls = this.hls();
-				return hls.concat(this._a/255.0);
-			}
-		),
-
-		hsv: ul4.expose("hsv", [],
-			function()
-			{
-				var r = this._r/255.0;
-				var g = this._g/255.0;
-				var b = this._b/255.0;
-				var maxc = Math.max(r, g, b);
-				var minc = Math.min(r, g, b);
-				var v = maxc;
-				if (minc == maxc)
-					return [0.0, 0.0, v];
-				var s = (maxc-minc) / maxc;
-				var rc = (maxc-r) / (maxc-minc);
-				var gc = (maxc-g) / (maxc-minc);
-				var bc = (maxc-b) / (maxc-minc);
-				var h;
-				if (r == maxc)
-					h = bc-gc;
-				else if (g == maxc)
-					h = 2.0+rc-bc;
-				else
-					h = 4.0+gc-rc;
-				h = (h/6.0) % 1.0;
-				return [h, s, v];
-			}
-		),
-
-		hsva: ul4.expose("hsva", [],
-			function()
-			{
-				var hsv = this.hsv();
-				return hsv.concat(this._a/255.0);
-			}
-		),
-
-		witha: ul4.expose("witha", ["a"],
-			function(a)
-			{
-				if (typeof(a) !== "number")
-					throw "witha() requires a number";
-				return ul4.Color.create(this._r, this._g, this._b, a);
-			}
-		),
-
-		withlum: ul4.expose("withlum", ["lum"],
-			function(lum)
-			{
-				if (typeof(lum) !== "number")
-					throw "witha() requires a number";
-				var hlsa = this.hlsa();
-				return ul4._hls(hlsa[0], lum, hlsa[2], hlsa[3]);
-			}
-		)
-	}
-);
-
-ul4.TimeDelta = ul4._inherit(
-	ul4.Proto,
-	{
-		__type__: "timedelta",
-
-		create: function(days, seconds, microseconds)
-		{
-			var td = ul4._clone(this);
-			if (typeof(days) === "undefined")
-				days = 0;
-			if (typeof(seconds) === "undefined")
-				seconds = 0;
-			if (typeof(microseconds) === "undefined")
-				microseconds = 0;
-
-			var total_microseconds = Math.floor((days * 86400 + seconds)*1000000 + microseconds);
-
-			microseconds = ul4.Mod._do(total_microseconds, 1000000);
-			var total_seconds = Math.floor(total_microseconds / 1000000);
-			seconds = ul4.Mod._do(total_seconds, 86400);
-			days = Math.floor(total_seconds / 86400);
-			if (seconds < 0)
-			{
-				seconds += 86400;
-				--days;
-			}
-
-			td._microseconds = microseconds;
-			td._seconds = seconds;
-			td._days = days;
-
-			return td;
-		},
-
-		__repr__: function()
-		{
-			if (!this._microseconds)
-			{
-				if (!this._seconds)
-				{
-					if (!this._days)
-						return "timedelta()";
-					return "timedelta(" + this._days + ")";
-				}
-				return "timedelta(" + this._days + ", " + this._seconds + ")";
-			}
-			return "timedelta(" + this._days + ", " + this._seconds + ", " + this._microseconds + ")";
-		},
-
-		__str__: function()
-		{
-			var v = [];
-			if (this._days)
-			{
-				v.push(this._days + " day");
-				if (this._days !== -1 && this._days !== 1)
-					v.push("s");
-				v.push(", ");
-			}
-			var seconds = this._seconds % 60;
-			var minutes = Math.floor(this._seconds / 60);
-			var hours = Math.floor(minutes / 60);
-			minutes = minutes % 60;
-
-			v.push("" + hours);
-			v.push(":");
-			v.push(ul4._lpad(minutes.toString(), "0", 2));
-			v.push(":");
-			v.push(ul4._lpad(seconds.toString(), "0", 2));
-			if (this._microseconds)
-			{
-				v.push(".");
-				v.push(ul4._lpad(this._microseconds.toString(), "0", 6));
-			}
-			return v.join("");
-		},
-
-		__bool__: function()
-		{
-			return this._days !== 0 || this._seconds !== 0 || this._microseconds !== 0;
-		},
-
-		__abs__: function()
-		{
-			return this._days < 0 ? ul4.TimeDelta.create(-this._days, -this._seconds, -this._microseconds) : this;
-		},
-
-		__eq__: function(other)
-		{
-			if (ul4._istimedelta(other))
-				return (this._days === other._days) && (this._seconds === other._seconds) && (this._microseconds === other._microseconds);
-			return false;
-		},
-
-		__lt__: function(other)
-		{
-			if (ul4._istimedelta(other))
-			{
-				if (this._days < other._days)
-					return true;
-				if (this._days > other._days)
-					return false;
-				if (this._seconds < other._seconds)
-					return true;
-				if (this._seconds > other._seconds)
-					return false;
-				return this._microseconds < other._microseconds;
-			}
-			throw "unorderable types: " + ul4._type(this) + "() >=< " + ul4._type(other) + "()";
-		},
-
-		__neg__: function()
-		{
-			return ul4.TimeDelta.create(-this._days, -this._seconds, -this._microseconds);
-		},
-
-		_add: function(date, days, seconds, microseconds)
-		{
-			var year = date.getFullYear();
-			var month = date.getMonth();
-			var day = date.getDate() + days;
-			var hour = date.getHours();
-			var minute = date.getMinutes();
-			var second = date.getSeconds() + seconds;
-			var millisecond = date.getMilliseconds() + microseconds/1000;
-			return new Date(year, month, day, hour, minute, second, millisecond);
-		},
-
-		__add__: function(other)
-		{
-			if (ul4._istimedelta(other))
-				return ul4.TimeDelta.create(this._days + other._days, this._seconds + other._seconds, this._microseconds + other._microseconds);
-			else if (ul4._isdate(other))
-				return this._add(other, this._days, this._seconds, this._microseconds);
-			throw ul4._type(this) + " + " + ul4._type(other) + " not supported";
-		},
-
-		__radd__: function(other)
-		{
-			if (ul4._isdate(other))
-				return this._add(other, this._days, this._seconds, this._microseconds);
-			throw ul4._type(this) + " + " + ul4._type(other) + " not supported";
-		},
-
-		__sub__: function(other)
-		{
-			if (ul4._istimedelta(other))
-				return ul4.TimeDelta.create(this._days - other._days, this._seconds - other._seconds, this._microseconds - other._microseconds);
-			throw ul4._type(this) + " - " + ul4._type(other) + " not supported";
-		},
-
-		__rsub__: function(other)
-		{
-			if (ul4._isdate(other))
-				return this._add(other, -this._days, -this._seconds, -this._microseconds);
-			throw ul4._type(this) + " - " + ul4._type(other) + " not supported";
-		},
-
-		__mul__: function(other)
-		{
-			if (typeof(other) === "number")
-			{
-				return ul4.TimeDelta.create(this._days * other, this._seconds * other, this._microseconds * other);
-			}
-			throw ul4._type(this) + " * " + ul4._type(other) + " not supported";
-		},
-
-		__rmul__: function(other)
-		{
-			if (typeof(other) === "number")
-			{
-				return ul4.TimeDelta.create(this._days * other, this._seconds * other, this._microseconds * other);
-			}
-			throw ul4._type(this) + " * " + ul4._type(other) + " not supported";
-		},
-
-		__truediv__: function(other)
-		{
-			if (typeof(other) === "number")
-			{
-				return ul4.TimeDelta.create(this._days / other, this._seconds / other, this._microseconds / other);
-			}
-			else if (ul4._istimedelta(other))
-			{
-				var myValue = this._days;
-				var otherValue = other._days;
-				var hasSeconds = this._seconds || other._seconds;
-				var hasMicroseconds = this._microseconds || other._microseconds;
-				if (hasSeconds || hasMicroseconds)
-				{
-					myValue = myValue*86400+this._seconds;
-					otherValue = otherValue*86400 + other._seconds;
-					if (hasMicroseconds)
-					{
-						myValue = myValue * 1000000 + this._microseconds;
-						otherValue = otherValue * 1000000 + other._microseconds;
-					}
-				}
-				return myValue/otherValue;
-			}
-			throw ul4._type(this) + " / " + ul4._type(other) + " not supported";
-		},
-
-		__getattr__: function(attrname)
-		{
-			var object = this;
-			switch (attrname)
-			{
-				case "days":
-					return ul4.expose("days", [], function(){ return object._days; });
-				case "seconds":
-					return ul4.expose("seconds", [], function(){ return object._seconds; });
-				case "microseconds":
-					return ul4.expose("microseconds", [], function(){ return object._microseconds; });
-				default:
-					return ul4.undefined;
-			}
-		},
-
-		days: function()
-		{
-			return this._days;
-		},
-
-		seconds: function()
-		{
-			return this._seconds;
-		},
-
-		microseconds: function()
-		{
-			return this._microseconds;
-		}
-	}
-);
-
-ul4.MonthDelta = ul4._inherit(
-	ul4.Proto,
-	{
-		__type__: "monthdelta",
-
-		create: function(months)
-		{
-			var md = ul4._clone(this);
-			md._months = typeof(months) !== "undefined" ? months : 0;
-			return md;
-		},
-
-		__repr__: function()
-		{
-			if (!this._months)
-				return "monthdelta()";
-			return "monthdelta(" + this._months + ")";
-		},
-
-		__str__: function()
-		{
-			if (this._months)
-			{
-				if (this._months !== -1 && this._months !== 1)
-					return this._months + " months";
-				return this._months + " month";
-			}
-			return "0 months";
-		},
-
-		__bool__: function()
-		{
-			return this._months !== 0;
-		},
-
-		__abs__: function()
-		{
-			return this._months < 0 ? ul4.MonthDelta.create(-this._months) : this;
-		},
-
-		__eq__: function(other)
-		{
-			if (ul4._ismonthdelta(other))
-				return this._months === other._months;
-			return false;
-		},
-
-		__lt__: function(other)
-		{
-			if (ul4._ismonthdelta(other))
-				return this._months < other._months;
-			throw "unorderable types: " + ul4._type(this) + "() >=< " + ul4._type(other) + "()";
-		},
-
-		__neg__: function()
-		{
-			return ul4.MonthDelta.create(-this._months);
-		},
-
-		_add: function(date, months)
-		{
-			var year = date.getFullYear();
-			var month = date.getMonth() + months;
-			var day = date.getDate();
-			var hour = date.getHours();
-			var minute = date.getMinutes();
-			var second = date.getSeconds();
-			var millisecond = date.getMilliseconds();
-
-			while (true)
-			{
-				// As the month might be out of bounds, we have to find out, what the real target month is
-				var targetmonth = new Date(year, month, 1, hour, minute, second, millisecond).getMonth();
-				var result = new Date(year, month, day, hour, minute, second, millisecond);
-				if (result.getMonth() === targetmonth)
-					return result;
-				--day;
-			}
-		},
-
-		__add__: function(other)
-		{
-			if (ul4._ismonthdelta(other))
-				return ul4.MonthDelta.create(this._months + other._months);
-			else if (ul4._isdate(other))
-				return this._add(other, this._months);
-			throw ul4._type(this) + " + " + ul4._type(other) + " not supported";
-		},
-
-		__radd__: function(other)
-		{
-			if (ul4._isdate(other))
-				return this._add(other, this._months);
-			throw ul4._type(this) + " + " + ul4._type(other) + " not supported";
-		},
-
-		__sub__: function(other)
-		{
-			if (ul4._ismonthdelta(other))
-				return ul4.MonthDelta.create(this._months - other._months);
-			throw ul4._type(this) + " - " + ul4._type(other) + " not supported";
-		},
-
-		__rsub__: function(other)
-		{
-			if (ul4._isdate(other))
-				return this._add(other, -this._months);
-			throw ul4._type(this) + " - " + ul4._type(other) + " not supported";
-		},
-
-		__mul__: function(other)
-		{
-			if (typeof(other) === "number")
-				return ul4.MonthDelta.create(this._months * Math.floor(other));
-			throw ul4._type(this) + " * " + ul4._type(other) + " not supported";
-		},
-
-		__rmul__: function(other)
-		{
-			if (typeof(other) === "number")
-				return ul4.MonthDelta.create(this._months * Math.floor(other));
-			throw ul4._type(this) + " * " + ul4._type(other) + " not supported";
-		},
-
-		__floordiv__: function(other)
-		{
-			if (typeof(other) === "number")
-				return ul4.MonthDelta.create(Math.floor(this._months / other));
-			else if (ul4._ismonthdelta(other))
-				return Math.floor(this._months / other._months);
-			throw ul4._type(this) + " // " + ul4._type(other) + " not supported";
-		},
-
-		__truediv__: function(other)
-		{
-			if (ul4._ismonthdelta(other))
-				return this._months / other._months;
-			throw ul4._type(this) + " / " + ul4._type(other) + " not supported";
-		},
-
-		__getattr__: function(attrname)
-		{
-			var object = this;
-			switch (attrname)
-			{
-				case "months":
-					return ul4.expose("months", [], function(){ return object._months; });
-				default:
-					return ul4.undefined;
-			}
-		},
-
-		months: function()
-		{
-			return this._months;
-		}
-	}
-);
-
 ul4.Location = ul4._inherit(
 	ul4.Proto,
 	{
@@ -2387,6 +1591,174 @@ ul4.Location = ul4._inherit(
 		}
 	}
 );
+
+ul4.Signature = ul4._inherit(
+	ul4.Proto,
+	{
+		create: function()
+		{
+			var signature = ul4._clone(this);
+			signature.args = [];
+			signature.argNames = {};
+			signature.remargs = null;
+			signature.remkwargs = null;
+
+			var nextDefault = false;
+			var lastArgname = null;
+			for (var i = 0; i < arguments.length; ++i)
+			{
+				var argName = arguments[i];
+				if (nextDefault)
+				{
+					signature.args.push({name: lastArgname, defaultValue: argName});
+					signature.argNames[lastArgname] = true;
+					nextDefault = false;
+				}
+				else
+				{
+					if (argName.substr(argName.length-1) === "=")
+					{
+						lastArgname = argName.substr(0, argName.length-1);
+						nextDefault = true;
+					}
+					else if (argName.substr(0, 2) === "**")
+						signature.remkwargs = argName.substr(2);
+					else if (argName.substr(0, 1) === "*")
+						signature.remargs = argName.substr(1);
+					else
+					{
+						signature.args.push({name: argName});
+						signature.argNames[argName] = true;
+					}
+				}
+			}
+			return signature;
+		},
+
+		// Create the argument array for calling a function with this signature with the arguments available from ``args``
+		bind: function(name, args)
+		{
+			var realargs = [];
+			var realkwargs = {};
+
+			for (var i = 0; i < args.length; ++i)
+			{
+				var name = args[i][0];
+				var arg = args[i][1];
+				if (name === null)
+					realargs.push(arg);
+				else if (name === "*")
+					realargs = realargs.concat(arg);
+				else if (name === "**")
+				{
+					if (ul4._ismap(arg))
+					{
+						arg.forEach(function(value, key){
+							realkwargs[key] = value;
+						});
+					}
+					else
+						ul4._extend(realkwargs, arg);
+				}
+				else
+					realkwargs[name] = arg;
+			}
+
+			var finalargs = [];
+
+			for (var i = 0; i < this.args.length; ++i)
+			{
+				var arg = this.args[i];
+
+				if (typeof(realkwargs[arg.name]) !== "undefined")
+				{
+					if (i < realargs.length)
+						throw name + "() argument " + ul4._repr(arg.name) + " (position " + i + ") specified multiple times";
+					finalargs.push(realkwargs[arg.name]);
+				}
+				else
+				{
+					if (i < realargs.length)
+						finalargs.push(realargs[i]);
+					else if (typeof(arg.defaultValue) === "undefined")
+						throw "required " + name + "() argument " + ul4._repr(arg.name) + " (position " + i + ") missing";
+					else
+						finalargs.push(arg.defaultValue);
+				}
+			}
+
+			// Do we accept additional positional arguments?
+			if (this.remargs === null)
+			{
+				// No, but we have them -> complain
+				if (realargs.length > this.args.length)
+					throw name + "() expects at most " + this.args.length + " positional argument" + (this.args.length != 1 ? "s" : "") + ", " + realargs.length + " given";
+			}
+			else
+			{
+				// Put additional positional arguments in the call into the ``*`` argument (if there are none, this pushes an empty list)
+				finalargs.push(realargs.slice(this.args.length));
+			}
+
+			// Do we accept arbitrary keyword arguments?
+			if (this.remkwargs === null)
+			{
+				// No => complain about unknown ones
+				for (var key in realkwargs)
+				{
+					if (!this.argNames[key])
+						throw name + "() doesn't support an argument named " + ul4._repr(key);
+				}
+			}
+			else
+			{
+				// Yes => Put the unknown ones into a dict and add that to the arguments array
+				var remkwargs = {};
+				for (var key in realkwargs)
+				{
+					if (!this.argNames[key])
+						remkwargs[key] = realkwargs[key];
+				}
+				finalargs.push(remkwargs);
+			}
+			return finalargs;
+		},
+
+		toString: function()
+		{
+			var v = [];
+			for (var i = 0; i < this.args.length; ++i)
+			{
+				var arg = this.args[i];
+
+				if (typeof(arg.defaultValue) === "undefined")
+					v.push(arg.name)
+				else
+					v.push(arg.name + "=" + ul4._repr(arg.defaultValue))
+			}
+			if (this.remargs != null)
+				v.push("*" + this.remargs);
+			if (this.remkwargs != null)
+				v.push("**" + this.remkwargs);
+			return "(" + v.join(", ") + ")";
+		}
+	}
+);
+
+// Adds name and signature to a function/method and makes the method callable in templates
+ul4.expose = function(name, args, needsout, f)
+{
+	if (typeof(f) === "undefined")
+	{
+		f = needsout;
+		needsout = false;
+	}
+	f._ul4_name = name;
+	f._ul4_needsout = needsout || false;
+	f._ul4_signature = ul4.Signature.create.apply(ul4.Signature, args);
+
+	return f;
+};
 
 ul4.AST = ul4._inherit(
 	ul4.Proto,
@@ -2451,7 +1823,7 @@ ul4.AST = ul4._inherit(
 	}
 );
 
-ul4.Const = ul4._inherit(
+ul4.ConstAST = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end, value)
@@ -2463,7 +1835,7 @@ ul4.Const = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["value"]),
 		_repr: function(out)
 		{
-			out.push("<Const value=");
+			out.push("<ConstAST value=");
 			out.push(ul4._repr(this.value));
 			out.push(">");
 		},
@@ -2474,7 +1846,7 @@ ul4.Const = ul4._inherit(
 	}
 );
 
-ul4.List = ul4._inherit(
+ul4.ListAST = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end)
@@ -2486,7 +1858,7 @@ ul4.List = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["items"]),
 		_repr: function(out)
 		{
-			out.push("<List");
+			out.push("<ListAST");
 			out.push(+1);
 			for (var i = 0; i < this.items.length; ++i)
 			{
@@ -2510,7 +1882,7 @@ ul4.List = ul4._inherit(
 	}
 );
 
-ul4.ListComp = ul4._inherit(
+ul4.ListCompAST = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end, item, varname, container, condition)
@@ -2525,7 +1897,7 @@ ul4.ListComp = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["item", "varname", "container", "condition"]),
 		_repr: function(out)
 		{
-			out.push("<ListComp");
+			out.push("<ListCompAST");
 			out.push(+1);
 			out.push("item=");
 			this.item._repr(out);
@@ -2582,7 +1954,7 @@ ul4.ListComp = ul4._inherit(
 	}
 );
 
-ul4.Dict = ul4._inherit(
+ul4.DictAST = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end)
@@ -2594,7 +1966,7 @@ ul4.Dict = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["items"]),
 		_repr: function(out)
 		{
-			out.push("<Dict");
+			out.push("<DictAST");
 			out.push(+1);
 			for (var i = 0; i < this.items.length; ++i)
 			{
@@ -2640,7 +2012,7 @@ ul4.Dict = ul4._inherit(
 	}
 );
 
-ul4.DictComp = ul4._inherit(
+ul4.DictCompAST = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end, key, value, varname, container, condition)
@@ -2656,7 +2028,7 @@ ul4.DictComp = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["key", "value", "varname", "container", "condition"]),
 		_repr: function(out)
 		{
-			out.push("<DictComp");
+			out.push("<DictCompAST");
 			out.push(+1);
 			out.push("key=");
 			this.key._repr(out);
@@ -2734,7 +2106,7 @@ ul4.DictComp = ul4._inherit(
 	}
 );
 
-ul4.Set = ul4._inherit(
+ul4.SetAST = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end)
@@ -2746,7 +2118,7 @@ ul4.Set = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["items"]),
 		_repr: function(out)
 		{
-			out.push("<Set");
+			out.push("<SetAST");
 			out.push(+1);
 			for (var i = 0; i < this.items.length; ++i)
 			{
@@ -2773,7 +2145,7 @@ ul4.Set = ul4._inherit(
 	}
 );
 
-ul4.SetComp = ul4._inherit(
+ul4.SetCompAST = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end, item, varname, container, condition)
@@ -2787,7 +2159,7 @@ ul4.SetComp = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["item", "varname", "container", "condition"]),
 		_repr: function(out)
 		{
-			out.push("<SetComp");
+			out.push("<SetCompAST");
 			out.push(+1);
 			out.push("item=");
 			this.item._repr(out);
@@ -2846,7 +2218,7 @@ ul4.SetComp = ul4._inherit(
 	}
 );
 
-ul4.GenExpr = ul4._inherit(
+ul4.GenExprAST = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end, item, varname, container, condition)
@@ -2861,7 +2233,7 @@ ul4.GenExpr = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["item", "varname", "container", "condition"]),
 		_repr: function(out)
 		{
-			out.push("<GenExpr");
+			out.push("<GenExprAST");
 			out.push(+1);
 			out.push("item=");
 			this.item._repr(out);
@@ -2931,7 +2303,7 @@ ul4.GenExpr = ul4._inherit(
 	}
 );
 
-ul4.Var = ul4._inherit(
+ul4.VarAST = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end, name)
@@ -2943,19 +2315,19 @@ ul4.Var = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["name"]),
 		_repr: function(out)
 		{
-			out.push("<Var name=");
+			out.push("<VarAST name=");
 			out.push(ul4._repr(this.name));
 			out.push(">");
 		},
 		_jssource: function(out)
 		{
-			out.push("ul4.Var._get(vars, ");
+			out.push("ul4.VarAST._get(vars, ");
 			out.push(ul4._asjson(this.name));
 			out.push(")");
 		},
 		_jssource_set: function(out, value)
 		{
-			out.push("ul4.Var._set(vars, ");
+			out.push("ul4.VarAST._set(vars, ");
 			out.push(ul4._asjson(this.name));
 			out.push(", ");
 			out.push(value);
@@ -2963,7 +2335,7 @@ ul4.Var = ul4._inherit(
 		},
 		_jssource_modify: function(out, operatorname, value)
 		{
-			out.push("ul4.Var._modify(ul4.");
+			out.push("ul4.VarAST._modify(ul4.");
 			out.push(operatorname);
 			out.push(", vars, ");
 			out.push(ul4._asjson(this.name));
@@ -2989,7 +2361,7 @@ ul4.Var = ul4._inherit(
 	}
 );
 
-ul4.Unary = ul4._inherit(
+ul4.UnaryAST = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end, obj)
@@ -3021,8 +2393,8 @@ ul4.Unary = ul4._inherit(
 );
 
 // Negation
-ul4.Neg = ul4._inherit(
-	ul4.Unary,
+ul4.NegAST = ul4._inherit(
+	ul4.UnaryAST,
 	{
 		_do: function(obj)
 		{
@@ -3034,8 +2406,8 @@ ul4.Neg = ul4._inherit(
 );
 
 // Bitwise not
-ul4.BitNot = ul4._inherit(
-	ul4.Unary,
+ul4.BitNotAST = ul4._inherit(
+	ul4.UnaryAST,
 	{
 		_do: function(obj)
 		{
@@ -3045,8 +2417,8 @@ ul4.BitNot = ul4._inherit(
 );
 
 // Not
-ul4.Not = ul4._inherit(
-	ul4.Unary,
+ul4.NotAST = ul4._inherit(
+	ul4.UnaryAST,
 	{
 		_do: function(obj)
 		{
@@ -3056,7 +2428,7 @@ ul4.Not = ul4._inherit(
 );
 
 // If expression
-ul4.If = ul4._inherit(
+ul4.IfAST = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end, objif, objcond, objelse)
@@ -3097,7 +2469,7 @@ ul4.If = ul4._inherit(
 	}
 );
 
-ul4.Text = ul4._inherit(
+ul4.TextAST = ul4._inherit(
 	ul4.AST,
 	{
 		text: function()
@@ -3120,15 +2492,15 @@ ul4.Text = ul4._inherit(
 		},
 		_repr: function(out)
 		{
-			out.push("<Text ");
+			out.push("<TextAST ");
 			out.push(ul4._repr(this.text()));
 			out.push(">");
 		}
 	}
 );
 
-ul4.Return = ul4._inherit(
-	ul4.Unary,
+ul4.ReturnAST = ul4._inherit(
+	ul4.UnaryAST,
 	{
 		_jssource: function(out)
 		{
@@ -3138,13 +2510,13 @@ ul4.Return = ul4._inherit(
 		_str: function(out)
 		{
 			out.push("return ");
-			ul4.Unary._str.call(this, out);
+			ul4.UnaryAST._str.call(this, out);
 		}
 	}
 );
 
-ul4.Print = ul4._inherit(
-	ul4.Unary,
+ul4.PrintAST = ul4._inherit(
+	ul4.UnaryAST,
 	{
 		_jssource: function(out)
 		{
@@ -3155,13 +2527,13 @@ ul4.Print = ul4._inherit(
 		_str: function(out)
 		{
 			out.push("print ");
-			ul4.Unary._str.call(this, out);
+			ul4.UnaryAST._str.call(this, out);
 		}
 	}
 );
 
-ul4.PrintX = ul4._inherit(
-	ul4.Unary,
+ul4.PrintXAST = ul4._inherit(
+	ul4.UnaryAST,
 	{
 		_jssource: function(out)
 		{
@@ -3172,12 +2544,12 @@ ul4.PrintX = ul4._inherit(
 		_str: function(out)
 		{
 			out.push("printx ");
-			ul4.Unary._str.call(this, out);
+			ul4.UnaryAST._str.call(this, out);
 		}
 	}
 );
 
-ul4.Binary = ul4._inherit(
+ul4.BinaryAST = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end, obj1, obj2)
@@ -3215,12 +2587,12 @@ ul4.Binary = ul4._inherit(
 );
 
 // Item access and assignment: dict[key], list[index], string[index], color[index]
-ul4.Item = ul4._inherit(
-	ul4.Binary,
+ul4.ItemAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_jssource: function(out)
 		{
-			out.push("ul4.Item._get(");
+			out.push("ul4.ItemAST._get(");
 			this.obj1._jssource(out);
 			out.push(", ");
 			this.obj2._jssource(out);
@@ -3228,7 +2600,7 @@ ul4.Item = ul4._inherit(
 		},
 		_jssource_set: function(out, value)
 		{
-			out.push("ul4.Item._set(");
+			out.push("ul4.ItemAST._set(");
 			this.obj1._jssource(out);
 			out.push(", ");
 			this.obj2._jssource(out);
@@ -3238,7 +2610,7 @@ ul4.Item = ul4._inherit(
 		},
 		_jssource_modify: function(out, operatorname, value)
 		{
-			out.push("ul4.Item._modify(ul4.");
+			out.push("ul4.ItemAST._modify(ul4.");
 			out.push(operatorname);
 			out.push(", ");
 			this.obj1._jssource(out);
@@ -3337,8 +2709,8 @@ ul4.Item = ul4._inherit(
 );
 
 // Comparison operator ==
-ul4.EQ = ul4._inherit(
-	ul4.Binary,
+ul4.EQAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_do: function(obj1, obj2)
 		{
@@ -3361,8 +2733,8 @@ ul4.EQ = ul4._inherit(
 );
 
 // Comparison operator !=
-ul4.NE = ul4._inherit(
-	ul4.Binary,
+ul4.NEAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_do: function(obj1, obj2)
 		{
@@ -3385,8 +2757,8 @@ ul4.NE = ul4._inherit(
 );
 
 // Comparison operator <
-ul4.LT = ul4._inherit(
-	ul4.Binary,
+ul4.LTAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_do: function(obj1, obj2)
 		{
@@ -3409,8 +2781,8 @@ ul4.LT = ul4._inherit(
 );
 
 // Comparison operator <=
-ul4.LE = ul4._inherit(
-	ul4.Binary,
+ul4.LEAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_do: function(obj1, obj2)
 		{
@@ -3433,8 +2805,8 @@ ul4.LE = ul4._inherit(
 );
 
 // Comparison operator >
-ul4.GT = ul4._inherit(
-	ul4.Binary,
+ul4.GTAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_do: function(obj1, obj2)
 		{
@@ -3457,8 +2829,8 @@ ul4.GT = ul4._inherit(
 );
 
 // Comparison operator >=
-ul4.GE = ul4._inherit(
-	ul4.Binary,
+ul4.GEAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_do: function(obj1, obj2)
 		{
@@ -3481,8 +2853,8 @@ ul4.GE = ul4._inherit(
 );
 
 // Containment test: string in string, obj in list, key in dict, value in rgb
-ul4.Contains = ul4._inherit(
-	ul4.Binary,
+ul4.ContainsAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_do: function(obj, container)
 		{
@@ -3517,19 +2889,19 @@ ul4.Contains = ul4._inherit(
 );
 
 // Inverted containment test
-ul4.NotContains = ul4._inherit(
-	ul4.Binary,
+ul4.NotContainsAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_do: function(obj, container)
 		{
-			return !ul4.Contains._do(obj, container);
+			return !ul4.ContainsAST._do(obj, container);
 		}
 	}
 );
 
 // Addition: num + num, string + string
-ul4.Add = ul4._inherit(
-	ul4.Binary,
+ul4.AddAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_do: function(obj1, obj2)
 		{
@@ -3563,8 +2935,8 @@ ul4.Add = ul4._inherit(
 );
 
 // Substraction: num - num
-ul4.Sub = ul4._inherit(
-	ul4.Binary,
+ul4.SubAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_do: function(obj1, obj2)
 		{
@@ -3584,8 +2956,8 @@ ul4.Sub = ul4._inherit(
 );
 
 // Multiplication: num * num, int * str, str * int, int * list, list * int
-ul4.Mul = ul4._inherit(
-	ul4.Binary,
+ul4.MulAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_do: function(obj1, obj2)
 		{
@@ -3649,8 +3021,8 @@ ul4.Mul = ul4._inherit(
 );
 
 // Truncating division
-ul4.FloorDiv = ul4._inherit(
-	ul4.Binary,
+ul4.FloorDivAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_do: function(obj1, obj2)
 		{
@@ -3670,8 +3042,8 @@ ul4.FloorDiv = ul4._inherit(
 );
 
 // "Real" division
-ul4.TrueDiv = ul4._inherit(
-	ul4.Binary,
+ul4.TrueDivAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_do: function(obj1, obj2)
 		{
@@ -3691,8 +3063,8 @@ ul4.TrueDiv = ul4._inherit(
 );
 
 // Modulo
-ul4.Mod = ul4._inherit(
-	ul4.Binary,
+ul4.ModAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		// (this is non-trivial, because it follows the Python semantic of ``-5 % 2`` being ``1``)
 		_do: function(obj1, obj2)
@@ -3715,8 +3087,8 @@ ul4.Mod = ul4._inherit(
 );
 
 // Bitwise left shift
-ul4.ShiftLeft = ul4._inherit(
-	ul4.Binary,
+ul4.ShiftLeftAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_do: function(obj1, obj2)
 		{
@@ -3725,7 +3097,7 @@ ul4.ShiftLeft = ul4._inherit(
 			else if (obj2 === true)
 				obj2 = 1;
 			if (obj2 < 0)
-				return ul4.ShiftRight._do(obj1, -obj2);
+				return ul4.ShiftRightAST._do(obj1, -obj2);
 			if (obj1 === false)
 				obj1 = 0;
 			else if (obj1 === true)
@@ -3742,8 +3114,8 @@ ul4.ShiftLeft = ul4._inherit(
 );
 
 // Bitwise right shift
-ul4.ShiftRight = ul4._inherit(
-	ul4.Binary,
+ul4.ShiftRightAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_do: function(obj1, obj2)
 		{
@@ -3752,7 +3124,7 @@ ul4.ShiftRight = ul4._inherit(
 			else if (obj2 === true)
 				obj2 = 1;
 			if (obj2 < 0)
-				return ul4.ShiftLeft._do(obj1, -obj2);
+				return ul4.ShiftLeftAST._do(obj1, -obj2);
 			if (obj1 === false)
 				obj1 = 0;
 			else if (obj1 === true)
@@ -3769,8 +3141,8 @@ ul4.ShiftRight = ul4._inherit(
 );
 
 // Bitwise and
-ul4.BitAnd = ul4._inherit(
-	ul4.Binary,
+ul4.BitAndAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_do: function(obj1, obj2)
 		{
@@ -3788,8 +3160,8 @@ ul4.BitAnd = ul4._inherit(
 );
 
 // Bitwise exclusive or
-ul4.BitXOr = ul4._inherit(
-	ul4.Binary,
+ul4.BitXOrAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_do: function(obj1, obj2)
 		{
@@ -3807,8 +3179,8 @@ ul4.BitXOr = ul4._inherit(
 );
 
 // Bitwise or
-ul4.BitOr = ul4._inherit(
-	ul4.Binary,
+ul4.BitOrAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_do: function(obj1, obj2)
 		{
@@ -3825,8 +3197,8 @@ ul4.BitOr = ul4._inherit(
 	}
 );
 
-ul4.And = ul4._inherit(
-	ul4.Binary,
+ul4.AndAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_jssource: function(out)
 		{
@@ -3839,8 +3211,8 @@ ul4.And = ul4._inherit(
 	}
 );
 
-ul4.Or = ul4._inherit(
-	ul4.Binary,
+ul4.OrAST = ul4._inherit(
+	ul4.BinaryAST,
 	{
 		_jssource: function(out)
 		{
@@ -3853,7 +3225,7 @@ ul4.Or = ul4._inherit(
 	}
 );
 
-ul4.Attr = ul4._inherit(
+ul4.AttrAST = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end, obj, attrname)
@@ -3866,7 +3238,7 @@ ul4.Attr = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["obj", "attrname"]),
 		_repr: function(out)
 		{
-			out.push("<Attr");
+			out.push("<AttrAST");
 			out.push(+1);
 			out.push("obj=");
 			this.obj._repr(out);
@@ -3878,7 +3250,7 @@ ul4.Attr = ul4._inherit(
 		},
 		_jssource: function(out)
 		{
-			out.push("ul4.Attr._get(");
+			out.push("ul4.AttrAST._get(");
 			this.obj._jssource(out);
 			out.push(", ");
 			out.push(ul4._asjson(this.attrname));
@@ -3886,7 +3258,7 @@ ul4.Attr = ul4._inherit(
 		},
 		_jssource_set: function(out, value)
 		{
-			out.push("ul4.Attr._set(");
+			out.push("ul4.AttrAST._set(");
 			this.obj._jssource(out);
 			out.push(", ");
 			out.push(ul4._asjson(this.attrname));
@@ -3896,7 +3268,7 @@ ul4.Attr = ul4._inherit(
 		},
 		_jssource_modify: function(out, operatorname, value)
 		{
-			out.push("ul4.Attr._modify(ul4.");
+			out.push("ul4.AttrAST._modify(ul4.");
 			out.push(operatorname);
 			out.push(", ");
 			this.obj._jssource(out);
@@ -3913,21 +3285,21 @@ ul4.Attr = ul4._inherit(
 				switch (attrname)
 				{
 					case "find":
-						return ul4.expose("find", ["sub", ["start", null], ["end", null]], function(sub, start, end){ return ul4._find(object, sub, start, end); });
+						return ul4.expose("find", ["sub", "start=", null, "end=", null], function(sub, start, end){ return ul4._find(object, sub, start, end); });
 					case "rfind":
-						return ul4.expose("rfind", ["sub", ["start", null], ["end", null]], function(sub, start, end){ return ul4._rfind(object, sub, start, end); });
+						return ul4.expose("rfind", ["sub", "start=", null, "end=", null], function(sub, start, end){ return ul4._rfind(object, sub, start, end); });
 					case "replace":
-						return ul4.expose("replace", ["old", "new", ["count", null]], function(old, new_, count){ return ul4._replace(object, old, new_, count); });
+						return ul4.expose("replace", ["old", "new", "count=", null], function(old, new_, count){ return ul4._replace(object, old, new_, count); });
 					case "strip":
-						return ul4.expose("strip", [["chars", null]], function(chars){ return ul4._strip(object, chars); });
+						return ul4.expose("strip", ["chars=", null], function(chars){ return ul4._strip(object, chars); });
 					case "lstrip":
-						return ul4.expose("lstrip", [["chars", null]], function(chars){ return ul4._lstrip(object, chars); });
+						return ul4.expose("lstrip", ["chars=", null], function(chars){ return ul4._lstrip(object, chars); });
 					case "rstrip":
-						return ul4.expose("rstrip", [["chars", null]], function(chars){ return ul4._rstrip(object, chars); });
+						return ul4.expose("rstrip", ["chars=", null], function(chars){ return ul4._rstrip(object, chars); });
 					case "split":
-						return ul4.expose("split", [["sep", null], ["count", null]], function(sep, count){ return ul4._split(object, sep, count); });
+						return ul4.expose("split", ["sep=", null, "count=", null], function(sep, count){ return ul4._split(object, sep, count); });
 					case "rsplit":
-						return ul4.expose("rsplit", [["sep", null], ["count", null]], function(sep, count){ return ul4._rsplit(object, sep, count); });
+						return ul4.expose("rsplit", ["sep=", null, "count=", null], function(sep, count){ return ul4._rsplit(object, sep, count); });
 					case "lower":
 						return ul4.expose("lower", [], function(){ return object.toLowerCase(); });
 					case "upper":
@@ -3953,11 +3325,11 @@ ul4.Attr = ul4._inherit(
 					case "insert":
 						return ul4.expose("insert", ["pos", "*items"], function(pos, items){ return ul4._insert(object, pos, items); });
 					case "pop":
-						return ul4.expose("pop", [["pos", -1]], function(pos){ return ul4._pop(object, pos); });
+						return ul4.expose("pop", ["pos=", -1], function(pos){ return ul4._pop(object, pos); });
 					case "find":
-						return ul4.expose("find", ["sub", ["start", null], ["end", null]], function(sub, start, end){ return ul4._find(object, sub, start, end); });
+						return ul4.expose("find", ["sub", "start=", null, "end=", null], function(sub, start, end){ return ul4._find(object, sub, start, end); });
 					case "rfind":
-						return ul4.expose("rfind", ["sub", ["start", null], ["end", null]], function(sub, start, end){ return ul4._rfind(object, sub, start, end); });
+						return ul4.expose("rfind", ["sub", "start=", null, "end=", null], function(sub, start, end){ return ul4._rfind(object, sub, start, end); });
 					default:
 						return ul4.undefined;
 				}
@@ -3969,7 +3341,7 @@ ul4.Attr = ul4._inherit(
 					case "weekday":
 						return ul4.expose("weekday", [], function(){ return ul4._weekday(object); });
 					case "week":
-						return ul4.expose("week", [["firstweekday", null]], function(firstweekday){ return ul4._week(object, firstweekday); });
+						return ul4.expose("week", ["firstweekday=", null], function(firstweekday){ return ul4._week(object, firstweekday); });
 					case "day":
 						return ul4.expose("day", [], function(){ return object.getDate(); });
 					case "month":
@@ -3999,7 +3371,7 @@ ul4.Attr = ul4._inherit(
 				switch (attrname)
 				{
 					case "get":
-						return ul4.expose("get", ["key", ["default", null]], function(key, default_){ return ul4._get(object, key, default_); });
+						return ul4.expose("get", ["key", "default=", null], function(key, default_){ return ul4._get(object, key, default_); });
 					case "items":
 						return ul4.expose("items", [], function(){ return ul4._items(object); });
 					case "values":
@@ -4025,7 +3397,7 @@ ul4.Attr = ul4._inherit(
 				switch (attrname)
 				{
 					case "get":
-						return ul4.expose("get", ["key", ["default", null]], function(key, default_){ return ul4._get(object, key, default_); });
+						return ul4.expose("get", ["key", "default=", null], function(key, default_){ return ul4._get(object, key, default_); });
 					case "items":
 						return ul4.expose("items", [], function(){ return ul4._items(object); });
 					case "values":
@@ -4045,17 +3417,14 @@ ul4.Attr = ul4._inherit(
 							};
 							realresult._ul4_name = result._ul4_name;
 							realresult._ul4_needsout = result._ul4_needsout;
-							realresult._ul4_remargs = result._ul4_remargs;
-							realresult._ul4_remkwargs = result._ul4_remkwargs;
-							realresult._ul4_args = result._ul4_args;
-							realresult._ul4_argnames = result._ul4_argnames;
+							realresult._ul4_signature = result._ul4_signature;
 							return realresult;
 						}
 						else
 							return result;
 				}
 			}
-			throw "Attr._get() needs an object with attributes";
+			throw "AttrAST._get() needs an object with attributes";
 		},
 		_set: function(object, attrname, value)
 		{
@@ -4066,7 +3435,7 @@ ul4.Attr = ul4._inherit(
 			else if (ul4._isobject(object))
 				object[attrname] = value;
 			else
-				throw "Attr._set() needs an object with attributes";
+				throw "AttrAST._set() needs an object with attributes";
 		},
 		_modify: function(operator, object, attrname, value)
 		{
@@ -4075,7 +3444,7 @@ ul4.Attr = ul4._inherit(
 	}
 );
 
-ul4.Call = ul4._inherit(
+ul4.CallAST = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end, obj, args)
@@ -4088,7 +3457,7 @@ ul4.Call = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["obj", "args"]),
 		_repr: function(out)
 		{
-			out.push("<Call");
+			out.push("<CallAST");
 			out.push(+1);
 			out.push("obj=");
 			this.obj._repr(out);
@@ -4153,7 +3522,7 @@ ul4.slice = ul4._inherit(
 
 
 // List/String slice
-ul4.Slice = ul4._inherit(
+ul4.SliceAST = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end, index1, index2)
@@ -4166,7 +3535,7 @@ ul4.Slice = ul4._inherit(
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["index1", "index2"]),
 		_repr: function(out)
 		{
-			out.push("<Slice");
+			out.push("<SliceAST");
 			out.push(+1);
 			if (this.index1 !== null)
 			{
@@ -4201,7 +3570,7 @@ ul4.Slice = ul4._inherit(
 );
 
 
-ul4.SetVar = ul4._inherit(
+ul4.SetVarAST = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end, lvalue, value)
@@ -4252,8 +3621,8 @@ ul4.SetVar = ul4._inherit(
 	}
 );
 
-ul4.ModifyVar = ul4._inherit(
-	ul4.SetVar,
+ul4.ModifyVarAST = ul4._inherit(
+	ul4.SetVarAST,
 	{
 		_jssource_value: function(out, lvalue, value)
 		{
@@ -4271,29 +3640,29 @@ ul4.ModifyVar = ul4._inherit(
 		}
 });
 
-ul4.AddVar = ul4._inherit(ul4.ModifyVar, { _operator: "Add" });
+ul4.AddVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "AddAST" });
 
-ul4.SubVar = ul4._inherit(ul4.ModifyVar, { _operator: "Sub" });
+ul4.SubVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "SubAST" });
 
-ul4.MulVar = ul4._inherit(ul4.ModifyVar, { _operator: "Mul" });
+ul4.MulVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "MulAST" });
 
-ul4.TrueDivVar = ul4._inherit(ul4.ModifyVar, { _operator: "TrueDiv" });
+ul4.TrueDivVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "TrueDivAST" });
 
-ul4.FloorDivVar = ul4._inherit(ul4.ModifyVar, { _operator: "FloorDiv" });
+ul4.FloorDivVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "FloorDivAST" });
 
-ul4.ModVar = ul4._inherit(ul4.ModifyVar, { _operator: "Mod" });
+ul4.ModVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "ModAST" });
 
-ul4.ShiftLeftVar = ul4._inherit(ul4.ModifyVar, { _operator: "ShiftLeft" });
+ul4.ShiftLeftVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "ShiftLeftAST" });
 
-ul4.ShiftRightVar = ul4._inherit(ul4.ModifyVar, { _operator: "ShiftRight" });
+ul4.ShiftRightVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "ShiftRightAST" });
 
-ul4.BitAndVar = ul4._inherit(ul4.ModifyVar, { _operator: "BitAnd" });
+ul4.BitAndVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "BitAndAST" });
 
-ul4.BitXOrVar = ul4._inherit(ul4.ModifyVar, { _operator: "BitXOr" });
+ul4.BitXOrVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "BitXOrAST" });
 
-ul4.BitOrVar = ul4._inherit(ul4.ModifyVar, { _operator: "BitOr" });
+ul4.BitOrVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "BitOrAST" });
 
-ul4.Block = ul4._inherit(
+ul4.BlockAST = ul4._inherit(
 	ul4.AST,
 	{
 		create: function(location, start, end)
@@ -4346,20 +3715,20 @@ ul4.Block = ul4._inherit(
 	}
 );
 
-ul4.ForBlock = ul4._inherit(
-	ul4.Block,
+ul4.ForBlockAST = ul4._inherit(
+	ul4.BlockAST,
 	{
 		create: function(location, start, end, varname, container)
 		{
-			var for_ = ul4.Block.create.call(this, location, start, end);
+			var for_ = ul4.BlockAST.create.call(this, location, start, end);
 			for_.varname = varname;
 			for_.container = container;
 			return for_;
 		},
-		_ul4onattrs: ul4.Block._ul4onattrs.concat(["varname", "container"]),
+		_ul4onattrs: ul4.BlockAST._ul4onattrs.concat(["varname", "container"]),
 		_repr: function(out)
 		{
-			out.push("<For");
+			out.push("<ForAST");
 			out.push(+1);
 			out.push("varname=");
 			out.push(ul4._repr(this.varname));
@@ -4367,7 +3736,7 @@ ul4.ForBlock = ul4._inherit(
 			out.push("container=");
 			this.container._repr(out);
 			out.push(0);
-			ul4.Block._repr.call(this, out);
+			ul4.BlockAST._repr.call(this, out);
 			out.push(-1);
 			out.push(">");
 		},
@@ -4421,23 +3790,23 @@ ul4.ForBlock = ul4._inherit(
 	}
 );
 
-ul4.WhileBlock = ul4._inherit(
-	ul4.Block,
+ul4.WhileBlockAST = ul4._inherit(
+	ul4.BlockAST,
 	{
 		create: function(location, start, end, condition)
 		{
-			var while_ = ul4.Block.create.call(this, location, start, end);
+			var while_ = ul4.BlockAST.create.call(this, location, start, end);
 			while_.condition = condition;
 			return while_;
 		},
-		_ul4onattrs: ul4.Block._ul4onattrs.concat(["condition"]),
+		_ul4onattrs: ul4.BlockAST._ul4onattrs.concat(["condition"]),
 		_repr: function(out)
 		{
-			out.push("<While");
+			out.push("<WhileAST");
 			out.push(+1);
 			out.push("condition=");
 			this.condition._repr(out);
-			ul4.Block._repr.call(this, out);
+			ul4.BlockAST._repr.call(this, out);
 			out.push(-1);
 			out.push(">");
 		},
@@ -4466,7 +3835,7 @@ ul4.WhileBlock = ul4._inherit(
 	}
 );
 
-ul4.Break = ul4._inherit(
+ul4.BreakAST = ul4._inherit(
 	ul4.AST,
 	{
 		_jssource: function(out)
@@ -4479,12 +3848,12 @@ ul4.Break = ul4._inherit(
 		},
 		_repr: function(out)
 		{
-			out.push("<Break>");
+			out.push("<BreakAST>");
 		}
 	}
 );
 
-ul4.Continue = ul4._inherit(
+ul4.ContinueAST = ul4._inherit(
 	ul4.AST,
 	{
 		_jssource: function(out)
@@ -4497,13 +3866,13 @@ ul4.Continue = ul4._inherit(
 		},
 		_repr: function(out)
 		{
-			out.push("<Continue>");
+			out.push("<ContinueAST>");
 		}
 	}
 );
 
-ul4.CondBlock = ul4._inherit(
-	ul4.Block,
+ul4.CondBlockAST = ul4._inherit(
+	ul4.BlockAST,
 	{
 		_jssource: function(out)
 		{
@@ -4513,16 +3882,16 @@ ul4.CondBlock = ul4._inherit(
 	}
 );
 
-ul4.ConditionalBlock = ul4._inherit(
-	ul4.Block,
+ul4.ConditionalBlockAST = ul4._inherit(
+	ul4.BlockAST,
 	{
 		create: function(location, start, end, condition)
 		{
-			var block = ul4.Block.create.call(this, location, start, end);
+			var block = ul4.BlockAST.create.call(this, location, start, end);
 			block.condition = condition;
 			return block;
 		},
-		_ul4onattrs: ul4.Block._ul4onattrs.concat(["condition"]),
+		_ul4onattrs: ul4.BlockAST._ul4onattrs.concat(["condition"]),
 		_repr: function(out)
 		{
 			out.push("<");
@@ -4531,7 +3900,7 @@ ul4.ConditionalBlock = ul4._inherit(
 			out.push("condition=");
 			this.condition._repr(out);
 			out.push(0);
-			ul4.Block._repr.call(this, out);
+			ul4.BlockAST._repr.call(this, out);
 			out.push(-1);
 			out.push(">");
 		},
@@ -4562,18 +3931,18 @@ ul4.ConditionalBlock = ul4._inherit(
 	}
 );
 
-ul4.IfBlock = ul4._inherit(ul4.ConditionalBlock, {_sourcejs: "if"});
+ul4.IfBlockAST = ul4._inherit(ul4.ConditionalBlockAST, {_sourcejs: "if"});
 
-ul4.ElIfBlock = ul4._inherit(ul4.ConditionalBlock, {_sourcejs: "else if"});
+ul4.ElIfBlockAST = ul4._inherit(ul4.ConditionalBlockAST, {_sourcejs: "else if"});
 
-ul4.ElseBlock = ul4._inherit(
-	ul4.Block,
+ul4.ElseBlockAST = ul4._inherit(
+	ul4.BlockAST,
 	{
 		_repr: function(out)
 		{
-			out.push("<Else");
+			out.push("<ElseAST");
 			out.push(+1);
-			ul4.Block._repr.call(this, out);
+			ul4.BlockAST._repr.call(this, out);
 			out.push(-1);
 			out.push(">");
 		},
@@ -4592,40 +3961,51 @@ ul4.ElseBlock = ul4._inherit(
 		{
 			out.push("else:");
 			out.push(+1);
-			ul4.Block._str.call(this, out);
+			ul4.BlockAST._str.call(this, out);
 			out.push(-1);
 		}
 	}
 );
 
 ul4.Template = ul4._inherit(
-	ul4.Block,
+	ul4.BlockAST,
 	{
-		create: function(location, start, end, source, name, keepws, startdelim, enddelim)
+		create: function(location, start, end, source, name, keepws, startdelim, enddelim, signature)
 		{
-			var template = ul4.Block.create.call(this, location, start, end);
+			var template = ul4.BlockAST.create.call(this, location, start, end);
 			template.source = source;
 			template.name = name;
 			template.keepws = keepws;
 			template.startdelim = startdelim;
 			template.enddelim = enddelim;
+			template.signature = signature;
 			template._jsfunction = null;
 			template._asts = null;
 			return template;
 		},
 		ul4ondump: function(encoder)
 		{
+			var signature;
 			encoder.dump(ul4.version);
 			encoder.dump(this.source);
 			encoder.dump(this.name);
 			encoder.dump(this.keepws);
 			encoder.dump(this.startdelim);
 			encoder.dump(this.enddelim);
-			ul4.Block.ul4ondump.call(this, encoder);
+			if (this.signature === null)
+				signature = null;
+			else
+			{
+				signature = [];
+			}
+			encoder.dump(signature);
+			ul4.BlockAST.ul4ondump.call(this, encoder);
 		},
 		ul4onload: function(decoder)
 		{
 			var version = decoder.load();
+			var signature;
+
 			if (version !== ul4.version)
 				throw "invalid version, expected " + ul4.version + ", got " + version;
 			this.source = decoder.load();
@@ -4633,7 +4013,11 @@ ul4.Template = ul4._inherit(
 			this.keepws = decoder.load();
 			this.startdelim = decoder.load();
 			this.enddelim = decoder.load();
-			ul4.Block.ul4onload.call(this, decoder);
+			signature = decoder.load();
+			if (signature !== null)
+				signature = ul4.Signature.create.apply(ul4.Signature, signature)
+			this.signature = signature;
+			ul4.BlockAST.ul4onload.call(this, decoder);
 		},
 		_getast: function(id)
 		{
@@ -4650,7 +4034,7 @@ ul4.Template = ul4._inherit(
 		},
 		_jssource: function(out)
 		{
-			out.push("ul4.Var._set(vars, " + ul4._asjson(this.name) + ", ul4.TemplateClosure.create(self._getast(" + this.__id__ + "), vars))");
+			out.push("ul4.VarAST._set(vars, " + ul4._asjson(this.name) + ", ul4.TemplateClosure.create(self._getast(" + this.__id__ + "), vars))");
 		},
 		_repr: function(out)
 		{
@@ -4674,7 +4058,7 @@ ul4.Template = ul4._inherit(
 				out.push(ul4._repr(this.enddelim));
 				out.push(0);
 			}
-			ul4.Block._repr.call(this, out);
+			ul4.BlockAST._repr.call(this, out);
 			out.push(-1);
 			out.push(">");
 		},
@@ -4684,7 +4068,7 @@ ul4.Template = ul4._inherit(
 			out.push(this.name ? this.name : "unnamed");
 			out.push(":");
 			out.push(+1);
-			ul4.Block._str.call(this, out);
+			ul4.BlockAST._str.call(this, out);
 			out.push(-1);
 		},
 		_makesource: function()
@@ -4764,8 +4148,6 @@ ul4.TemplateClosure = ul4._inherit(
 			closure.template = template;
 			// Store a frozen copy of the current values of the parent template
 			closure.vars = ul4._extend({}, vars);
-			// The template (i.e. the closure) itself should be visible in the parent variables
-			closure.vars[template.name] = closure;
 			// Copy over the required attribute from the template
 			closure.name = template.name;
 			closure.location = template.location;
@@ -5454,15 +4836,15 @@ ul4.functions = {
 	print: ul4.expose("print", ["*args"], true, ul4._print),
 	printx: ul4.expose("printx", ["*args"], true, ul4._printx),
 	repr: ul4.expose("repr", ["obj"], ul4._repr),
-	str: ul4.expose("str", [["obj", ""]], ul4._str),
-	int: ul4.expose("int", [["obj", 0], ["base", null]], ul4._int),
-	float: ul4.expose("float", [["obj", 0.0]], ul4._float),
-	list: ul4.expose("list", [["iterable", []]], ul4._list),
-	set: ul4.expose("set", [["iterable", []]], ul4._set),
-	bool: ul4.expose("bool", [["obj", false]], ul4._bool),
+	str: ul4.expose("str", ["obj=", ""], ul4._str),
+	int: ul4.expose("int", ["obj=", 0, "base=", null], ul4._int),
+	float: ul4.expose("float", ["obj=", 0.0], ul4._float),
+	list: ul4.expose("list", ["iterable=", []], ul4._list),
+	set: ul4.expose("set", ["iterable=", []], ul4._set),
+	bool: ul4.expose("bool", ["obj=", false], ul4._bool),
 	len: ul4.expose("len", ["sequence"], ul4._len),
 	type: ul4.expose("type", ["obj"], ul4._type),
-	format: ul4.expose("format", ["obj", "fmt", ["lang", null]], ul4._format),
+	format: ul4.expose("format", ["obj", "fmt", "lang=", null], ul4._format),
 	any: ul4.expose("any", ["iterable"], ul4._any),
 	all: ul4.expose("all", ["iterable"], ul4._all),
 	zip: ul4.expose("zip", ["*iterables"], ul4._zip),
@@ -5488,18 +4870,18 @@ ul4.functions = {
 	fromul4on: ul4.expose("fromul4on", ["string"], ul4._fromul4on),
 	now: ul4.expose("now", [], ul4._now),
 	utcnow: ul4.expose("utcnow", [], ul4._utcnow),
-	enumerate: ul4.expose("enumerate", ["iterable", ["start", 0]], ul4._enumerate),
+	enumerate: ul4.expose("enumerate", ["iterable", "start=", 0], ul4._enumerate),
 	isfirst: ul4.expose("isfirst", ["iterable"], ul4._isfirst),
 	islast: ul4.expose("islast", ["iterable"], ul4._islast),
 	isfirstlast: ul4.expose("isfirstlast", ["iterable"], ul4._isfirstlast),
-	enumfl: ul4.expose("enumfl", ["iterable", ["start", 0]], ul4._enumfl),
+	enumfl: ul4.expose("enumfl", ["iterable", "start=", 0], ul4._enumfl),
 	abs: ul4.expose("abs", ["number"], ul4._abs),
-	date: ul4.expose("date", ["year", "month", "day", ["hour", 0], ["minute", 0], ["second", 0], ["microsecond", 0]], ul4._date),
-	timedelta: ul4.expose("timedelta", [["days", 0], ["seconds", 0], ["microseconds", 0]], ul4._timedelta),
-	monthdelta: ul4.expose("monthdelta", [["months", 0]], ul4._monthdelta),
-	rgb: ul4.expose("rgb", ["r", "g", "b", ["a", 1.0]], ul4._rgb),
-	hls: ul4.expose("hls", ["h", "l", "s", ["a", 1.0]], ul4._hls),
-	hsv: ul4.expose("hsv", ["h", "s", "v", ["a", 1.0]], ul4._hsv),
+	date: ul4.expose("date", ["year", "month", "day", "hour=", 0, "minute=", 0, "second=", 0, "microsecond=", 0], ul4._date),
+	timedelta: ul4.expose("timedelta", ["days=", 0, "seconds=", 0, "microseconds=", 0], ul4._timedelta),
+	monthdelta: ul4.expose("monthdelta", ["months=", 0], ul4._monthdelta),
+	rgb: ul4.expose("rgb", ["r", "g", "b", "a=", 1.0], ul4._rgb),
+	hls: ul4.expose("hls", ["h", "l", "s", "a=", 1.0], ul4._hls),
+	hsv: ul4.expose("hsv", ["h", "s", "v", "a=", 1.0], ul4._hsv),
 	xmlescape: ul4.expose("xmlescape", ["obj"], ul4._xmlescape),
 	csv: ul4.expose("csv", ["obj"], ul4._csv),
 	chr: ul4.expose("chr", ["i"], ul4._chr),
@@ -5509,9 +4891,9 @@ ul4.functions = {
 	bin: ul4.expose("bin", ["number"], ul4._bin),
 	min: ul4.expose("min", ["*obj"], ul4._min),
 	max: ul4.expose("max", ["*obj"], ul4._max),
-	sum: ul4.expose("sum", ["iterable", ["start", 0]], ul4._sum),
-	first: ul4.expose("first", ["iterable", ["default", null]], ul4._first),
-	last: ul4.expose("last", ["iterable", ["default", null]], ul4._last),
+	sum: ul4.expose("sum", ["iterable", "start=", 0], ul4._sum),
+	first: ul4.expose("first", ["iterable", "default=", null], ul4._first),
+	last: ul4.expose("last", ["iterable", "default=", null], ul4._last),
 	sorted: ul4.expose("sorted", ["iterable"], ul4._sorted),
 	range: ul4.expose("range", ["*args"], ul4._range),
 	slice: ul4.expose("slice", ["*args"], ul4._slice),
@@ -5521,7 +4903,7 @@ ul4.functions = {
 	random: ul4.expose("random", [], ul4._random),
 	randrange: ul4.expose("randrange", ["*args"], ul4._randrange),
 	randchoice: ul4.expose("randchoice", ["sequence"], ul4._randchoice),
-	round: ul4.expose("round", ["x", ["digits", 0]], ul4._round)
+	round: ul4.expose("round", ["x", "digit=", 0], ul4._round)
 };
 
 // Functions implementing UL4 methods
@@ -5988,84 +5370,675 @@ ul4._update = function(obj, others, kwargs)
 	return null;
 };
 
-(function(){
-	var classes = [
-		"Location",
-		"Text",
-		"Const",
-		"List",
-		"ListComp",
-		"Dict",
-		"DictComp",
-		"Set",
-		"SetComp",
-		"GenExpr",
-		"Var",
-		"Not",
-		"Neg",
-		"BitNot",
-		"If",
-		"Return",
-		"Print",
-		"PrintX",
-		"Item",
-		"EQ",
-		"NE",
-		"LT",
-		"LE",
-		"GT",
-		"GE",
-		"NotContains",
-		"Contains",
-		"Add",
-		"Sub",
-		"Mul",
-		"FloorDiv",
-		"TrueDiv",
-		"Mod",
-		"ShiftLeft",
-		"ShiftRight",
-		"BitAnd",
-		"BitXOr",
-		"BitOr",
-		"And",
-		"Or",
-		"Slice",
-		"Attr",
-		"Call",
-		"SetVar",
-		"AddVar",
-		"SubVar",
-		"MulVar",
-		"TrueDivVar",
-		"FloorDivVar",
-		"ModVar",
-		"ShiftLeftVar",
-		"ShiftRightVar",
-		"BitAndVar",
-		"BitXOrVar",
-		"BitOrVar",
-		"ForBlock",
-		"WhileBlock",
-		"Break",
-		"Continue",
-		"CondBlock",
-		"IfBlock",
-		"ElIfBlock",
-		"ElseBlock",
-		"Template"
-	];
-
-	for (var i = 0; i < classes.length; ++i)
+ul4.Color = ul4._inherit(
+	ul4.Proto,
 	{
-		var name = classes[i];
-		var ul4onname = name.toLowerCase();
-		var object = ul4[name];
-		object.name = name;
-		object.type = ul4onname;
-		ul4on.register("de.livinglogic.ul4." + ul4onname, object);
+		__type__: "color",
+
+		create: function(r, g, b, a)
+		{
+			var c = ul4._clone(this);
+			c._r = typeof(r) !== "undefined" ? r : 0;
+			c._g = typeof(g) !== "undefined" ? g : 0;
+			c._b = typeof(b) !== "undefined" ? b : 0;
+			c._a = typeof(a) !== "undefined" ? a : 255;
+			return c;
+		},
+
+		__repr__: function()
+		{
+			var r = ul4._lpad(this._r.toString(16), "0", 2);
+			var g = ul4._lpad(this._g.toString(16), "0", 2);
+			var b = ul4._lpad(this._b.toString(16), "0", 2);
+			var a = ul4._lpad(this._a.toString(16), "0", 2);
+			if (this._a !== 0xff)
+			{
+				if (r[0] === r[1] && g[0] === g[1] && b[0] === b[1] && a[0] === a[1])
+					return "#" + r[0] + g[0] + b[0] + a[0];
+				else
+					return "#" + r + g + b + a;
+			}
+			else
+			{
+				if (r[0] === r[1] && g[0] === g[1] && b[0] === b[1])
+					return "#" + r[0] + g[0] + b[0];
+				else
+					return "#" + r + g + b;
+			}
+		},
+
+		__str__: function()
+		{
+			if (this._a !== 0xff)
+			{
+				return "rgba(" + this._r + ", " + this._g + ", " + this._b + ", " + (this._a/255) + ")";
+			}
+			else
+			{
+				var r = ul4._lpad(this._r.toString(16), "0", 2);
+				var g = ul4._lpad(this._g.toString(16), "0", 2);
+				var b = ul4._lpad(this._b.toString(16), "0", 2);
+				var a = ul4._lpad(this._a.toString(16), "0", 2);
+				if (r[0] === r[1] && g[0] === g[1] && b[0] === b[1])
+					return "#" + r[0] + g[0] + b[0];
+				else
+					return "#" + r + g + b;
+			}
+		},
+
+		__iter__: function()
+		{
+			return {
+				obj: this,
+				index: 0,
+				next: function() {
+					if (this.index == 0)
+					{
+						++this.index;
+						return {value: this.obj._r, done: false};
+					}
+					else if (this.index == 1)
+					{
+						++this.index;
+						return {value: this.obj._g, done: false};
+					}
+					else if (this.index == 2)
+					{
+						++this.index;
+						return {value: this.obj._b, done: false};
+					}
+					else if (this.index == 3)
+					{
+						++this.index;
+						return {value: this.obj._a, done: false};
+					}
+					else
+						return {done: true};
+				}
+			};
+		},
+
+		__getattr__: function(attrname)
+		{
+			var object = this;
+			switch (attrname)
+			{
+				case "r":
+					return ul4.expose("r", [], function(){ return object._r; });
+				case "g":
+					return ul4.expose("g", [], function(){ return object._g; });
+				case "b":
+					return ul4.expose("b", [], function(){ return object._b; });
+				case "a":
+					return ul4.expose("a", [], function(){ return object._a; });
+				case "lum":
+					return ul4.expose("lum", [], function(){ return object.lum(); });
+				case "hls":
+					return ul4.expose("hls", [], function(){ return object.hls(); });
+				case "hlsa":
+					return ul4.expose("hlsa", [], function(){ return object.hlsa(); });
+				case "hsv":
+					return ul4.expose("hsv", [], function(){ return object.hsv(); });
+				case "hsva":
+					return ul4.expose("hsva", [], function(){ return object.hsva(); });
+				case "witha":
+					return ul4.expose("witha", ["a"], function(a){ return object.witha(a); });
+				case "withlum":
+					return ul4.expose("withlum", ["lum"], function(lum){ return object.withlum(lum); });
+				case "abslum":
+					return ul4.expose("abslum", ["lum"], function(lum){ return object.abslum(lum); });
+				case "rellum":
+					return ul4.expose("rellum", ["lum"], function(lum){ return object.rellum(lum); });
+				default:
+					return ul4.undefined;
+			}
+		},
+
+		__getitem__: function(key)
+		{
+			var orgkey = key;
+			if (key < 0)
+				key += 4;
+			switch (key)
+			{
+				case 0:
+					return this._r;
+				case 1:
+					return this._g;
+				case 2:
+					return this._b;
+				case 3:
+					return this._a;
+				default:
+					return undefined;
+			}
+		},
+
+		r: ul4.expose("r", [],
+			function()
+			{
+				return this._r;
+			}
+		),
+
+		g: ul4.expose("g", [],
+			function()
+			{
+				return this._g;
+			}
+		),
+
+		b: ul4.expose("b", [],
+			function()
+			{
+				return this._b;
+			}
+		),
+
+		a: ul4.expose("a", [],
+			function()
+			{
+				return this._a;
+			}
+		),
+
+		lum: ul4.expose("lum", [],
+			function()
+			{
+				return this.hls()[1];
+			}
+		),
+
+		hls: ul4.expose("hls", [],
+			function()
+			{
+				var r = this._r/255.0;
+				var g = this._g/255.0;
+				var b = this._b/255.0;
+				var maxc = Math.max(r, g, b);
+				var minc = Math.min(r, g, b);
+				var h, l, s;
+				var rc, gc, bc;
+
+				l = (minc+maxc)/2.0;
+				if (minc == maxc)
+					return [0.0, l, 0.0];
+				if (l <= 0.5)
+					s = (maxc-minc) / (maxc+minc);
+				else
+					s = (maxc-minc) / (2.0-maxc-minc);
+				rc = (maxc-r) / (maxc-minc);
+				gc = (maxc-g) / (maxc-minc);
+				bc = (maxc-b) / (maxc-minc);
+				if (r == maxc)
+					h = bc-gc;
+				else if (g == maxc)
+					h = 2.0+rc-bc;
+				else
+					h = 4.0+gc-rc;
+				h = (h/6.0) % 1.0;
+				return [h, l, s];
+			}
+		),
+
+		hlsa: ul4.expose("hlsa", [],
+			function()
+			{
+				var hls = this.hls();
+				return hls.concat(this._a/255.0);
+			}
+		),
+
+		hsv: ul4.expose("hsv", [],
+			function()
+			{
+				var r = this._r/255.0;
+				var g = this._g/255.0;
+				var b = this._b/255.0;
+				var maxc = Math.max(r, g, b);
+				var minc = Math.min(r, g, b);
+				var v = maxc;
+				if (minc == maxc)
+					return [0.0, 0.0, v];
+				var s = (maxc-minc) / maxc;
+				var rc = (maxc-r) / (maxc-minc);
+				var gc = (maxc-g) / (maxc-minc);
+				var bc = (maxc-b) / (maxc-minc);
+				var h;
+				if (r == maxc)
+					h = bc-gc;
+				else if (g == maxc)
+					h = 2.0+rc-bc;
+				else
+					h = 4.0+gc-rc;
+				h = (h/6.0) % 1.0;
+				return [h, s, v];
+			}
+		),
+
+		hsva: ul4.expose("hsva", [],
+			function()
+			{
+				var hsv = this.hsv();
+				return hsv.concat(this._a/255.0);
+			}
+		),
+
+		witha: ul4.expose("witha", ["a"],
+			function(a)
+			{
+				if (typeof(a) !== "number")
+					throw "witha() requires a number";
+				return ul4.Color.create(this._r, this._g, this._b, a);
+			}
+		),
+
+		withlum: ul4.expose("withlum", ["lum"],
+			function(lum)
+			{
+				if (typeof(lum) !== "number")
+					throw "witha() requires a number";
+				var hlsa = this.hlsa();
+				return ul4._hls(hlsa[0], lum, hlsa[2], hlsa[3]);
+			}
+		)
 	}
-})();
+);
+
+ul4.TimeDelta = ul4._inherit(
+	ul4.Proto,
+	{
+		__type__: "timedelta",
+
+		create: function(days, seconds, microseconds)
+		{
+			var td = ul4._clone(this);
+			if (typeof(days) === "undefined")
+				days = 0;
+			if (typeof(seconds) === "undefined")
+				seconds = 0;
+			if (typeof(microseconds) === "undefined")
+				microseconds = 0;
+
+			var total_microseconds = Math.floor((days * 86400 + seconds)*1000000 + microseconds);
+
+			microseconds = ul4.ModAST._do(total_microseconds, 1000000);
+			var total_seconds = Math.floor(total_microseconds / 1000000);
+			seconds = ul4.ModAST._do(total_seconds, 86400);
+			days = Math.floor(total_seconds / 86400);
+			if (seconds < 0)
+			{
+				seconds += 86400;
+				--days;
+			}
+
+			td._microseconds = microseconds;
+			td._seconds = seconds;
+			td._days = days;
+
+			return td;
+		},
+
+		__repr__: function()
+		{
+			if (!this._microseconds)
+			{
+				if (!this._seconds)
+				{
+					if (!this._days)
+						return "timedelta()";
+					return "timedelta(" + this._days + ")";
+				}
+				return "timedelta(" + this._days + ", " + this._seconds + ")";
+			}
+			return "timedelta(" + this._days + ", " + this._seconds + ", " + this._microseconds + ")";
+		},
+
+		__str__: function()
+		{
+			var v = [];
+			if (this._days)
+			{
+				v.push(this._days + " day");
+				if (this._days !== -1 && this._days !== 1)
+					v.push("s");
+				v.push(", ");
+			}
+			var seconds = this._seconds % 60;
+			var minutes = Math.floor(this._seconds / 60);
+			var hours = Math.floor(minutes / 60);
+			minutes = minutes % 60;
+
+			v.push("" + hours);
+			v.push(":");
+			v.push(ul4._lpad(minutes.toString(), "0", 2));
+			v.push(":");
+			v.push(ul4._lpad(seconds.toString(), "0", 2));
+			if (this._microseconds)
+			{
+				v.push(".");
+				v.push(ul4._lpad(this._microseconds.toString(), "0", 6));
+			}
+			return v.join("");
+		},
+
+		__bool__: function()
+		{
+			return this._days !== 0 || this._seconds !== 0 || this._microseconds !== 0;
+		},
+
+		__abs__: function()
+		{
+			return this._days < 0 ? ul4.TimeDelta.create(-this._days, -this._seconds, -this._microseconds) : this;
+		},
+
+		__eq__: function(other)
+		{
+			if (ul4._istimedelta(other))
+				return (this._days === other._days) && (this._seconds === other._seconds) && (this._microseconds === other._microseconds);
+			return false;
+		},
+
+		__lt__: function(other)
+		{
+			if (ul4._istimedelta(other))
+			{
+				if (this._days < other._days)
+					return true;
+				if (this._days > other._days)
+					return false;
+				if (this._seconds < other._seconds)
+					return true;
+				if (this._seconds > other._seconds)
+					return false;
+				return this._microseconds < other._microseconds;
+			}
+			throw "unorderable types: " + ul4._type(this) + "() >=< " + ul4._type(other) + "()";
+		},
+
+		__neg__: function()
+		{
+			return ul4.TimeDelta.create(-this._days, -this._seconds, -this._microseconds);
+		},
+
+		_add: function(date, days, seconds, microseconds)
+		{
+			var year = date.getFullYear();
+			var month = date.getMonth();
+			var day = date.getDate() + days;
+			var hour = date.getHours();
+			var minute = date.getMinutes();
+			var second = date.getSeconds() + seconds;
+			var millisecond = date.getMilliseconds() + microseconds/1000;
+			return new Date(year, month, day, hour, minute, second, millisecond);
+		},
+
+		__add__: function(other)
+		{
+			if (ul4._istimedelta(other))
+				return ul4.TimeDelta.create(this._days + other._days, this._seconds + other._seconds, this._microseconds + other._microseconds);
+			else if (ul4._isdate(other))
+				return this._add(other, this._days, this._seconds, this._microseconds);
+			throw ul4._type(this) + " + " + ul4._type(other) + " not supported";
+		},
+
+		__radd__: function(other)
+		{
+			if (ul4._isdate(other))
+				return this._add(other, this._days, this._seconds, this._microseconds);
+			throw ul4._type(this) + " + " + ul4._type(other) + " not supported";
+		},
+
+		__sub__: function(other)
+		{
+			if (ul4._istimedelta(other))
+				return ul4.TimeDelta.create(this._days - other._days, this._seconds - other._seconds, this._microseconds - other._microseconds);
+			throw ul4._type(this) + " - " + ul4._type(other) + " not supported";
+		},
+
+		__rsub__: function(other)
+		{
+			if (ul4._isdate(other))
+				return this._add(other, -this._days, -this._seconds, -this._microseconds);
+			throw ul4._type(this) + " - " + ul4._type(other) + " not supported";
+		},
+
+		__mul__: function(other)
+		{
+			if (typeof(other) === "number")
+			{
+				return ul4.TimeDelta.create(this._days * other, this._seconds * other, this._microseconds * other);
+			}
+			throw ul4._type(this) + " * " + ul4._type(other) + " not supported";
+		},
+
+		__rmul__: function(other)
+		{
+			if (typeof(other) === "number")
+			{
+				return ul4.TimeDelta.create(this._days * other, this._seconds * other, this._microseconds * other);
+			}
+			throw ul4._type(this) + " * " + ul4._type(other) + " not supported";
+		},
+
+		__truediv__: function(other)
+		{
+			if (typeof(other) === "number")
+			{
+				return ul4.TimeDelta.create(this._days / other, this._seconds / other, this._microseconds / other);
+			}
+			else if (ul4._istimedelta(other))
+			{
+				var myValue = this._days;
+				var otherValue = other._days;
+				var hasSeconds = this._seconds || other._seconds;
+				var hasMicroseconds = this._microseconds || other._microseconds;
+				if (hasSeconds || hasMicroseconds)
+				{
+					myValue = myValue*86400+this._seconds;
+					otherValue = otherValue*86400 + other._seconds;
+					if (hasMicroseconds)
+					{
+						myValue = myValue * 1000000 + this._microseconds;
+						otherValue = otherValue * 1000000 + other._microseconds;
+					}
+				}
+				return myValue/otherValue;
+			}
+			throw ul4._type(this) + " / " + ul4._type(other) + " not supported";
+		},
+
+		__getattr__: function(attrname)
+		{
+			var object = this;
+			switch (attrname)
+			{
+				case "days":
+					return ul4.expose("days", [], function(){ return object._days; });
+				case "seconds":
+					return ul4.expose("seconds", [], function(){ return object._seconds; });
+				case "microseconds":
+					return ul4.expose("microseconds", [], function(){ return object._microseconds; });
+				default:
+					return ul4.undefined;
+			}
+		},
+
+		days: function()
+		{
+			return this._days;
+		},
+
+		seconds: function()
+		{
+			return this._seconds;
+		},
+
+		microseconds: function()
+		{
+			return this._microseconds;
+		}
+	}
+);
+
+ul4.MonthDelta = ul4._inherit(
+	ul4.Proto,
+	{
+		__type__: "monthdelta",
+
+		create: function(months)
+		{
+			var md = ul4._clone(this);
+			md._months = typeof(months) !== "undefined" ? months : 0;
+			return md;
+		},
+
+		__repr__: function()
+		{
+			if (!this._months)
+				return "monthdelta()";
+			return "monthdelta(" + this._months + ")";
+		},
+
+		__str__: function()
+		{
+			if (this._months)
+			{
+				if (this._months !== -1 && this._months !== 1)
+					return this._months + " months";
+				return this._months + " month";
+			}
+			return "0 months";
+		},
+
+		__bool__: function()
+		{
+			return this._months !== 0;
+		},
+
+		__abs__: function()
+		{
+			return this._months < 0 ? ul4.MonthDelta.create(-this._months) : this;
+		},
+
+		__eq__: function(other)
+		{
+			if (ul4._ismonthdelta(other))
+				return this._months === other._months;
+			return false;
+		},
+
+		__lt__: function(other)
+		{
+			if (ul4._ismonthdelta(other))
+				return this._months < other._months;
+			throw "unorderable types: " + ul4._type(this) + "() >=< " + ul4._type(other) + "()";
+		},
+
+		__neg__: function()
+		{
+			return ul4.MonthDelta.create(-this._months);
+		},
+
+		_add: function(date, months)
+		{
+			var year = date.getFullYear();
+			var month = date.getMonth() + months;
+			var day = date.getDate();
+			var hour = date.getHours();
+			var minute = date.getMinutes();
+			var second = date.getSeconds();
+			var millisecond = date.getMilliseconds();
+
+			while (true)
+			{
+				// As the month might be out of bounds, we have to find out, what the real target month is
+				var targetmonth = new Date(year, month, 1, hour, minute, second, millisecond).getMonth();
+				var result = new Date(year, month, day, hour, minute, second, millisecond);
+				if (result.getMonth() === targetmonth)
+					return result;
+				--day;
+			}
+		},
+
+		__add__: function(other)
+		{
+			if (ul4._ismonthdelta(other))
+				return ul4.MonthDelta.create(this._months + other._months);
+			else if (ul4._isdate(other))
+				return this._add(other, this._months);
+			throw ul4._type(this) + " + " + ul4._type(other) + " not supported";
+		},
+
+		__radd__: function(other)
+		{
+			if (ul4._isdate(other))
+				return this._add(other, this._months);
+			throw ul4._type(this) + " + " + ul4._type(other) + " not supported";
+		},
+
+		__sub__: function(other)
+		{
+			if (ul4._ismonthdelta(other))
+				return ul4.MonthDelta.create(this._months - other._months);
+			throw ul4._type(this) + " - " + ul4._type(other) + " not supported";
+		},
+
+		__rsub__: function(other)
+		{
+			if (ul4._isdate(other))
+				return this._add(other, -this._months);
+			throw ul4._type(this) + " - " + ul4._type(other) + " not supported";
+		},
+
+		__mul__: function(other)
+		{
+			if (typeof(other) === "number")
+				return ul4.MonthDelta.create(this._months * Math.floor(other));
+			throw ul4._type(this) + " * " + ul4._type(other) + " not supported";
+		},
+
+		__rmul__: function(other)
+		{
+			if (typeof(other) === "number")
+				return ul4.MonthDelta.create(this._months * Math.floor(other));
+			throw ul4._type(this) + " * " + ul4._type(other) + " not supported";
+		},
+
+		__floordiv__: function(other)
+		{
+			if (typeof(other) === "number")
+				return ul4.MonthDelta.create(Math.floor(this._months / other));
+			else if (ul4._ismonthdelta(other))
+				return Math.floor(this._months / other._months);
+			throw ul4._type(this) + " // " + ul4._type(other) + " not supported";
+		},
+
+		__truediv__: function(other)
+		{
+			if (ul4._ismonthdelta(other))
+				return this._months / other._months;
+			throw ul4._type(this) + " / " + ul4._type(other) + " not supported";
+		},
+
+		__getattr__: function(attrname)
+		{
+			var object = this;
+			switch (attrname)
+			{
+				case "months":
+					return ul4.expose("months", [], function(){ return object._months; });
+				default:
+					return ul4.undefined;
+			}
+		},
+
+		months: function()
+		{
+			return this._months;
+		}
+	}
+);
 
 // When we don't have a real ``Set`` type, emulate one that supports strings
 ul4._Set = ul4._inherit(
@@ -6137,3 +6110,85 @@ ul4._Set = ul4._inherit(
 		}
 	}
 );
+
+(function(){
+	var classes = [
+		"Location",
+		"TextAST",
+		"ConstAST",
+		"ListAST",
+		"ListCompAST",
+		"DictAST",
+		"DictCompAST",
+		"SetAST",
+		"SetCompAST",
+		"GenExprAST",
+		"VarAST",
+		"NotAST",
+		"NegAST",
+		"BitNotAST",
+		"IfAST",
+		"ReturnAST",
+		"PrintAST",
+		"PrintXAST",
+		"ItemAST",
+		"EQAST",
+		"NEAST",
+		"LTAST",
+		"LEAST",
+		"GTAST",
+		"GEAST",
+		"NotContainsAST",
+		"ContainsAST",
+		"AddAST",
+		"SubAST",
+		"MulAST",
+		"FloorDivAST",
+		"TrueDivAST",
+		"ModAST",
+		"ShiftLeftAST",
+		"ShiftRightAST",
+		"BitAndAST",
+		"BitXOrAST",
+		"BitOrAST",
+		"AndAST",
+		"OrAST",
+		"SliceAST",
+		"AttrAST",
+		"CallAST",
+		"SetVarAST",
+		"AddVarAST",
+		"SubVarAST",
+		"MulVarAST",
+		"TrueDivVarAST",
+		"FloorDivVarAST",
+		"ModVarAST",
+		"ShiftLeftVarAST",
+		"ShiftRightVarAST",
+		"BitAndVarAST",
+		"BitXOrVarAST",
+		"BitOrVarAST",
+		"ForBlockAST",
+		"WhileBlockAST",
+		"BreakAST",
+		"ContinueAST",
+		"CondBlockAST",
+		"IfBlockAST",
+		"ElIfBlockAST",
+		"ElseBlockAST",
+		"Template"
+	];
+
+	for (var i = 0; i < classes.length; ++i)
+	{
+		var name = classes[i];
+		var ul4onname = name;
+		if (ul4onname.substr(ul4onname.length-3) === "AST")
+			ul4onname = ul4onname.substr(0, ul4onname.length-3);
+		ul4onname = ul4onname.toLowerCase();
+		var object = ul4[name];
+		object.name = name;
+		object.type = ul4onname;
+		ul4on.register("de.livinglogic.ul4." + ul4onname, object);
+	}
+})();
