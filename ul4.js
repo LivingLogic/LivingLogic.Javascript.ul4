@@ -1,5 +1,4 @@
 /*!
-
  * UL4 JavaScript Library
  * http://www.livinglogic.de/Python/ul4c/
  *
@@ -96,22 +95,57 @@ ul4._map2object = function(obj)
 
 ul4._call = function(f, out, args)
 {
+	var context, finalargs;
 	if (typeof(f) === "function")
-	{
-		args = f._ul4_signature.bind(f._ul4_name, args);
-		if (f._ul4_needsout)
-			args = [out].concat(args);
-		return f.apply(ul4, args);
-	}
+		context = ul4; // Use ``ul4`` as the function context.
 	else if (f && typeof(f.__call__) === "function")
 	{
-		args = f.__call__._ul4_signature.bind(f.__call__._ul4_name, args);
-		if (f.__call__._ul4_needsout)
-			args = [out].concat(args);
-		return f.__call__.apply(f, args); // Use the object as the function context.
+		context = f; // Use the object as the function context.
+		f = f.__call__;
 	}
 	else
 		throw ul4._repr(f) + " is not callable!";
+
+	if (f._ul4_callwithobject)
+	{
+		if (f._ul4_signature === null)
+		{
+			finalargs = {};
+			for (var i = 0; i < args.length; ++i)
+			{
+				var argname = args[i][0];
+				var argvalue = args[i][1];
+				if (argname === null)
+					throw ul4._repr(f) + " doesn't support positional arguments!";
+				else if (argname === "*")
+					throw ul4._repr(f) + " doesn't support a * argument!";
+				else if (argname === "**")
+				{
+					if (ul4._ismap(argvalue))
+					{
+						argvalue.forEach(function(value, key){
+							finalargs[key] = value;
+						});
+					}
+					else
+						ul4._extend(finalargs, argvalue);
+				}
+				finalargs[argname] = argvalue;
+			}
+			finalargs = [finalargs];
+		}
+		else
+			finalargs = [f._ul4_signature.bindObject(f._ul4_name, args)];
+	}
+	else
+	{
+		if (f._ul4_signature === null)
+			throw ul4._repr(f) + " doesn't support positional arguments!";
+		finalargs = f._ul4_signature.bindArray(f._ul4_name, args);
+	}
+	if (f._ul4_needsout)
+		finalargs = [out].concat(finalargs);
+	return f.apply(context, finalargs);
 };
 
 ul4._shape = function(value)
@@ -1636,32 +1670,32 @@ ul4.Signature = ul4._inherit(
 		},
 
 		// Create the argument array for calling a function with this signature with the arguments available from ``args``
-		bind: function(name, args)
+		bindArray: function(name, args)
 		{
 			var realargs = [];
 			var realkwargs = {};
 
 			for (var i = 0; i < args.length; ++i)
 			{
-				var name = args[i][0];
-				var arg = args[i][1];
-				if (name === null)
-					realargs.push(arg);
-				else if (name === "*")
-					realargs = realargs.concat(arg);
-				else if (name === "**")
+				var argname = args[i][0];
+				var argvalue = args[i][1];
+				if (argname === null)
+					realargs.push(argvalue);
+				else if (argname === "*")
+					realargs = realargs.concat(argvalue);
+				else if (argname === "**")
 				{
-					if (ul4._ismap(arg))
+					if (ul4._ismap(argvalue))
 					{
-						arg.forEach(function(value, key){
+						argvalue.forEach(function(value, key){
 							realkwargs[key] = value;
 						});
 					}
 					else
-						ul4._extend(realkwargs, arg);
+						ul4._extend(realkwargs, argvalue);
 				}
 				else
-					realkwargs[name] = arg;
+					realkwargs[argname] = argvalue;
 			}
 
 			var finalargs = [];
@@ -1673,7 +1707,7 @@ ul4.Signature = ul4._inherit(
 				if (typeof(realkwargs[arg.name]) !== "undefined")
 				{
 					if (i < realargs.length)
-						throw name + "() argument " + ul4._repr(arg.name) + " (position " + i + ") specified multiple times";
+						throw (name !== null ? name + "() " : "") + "argument " + ul4._repr(arg.name) + " (position " + i + ") specified multiple times";
 					finalargs.push(realkwargs[arg.name]);
 				}
 				else
@@ -1681,7 +1715,7 @@ ul4.Signature = ul4._inherit(
 					if (i < realargs.length)
 						finalargs.push(realargs[i]);
 					else if (typeof(arg.defaultValue) === "undefined")
-						throw "required " + name + "() argument " + ul4._repr(arg.name) + " (position " + i + ") missing";
+						throw "required " + (name !== null ? name + "() " : "") + "argument " + ul4._repr(arg.name) + " (position " + i + ") missing";
 					else
 						finalargs.push(arg.defaultValue);
 				}
@@ -1692,7 +1726,12 @@ ul4.Signature = ul4._inherit(
 			{
 				// No, but we have them -> complain
 				if (realargs.length > this.args.length)
-					throw name + "() expects at most " + this.args.length + " positional argument" + (this.args.length != 1 ? "s" : "") + ", " + realargs.length + " given";
+				{
+					if (name === null)
+						throw "expected at most " + this.args.length + " positional argument" + (this.args.length != 1 ? "s" : "") + ", " + realargs.length + " given";
+					else
+						throw name + "() expects at most " + this.args.length + " positional argument" + (this.args.length != 1 ? "s" : "") + ", " + realargs.length + " given";
+				}
 			}
 			else
 			{
@@ -1707,7 +1746,12 @@ ul4.Signature = ul4._inherit(
 				for (var key in realkwargs)
 				{
 					if (!this.argNames[key])
-						throw name + "() doesn't support an argument named " + ul4._repr(key);
+					{
+						if (name === null)
+							throw "an argument named " + ul4._repr(key) + " isn't supported";
+						else
+							throw name + "() doesn't support an argument named " + ul4._repr(key);
+					}
 				}
 			}
 			else
@@ -1722,6 +1766,22 @@ ul4.Signature = ul4._inherit(
 				finalargs.push(remkwargs);
 			}
 			return finalargs;
+		},
+
+		// Create the argument object for calling a function with this signature with the arguments available from ``args``
+		bindObject: function(name, args)
+		{
+			args = this.bindArray(name, args);
+			var argObject = {};
+
+			for (var i = 0; i < this.args.length; ++i)
+				argObject[this.args[i].name] = args[i];
+			if (this.remkwargs !== null)
+				argObject[this.remkwargs] = args[args.length-1];
+			if (this.remargs !== null)
+				argObject[this.remargs] = args[args.length-(this.remkwargs !== null ? 2 : 1)];
+
+			return argObject;
 		},
 
 		toString: function()
@@ -1746,16 +1806,19 @@ ul4.Signature = ul4._inherit(
 );
 
 // Adds name and signature to a function/method and makes the method callable in templates
-ul4.expose = function(name, args, needsout, f)
+ul4.expose = function(name, signature, options, f)
 {
 	if (typeof(f) === "undefined")
 	{
-		f = needsout;
-		needsout = false;
+		f = options;
+		options = {};
 	}
 	f._ul4_name = name;
-	f._ul4_needsout = needsout || false;
-	f._ul4_signature = ul4.Signature.create.apply(ul4.Signature, args);
+	f._ul4_needsout = options.needsout || false;
+	f._ul4_callwithobject = options.callwithobject || false;
+	if (ul4._islist(signature))
+		signature = ul4.Signature.create.apply(ul4.Signature, signature);
+	f._ul4_signature = signature;
 
 	return f;
 };
@@ -3417,6 +3480,7 @@ ul4.AttrAST = ul4._inherit(
 							};
 							realresult._ul4_name = result._ul4_name;
 							realresult._ul4_needsout = result._ul4_needsout;
+							realresult._ul4_callwithobject = result._ul4_callwithobject;
 							realresult._ul4_signature = result._ul4_signature;
 							return realresult;
 						}
@@ -3981,6 +4045,7 @@ ul4.Template = ul4._inherit(
 			template.signature = signature;
 			template._jsfunction = null;
 			template._asts = null;
+			template.__call__ = ul4.expose(name, signature, {callwithobject: true}, function(vars){ return this._callbound(vars); });
 			return template;
 		},
 		ul4ondump: function(encoder)
@@ -3992,11 +4057,23 @@ ul4.Template = ul4._inherit(
 			encoder.dump(this.keepws);
 			encoder.dump(this.startdelim);
 			encoder.dump(this.enddelim);
-			if (this.signature === null)
-				signature = null;
+			if (this.signature === null || this.signature.isa(ul4.SignatureAST))
+				signature = this.signature;
 			else
 			{
 				signature = [];
+				for (var i = 0; i < this.signature.args.length; ++i)
+				{
+					var arg = this.signature.args[i];
+					if (typeof(arg.defaultValue) === "undefined")
+						signature.push(arg.name);
+					else
+						signature.push(arg.name+"=", arg.defaultValue);
+				}
+				if (this.signature.remargs !== null)
+					signature.push("*" + this.signature.remargs);
+				if (this.signature.remkwargs !== null)
+					signature.push("**" + this.signature.remkwargs);
 			}
 			encoder.dump(signature);
 			ul4.BlockAST.ul4ondump.call(this, encoder);
@@ -4014,8 +4091,8 @@ ul4.Template = ul4._inherit(
 			this.startdelim = decoder.load();
 			this.enddelim = decoder.load();
 			signature = decoder.load();
-			if (signature !== null)
-				signature = ul4.Signature.create.apply(ul4.Signature, signature)
+			if (ul4._islist(signature))
+				signature = ul4.Signature.create.apply(ul4.Signature, signature);
 			this.signature = signature;
 			ul4.BlockAST.ul4onload.call(this, decoder);
 		},
@@ -4034,7 +4111,12 @@ ul4.Template = ul4._inherit(
 		},
 		_jssource: function(out)
 		{
-			out.push("ul4.VarAST._set(vars, " + ul4._asjson(this.name) + ", ul4.TemplateClosure.create(self._getast(" + this.__id__ + "), vars))");
+			out.push("ul4.VarAST._set(vars, " + ul4._asjson(this.name) + ", ul4.TemplateClosure.create(self._getast(" + this.__id__ + "), ");
+			if (this.signature === null)
+				out.push("null");
+			else
+				this.signature._jssource(out);
+			out.push(", vars))");
 		},
 		_repr: function(out)
 		{
@@ -4086,15 +4168,27 @@ ul4.Template = ul4._inherit(
 			out.push(0);
 			return ul4._formatsource(out);
 		},
-		render: function(out, vars)
+		_renderbound: function(out, vars)
 		{
 			if (this._jsfunction === null)
 				this._jsfunction = eval(this._makesource());
-			this._jsfunction(this, out, vars || {});
+			this._jsfunction(this, out, vars);
+		},
+		render: function(out, vars)
+		{
+			vars = vars || {};
+			var realvars = (this.signature !== null) ? this.signature.bindObject(this.name, [["**", vars]]) : vars;
+			this._renderbound(out, realvars);
+		},
+		_rendersbound: function(vars)
+		{
+			var out = [];
+			this._renderbound(out, vars);
+			return out.join("");
 		},
 		renders: function(vars)
 		{
-			var out = []
+			var out = [];
 			this.render(out, vars);
 			return out.join("");
 		},
@@ -4120,34 +4214,113 @@ ul4.Template = ul4._inherit(
 				case "enddelim":
 					return this.enddelim;
 				case "render":
-					return ul4.expose("render", ["**vars"], true, function(out, vars){ return object.render(out, vars); });
+					return ul4.expose("render", this.signature, {needsout: true, callwithobject: true}, function(out, vars){ return object._renderbound(out, vars); });
 				case "renders":
-					return ul4.expose("renders", ["**vars"], function(vars){ return object.renders(vars); });
+					return ul4.expose("renders", this.signature, {callwithobject: true}, function(vars){ return object._rendersbound(vars); });
 				default:
 					return ul4.undefined;
 			}
 		},
-		call: function(vars)
+		_callbound: function(vars)
 		{
 			if (this._jsfunction === null)
 				this._jsfunction = eval(this._makesource());
 			var out = [];
-			return this._jsfunction(this, out, vars || {});
+			return this._jsfunction(this, out, vars);
 		},
-		__call__: ul4.expose(null, ["**vars"], function(vars){ return this.call(vars); }),
+		call: function(vars)
+		{
+			vars = vars || {};
+			var realvars = (this.signature !== null) ? this.signature.bindObject(this.name, [["**", vars]]) : vars;
+			return this._callbound(realvars);
+		},
 		__type__: "template" // used by ``istemplate()``
+	}
+);
+
+ul4.SignatureAST = ul4._inherit(
+	ul4.AST,
+	{
+		create: function(location, start, end)
+		{
+			var signature = ul4.AST.create.call(this, location, start, end);
+			signature.params = [];
+			return signature;
+		},
+		ul4ondump: function(encoder)
+		{
+			ul4.AST.ul4ondump.call(this, encoder);
+
+			var dump = [];
+
+			for (var i = 0; i < this.params.length; ++i)
+			{
+				var param = this.params[i];
+				if (param[1] === null)
+					dump.push(param[0]);
+				else
+					dump.push(param);
+			}
+			encoder.dump(dump);
+		},
+		ul4onload: function(decoder)
+		{
+			ul4.AST.ul4onload.call(this, decoder);
+			var dump = decoder.load();
+			this.params = [];
+			for (var i = 0; i < dump.length; ++i)
+			{
+				var param = dump[i];
+				if (typeof(param) === "string")
+					this.params.push([param, null]);
+				else
+					this.params.push(param);
+			}
+		},
+		_jssource: function(out)
+		{
+			out.push("ul4.Signature.create(");
+			for (var i = 0; i < this.params.length; ++i)
+			{
+				var param = this.params[i];
+				if (i)
+					out.push(", ");
+				if (param[1] === null)
+					out.push(ul4._repr(param[0]));
+				else
+				{
+					out.push(ul4._repr(param[0]+"="));
+					out.push(", ");
+					param[1]._jssource(out);
+				}
+			}
+			out.push(")");
+		},
+		_repr: function(out)
+		{
+			out.push("<");
+			out.push(this.name);
+			out.push(+1);
+			out.push("params=");
+			this.params._repr(out);
+			out.push(-1);
+			out.push(">");
+		}
 	}
 );
 
 ul4.TemplateClosure = ul4._inherit(
 	ul4.Proto,
 	{
-		create: function(template, vars)
+		create: function(template, signature, vars)
 		{
 			var closure = ul4._clone(this);
 			closure.template = template;
+			closure.signature = signature;
 			// Store a frozen copy of the current values of the parent template
 			closure.vars = ul4._extend({}, vars);
+			// We can't set ``__call__`` on ``ul4.TemplateClosure``, because we need the signature
+			closure.__call__ = ul4.expose(template.name, signature, {callwithobject: true}, function(vars){ return this._callbound(vars); });
 			// Copy over the required attribute from the template
 			closure.name = template.name;
 			closure.location = template.location;
@@ -4158,17 +4331,17 @@ ul4.TemplateClosure = ul4._inherit(
 			closure.content = template.content;
 			return closure;
 		},
-		render: function(out, vars)
+		_renderbound: function(out, vars)
 		{
-			this.template.render(out, ul4._simpleinherit(this.vars, vars));
+			this.template._renderbound(out, ul4._simpleinherit(this.vars, vars));
 		},
-		renders: function(vars)
+		_rendersbound: function(vars)
 		{
-			return this.template.renders(ul4._simpleinherit(this.vars, vars));
+			return this.template._rendersbound(ul4._simpleinherit(this.vars, vars));
 		},
-		call: function(vars)
+		_callbound: function(vars)
 		{
-			return this.template.call(ul4._simpleinherit(this.vars, vars));
+			return this.template._callbound(ul4._simpleinherit(this.vars, vars));
 		},
 		__getattr__: function(attrname)
 		{
@@ -4176,14 +4349,13 @@ ul4.TemplateClosure = ul4._inherit(
 			switch (attrname)
 			{
 				case "render":
-					return ul4.expose("render", ["**vars"], true, function(out, vars){ return object.render(out, vars); });
+					return ul4.expose("render", this.signature, {needsout: true, callwithobject: true}, function(out, vars){ return object._renderbound(out, vars); });
 				case "renders":
-					return ul4.expose("renders", ["**vars"], function(vars){ return object.renders(vars); });
+					return ul4.expose("renders", this.signature, {callwithobject: true}, function(vars){ return object._rendersbound(vars); });
 				default:
 					return this.template.__getattr__(attrname);
 			}
 		},
-		__call__: ul4.expose(null, ["**vars"], function(vars){ return this.call(vars); }),
 		__type__: "template" // used by ``istemplate()``
 	}
 );
@@ -4595,7 +4767,6 @@ ul4._enumerate = function(iterable, start)
 			return item.done ? item : {value: [this.index++, item.value], done: false};
 		}
 	};
-	return ul4._markiter(result);
 };
 
 // Return an iterator over ``[isfirst, item]`` lists from the iterable object ``iterable`` (``isfirst`` is true for the first item, false otherwise)
@@ -4833,8 +5004,8 @@ ul4._utcnow = function()
 };
 
 ul4.functions = {
-	print: ul4.expose("print", ["*args"], true, ul4._print),
-	printx: ul4.expose("printx", ["*args"], true, ul4._printx),
+	print: ul4.expose("print", ["*args"], {needsout: true}, ul4._print),
+	printx: ul4.expose("printx", ["*args"], {needsout: true}, ul4._printx),
 	repr: ul4.expose("repr", ["obj"], ul4._repr),
 	str: ul4.expose("str", ["obj=", ""], ul4._str),
 	int: ul4.expose("int", ["obj=", 0, "base=", null], ul4._int),
@@ -6176,6 +6347,7 @@ ul4._Set = ul4._inherit(
 		"IfBlockAST",
 		"ElIfBlockAST",
 		"ElseBlockAST",
+		"SignatureAST",
 		"Template"
 	];
 
