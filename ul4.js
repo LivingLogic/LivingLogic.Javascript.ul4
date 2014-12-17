@@ -28,7 +28,7 @@
 
 /*jslint vars: true */
 var ul4 = {
-	version: "31",
+	version: "32",
 
 	// REs for parsing JSON
 	_rvalidchars: /^[\],:{}\s]*$/,
