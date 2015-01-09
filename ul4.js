@@ -1845,12 +1845,12 @@ ul4.expose = function(name, signature, options, f)
 ul4.AST = ul4._inherit(
 	ul4.Proto,
 	{
-		create: function(location, start, end)
+		create: function(location, startpos, endpos)
 		{
 			var ast = ul4._clone(this);
 			ast.location = location;
-			ast.start = start;
-			ast.end = end;
+			ast.startpos = startpos;
+			ast.endpos = endpos;
 			return ast;
 		},
 		__str__: function()
@@ -1880,7 +1880,7 @@ ul4.AST = ul4._inherit(
 		},
 		_str: function(out)
 		{
-			out.push(this.location.source.substring(this.start, this.end).replace(/\r?\n/g, ' '));
+			out.push(this.location.source.substring(this.startpos, this.endpos).replace(/\r?\n/g, ' '));
 		},
 		_add2template: function(template)
 		{
@@ -1901,16 +1901,16 @@ ul4.AST = ul4._inherit(
 			throw "object is immutable";
 		},
 		// used in ul4ondump/ul4ondump to automatically dump these attributes
-		_ul4onattrs: ["location", "start", "end"]
+		_ul4onattrs: ["location", "startpos", "endpos"]
 	}
 );
 
 ul4.ConstAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end, value)
+		create: function(location, startpos, endpos, value)
 		{
-			var constant = ul4.AST.create.call(this, location, start, end);
+			var constant = ul4.AST.create.call(this, location, startpos, endpos);
 			constant.value = value;
 			return constant;
 		},
@@ -1931,9 +1931,9 @@ ul4.ConstAST = ul4._inherit(
 ul4.ListAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end)
+		create: function(location, startpos, endpos)
 		{
-			var list = ul4.AST.create.call(this, location, start, end);
+			var list = ul4.AST.create.call(this, location, startpos, endpos);
 			list.items = [];
 			return list;
 		},
@@ -1967,9 +1967,9 @@ ul4.ListAST = ul4._inherit(
 ul4.ListCompAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end, item, varname, container, condition)
+		create: function(location, startpos, endpos, item, varname, container, condition)
 		{
-			var listcomp = ul4.AST.create.call(this, location, start, end);
+			var listcomp = ul4.AST.create.call(this, location, startpos, endpos);
 			listcomp.item = item;
 			listcomp.varname = varname;
 			listcomp.container = container;
@@ -2039,9 +2039,9 @@ ul4.ListCompAST = ul4._inherit(
 ul4.DictAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end)
+		create: function(location, startpos, endpos)
 		{
-			var dict = ul4.AST.create.call(this, location, start, end);
+			var dict = ul4.AST.create.call(this, location, startpos, endpos);
 			dict.items = [];
 			return dict;
 		},
@@ -2097,9 +2097,9 @@ ul4.DictAST = ul4._inherit(
 ul4.DictCompAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end, key, value, varname, container, condition)
+		create: function(location, startpos, endpos, key, value, varname, container, condition)
 		{
-			var listcomp = ul4.AST.create.call(this, location, start, end);
+			var listcomp = ul4.AST.create.call(this, location, startpos, endpos);
 			listcomp.key = key;
 			listcomp.value = value;
 			listcomp.varname = varname;
@@ -2191,9 +2191,9 @@ ul4.DictCompAST = ul4._inherit(
 ul4.SetAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end)
+		create: function(location, startpos, endpos)
 		{
-			var set = ul4.AST.create.call(this, location, start, end);
+			var set = ul4.AST.create.call(this, location, startpos, endpos);
 			set.items = [];
 			return set;
 		},
@@ -2230,9 +2230,9 @@ ul4.SetAST = ul4._inherit(
 ul4.SetCompAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end, item, varname, container, condition)
+		create: function(location, startpos, endpos, item, varname, container, condition)
 		{
-			var setcomp = ul4.AST.create.call(this, location, start, end);
+			var setcomp = ul4.AST.create.call(this, location, startpos, endpos);
 			setcomp.item = item;
 			setcomp.container = container;
 			setcomp.condition = condition;
@@ -2303,9 +2303,9 @@ ul4.SetCompAST = ul4._inherit(
 ul4.GenExprAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end, item, varname, container, condition)
+		create: function(location, startpos, endpos, item, varname, container, condition)
 		{
-			var genexp = ul4.AST.create.call(this, location, start, end);
+			var genexp = ul4.AST.create.call(this, location, startpos, endpos);
 			genexp.item = item;
 			genexp.varname = varname;
 			genexp.container = container;
@@ -2388,9 +2388,9 @@ ul4.GenExprAST = ul4._inherit(
 ul4.VarAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end, name)
+		create: function(location, startpos, endpos, name)
 		{
-			var variable = ul4.AST.create.call(this, location, start, end);
+			var variable = ul4.AST.create.call(this, location, startpos, endpos);
 			variable.name = name;
 			return variable;
 		},
@@ -2446,9 +2446,9 @@ ul4.VarAST = ul4._inherit(
 ul4.UnaryAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end, obj)
+		create: function(location, startpos, endpos, obj)
 		{
-			var unary = ul4.AST.create.call(this, location, start, end);
+			var unary = ul4.AST.create.call(this, location, startpos, endpos);
 			unary.obj = obj;
 			return unary;
 		},
@@ -2513,9 +2513,9 @@ ul4.NotAST = ul4._inherit(
 ul4.IfAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end, objif, objcond, objelse)
+		create: function(location, startpos, endpos, objif, objcond, objelse)
 		{
-			var ifexpr = ul4.AST.create.call(this, location, start, end);
+			var ifexpr = ul4.AST.create.call(this, location, startpos, endpos);
 			ifexpr.objif = objif;
 			ifexpr.objcond = objcond;
 			ifexpr.objelse = objelse;
@@ -2627,9 +2627,9 @@ ul4.PrintXAST = ul4._inherit(
 ul4.BinaryAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end, obj1, obj2)
+		create: function(location, startpos, endpos, obj1, obj2)
 		{
-			var binary = ul4.AST.create.call(this, location, start, end);
+			var binary = ul4.AST.create.call(this, location, startpos, endpos);
 			binary.obj1 = obj1;
 			binary.obj2 = obj2;
 			return binary;
@@ -3303,9 +3303,9 @@ ul4.OrAST = ul4._inherit(
 ul4.AttrAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end, obj, attrname)
+		create: function(location, startpos, endpos, obj, attrname)
 		{
-			var attr = ul4.AST.create.call(this, location, start, end);
+			var attr = ul4.AST.create.call(this, location, startpos, endpos);
 			attr.obj = obj;
 			attr.attrname = attrname;
 			return attr;
@@ -3523,9 +3523,9 @@ ul4.AttrAST = ul4._inherit(
 ul4.CallAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end, obj, args)
+		create: function(location, startpos, endpos, obj, args)
 		{
-			var call = ul4.AST.create.call(this, location, start, end);
+			var call = ul4.AST.create.call(this, location, startpos, endpos);
 			call.obj = obj;
 			call.args = args;
 			return call;
@@ -3601,9 +3601,9 @@ ul4.slice = ul4._inherit(
 ul4.SliceAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end, index1, index2)
+		create: function(location, startpos, endpos, index1, index2)
 		{
-			var slice = ul4.AST.create.call(this, location, start, end);
+			var slice = ul4.AST.create.call(this, location, startpos, endpos);
 			slice.index1 = index1;
 			slice.index2 = index2;
 			return slice;
@@ -3649,9 +3649,9 @@ ul4.SliceAST = ul4._inherit(
 ul4.SetVarAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end, lvalue, value)
+		create: function(location, startpos, endpos, lvalue, value)
 		{
-			var changevar = ul4.AST.create.call(this, location, start, end);
+			var changevar = ul4.AST.create.call(this, location, startpos, endpos);
 			changevar.lvalue = lvalue;
 			changevar.value = value;
 			return changevar;
@@ -3741,9 +3741,9 @@ ul4.BitOrVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "BitOrAST" });
 ul4.BlockAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end)
+		create: function(location, startpos, endpos)
 		{
-			var block = ul4.AST.create.call(this, location, start, end);
+			var block = ul4.AST.create.call(this, location, startpos, endpos);
 			block.endlocation = null;
 			block.content = [];
 			return block;
@@ -3794,9 +3794,9 @@ ul4.BlockAST = ul4._inherit(
 ul4.ForBlockAST = ul4._inherit(
 	ul4.BlockAST,
 	{
-		create: function(location, start, end, varname, container)
+		create: function(location, startpos, endpos, varname, container)
 		{
-			var for_ = ul4.BlockAST.create.call(this, location, start, end);
+			var for_ = ul4.BlockAST.create.call(this, location, startpos, endpos);
 			for_.varname = varname;
 			for_.container = container;
 			return for_;
@@ -3869,9 +3869,9 @@ ul4.ForBlockAST = ul4._inherit(
 ul4.WhileBlockAST = ul4._inherit(
 	ul4.BlockAST,
 	{
-		create: function(location, start, end, condition)
+		create: function(location, startpos, endpos, condition)
 		{
-			var while_ = ul4.BlockAST.create.call(this, location, start, end);
+			var while_ = ul4.BlockAST.create.call(this, location, startpos, endpos);
 			while_.condition = condition;
 			return while_;
 		},
@@ -3961,9 +3961,9 @@ ul4.CondBlockAST = ul4._inherit(
 ul4.ConditionalBlockAST = ul4._inherit(
 	ul4.BlockAST,
 	{
-		create: function(location, start, end, condition)
+		create: function(location, startpos, endpos, condition)
 		{
-			var block = ul4.BlockAST.create.call(this, location, start, end);
+			var block = ul4.BlockAST.create.call(this, location, startpos, endpos);
 			block.condition = condition;
 			return block;
 		},
@@ -4046,9 +4046,9 @@ ul4.ElseBlockAST = ul4._inherit(
 ul4.Template = ul4._inherit(
 	ul4.BlockAST,
 	{
-		create: function(location, start, end, source, name, whitespace, startdelim, enddelim, signature)
+		create: function(location, startpos, endpos, source, name, whitespace, startdelim, enddelim, signature)
 		{
-			var template = ul4.BlockAST.create.call(this, location, start, end);
+			var template = ul4.BlockAST.create.call(this, location, startpos, endpos);
 			template.source = source;
 			template.name = name;
 			template.whitespace = whitespace;
@@ -4253,9 +4253,9 @@ ul4.Template = ul4._inherit(
 ul4.SignatureAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(location, start, end)
+		create: function(location, startpos, endpos)
 		{
-			var signature = ul4.AST.create.call(this, location, start, end);
+			var signature = ul4.AST.create.call(this, location, startpos, endpos);
 			signature.params = [];
 			return signature;
 		},
