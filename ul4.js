@@ -1505,34 +1505,6 @@ ul4._rpad = function(string, pad, len)
 	return string;
 };
 
-ul4._checkfuncargs = function(funcname, args, min, max)
-{
-	if (typeof(max) === "undefined")
-		max = min;
-	if (args.length < min || (max !== null && args.length > max))
-	{
-		if (min == max)
-			throw "function " + funcname + "() requires " + min + " argument" + (min!==1 ? "s" : "") + ", " + args.length + " given";
-		else if (max !== null)
-			throw "function " + funcname + "() requires " + min + "-" + max + " arguments, " + args.length + " given";
-		else
-			throw "function " + funcname + "() requires at least " + min + " argument" + (min!==1 ? "s" : "") + ", " + args.length + " given";
-	}
-};
-
-ul4._checkmethargs = function(methname, args, min, max)
-{
-	if (typeof(max) === "undefined")
-		max = min;
-	if ((args.length-1) < min || (args.length-1) > max)
-	{
-		if (min == max)
-			throw "method " + methname + "() requires " + min + " argument" + (min!==1 ? "s" : "") + ", " + (args.length-1) + " given";
-		else
-			throw "method " + methname + "() requires " + min + "-" + max + " arguments, " + (args.length-1) + " given";
-	}
-};
-
 ul4.Proto = {
 	__prototype__: null,
 	__id__: 0,
