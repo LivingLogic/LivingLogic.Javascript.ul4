@@ -28,7 +28,7 @@
 
 /*jslint vars: true */
 var ul4 = {
-	version: "32",
+	version: "33",
 
 	// REs for parsing JSON
 	_rvalidchars: /^[\],:{}\s]*$/,
@@ -1549,51 +1549,98 @@ ul4.Proto = {
 ul4.Location = ul4._inherit(
 	ul4.Proto,
 	{
-		create: function(root, source, type, starttag, endtag, startcode, endcode)
+		create: function(source, startpos, endpos)
 		{
 			var location = ul4._clone(this);
-			location.root = root;
 			location.source = source;
-			location.type = type;
-			location.starttag = starttag;
-			location.endtag = endtag;
-			location.startcode = startcode;
-			location.endcode = endcode;
-			// Unfortunately Javascript doesn't have what other languages call properties, so we must create real attributes here
-			if (typeof(source) !== "undefined")
-			{
-				location.tag = source.substring(starttag, endtag);
-				location.code = source.substring(startcode, endcode);
-			}
-			else
-			{
-				location.tag = null;
-				location.code = null;
-			}
+			location.startpos = startpos;
+			location.endpos = endpos;
+			location.text = typeof(source) !== "undefined" ? source.substring(startpos, endpos) : null;
 			return location;
 		},
 		ul4ondump: function(encoder)
 		{
-			encoder.dump(this.root);
 			encoder.dump(this.source);
-			encoder.dump(this.type);
-			encoder.dump(this.starttag);
-			encoder.dump(this.endtag);
-			encoder.dump(this.startcode);
-			encoder.dump(this.endcode);
+			encoder.dump(this.startpos);
+			encoder.dump(this.endpos);
 		},
 		ul4onload: function(decoder)
 		{
-			this.root = decoder.load();
 			this.source = decoder.load();
-			this.type = decoder.load();
-			this.starttag = decoder.load();
-			this.endtag = decoder.load();
-			this.startcode = decoder.load();
-			this.endcode = decoder.load();
+			this.startpos = decoder.load();
+			this.endpos = decoder.load();
+			this.text = this.source.substring(this.startpos, this.endpos);
+		}
+	}
+);
 
-			this.tag = this.source.substring(this.starttag, this.endtag);
-			this.code = this.source.substring(this.startcode, this.endcode);
+ul4.TextLocation = ul4._inherit(
+	ul4.Location,
+	{
+		create: function(source, startpos, endpos, text)
+		{
+			var location = ul4.Location.create.call(this, source, startpos, endpos);
+			// Create a "real" text attribute, as Safari doesn't support getters/setters
+			location._maketext(text);
+			return location;
+		},
+		_maketext: function(text)
+		{
+			if (typeof(this.source) !== "undefined")
+			{
+				if (text === null)
+					this.text = this.source.substring(this.startpos, this.endpos);
+				else
+					this.text = text;
+			}
+			else
+				this.text = null;
+		},
+		ul4ondump: function(encoder)
+		{
+			ul4.Location.ul4ondump.call(this, encoder);
+
+			if (this.text === this.source.substring(this.startpos, this.endpos))
+				encoder.dump(null);
+			else
+				encoder.dump(this.text);
+		},
+		ul4onload: function(decoder)
+		{
+			ul4.Location.ul4onload.call(this, decoder);
+			// Recreate ``text`` attribute
+			this._maketext(decoder.load());
+		}
+	}
+);
+
+ul4.TagLocation = ul4._inherit(
+	ul4.Location,
+	{
+		create: function(source, startpos, endpos, tag, startposcode, endposcode)
+		{
+			var location = ul4.Location.create.call(this, source, startpos, endpos);
+			location.tag = tag;
+			location.startposcode = startposcode;
+			location.endposcode = endposcode;
+			location.code = typeof(source) !== "undefined" ? source.substring(startposcode, endposcode) : null;
+			return location;
+		},
+		ul4ondump: function(encoder)
+		{
+			ul4.Location.ul4ondump.call(this, encoder);
+			encoder.dump(this.tag);
+			encoder.dump(this.startposcode);
+			encoder.dump(this.endposcode);
+		},
+		ul4onload: function(decoder)
+		{
+			ul4.Location.ul4onload.call(this, decoder);
+			this.tag = decoder.load();
+			this.startposcode = decoder.load();
+			this.endposcode = decoder.load();
+			// Recreate ``code`` attribute
+			this.code = this.source.substring(this.startposcode, this.endposcode);
 		}
 	}
 );
@@ -2507,28 +2554,21 @@ ul4.IfAST = ul4._inherit(
 ul4.TextAST = ul4._inherit(
 	ul4.AST,
 	{
-		text: function()
-		{
-			var text = this.location.code;
-			if (!this.location.root.keepws)
-				text = text.replace(/\r?\n\s*/g, "");
-			return text;
-		},
 		_jssource: function(out)
 		{
 			out.push("out.push(");
-			out.push(ul4._asjson(this.text()));
+			out.push(ul4._asjson(this.location.text));
 			out.push(")");
 		},
 		_str: function(out)
 		{
 			out.push("text ");
-			out.push(ul4._repr(this.text()));
+			out.push(ul4._repr(this.location.text));
 		},
 		_repr: function(out)
 		{
 			out.push("<TextAST ");
-			out.push(ul4._repr(this.text()));
+			out.push(ul4._repr(this.location.text));
 			out.push(">");
 		}
 	}
@@ -4006,12 +4046,12 @@ ul4.ElseBlockAST = ul4._inherit(
 ul4.Template = ul4._inherit(
 	ul4.BlockAST,
 	{
-		create: function(location, start, end, source, name, keepws, startdelim, enddelim, signature)
+		create: function(location, start, end, source, name, whitespace, startdelim, enddelim, signature)
 		{
 			var template = ul4.BlockAST.create.call(this, location, start, end);
 			template.source = source;
 			template.name = name;
-			template.keepws = keepws;
+			template.whitespace = whitespace;
 			template.startdelim = startdelim;
 			template.enddelim = enddelim;
 			template.signature = signature;
@@ -4026,7 +4066,7 @@ ul4.Template = ul4._inherit(
 			encoder.dump(ul4.version);
 			encoder.dump(this.source);
 			encoder.dump(this.name);
-			encoder.dump(this.keepws);
+			encoder.dump(this.whitespace);
 			encoder.dump(this.startdelim);
 			encoder.dump(this.enddelim);
 			if (this.signature === null || this.signature.isa(ul4.SignatureAST))
@@ -4059,7 +4099,7 @@ ul4.Template = ul4._inherit(
 				throw "invalid version, expected " + ul4.version + ", got " + version;
 			this.source = decoder.load();
 			this.name = decoder.load();
-			this.keepws = decoder.load();
+			this.whitespace = decoder.load();
 			this.startdelim = decoder.load();
 			this.enddelim = decoder.load();
 			signature = decoder.load();
@@ -4097,8 +4137,8 @@ ul4.Template = ul4._inherit(
 			out.push("name=");
 			out.push(ul4._repr(this.name));
 			out.push(0);
-			out.push("keepws=");
-			out.push(ul4._repr(this.keepws));
+			out.push("whitespace=");
+			out.push(ul4._repr(this.whitespace));
 			out.push(0);
 			if (this.startdelim !== "<?")
 			{
@@ -4179,8 +4219,8 @@ ul4.Template = ul4._inherit(
 					return this.source;
 				case "name":
 					return this.name;
-				case "keepws":
-					return this.keepws;
+				case "whitespace":
+					return this.whitespace;
 				case "startdelim":
 					return this.startdelim;
 				case "enddelim":
@@ -6256,7 +6296,8 @@ ul4._Set = ul4._inherit(
 
 (function(){
 	var classes = [
-		"Location",
+		"TextLocation",
+		"TagLocation",
 		"TextAST",
 		"ConstAST",
 		"ListAST",
