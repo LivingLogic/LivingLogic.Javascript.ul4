@@ -4194,6 +4194,7 @@ ul4.Template = ul4._inherit(
 			out.push(-1);
 			out.push("})");
 			out.push(0);
+			// Make generated Javascript debuggable in Firefox
 			out.push("//# sourceURL=" + (this.name ? this.name : "unnamed") + "-" + this.__id__ + "-" + (new Date().getTime()) + ".js");
 			out.push(0);
 			return ul4._formatsource(out);
