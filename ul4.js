@@ -3876,7 +3876,7 @@ ul4.ForBlockAST = ul4._inherit(
 			ul4.AST._str.call(this, out);
 			out.push(":");
 			out.push(+1);
-			ul4.Block._str.call(this, out);
+			ul4.BlockAST._str.call(this, out);
 			out.push(-1);
 		}
 	}
@@ -3921,7 +3921,7 @@ ul4.WhileBlockAST = ul4._inherit(
 			ul4.AST._str.call(this, out);
 			out.push(":");
 			out.push(+1);
-			ul4.Block._str.call(this, out);
+			ul4.BlockAST._str.call(this, out);
 			out.push(-1);
 		}
 	}
@@ -4017,7 +4017,7 @@ ul4.ConditionalBlockAST = ul4._inherit(
 			ul4.AST._str.call(this, out);
 			out.push(":");
 			out.push(+1);
-			ul4.Block._str.call(this, out);
+			ul4.BlockAST._str.call(this, out);
 			out.push(-1);
 		}
 	}
