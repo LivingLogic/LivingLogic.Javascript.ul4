@@ -2,8 +2,8 @@
  * UL4 JavaScript Library
  * http://www.livinglogic.de/Python/ul4c/
  *
- * Copyright 2011-2014 by LivingLogic AG, Bayreuth/Germany
- * Copyright 2011-2014 by Walter Dörwald
+ * Copyright 2011-2015 by LivingLogic AG, Bayreuth/Germany
+ * Copyright 2011-2015 by Walter Dörwald
  *
  * All Rights Reserved
  *
@@ -93,22 +93,13 @@ ul4._map2object = function(obj)
 	return obj;
 };
 
-ul4._call = function(f, out, args)
+// Call a function ``f`` with UL4 argument handling
+ul4._internal_call = function(context, f, functioncontext, signature, needscontext, needsobject, args)
 {
-	var context, finalargs;
-	if (typeof(f) === "function")
-		context = ul4; // Use ``ul4`` as the function context.
-	else if (f && typeof(f.__call__) === "function")
+	var finalargs;
+	if (needsobject)
 	{
-		context = f; // Use the object as the function context.
-		f = f.__call__;
-	}
-	else
-		throw ul4._repr(f) + " is not callable!";
-
-	if (f._ul4_callwithobject)
-	{
-		if (f._ul4_signature === null)
+		if (signature === null)
 		{
 			finalargs = {};
 			for (var i = 0; i < args.length; ++i)
@@ -135,33 +126,54 @@ ul4._call = function(f, out, args)
 			finalargs = [finalargs];
 		}
 		else
-			finalargs = [f._ul4_signature.bindObject(f._ul4_name, args)];
+			finalargs = [signature.bindObject(f._ul4_name, args)];
 	}
 	else
 	{
-		if (f._ul4_signature === null)
+		if (signature === null)
 			throw ul4._repr(f) + " doesn't support positional arguments!";
-		finalargs = f._ul4_signature.bindArray(f._ul4_name, args);
+		finalargs = signature.bindArray(f._ul4_name, args);
 	}
-	if (f._ul4_needsout)
-		finalargs = [out].concat(finalargs);
-	return f.apply(context, finalargs);
+	if (needscontext)
+		finalargs.unshift(context);
+	return f.apply(functioncontext, finalargs);
 };
 
-ul4._shape = function(value)
+ul4._callfunction = function(context, f, args)
 {
-	if (!ul4._islist(value))
-		return null;
-	var shape = [];
-	for (var i = 0; i < value.length; ++i)
-		shape.push(ul4._shape(value[i]));
-	return shape;
+	if (typeof(f._ul4_signature) === "undefined" || typeof(f._ul4_needsobject) === "undefined" || typeof(f._ul4_needscontext) === "undefined")
+		throw "function " + ul4._repr(f) + " is not callable by UL4!";
+	return ul4._internal_call(context, f, ul4, f._ul4_signature, f._ul4_needscontext, f._ul4_needsobject, args);
 }
 
-ul4._unpackvar = function(value, shape)
+ul4._callobject = function(context, obj, args)
 {
-	if (shape === null)
-		return value;
+	if (typeof(obj._ul4_callsignature) === "undefined" || typeof(obj._ul4_callneedsobject) === "undefined" || typeof(obj._ul4_callneedscontext) === "undefined")
+		throw "object " + ul4._repr(obj) + " is not callable by UL4!";
+	return ul4._internal_call(context, obj.__call__, obj, obj._ul4_callsignature, obj._ul4_callneedscontext, obj._ul4_callneedsobject, args);
+}
+
+ul4._callrender = function(context, obj, args)
+{
+	if (typeof(obj._ul4_rendersignature) === "undefined" || typeof(obj._ul4_renderneedsobject) === "undefined" || typeof(obj._ul4_renderneedscontext) === "undefined")
+		throw "object " + ul4._repr(obj) + " is not renderable by UL4!";
+	return ul4._internal_call(context, obj.__render__, obj, obj._ul4_rendersignature, obj._ul4_renderneedscontext, obj._ul4_renderneedsobject, args);
+}
+
+ul4._call = function(context, f, args)
+{
+	if (typeof(f) === "function")
+		return ul4._callfunction(context, f, args);
+	else if (f && typeof(f.__call__) === "function")
+		return ul4._callobject(context, f, args);
+	else
+		throw ul4._repr(f) + " is not callable!";
+}
+
+ul4._unpackvar = function(lvalue, value)
+{
+	if (!ul4._islist(lvalue))
+		return [[lvalue, value]];
 	else
 	{
 		var newvalue = [];
@@ -173,17 +185,17 @@ ul4._unpackvar = function(value, shape)
 
 			if (item.done)
 			{
-				if (i === shape.length)
+				if (i === lvalue.length)
 					break;
 				else
-					throw "mismatched variable unpacking: " + shape.length + " varnames, " + (i+1) + " items";
+					throw "mismatched variable unpacking: " + lvalue.length + " varnames, " + (i+1) + " items";
 			}
 			else
 			{
-				if (i < shape.length)
-					newvalue.push(ul4._unpackvar(item.value, shape[i]));
+				if (i < lvalue.length)
+					newvalue = newvalue.concat(ul4._unpackvar(lvalue[i], item.value));
 				else
-					throw "mismatched variable unpacking: " + shape.length + " varnames, >" + i + " items";
+					throw "mismatched variable unpacking: " + lvalue.length + " varnames, >" + i + " items";
 			}
 		}
 		return newvalue;
@@ -362,28 +374,6 @@ ul4._date_repr = function(obj)
 	result += ")";
 
 	return result;
-};
-
-ul4._print = function(out, args)
-{
-	for (var i = 0; i < args.length; ++i)
-	{
-		if (i)
-			out.push(" ");
-		out.push(ul4._str(args[i]));
-	}
-	return null;
-};
-
-ul4._printx = function(out, args)
-{
-	for (var i = 0; i < args.length; ++i)
-	{
-		if (i)
-			out.push(" ");
-		out.push(ul4._xmlescape(args[i]));
-	}
-	return null;
 };
 
 ul4._map_repr = function(obj)
@@ -1518,6 +1508,18 @@ ul4.Proto = {
 		return this.__prototype__.isa(type);
 	},
 
+	isprotoof: function(obj)
+	{
+		while (true)
+		{
+			if (obj === null || Object.prototype.toString.call(obj) !== "[object Object]" || typeof(obj.__prototype__) === "undefined")
+				return false;
+			if (obj === this)
+				return true;
+			obj = obj.__prototype__;
+		}
+	},
+
 	// To support comparison you only have to implement ``__eq__`` and ``__lt__``
 
 	__ne__: function(other)
@@ -1734,14 +1736,101 @@ ul4.expose = function(name, signature, options, f)
 		options = {};
 	}
 	f._ul4_name = name;
-	f._ul4_needsout = options.needsout || false;
-	f._ul4_callwithobject = options.callwithobject || false;
 	if (ul4._islist(signature))
 		signature = ul4.Signature.create.apply(ul4.Signature, signature);
 	f._ul4_signature = signature;
+	f._ul4_needsobject = options.needsobject || false;
+	f._ul4_needscontext = options.needscontext || false;
 
 	return f;
 };
+
+ul4.Context = ul4._inherit(
+	ul4.Proto,
+	{
+		create: function(vars)
+		{
+			if (vars === null || typeof(vars) === "undefined")
+				vars = {};
+			var context = ul4._clone(this);
+			context.vars = vars;
+			context.indents = [];
+			context._output = [];
+			return context;
+		},
+
+		/* Return a clone of the ``Context``, but with a fresh empty ``vars`` objects that inherits from the previous one.
+		 * This is used by the various comprehension to avoid leaking loop variables.
+		 */
+		inheritvars: function()
+		{
+			var context = ul4._clone(this);
+			context.vars = ul4._simpleclone(this.vars);
+			return context;
+		},
+
+		/* Return a clone of the ``Context`` with one additional indentation (this is used by ``RenderAST``) */
+		withindent: function(indent)
+		{
+			var context = ul4._clone(this);
+			if (indent !== null)
+			{
+				context.indents = this.indents.slice();
+				context.indents.push(indent);
+			}
+			return context;
+		},
+
+		/* Return a clone of the ``Context`` with the output buffer replaced (this is used by ``renders`` so collect the output in a separate buffer) */
+		replaceoutput: function()
+		{
+			var context = ul4._clone(this);
+			context._output = [];
+			return context;
+		},
+
+		clone: function(vars)
+		{
+			return ul4._clone(this);
+		},
+
+		output: function(value)
+		{
+			this._output.push(value);
+		},
+
+		getoutput: function()
+		{
+			return this._output.join("");
+		},
+
+		get: function(name)
+		{
+			return this.vars[name];
+		},
+
+		set: function(name, value)
+		{
+			this.vars[name] = value;
+		}
+	}
+);
+
+ul4.ReturnException = ul4._inherit(
+	ul4.Proto,
+	{
+		create: function(result)
+		{
+			var exception = ul4._clone(this);
+			exception.result = result;
+			return exception;
+		}
+	}
+);
+
+ul4.BreakException = ul4._inherit(ul4.Proto, {});
+
+ul4.ContinueException = ul4._inherit(ul4.Proto, {});
 
 ul4.AST = ul4._inherit(
 	ul4.Proto,
@@ -1765,22 +1854,19 @@ ul4.AST = ul4._inherit(
 			this._repr(out);
 			return ul4._formatsource(out);
 		},
-		jssource: function()
+		_eval_set: function(context, value)
 		{
-			var out = [];
-			this._jssource(out);
-			return ul4._formatsource(out);
+			throw "lvalue required";
 		},
-		_jssource_set: function(out, value)
+		_eval_modify: function(context, operator, value)
 		{
 			throw "lvalue required";
 		},
 		_repr: function(out)
 		{
 		},
-		_add2template: function(template)
+		_str: function(out)
 		{
-			template._asts[this.__id__] = this;
 		},
 		ul4ondump: function(encoder)
 		{
@@ -1815,11 +1901,9 @@ ul4.TextAST = ul4._inherit(
 		{
 			return this.source.substring(this.startpos, this.endpos);
 		},
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("out.push(");
-			out.push(ul4._asjson(this._text()));
-			out.push(")");
+			context.output(this._text());
 		},
 		_str: function(out)
 		{
@@ -1856,6 +1940,19 @@ ul4.IndentAST = ul4._inherit(
 			else
 				this.text = null;
 		},
+		_text: function()
+		{
+			if (this.text === null)
+				return this.source.substring(this.startpos, this.endpos);
+			else
+				return this.text;
+		},
+		_eval: function(context)
+		{
+			for (var i = 0; i < context.indents.length; ++i)
+				context.output(context.indents[i]);
+			context.output(this._text());
+		},
 		ul4ondump: function(encoder)
 		{
 			ul4.TextAST.ul4ondump.call(this, encoder);
@@ -1870,6 +1967,17 @@ ul4.IndentAST = ul4._inherit(
 			ul4.TextAST.ul4onload.call(this, decoder);
 			// Recreate ``text`` attribute
 			this._maketext(decoder.load());
+		},
+		_str: function(out)
+		{
+			out.push("indent ");
+			out.push(ul4._repr(this._text()));
+		},
+		_repr: function(out)
+		{
+			out.push("<IndentAST ");
+			out.push(ul4._repr(this._text()));
+			out.push(">");
 		}
 	}
 );
@@ -1877,6 +1985,17 @@ ul4.IndentAST = ul4._inherit(
 ul4.LineEndAST = ul4._inherit(
 	ul4.TextAST,
 	{
+		_str: function(out)
+		{
+			out.push("lineend ");
+			out.push(ul4._repr(this._text()));
+		},
+		_repr: function(out)
+		{
+			out.push("<LineEndAST ");
+			out.push(ul4._repr(this._text()));
+			out.push(">");
+		}
 	}
 );
 
@@ -1960,9 +2079,9 @@ ul4.ConstAST = ul4._inherit(
 			out.push(ul4._repr(this.value));
 			out.push(">");
 		},
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push(ul4._asjson(this.value));
+			return this.value;
 		}
 	}
 );
@@ -1980,25 +2099,19 @@ ul4.ListAST = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<ListAST");
-			out.push(+1);
 			for (var i = 0; i < this.items.length; ++i)
 			{
+				out.push(" ");
 				this.items[i]._repr(out);
-				out.push(0);
 			}
-			out.push(-1);
 			out.push(">");
 		},
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("[");
+			var result = [];
 			for (var i = 0; i < this.items.length; ++i)
-			{
-				if (i)
-					out.push(", ");
-				this.items[i]._jssource(out);
-			}
-			out.push("]");
+				result.push(this.items[i]._eval(context));
+			return result;
 		}
 	}
 );
@@ -2019,58 +2132,38 @@ ul4.ListCompAST = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<ListCompAST");
-			out.push(+1);
-			out.push("item=");
+			out.push(" item=");
 			this.item._repr(out);
-			out.push(0);
-			out.push("varname=");
+			out.push(" varname=");
 			out.push(ul4._repr(this.varname));
-			out.push(0);
-			out.push("container=");
+			out.push(" container=");
 			this.container._repr(out);
-			out.push(0);
 			if (condition !== null)
 			{
-				out.push("condition=");
+				out.push(" condition=");
 				this.condition._repr(out);
-				out.push(0);
 			}
-			out.push(-1);
 			out.push(">");
 		},
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("(function(vars){vars = ul4._simpleclone(vars); var result=[];for(var iter=ul4._iter(");
-			this.container._jssource(out);
-			out.push(");;){var item=iter.next();if(item.done)break;");
-			out.push("var value" + this.__id__ + " = ul4._unpackvar(item.value, ");
-			out.push(ul4._asjson(ul4._shape(this.varname)));
-			out.push(");");
-			out.push(0);
-			this._jssource_value(out, this.varname, "value" + this.__id__);
-			if (this.condition !== null)
+			var container = this.container._eval(context);
+
+			var localcontext = context.inheritvars();
+
+			var result = [];
+			for (var iter = ul4._iter(container);;)
 			{
-				out.push("if(ul4._bool(");
-				this.condition._jssource(out);
-				out.push("))");
+				var item = iter.next();
+				if (item.done)
+					break;
+				var varitems = ul4._unpackvar(this.varname, item.value);
+				for (var i = 0; i < varitems.length; ++i)
+					varitems[i][0]._eval_set(localcontext, varitems[i][1]);
+				if (this.condition === null || ul4._bool(this.condition._eval(localcontext)))
+					result.push(this.item._eval(localcontext));
 			}
-			out.push("result.push(");
-			this.item._jssource(out);
-			out.push(");}return result;})(vars)");
-		},
-		_jssource_value: function(out, lvalue, value)
-		{
-			if (!ul4._islist(lvalue))
-			{
-				lvalue._jssource_set(out, value);
-				out.push(";");
-				out.push(0);
-			}
-			else
-			{
-				for (var i = 0; i < lvalue.length; ++i)
-					this._jssource_value(out, lvalue[i], value + "[" + i + "]");
-			}
+			return result;
 		}
 	}
 );
@@ -2088,47 +2181,39 @@ ul4.DictAST = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<DictAST");
-			out.push(+1);
 			for (var i = 0; i < this.items.length; ++i)
 			{
+				out.push(" ");
 				this.items[i][0]._repr(out);
 				out.push("=");
 				this.items[i][1]._repr(out);
-				out.push(0);
 			}
-			out.push(-1);
 			out.push(">");
 		},
-		_jssource: function(out)
+		_eval: function(context)
 		{
+			var result;
 			if (ul4on._havemap)
 			{
-				out.push(ul4on._havemapconstructor ? "new Map([" : "ul4on._makemap(");
+				result = new Map();
 				for (var i = 0; i < this.items.length; ++i)
 				{
-					if (i)
-						out.push(", ");
-					out.push("[");
-					this.items[i][0]._jssource(out);
-					out.push(", ");
-					this.items[i][1]._jssource(out);
-					out.push("]");
+					var key = this.items[i][0]._eval(context);
+					var value = this.items[i][1]._eval(context);
+					result.set(key, value);
 				}
-				out.push(ul4on._havemapconstructor ? "])" : ")");
 			}
 			else
 			{
-				out.push("{");
+				result = {};
 				for (var i = 0; i < this.items.length; ++i)
 				{
-					if (i)
-						out.push(", ");
-					this.items[i][0]._jssource(out);
-					out.push(": ");
-					this.items[i][1]._jssource(out);
+					var key = this.items[i][0]._eval(context);
+					var value = this.items[i][1]._eval(context);
+					result[key] = value;
 				}
-				out.push("}");
 			}
+			return result;
 		}
 	}
 );
@@ -2150,79 +2235,68 @@ ul4.DictCompAST = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<DictCompAST");
-			out.push(+1);
-			out.push("key=");
+			out.push(" key=");
 			this.key._repr(out);
-			out.push(0);
-			out.push("value=");
+			out.push(" value=");
 			this.value._repr(out);
-			out.push(0);
-			out.push("varname=");
+			out.push(" varname=");
 			this.varname._repr(out);
-			out.push(0);
-			out.push("container=");
+			out.push(" container=");
 			this.container._repr(out);
-			out.push(0);
 			if (condition !== null)
 			{
-				out.push("condition=");
+				out.push(" condition=");
 				this.condition._repr(out);
-				out.push(0);
 			}
-			out.push(-1);
 			out.push(">");
 		},
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("(function(vars){vars=ul4._simpleclone(vars);var result=");
-			if (ul4on._havemap)
-				out.push("new Map()");
-			else
-				out.push("{}");
-			out.push(";for(var iter = ul4._iter(");
-			this.container._jssource(out);
-			out.push(");;){var item=iter.next();if(item.done)break;");
-			out.push("var value" + this.__id__ + " = ul4._unpackvar(item.value, ");
-			out.push(ul4._asjson(ul4._shape(this.varname)));
-			out.push(");");
-			out.push(0);
-			this._jssource_value(out, this.varname, "value" + this.__id__);
-			if (this.condition !== null)
-			{
-				out.push("if(ul4._bool(");
-				this.condition._jssource(out);
-				out.push("))");
-			}
+			var container = this.container._eval(context);
+
+			var localcontext = context.inheritvars();
+
+			var result;
 			if (ul4on._havemap)
 			{
-				out.push("result.set(");
-				this.key._jssource(out);
-				out.push(", ");
-				this.value._jssource(out);
-				out.push(")");
+				result = new Map();
+				for (var iter = ul4._iter(container);;)
+				{
+					var item = iter.next();
+					if (item.done)
+						break;
+					var varitems = ul4._unpackvar(this.varname, item.value);
+					for (var i = 0; i < varitems.length; ++i)
+						varitems[i][0]._eval_set(localcontext, varitems[i][1]);
+					if (this.condition === null || ul4._bool(this.condition._eval(localcontext)))
+					{
+						var key = this.key._eval(localcontext);
+						var value = this.value._eval(localcontext);
+						result.set(key, value);
+					}
+				}
 			}
 			else
 			{
-				out.push("result[");
-				this.key._jssource(out);
-				out.push("]=");
-				this.value._jssource(out);
+				result = {};
+				for (var iter = ul4._iter(container);;)
+				{
+					var item = iter.next();
+					if (item.done)
+						break;
+					var varitems = ul4._unpackvar(this.varname, value.value);
+					for (var i = 0; i < varitems.length; ++i)
+						varitems[i][0]._eval_set(localcontext, varitems[i][1]);
+					if (this.condition === null || ul4._bool(this.condition._eval(localcontext)))
+					{
+						var key = this.key._eval(localcontext);
+						var value = this.value._eval(localcontext);
+						result[key] = value;
+					}
+				}
 			}
-			out.push(";}return result;})(vars)");
-		},
-		_jssource_value: function(out, lvalue, value)
-		{
-			if (!ul4._islist(lvalue))
-			{
-				lvalue._jssource_set(out, value);
-				out.push(";");
-				out.push(0);
-			}
-			else
-			{
-				for (var i = 0; i < lvalue.length; ++i)
-					this._jssource_value(out, lvalue[i], value + "[" + i + "]");
-			}
+
+			return result;
 		}
 	}
 );
@@ -2240,28 +2314,23 @@ ul4.SetAST = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<SetAST");
-			out.push(+1);
 			for (var i = 0; i < this.items.length; ++i)
 			{
+				out.push(" ");
 				this.items[i][0]._repr(out);
 				out.push("=");
 				this.items[i][1]._repr(out);
-				out.push(0);
 			}
-			out.push(-1);
 			out.push(">");
 		},
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			var mode = ul4on._haveset + ul4on._havesetconstructor;
-			out.push(["ul4._Set.create(", "ul4on._makeset(", "new Set(["][mode]);
+			var result = ul4on._haveset ? new Set() : ul4._Set.create();
+
 			for (var i = 0; i < this.items.length; ++i)
-			{
-				if (i)
-					out.push(", ");
-				this.items[i]._jssource(out);
-			}
-			out.push([")", ")", "])"][mode]);
+				result.add(this.items[i]._eval(context));
+
+			return result;
 		}
 	}
 );
@@ -2281,60 +2350,39 @@ ul4.SetCompAST = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<SetCompAST");
-			out.push(+1);
-			out.push("item=");
+			out.push(" item=");
 			this.item._repr(out);
-			out.push(0);
-			out.push("varname=");
+			out.push(" varname=");
 			this.varname._repr(out);
-			out.push(0);
-			out.push("container=");
+			out.push(" container=");
 			this.container._repr(out);
-			out.push(0);
 			if (condition !== null)
 			{
-				out.push("condition=");
+				out.push(" condition=");
 				this.condition._repr(out);
-				out.push(0);
 			}
-			out.push(-1);
 			out.push(">");
 		},
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("(function(vars){vars=ul4._simpleclone(vars);var result=");
-			out.push(ul4on._haveset ? "new Set()" : "ul4._Set.create()");
-			out.push(";for(var iter = ul4._iter(");
-			this.container._jssource(out);
-			out.push(");;){var item=iter.next();if(item.done)break;");
-			out.push("var value" + this.__id__ + " = ul4._unpackvar(item.value, ");
-			out.push(ul4._asjson(ul4._shape(this.varname)));
-			out.push(");");
-			out.push(0);
-			this._jssource_value(out, this.varname, "value" + this.__id__);
-			if (this.condition !== null)
+			var container = this.container._eval(context);
+
+			var localcontext = context.inheritvars();
+
+			var result = ul4on._haveset ? new Set() : ul4._Set.create();
+			for (var iter = ul4._iter(container);;)
 			{
-				out.push("if(ul4._bool(");
-				this.condition._jssource(out);
-				out.push("))");
+				var item = iter.next();
+				if (item.done)
+					break;
+				var varitems = ul4._unpackvar(this.varname, item.value);
+				for (var i = 0; i < varitems.length; ++i)
+					varitems[i][0]._eval_set(localcontext, varitems[i][1]);
+				if (this.condition === null || ul4._bool(this.condition._eval(localcontext)))
+					result.add(this.item._eval(localcontext));
 			}
-			out.push("result.add(");
-			this.item._jssource(out);
-			out.push(");}return result;})(vars)");
-		},
-		_jssource_value: function(out, lvalue, value)
-		{
-			if (!ul4._islist(lvalue))
-			{
-				lvalue._jssource_set(out, value);
-				out.push(";");
-				out.push(0);
-			}
-			else
-			{
-				for (var i = 0; i < lvalue.length; ++i)
-					this._jssource_value(out, lvalue[i], value + "[" + i + "]");
-			}
+
+			return result;
 		}
 	}
 );
@@ -2355,71 +2403,48 @@ ul4.GenExprAST = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<GenExprAST");
-			out.push(+1);
-			out.push("item=");
+			out.push(" item=");
 			this.item._repr(out);
-			out.push(0);
-			out.push("varname=");
+			out.push(" varname=");
 			this.varname._repr(out);
-			out.push(0);
-			out.push("container=");
+			out.push(" container=");
 			this.container._repr(out);
-			out.push(0);
-			if (condition !== null)
+			if (this.condition !== null)
 			{
-				out.push("condition=");
+				out.push(" condition=");
 				this.condition._repr(out);
-				out.push(0);
 			}
-			out.push(-1);
 			out.push(">");
 		},
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("(function(vars, container){");
-				out.push("vars = ul4._simpleclone(vars);");
-				out.push("var iter = ul4._iter(container);");
-				out.push("return {");
-					out.push("next: function(){");
-					out.push("for (;;)");
-					out.push("{");
-						out.push("var item = iter.next();");
-						out.push("if(item.done)");
-							out.push("return item;");
-						out.push("var value" + this.__id__ + " = ul4._unpackvar(item.value, ");
-						out.push(ul4._asjson(ul4._shape(this.varname)));
-						out.push(");");
-						out.push(0);
-						this._jssource_value(out, this.varname, "value" + this.__id__);
-						if (this.condition !== null)
+			var container = this.container._eval(context);
+			var iter = ul4._iter(container);
+
+			var localcontext = context.inheritvars();
+
+			var self = this;
+
+			var result = {
+				next: function(){
+					while (true)
+					{
+						var item = iter.next();
+						if (item.done)
+							return item;
+						var varitems = ul4._unpackvar(self.varname, item.value);
+						for (var i = 0; i < varitems.length; ++i)
+							varitems[i][0]._eval_set(localcontext, varitems[i][1]);
+						if (self.condition === null || ul4._bool(self.condition._eval(localcontext)))
 						{
-							out.push("if(ul4._bool(");
-							this.condition._jssource(out);
-							out.push("))");
+							var value = self.item._eval(localcontext);
+							return {value: value, done: false};
 						}
-						out.push("break;");
-					out.push("}");
-					out.push("return {value: ");
-					this.item._jssource(out);
-					out.push(", done: false};");
-				out.push("}");
-			out.push("}})(vars, ");
-			this.container._jssource(out);
-			out.push(")");
-		},
-		_jssource_value: function(out, lvalue, value)
-		{
-			if (!ul4._islist(lvalue))
-			{
-				lvalue._jssource_set(out, value);
-				out.push(";");
-				out.push(0);
-			}
-			else
-			{
-				for (var i = 0; i < lvalue.length; ++i)
-					this._jssource_value(out, lvalue[i], value + "[" + i + "]");
-			}
+					}
+				}
+			};
+
+			return result;
 		}
 	}
 );
@@ -2440,44 +2465,33 @@ ul4.VarAST = ul4._inherit(
 			out.push(ul4._repr(this.name));
 			out.push(">");
 		},
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("ul4.VarAST._get(vars, ");
-			out.push(ul4._asjson(this.name));
-			out.push(")");
+			return this._get(context, this.name);
 		},
-		_jssource_set: function(out, value)
+		_eval_set: function(context, value)
 		{
-			out.push("ul4.VarAST._set(vars, ");
-			out.push(ul4._asjson(this.name));
-			out.push(", ");
-			out.push(value);
-			out.push(")");
+			this._set(context, this.name, value);
 		},
-		_jssource_modify: function(out, operatorname, value)
+		_eval_modify: function(context, operator, value)
 		{
-			out.push("ul4.VarAST._modify(ul4.");
-			out.push(operatorname);
-			out.push(", vars, ");
-			out.push(ul4._asjson(this.name));
-			out.push(", ");
-			out.push(value);
-			out.push(")");
+			this._modify(context, operator, this.name, value);
 		},
-		_get: function(vars, name)
+		_get: function(context, name)
 		{
-			var result = vars[name];
+			var result = context.get(name);
 			if (typeof(result) === "undefined")
 				result = ul4.functions[name];
 			return result;
 		},
-		_set: function(vars, name, value)
+		_set: function(context, name, value)
 		{
-			vars[name] = value;
+			context.set(name, value);
 		},
-		_modify: function(operator, vars, name, value)
+		_modify: function(context, operator, name, value)
 		{
-			vars[name] = operator._ido(vars[name], value);
+			var newvalue = operator._ido(context.get(name), value)
+			context.set(name, newvalue);
 		}
 	}
 );
@@ -2495,20 +2509,15 @@ ul4.UnaryAST = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<");
-			out.push(this.name);
-			out.push(+1);
-			out.push("obj=");
+			out.push(this.typename);
+			out.push(" obj=");
 			this.obj._repr(out);
-			out.push(-1);
 			out.push(">");
 		},
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("ul4.");
-			out.push(this.name);
-			out.push("._do(");
-			this.obj._jssource(out);
-			out.push(")");
+			var obj = this.obj._eval(context);
+			return this._do(obj);
 		}
 	}
 );
@@ -2564,7 +2573,7 @@ ul4.IfAST = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<");
-			out.push(this.name);
+			out.push(this.typename);
 			out.push(+1);
 			out.push("objif=");
 			this.objif._repr(out);
@@ -2577,15 +2586,15 @@ ul4.IfAST = ul4._inherit(
 			out.push(-1);
 			out.push(">");
 		},
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("(ul4._bool(");
-			this.objcond._jssource(out);
-			out.push(")?(");
-			this.objif._jssource(out);
-			out.push("):(");
-			this.objelse._jssource(out);
-			out.push("))");
+			var result;
+			var condvalue = this.objcond._eval(context);
+			if (ul4._bool(condvalue))
+				result = this.objif._eval(context);
+			else
+				result = this.objelse._eval(context);
+			return result;
 		}
 	}
 );
@@ -2593,10 +2602,10 @@ ul4.IfAST = ul4._inherit(
 ul4.ReturnAST = ul4._inherit(
 	ul4.UnaryAST,
 	{
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("return ");
-			this.obj._jssource(out);
+			var result = this.obj._eval(context);
+			throw ul4.ReturnException.create(result);
 		},
 		_str: function(out)
 		{
@@ -2609,11 +2618,11 @@ ul4.ReturnAST = ul4._inherit(
 ul4.PrintAST = ul4._inherit(
 	ul4.UnaryAST,
 	{
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("out.push(ul4._str(");
-			this.obj._jssource(out);
-			out.push("))");
+			var obj = this.obj._eval(context);
+			var output = ul4._str(obj);
+			context.output(output);
 		},
 		_str: function(out)
 		{
@@ -2626,11 +2635,11 @@ ul4.PrintAST = ul4._inherit(
 ul4.PrintXAST = ul4._inherit(
 	ul4.UnaryAST,
 	{
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("out.push(ul4._xmlescape(");
-			this.obj._jssource(out);
-			out.push("))");
+			var obj = this.obj._eval(context);
+			var output = ul4._xmlescape(obj);
+			context.output(output);
 		},
 		_str: function(out)
 		{
@@ -2655,24 +2664,17 @@ ul4.BinaryAST = ul4._inherit(
 		{
 			out.push("<");
 			out.push(this.type);
-			out.push(+1);
-			out.push("obj1=");
+			out.push(" obj1=");
 			this.obj1._repr(out);
-			out.push(0);
-			out.push("obj2=");
+			out.push(" obj2=");
 			this.obj2._repr(out);
-			out.push(-1);
 			out.push(">");
 		},
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("ul4.");
-			out.push(this.name);
-			out.push("._do(");
-			this.obj1._jssource(out);
-			out.push(", ");
-			this.obj2._jssource(out);
-			out.push(")");
+			var obj1 = this.obj1._eval(context);
+			var obj2 = this.obj2._eval(context);
+			return this._do(obj1, obj2);
 		}
 	}
 );
@@ -2681,35 +2683,22 @@ ul4.BinaryAST = ul4._inherit(
 ul4.ItemAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_jssource: function(out)
+		_do: function(obj1, obj2)
 		{
-			out.push("ul4.ItemAST._get(");
-			this.obj1._jssource(out);
-			out.push(", ");
-			this.obj2._jssource(out);
-			out.push(")");
+			var result = this._get(obj1, obj2);
+			return result;
 		},
-		_jssource_set: function(out, value)
+		_eval_set: function(context, value)
 		{
-			out.push("ul4.ItemAST._set(");
-			this.obj1._jssource(out);
-			out.push(", ");
-			this.obj2._jssource(out);
-			out.push(", ");
-			out.push(value);
-			out.push(")");
+			var obj1 = this.obj1._eval(context);
+			var obj2 = this.obj2._eval(context);
+			this._set(obj1, obj2, value);
 		},
-		_jssource_modify: function(out, operatorname, value)
+		_eval_modify: function(context, operator, value)
 		{
-			out.push("ul4.ItemAST._modify(ul4.");
-			out.push(operatorname);
-			out.push(", ");
-			this.obj1._jssource(out);
-			out.push(", ");
-			this.obj2._jssource(out);
-			out.push(", ");
-			out.push(value);
-			out.push(")");
+			var obj1 = this.obj1._eval(context);
+			var obj2 = this.obj2._eval(context);
+			this._modify(operator, obj1, obj2, value);
 		},
 		_get: function(container, key)
 		{
@@ -3291,13 +3280,13 @@ ul4.BitOrAST = ul4._inherit(
 ul4.AndAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("(function(){var obj1=");
-			this.obj1._jssource(out);
-			out.push("; return (!ul4._bool(obj1)) ? obj1 : ");
-			this.obj2._jssource(out);
-			out.push(";})()");
+			var obj1 = this.obj1._eval(context);
+			if (!ul4._bool(obj1))
+				return obj1;
+			var obj2 = this.obj2._eval(context);
+			return obj2;
 		}
 	}
 );
@@ -3305,13 +3294,13 @@ ul4.AndAST = ul4._inherit(
 ul4.OrAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("(function(){var obj1=");
-			this.obj1._jssource(out);
-			out.push("; return (ul4._bool(obj1)) ? obj1 : ");
-			this.obj2._jssource(out);
-			out.push(";})()");
+			var obj1 = this.obj1._eval(context);
+			if (ul4._bool(obj1))
+				return obj1;
+			var obj2 = this.obj2._eval(context);
+			return obj2;
 		}
 	}
 );
@@ -3330,44 +3319,27 @@ ul4.AttrAST = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<AttrAST");
-			out.push(+1);
-			out.push("obj=");
+			out.push(" obj=");
 			this.obj._repr(out);
-			out.push(0);
-			out.push("attrname=");
+			out.push(" attrname=");
 			out.push(ul4._repr(this.attrname));
-			out.push(-1);
 			out.push(">");
 		},
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("ul4.AttrAST._get(");
-			this.obj._jssource(out);
-			out.push(", ");
-			out.push(ul4._asjson(this.attrname));
-			out.push(")");
+			var obj = this.obj._eval(context);
+			var result = this._get(obj, this.attrname);
+			return result;
 		},
-		_jssource_set: function(out, value)
+		_eval_set: function(context, value)
 		{
-			out.push("ul4.AttrAST._set(");
-			this.obj._jssource(out);
-			out.push(", ");
-			out.push(ul4._asjson(this.attrname));
-			out.push(", ");
-			out.push(value);
-			out.push(")");
+			var obj = this.obj._eval(context);
+			this._set(obj, this.attrname, value);
 		},
-		_jssource_modify: function(out, operatorname, value)
+		_eval_modify: function(context, operator, value)
 		{
-			out.push("ul4.AttrAST._modify(ul4.");
-			out.push(operatorname);
-			out.push(", ");
-			this.obj._jssource(out);
-			out.push(", ");
-			out.push(ul4._asjson(this.attrname));
-			out.push(", ");
-			out.push(value);
-			out.push(")");
+			var obj = this.obj._eval(context);
+			this._modify(operator, obj, this.attrname, value);
 		},
 		_get: function(object, attrname)
 		{
@@ -3507,9 +3479,9 @@ ul4.AttrAST = ul4._inherit(
 								return result.apply(object, arguments);
 							};
 							realresult._ul4_name = result._ul4_name;
-							realresult._ul4_needsout = result._ul4_needsout;
-							realresult._ul4_callwithobject = result._ul4_callwithobject;
 							realresult._ul4_signature = result._ul4_signature;
+							realresult._ul4_needsobject = result._ul4_needsobject;
+							realresult._ul4_needscontext = result._ul4_needscontext;
 							return realresult;
 						}
 						else
@@ -3531,7 +3503,9 @@ ul4.AttrAST = ul4._inherit(
 		},
 		_modify: function(operator, object, attrname, value)
 		{
-			this._set(object, attrname, operator._ido(this._get(object, attrname), value));
+			var oldvalue = this._get(object, attrname);
+			var newvalue = operator._ido(oldvalue, value);
+			this._set(object, attrname, newvalue);
 		}
 	}
 );
@@ -3550,14 +3524,69 @@ ul4.CallAST = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<CallAST");
-			out.push(+1);
-			out.push("obj=");
+			out.push(" obj=");
+			this.obj._repr(out);
+			for (var i = 0; i < this.args.length; ++i)
+			{
+				var name = this.args[i][0];
+				var arg = this.args[i][1];
+				out.push(" ");
+				if (name === null)
+					;
+				else if (name === "*")
+					out.push("*");
+				else if (name === "**")
+					out.push("**");
+				else
+					out.push(name + "=");
+				arg._repr(out);
+			}
+			out.push(">");
+		},
+		_makeargs: function(context)
+		{
+			var args = [];
+			for (var i = 0; i < this.args.length; ++i)
+			{
+				var name = this.args[i][0];
+				var value = this.args[i][1]._eval(context);
+				args.push([name, value]);
+			}
+			return args;
+		},
+		_eval: function(context)
+		{
+			var obj = this.obj._eval(context);
+			var args = this._makeargs(context);
+			var result = ul4._call(context, obj, args);
+			return result;
+		}
+	}
+);
+
+ul4.RenderAST = ul4._inherit(
+	ul4.CallAST,
+	{
+		create: function(tag, startpos, endpos, obj, args)
+		{
+			var render = ul4.CallAST.create.call(this, tag, startpos, endpos, obj, args);
+			render.indent = null;
+			return render;
+		},
+		_ul4onattrs: ul4.CallAST._ul4onattrs.concat(["indent"]),
+		_repr: function(out)
+		{
+			out.push("<RenderAST");
+			out.push(" indent=");
+			out.push(ul4._repr(this.indent));
+			out.push(" obj=");
 			this.obj._repr(out);
 			out.push(0);
 			for (var i = 0; i < this.args.length; ++i)
 			{
 				var name = this.args[i][0];
 				var arg = this.args[i][1];
+				out.push(" ");
 				if (name === null)
 					;
 				else if (name === "*")
@@ -3572,24 +3601,18 @@ ul4.CallAST = ul4._inherit(
 			out.push(-1);
 			out.push(">");
 		},
-		_jssource: function(out)
+		_str: function(out)
 		{
-			out.push("ul4._call(");
-			this.obj._jssource(out);
-			out.push(", out, [");
-
-			for (var i = 0; i < this.args.length; ++i)
-			{
-				if (i)
-					out.push(", ");
-				out.push("[");
-				out.push(ul4._asjson(this.args[i][0]));
-				out.push(", ");
-				this.args[i][1]._jssource(out);
-				out.push("]");
-			}
-			out.push("]");
-			out.push(")");
+			out.push("render ");
+			out.push(this.tag.source.substring(this.startpos, this.endpos).replace(/\r?\n/g, ' '));
+		},
+		_eval: function(context)
+		{
+			var localcontext = context.withindent(this.indent !== null ? this.indent._text() : null);
+			var obj = this.obj._eval(localcontext);
+			var args = this._makeargs(localcontext);
+			var result = ul4._callrender(localcontext, obj, args);
+			return result;
 		}
 	}
 );
@@ -3628,35 +3651,23 @@ ul4.SliceAST = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<SliceAST");
-			out.push(+1);
 			if (this.index1 !== null)
 			{
-				out.push("index1=");
+				out.push(" index1=");
 				this.index1._repr(out);
-				out.push(0);
 			}
 			if (this.index2 !== null)
 			{
-				out.push("index2=");
+				out.push(" index2=");
 				this.index2._repr(out);
-				out.push(0);
 			}
-			out.push(-1);
 			out.push(">");
 		},
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("ul4.slice.create(");
-			if (this.index1 !== null)
-				this.index1._jssource(out);
-			else
-				out.push("null");
-			out.push(", ");
-			if (this.index2 !== null)
-				this.index2._jssource(out);
-			else
-				out.push("null");
-			 out.push(")");
+			var index1 = this.index1 !== null ? this.index1._eval(context) : null;
+			var index2 = this.index2 !== null ? this.index2._eval(context) : null;
+			return ul4.slice.create(index1, index2);
 		}
 	}
 );
@@ -3676,38 +3687,21 @@ ul4.SetVarAST = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<");
-			out.push(this.name);
-			out.push(+1);
-			out.push("lvalue=");
+			out.push(this.typename);
+			out.push(" lvalue=");
 			out.push(ul4._repr(this.lvalue));
-			out.push(0);
-			out.push("value=");
+			out.push(" value=");
 			this.value._repr(out);
-			out.push(-1);
 			out.push(">");
 		},
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("var value" + this.__id__ + " = ul4._unpackvar(");
-			this.value._jssource(out);
-			out.push(", ");
-			out.push(ul4._asjson(ul4._shape(this.lvalue)));
-			out.push(");");
-			out.push(0);
-			this._jssource_value(out, this.lvalue, "value" + this.__id__);
-		},
-		_jssource_value: function(out, lvalue, value)
-		{
-			if (!ul4._islist(lvalue))
+			var value = this.value._eval(context);
+			var items = ul4._unpackvar(this.lvalue, value);
+			for (var i = 0; i < items.length; ++i)
 			{
-				lvalue._jssource_set(out, value);
-				out.push(";");
-				out.push(0);
-			}
-			else
-			{
-				for (var i = 0; i < lvalue.length; ++i)
-					this._jssource_value(out, lvalue[i], value + "[" + i + "]");
+				var item = items[i];
+				item[0]._eval_set(context, item[1]);
 			}
 		}
 	}
@@ -3716,43 +3710,40 @@ ul4.SetVarAST = ul4._inherit(
 ul4.ModifyVarAST = ul4._inherit(
 	ul4.SetVarAST,
 	{
-		_jssource_value: function(out, lvalue, value)
+		_eval: function(context)
 		{
-			if (!ul4._islist(lvalue))
+			var value = this.value._eval(context);
+			var items = ul4._unpackvar(this.lvalue, value);
+			for (var i = 0; i < items.length; ++i)
 			{
-				lvalue._jssource_modify(out, this._operator, value);
-				out.push(";");
-				out.push(0);
-			}
-			else
-			{
-				for (var i = 0; i < lvalue.length; ++i)
-					this._jssource_value(out, lvalue[i], value + "[" + i + "]");
+				var item = items[i];
+				item[0]._eval_modify(context, this._operator, item[1]);
 			}
 		}
-});
+	}
+);
 
-ul4.AddVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "AddAST" });
+ul4.AddVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: ul4.AddAST });
 
-ul4.SubVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "SubAST" });
+ul4.SubVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: ul4.SubAST });
 
-ul4.MulVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "MulAST" });
+ul4.MulVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: ul4.MulAST });
 
-ul4.TrueDivVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "TrueDivAST" });
+ul4.TrueDivVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: ul4.TrueDivAST });
 
-ul4.FloorDivVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "FloorDivAST" });
+ul4.FloorDivVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: ul4.FloorDivAST });
 
-ul4.ModVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "ModAST" });
+ul4.ModVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: ul4.ModAST });
 
-ul4.ShiftLeftVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "ShiftLeftAST" });
+ul4.ShiftLeftVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: ul4.ShiftLeftAST });
 
-ul4.ShiftRightVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "ShiftRightAST" });
+ul4.ShiftRightVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: ul4.ShiftRightAST });
 
-ul4.BitAndVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "BitAndAST" });
+ul4.BitAndVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: ul4.BitAndAST });
 
-ul4.BitXOrVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "BitXOrAST" });
+ul4.BitXOrVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: ul4.BitXOrAST });
 
-ul4.BitOrVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: "BitOrAST" });
+ul4.BitOrVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: ul4.BitOrAST });
 
 ul4.BlockAST = ul4._inherit(
 	ul4.CodeAST,
@@ -3765,28 +3756,10 @@ ul4.BlockAST = ul4._inherit(
 			return block;
 		},
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["endtag", "content"]),
-		_add2template: function(template)
-		{
-			ul4.AST._add2template.call(this, template);
-			for (var i = 0; i < this.content.length; ++i)
-				this.content[i]._add2template(template);
-		},
-		_repr: function(out)
+		_eval: function(context)
 		{
 			for (var i = 0; i < this.content.length; ++i)
-			{
-				this.content[i]._repr(out);
-				out.push(0);
-			}
-		},
-		_jssource_content: function(out)
-		{
-			for (var i = 0; i < this.content.length; ++i)
-			{
-				this.content[i]._jssource(out);
-				out.push(";");
-				out.push(0);
-			}
+				this.content[i]._eval(context);
 		},
 		_str: function(out)
 		{
@@ -3821,53 +3794,48 @@ ul4.ForBlockAST = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<ForAST");
-			out.push(+1);
-			out.push("varname=");
+			out.push(" varname=");
 			out.push(ul4._repr(this.varname));
-			out.push(0);
-			out.push("container=");
+			out.push(" container=");
 			this.container._repr(out);
-			out.push(0);
-			ul4.BlockAST._repr.call(this, out);
-			out.push(-1);
 			out.push(">");
 		},
-		_jssource: function(out)
+		_str: function(out)
 		{
-			out.push("for (var iter" + this.__id__ + " = ul4._iter(");
-			this.container._jssource(out);
-			out.push(");;)");
-			out.push(0);
-			out.push("{");
+			out.push("for "),
+			out.push(ul4._repr(this.varname));
+			out.push(" in ");
+			this.container._repr(out);
+			out.push(":");
 			out.push(+1);
-			out.push("var item" + this.__id__ + " = iter" + this.__id__ + ".next();");
-			out.push(0);
-			out.push("if (item" + this.__id__ + ".done)");
-			out.push(+1);
-			out.push("break;");
+			ul4.BlockAST._str.call(this, out);
 			out.push(-1);
-			out.push("var value" + this.__id__ + " = ul4._unpackvar(item" + this.__id__ + ".value, ");
-			out.push(ul4._asjson(ul4._shape(this.varname)));
-			out.push(");");
-			out.push(0);
-			this._jssource_value(out, this.varname, "value" + this.__id__);
-			this._jssource_content(out);
-			out.push(-1);
-			out.push("}");
-			out.push(0);
 		},
-		_jssource_value: function(out, lvalue, value)
+		_eval: function(context)
 		{
-			if (!ul4._islist(lvalue))
+			var container = this.container._eval(context);
+
+			for (var iter = ul4._iter(container);;)
 			{
-				lvalue._jssource_set(out, value);
-				out.push(";");
-				out.push(0);
-			}
-			else
-			{
-				for (var i = 0; i < lvalue.length; ++i)
-					this._jssource_value(out, lvalue[i], value + "[" + i + "]");
+				var value = iter.next();
+				if (value.done)
+					break;
+				var varitems = ul4._unpackvar(this.varname, value.value);
+				for (var i = 0; i < varitems.length; ++i)
+					varitems[i][0]._eval_set(context, varitems[i][1]);
+				try
+				{
+					ul4.BlockAST._eval.call(this, context);
+				}
+				catch (exc)
+				{
+					if (exc === ul4.BreakException)
+						break;
+					else if (exc === ul4.ContinueException)
+						;
+					else
+						throw exc;
+				}
 			}
 		},
 		_str: function(out)
@@ -3895,25 +3863,40 @@ ul4.WhileBlockAST = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<WhileAST");
-			out.push(+1);
-			out.push("condition=");
+			out.push(" condition=");
 			this.condition._repr(out);
-			ul4.BlockAST._repr.call(this, out);
-			out.push(-1);
 			out.push(">");
 		},
-		_jssource: function(out)
+		_str: function(out)
 		{
-			out.push("while (ul4._bool(");
-			this.condition._jssource(out);
-			out.push("))");
-			out.push(0);
-			out.push("{");
+			out.push("while "),
+			this.container._repr(out);
+			out.push(":");
 			out.push(+1);
-			this._jssource_content(out);
+			ul4.BlockAST._str.call(this, out);
 			out.push(-1);
-			out.push("}");
-			out.push(0);
+		},
+		_eval: function(context)
+		{
+			while (true)
+			{
+				var cond = this.condition._eval(context);
+				if (!ul4._bool(cond))
+					break;
+				try
+				{
+					ul4.BlockAST._eval.call(this, context);
+				}
+				catch (exc)
+				{
+					if (exc === ul4.BreakException)
+						break;
+					else if (exc === ul4.ContinueException)
+						;
+					else
+						throw exc;
+				}
+			}
 		},
 		_str: function(out)
 		{
@@ -3930,13 +3913,14 @@ ul4.WhileBlockAST = ul4._inherit(
 ul4.BreakAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("break");
+			throw ul4.BreakException;
 		},
 		_str: function(out)
 		{
 			out.push("break");
+			out.push(0);
 		},
 		_repr: function(out)
 		{
@@ -3948,13 +3932,14 @@ ul4.BreakAST = ul4._inherit(
 ul4.ContinueAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("continue");
+			throw ul4.ContinueException;
 		},
 		_str: function(out)
 		{
 			out.push("continue");
+			out.push(0);
 		},
 		_repr: function(out)
 		{
@@ -3966,10 +3951,18 @@ ul4.ContinueAST = ul4._inherit(
 ul4.CondBlockAST = ul4._inherit(
 	ul4.BlockAST,
 	{
-		_jssource: function(out)
+		_eval: function(context)
 		{
 			for (var i = 0; i < this.content.length; ++i)
-				this.content[i]._jssource(out);
+			{
+				var block = this.content[i];
+				var execute = block._execute(context);
+				if (execute)
+				{
+					block._eval(context);
+					break;
+				}
+			}
 		}
 	}
 );
@@ -3987,45 +3980,33 @@ ul4.ConditionalBlockAST = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<");
-			out.push(this.type);
-			out.push(+1);
-			out.push("condition=");
+			out.push(this.typename);
+			out.push(" condition=");
 			this.condition._repr(out);
-			out.push(0);
-			ul4.BlockAST._repr.call(this, out);
-			out.push(-1);
 			out.push(">");
-		},
-		_jssource: function(out)
-		{
-			out.push(this._sourcejs);
-			out.push(" (ul4._bool(");
-			this.condition._jssource(out);
-			out.push("))");
-			out.push(0);
-			out.push("{");
-			out.push(+1);
-			this._jssource_content(out);
-			out.push(-1);
-			out.push("}");
-			out.push(0);
 		},
 		_str: function(out)
 		{
-			out.push(this._sourcejs);
+			out.push(this._strname);
 			out.push(" ");
-			ul4.AST._str.call(this, out);
+			this.condition._str(out);
 			out.push(":");
 			out.push(+1);
 			ul4.BlockAST._str.call(this, out);
 			out.push(-1);
+		},
+		_execute: function(context)
+		{
+			var cond = this.condition._eval(context);
+			var result = ul4._bool(cond);
+			return result;
 		}
 	}
 );
 
-ul4.IfBlockAST = ul4._inherit(ul4.ConditionalBlockAST, {_sourcejs: "if"});
+ul4.IfBlockAST = ul4._inherit(ul4.ConditionalBlockAST, {_strname: "if"});
 
-ul4.ElIfBlockAST = ul4._inherit(ul4.ConditionalBlockAST, {_sourcejs: "else if"});
+ul4.ElIfBlockAST = ul4._inherit(ul4.ConditionalBlockAST, {_strname: "else if"});
 
 ul4.ElseBlockAST = ul4._inherit(
 	ul4.BlockAST,
@@ -4033,21 +4014,18 @@ ul4.ElseBlockAST = ul4._inherit(
 		_repr: function(out)
 		{
 			out.push("<ElseAST");
-			out.push(+1);
-			ul4.BlockAST._repr.call(this, out);
-			out.push(-1);
 			out.push(">");
 		},
-		_jssource: function(out)
+		_str: function(out)
 		{
-			out.push("else");
-			out.push(0);
-			out.push("{");
+			out.push("else:"),
 			out.push(+1);
-			this._jssource_content(out);
+			ul4.BlockAST._str.call(this, out);
 			out.push(-1);
-			out.push("}");
-			out.push(0);
+		},
+		_execute: function(context)
+		{
+			return true;
 		},
 		_str: function(out)
 		{
@@ -4073,7 +4051,8 @@ ul4.Template = ul4._inherit(
 			template.signature = signature;
 			template._jsfunction = null;
 			template._asts = null;
-			template.__call__ = ul4.expose(name, signature, {callwithobject: true}, function(vars){ return this._callbound(vars); });
+			template._ul4_callsignature = signature;
+			template._ul4_rendersignature = signature;
 			return template;
 		},
 		ul4ondump: function(encoder)
@@ -4085,7 +4064,7 @@ ul4.Template = ul4._inherit(
 			encoder.dump(this.whitespace);
 			encoder.dump(this.startdelim);
 			encoder.dump(this.enddelim);
-			if (this.signature === null || this.signature.isa(ul4.SignatureAST))
+			if (this.signature === null || ul4.SignatureAST.isprotoof(this.signature))
 				signature = this.signature;
 			else
 			{
@@ -4122,54 +4101,42 @@ ul4.Template = ul4._inherit(
 			if (ul4._islist(signature))
 				signature = ul4.Signature.create.apply(ul4.Signature, signature);
 			this.signature = signature;
+			this._ul4_callsignature = signature;
+			this._ul4_rendersignature = signature;
 			ul4.BlockAST.ul4onload.call(this, decoder);
-		},
-		_getast: function(id)
-		{
-			if (this._asts === null)
-			{
-				this._asts = {};
-				this._add2template(this);
-			}
-			return this._asts[id];
 		},
 		loads: function(string)
 		{
 			return ul4on.loads(string);
 		},
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("ul4.VarAST._set(vars, " + ul4._asjson(this.name) + ", ul4.TemplateClosure.create(self._getast(" + this.__id__ + "), ");
-			if (this.signature === null)
-				out.push("null");
-			else
-				this.signature._jssource(out);
-			out.push(", vars))");
+			var signature = null;
+			if (this.signature !== null)
+				signature = this.signature._eval(context);
+			var closure = ul4.TemplateClosure.create(this, signature, context.vars);
+			context.set(this.name, closure);
 		},
 		_repr: function(out)
 		{
 			out.push("<Template");
-			out.push(+1);
-			out.push("name=");
-			out.push(ul4._repr(this.name));
-			out.push(0);
-			out.push("whitespace=");
+			if (this.name !== null)
+			{
+				out.push(" name=");
+				out.push(ul4._repr(this.name));
+			}
+			out.push(" whitespace=");
 			out.push(ul4._repr(this.whitespace));
-			out.push(0);
 			if (this.startdelim !== "<?")
 			{
-				out.push("startdelim=");
+				out.push(" startdelim=");
 				out.push(ul4._repr(this.startdelim));
-				out.push(0);
 			}
 			if (this.enddelim !== "?>")
 			{
-				out.push("enddelim=");
+				out.push(" enddelim=");
 				out.push(ul4._repr(this.enddelim));
-				out.push(0);
 			}
-			ul4.BlockAST._repr.call(this, out);
-			out.push(-1);
 			out.push(">");
 		},
 		_str: function(out)
@@ -4181,51 +4148,45 @@ ul4.Template = ul4._inherit(
 			ul4.BlockAST._str.call(this, out);
 			out.push(-1);
 		},
-		_makesource: function()
+		_ul4_callneedsobject: true,
+		_ul4_callneedscontext: true,
+		_ul4_renderneedsobject: true,
+		_ul4_renderneedscontext: true,
+		_renderbound: function(context, vars)
 		{
-			var out = [];
-			out.push("(function(self, out, vars)");
-			out.push(0);
-			out.push("{");
-			out.push(+1);
-			out.push("vars = ul4._simpleclone(vars);"); // variables assignments shouldn't be visible in the parent
-			out.push(0);
-			this._jssource_content(out);
-			out.push(-1);
-			out.push("})");
-			out.push(0);
-			// Make generated Javascript debuggable in Firefox
-			out.push("//# sourceURL=" + (this.name ? this.name : "unnamed") + "-" + this.__id__ + "-" + (new Date().getTime()) + ".js");
-			out.push(0);
-			return ul4._formatsource(out);
+			var localcontext = context.clone();
+			localcontext.vars = vars;
+			try
+			{
+				ul4.BlockAST._eval.call(this, localcontext);
+			}
+			catch (exc)
+			{
+				if (!ul4.ReturnException.isprotoof(exc))
+					throw exc;
+			}
 		},
-		_renderbound: function(out, vars)
+		__render__: function(context, vars)
 		{
-			if (this._jsfunction === null)
-				this._jsfunction = eval(this._makesource());
-			this._jsfunction(this, out, vars);
+			this._renderbound(context, vars);
 		},
-		render: function(out, vars)
+		_rendersbound: function(context, vars)
 		{
-			vars = vars || {};
-			var realvars = (this.signature !== null) ? this.signature.bindObject(this.name, [["**", vars]]) : vars;
-			this._renderbound(out, realvars);
-		},
-		_rendersbound: function(vars)
-		{
-			var out = [];
-			this._renderbound(out, vars);
-			return out.join("");
+			var localcontext = context.replaceoutput();
+			this._renderbound(localcontext, vars);
+			return localcontext.getoutput();
 		},
 		renders: function(vars)
 		{
-			var out = [];
-			this.render(out, vars);
-			return out.join("");
+			vars = vars || {};
+			var context = ul4.Context.create();
+			if (this.signature !== null)
+				vars = this.signature.bindObject(this.name, [["**", vars]]);
+			return this._rendersbound(context, vars);
 		},
 		__getattr__: function(attrname)
 		{
-			var object = this;
+			var self = this;
 			switch (attrname)
 			{
 				case "tag":
@@ -4244,26 +4205,40 @@ ul4.Template = ul4._inherit(
 					return this.startdelim;
 				case "enddelim":
 					return this.enddelim;
-				case "render":
-					return ul4.expose("render", this.signature, {needsout: true, callwithobject: true}, function(out, vars){ return object._renderbound(out, vars); });
 				case "renders":
-					return ul4.expose("renders", this.signature, {callwithobject: true}, function(vars){ return object._rendersbound(vars); });
+					return ul4.expose("renders", this.signature, {needscontext: true, needsobject: true}, function(context, vars){ return self._rendersbound(context, vars); });
 				default:
 					return ul4.undefined;
 			}
 		},
-		_callbound: function(vars)
+		_callbound: function(context, vars)
 		{
-			if (this._jsfunction === null)
-				this._jsfunction = eval(this._makesource());
-			var out = [];
-			return this._jsfunction(this, out, vars);
+			var localcontext = context.clone();
+			localcontext.vars = vars;
+			try
+			{
+				ul4.BlockAST._eval.call(this, localcontext);
+			}
+			catch (exc)
+			{
+				if (ul4.ReturnException.isprotoof(exc))
+					return exc.result;
+				else
+					throw exc;
+			}
+			return null;
 		},
 		call: function(vars)
 		{
 			vars = vars || {};
-			var realvars = (this.signature !== null) ? this.signature.bindObject(this.name, [["**", vars]]) : vars;
-			return this._callbound(realvars);
+			var context = ul4.Context.create();
+			if (this.signature !== null)
+				vars = this.signature.bindObject(this.name, [["**", vars]]);
+			return this._callbound(context, vars);
+		},
+		__call__: function(context, vars)
+		{
+			return this._callbound(context, vars);
 		},
 		__type__: "template" // used by ``istemplate()``
 	}
@@ -4308,33 +4283,28 @@ ul4.SignatureAST = ul4._inherit(
 					this.params.push(param);
 			}
 		},
-		_jssource: function(out)
+		_eval: function(context)
 		{
-			out.push("ul4.Signature.create(");
+			var args = [];
 			for (var i = 0; i < this.params.length; ++i)
 			{
 				var param = this.params[i];
-				if (i)
-					out.push(", ");
 				if (param[1] === null)
-					out.push(ul4._repr(param[0]));
+					args.push(param[0]);
 				else
 				{
-					out.push(ul4._repr(param[0]+"="));
-					out.push(", ");
-					param[1]._jssource(out);
+					args.push(param[0] + "=");
+					args.push(param[1]._eval(context));
 				}
 			}
-			out.push(")");
+			return ul4.Signature.create.apply(ul4.Signature, args);
 		},
 		_repr: function(out)
 		{
 			out.push("<");
-			out.push(this.name);
-			out.push(+1);
-			out.push("params=");
+			out.push(this.typename);
+			out.push(" params=");
 			this.params._repr(out);
-			out.push(-1);
 			out.push(">");
 		}
 	}
@@ -4350,8 +4320,8 @@ ul4.TemplateClosure = ul4._inherit(
 			closure.signature = signature;
 			// Store a frozen copy of the current values of the parent template
 			closure.vars = ul4._extend({}, vars);
-			// We can't set ``__call__`` on ``ul4.TemplateClosure``, because we need the signature
-			closure.__call__ = ul4.expose(template.name, signature, {callwithobject: true}, function(vars){ return this._callbound(vars); });
+			closure._ul4_callsignature = signature;
+			closure._ul4_rendersignature = signature;
 			// Copy over the required attribute from the template
 			closure.name = template.name;
 			closure.tag = template.tag;
@@ -4362,27 +4332,29 @@ ul4.TemplateClosure = ul4._inherit(
 			closure.content = template.content;
 			return closure;
 		},
-		_renderbound: function(out, vars)
+		_ul4_callneedsobject: true,
+		_ul4_callneedscontext: true,
+		_ul4_renderneedsobject: true,
+		_ul4_renderneedscontext: true,
+		__render__: function(context, vars)
 		{
-			this.template._renderbound(out, ul4._simpleinherit(this.vars, vars));
+			this.template._renderbound(context, ul4._simpleinherit(this.vars, vars));
 		},
-		_rendersbound: function(vars)
+		__call__: function(context, vars)
 		{
-			return this.template._rendersbound(ul4._simpleinherit(this.vars, vars));
+			return this.template._callbound(context, ul4._simpleinherit(this.vars, vars));
 		},
-		_callbound: function(vars)
+		_rendersbound: function(context, vars)
 		{
-			return this.template._callbound(ul4._simpleinherit(this.vars, vars));
+			return this.template._rendersbound(context, ul4._simpleinherit(this.vars, vars));
 		},
 		__getattr__: function(attrname)
 		{
-			var object = this;
+			var self = this;
 			switch (attrname)
 			{
-				case "render":
-					return ul4.expose("render", this.signature, {needsout: true, callwithobject: true}, function(out, vars){ return object._renderbound(out, vars); });
 				case "renders":
-					return ul4.expose("renders", this.signature, {callwithobject: true}, function(vars){ return object._rendersbound(vars); });
+					return ul4.expose("renders", this.signature, {needscontext: true, needsobject: true}, function(context, vars){ return self._rendersbound(context, vars); });
 				default:
 					return this.template.__getattr__(attrname);
 			}
@@ -5035,8 +5007,6 @@ ul4._utcnow = function()
 };
 
 ul4.functions = {
-	print: ul4.expose("print", ["*args"], {needsout: true}, ul4._print),
-	printx: ul4.expose("printx", ["*args"], {needsout: true}, ul4._printx),
 	repr: ul4.expose("repr", ["obj"], ul4._repr),
 	str: ul4.expose("str", ["obj=", ""], ul4._str),
 	int: ul4.expose("int", ["obj=", 0, "base=", null], ul4._int),
@@ -5662,35 +5632,35 @@ ul4.Color = ul4._inherit(
 
 		__getattr__: function(attrname)
 		{
-			var object = this;
+			var self = this;
 			switch (attrname)
 			{
 				case "r":
-					return ul4.expose("r", [], function(){ return object._r; });
+					return ul4.expose("r", [], function(){ return self._r; });
 				case "g":
-					return ul4.expose("g", [], function(){ return object._g; });
+					return ul4.expose("g", [], function(){ return self._g; });
 				case "b":
-					return ul4.expose("b", [], function(){ return object._b; });
+					return ul4.expose("b", [], function(){ return self._b; });
 				case "a":
-					return ul4.expose("a", [], function(){ return object._a; });
+					return ul4.expose("a", [], function(){ return self._a; });
 				case "lum":
-					return ul4.expose("lum", [], function(){ return object.lum(); });
+					return ul4.expose("lum", [], function(){ return self.lum(); });
 				case "hls":
-					return ul4.expose("hls", [], function(){ return object.hls(); });
+					return ul4.expose("hls", [], function(){ return self.hls(); });
 				case "hlsa":
-					return ul4.expose("hlsa", [], function(){ return object.hlsa(); });
+					return ul4.expose("hlsa", [], function(){ return self.hlsa(); });
 				case "hsv":
-					return ul4.expose("hsv", [], function(){ return object.hsv(); });
+					return ul4.expose("hsv", [], function(){ return self.hsv(); });
 				case "hsva":
-					return ul4.expose("hsva", [], function(){ return object.hsva(); });
+					return ul4.expose("hsva", [], function(){ return self.hsva(); });
 				case "witha":
-					return ul4.expose("witha", ["a"], function(a){ return object.witha(a); });
+					return ul4.expose("witha", ["a"], function(a){ return self.witha(a); });
 				case "withlum":
-					return ul4.expose("withlum", ["lum"], function(lum){ return object.withlum(lum); });
+					return ul4.expose("withlum", ["lum"], function(lum){ return self.withlum(lum); });
 				case "abslum":
-					return ul4.expose("abslum", ["lum"], function(lum){ return object.abslum(lum); });
+					return ul4.expose("abslum", ["lum"], function(lum){ return self.abslum(lum); });
 				case "rellum":
-					return ul4.expose("rellum", ["lum"], function(lum){ return object.rellum(lum); });
+					return ul4.expose("rellum", ["lum"], function(lum){ return self.rellum(lum); });
 				default:
 					return ul4.undefined;
 			}
@@ -6052,15 +6022,15 @@ ul4.TimeDelta = ul4._inherit(
 
 		__getattr__: function(attrname)
 		{
-			var object = this;
+			var self = this;
 			switch (attrname)
 			{
 				case "days":
-					return ul4.expose("days", [], function(){ return object._days; });
+					return ul4.expose("days", [], function(){ return self._days; });
 				case "seconds":
-					return ul4.expose("seconds", [], function(){ return object._seconds; });
+					return ul4.expose("seconds", [], function(){ return self._seconds; });
 				case "microseconds":
-					return ul4.expose("microseconds", [], function(){ return object._microseconds; });
+					return ul4.expose("microseconds", [], function(){ return self._microseconds; });
 				default:
 					return ul4.undefined;
 			}
@@ -6225,11 +6195,11 @@ ul4.MonthDelta = ul4._inherit(
 
 		__getattr__: function(attrname)
 		{
-			var object = this;
+			var self = this;
 			switch (attrname)
 			{
 				case "months":
-					return ul4.expose("months", [], function(){ return object._months; });
+					return ul4.expose("months", [], function(){ return self._months; });
 				default:
 					return ul4.undefined;
 			}
@@ -6266,11 +6236,11 @@ ul4._Set = ul4._inherit(
 
 		__getattr__: function(attrname)
 		{
-			var object = this;
+			var self = this;
 			switch (attrname)
 			{
 				case "add":
-					return ul4.expose("add", ["*items"], function(items){ object.add.apply(object, items); });
+					return ul4.expose("add", ["*items"], function(items){ self.add.apply(self, items); });
 				default:
 					return ul4.undefined;
 			}
@@ -6360,6 +6330,7 @@ ul4._Set = ul4._inherit(
 		"SliceAST",
 		"AttrAST",
 		"CallAST",
+		"RenderAST",
 		"SetVarAST",
 		"AddVarAST",
 		"SubVarAST",
@@ -6392,7 +6363,7 @@ ul4._Set = ul4._inherit(
 			ul4onname = ul4onname.substr(0, ul4onname.length-3);
 		ul4onname = ul4onname.toLowerCase();
 		var object = ul4[name];
-		object.name = name;
+		object.typename = name;
 		object.type = ul4onname;
 		ul4on.register("de.livinglogic.ul4." + ul4onname, object);
 	}

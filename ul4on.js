@@ -2,8 +2,8 @@
  * UL4ON JavaScript Library
  * http://www.livinglogic.de/Python/ul4on/
  *
- * Copyright 2012-2014 by LivingLogic AG, Bayreuth/Germany
- * Copyright 2012-2014 by Walter Dörwald
+ * Copyright 2012-2015 by LivingLogic AG, Bayreuth/Germany
+ * Copyright 2012-2015 by Walter Dörwald
  *
  * All Rights Reserved
  *
@@ -544,7 +544,7 @@ var ul4on = {
 					result.ul4onload(this);
 					typecode = this.readblackchar();
 					if (typecode !== ")")
-						throw "object terminator ')' expected, got " + ul4._repr(typecode) + " at position " + this.pos;
+						throw "object terminator ')' for object of type '" + name + "' expected, got " + ul4._repr(typecode) + " at position " + this.pos;
 					return result;
 				default:
 					throw "unknown typecode " + ul4._repr(typecode) + " at position " + this.pos;
