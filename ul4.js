@@ -142,21 +142,21 @@ ul4._internal_call = function(context, f, functioncontext, signature, needsconte
 ul4._callfunction = function(context, f, args)
 {
 	if (typeof(f._ul4_signature) === "undefined" || typeof(f._ul4_needsobject) === "undefined" || typeof(f._ul4_needscontext) === "undefined")
-		throw "function " + ul4._repr(f) + " is not callable by UL4!";
+		throw ul4.FunctionNotCallableByUL4Error.create(f);
 	return ul4._internal_call(context, f, ul4, f._ul4_signature, f._ul4_needscontext, f._ul4_needsobject, args);
 }
 
 ul4._callobject = function(context, obj, args)
 {
 	if (typeof(obj._ul4_callsignature) === "undefined" || typeof(obj._ul4_callneedsobject) === "undefined" || typeof(obj._ul4_callneedscontext) === "undefined")
-		throw "object " + ul4._repr(obj) + " is not callable by UL4!";
+		throw ul4.ObjectNotCallableByUL4Error.create(f);
 	return ul4._internal_call(context, obj.__call__, obj, obj._ul4_callsignature, obj._ul4_callneedscontext, obj._ul4_callneedsobject, args);
 }
 
 ul4._callrender = function(context, obj, args)
 {
 	if (typeof(obj._ul4_rendersignature) === "undefined" || typeof(obj._ul4_renderneedsobject) === "undefined" || typeof(obj._ul4_renderneedscontext) === "undefined")
-		throw "object " + ul4._repr(obj) + " is not renderable by UL4!";
+		throw ul4.ObjectNotRenderableByUL4Error.create(f);
 	return ul4._internal_call(context, obj.__render__, obj, obj._ul4_rendersignature, obj._ul4_renderneedscontext, obj._ul4_renderneedsobject, args);
 }
 
@@ -167,7 +167,7 @@ ul4._call = function(context, f, args)
 	else if (f && typeof(f.__call__) === "function")
 		return ul4._callobject(context, f, args);
 	else
-		throw ul4._repr(f) + " is not callable!";
+		throw ul4.NotCallableError.create(f);
 }
 
 ul4._unpackvar = function(lvalue, value)
@@ -301,7 +301,7 @@ ul4._iter = function(obj)
 			}
 		};
 	}
-	throw "'" + ul4._type(obj) + "' object is not iterable";
+	throw ul4.NotIterableError.create(obj);
 };
 
 ul4._str_repr = function(str)
@@ -446,7 +446,7 @@ ul4._object_repr = function(obj)
 	return v.join("");
 };
 
-// Return a string representation of ``obj``: This should be an object supported by UL4
+// Return a string representation of ``obj``: If possible this should be an object literal supported by UL4, otherwise the output should be bracketed with ``<`` and ``>``
 ul4._repr = function(obj)
 {
 	if (obj === null)
@@ -459,6 +459,11 @@ ul4._repr = function(obj)
 		return ul4._str_repr(obj);
 	else if (typeof(obj) === "number")
 		return "" + obj;
+	else if (typeof(obj) === "function")
+		if (obj._ul4_name || obj.name)
+			return "<function " + (obj._ul4_name || obj.name) + ">";
+		else
+			return "<anonymous function>";
 	else if (ul4._isdate(obj))
 		return ul4._date_repr(obj);
 	else if (typeof(obj) === "undefined")
@@ -1816,8 +1821,13 @@ ul4.Context = ul4._inherit(
 	}
 );
 
+/// Exceptions
+
+ul4.Exception = ul4._inherit(ul4.Proto, {});
+
+// Control flow exceptions
 ul4.ReturnException = ul4._inherit(
-	ul4.Proto,
+	ul4.Exception,
 	{
 		create: function(result)
 		{
@@ -1828,10 +1838,138 @@ ul4.ReturnException = ul4._inherit(
 	}
 );
 
-ul4.BreakException = ul4._inherit(ul4.Proto, {});
+ul4.BreakException = ul4._inherit(ul4.Exception, {});
 
-ul4.ContinueException = ul4._inherit(ul4.Proto, {});
+ul4.ContinueException = ul4._inherit(ul4.Exception, {});
 
+// Real exceptions raised by various parts of UL4
+ul4.SyntaxError = ul4._inherit(ul4.Exception, {});
+
+ul4.LValueRequiredError = ul4._inherit(
+	ul4.SyntaxError,
+	{
+		toString: function()
+		{
+			return "ul4.LValueRequiredError: lvalue required!";
+		}
+	}
+);
+
+ul4.TypeError = ul4._inherit(ul4.Exception, {});
+
+ul4.NotCallableError = ul4._inherit(
+	ul4.TypeError,
+	{
+		create: function(obj)
+		{
+			var exception = ul4._clone(this);
+			exception.obj = obj;
+			return exception;
+		},
+		toString: function()
+		{
+			return "ul4.NotCallableError: " + ul4._repr(this.obj) + " is not callable!";
+		}
+	}
+);
+
+ul4.FunctionNotCallableByUL4Error = ul4._inherit(
+	ul4.NotCallableError,
+	{
+		toString: function()
+		{
+			return "ul4.FunctionNotCallableByUL4Error: function " + ul4._repr(this.obj) + " is not callable by UL4!";
+		}
+	}
+);
+
+ul4.ObjectNotCallableByUL4Error = ul4._inherit(
+	ul4.NotCallableError,
+	{
+		toString: function()
+		{
+			return "ul4.ObjectNotCallableByUL4Error: object " + ul4._repr(this.obj) + " is not callable by UL4!";
+		}
+	}
+);
+
+ul4.ObjectNotRenderableByUL4Error = ul4._inherit(
+	ul4.NotCallableError,
+	{
+		toString: function()
+		{
+			return "ul4.ObjectNotRenderableByUL4Error: object " + ul4._repr(this.obj) + " is not renderable by UL4!";
+		}
+	}
+);
+
+ul4.NotIterableError = ul4._inherit(
+	ul4.TypeError,
+	{
+		create: function(obj)
+		{
+			var exception = ul4._clone(this);
+			exception.obj = obj;
+			return exception;
+		},
+		toString: function()
+		{
+			return "ul4.NotIterableError: " + ul4._repr(this.obj) + " is not iterable!";
+		}
+	}
+);
+
+/// Exception that wraps other exception while they bubble up the stack
+ul4.Error = ul4._inherit(
+	ul4.Exception,
+	{
+		create: function(node, cause)
+		{
+			var exception = ul4._clone(this);
+			exception.node = node;
+			exception.template = null; // Will be filled in when the exception bubbles up
+			exception.cause = cause;
+			return exception;
+		},
+		toString: function()
+		{
+			var templateprefix, pos, text;
+			if (this.template !== null)
+			{
+				if (ul4.TemplateClosure.isprotoof(this.template))
+					templateprefix = "in local template " + ul4._repr(this.template.name) + ": ";
+				else if (this.template.name !== null)
+					templateprefix = "in template " + ul4._repr(this.template.name) + ": ";
+				else
+					templateprefix = "in unnamed template: ";
+			}
+			else
+				templateprefix = "";
+
+			pos = "offset " + this.node.startpos + ":" + this.node.endpos;
+
+			if (ul4.Tag.isprotoof(this.node))
+			{
+				var code = ul4._repr(this.node._text()).slice(1, 1);
+				text = code;
+			}
+			else
+			{
+				var prefix = this.node.tag.source.substring(this.node.tag.startpos, this.node.startpos);
+				var code = this.node.tag.source.substring(this.node.startpos, this.node.endpos);
+				var suffix = this.node.tag.source.substring(this.node.endpos, this.node.tag.endpos);
+				prefix = ul4._repr(prefix).slice(1, -1);
+				code = ul4._repr(code).slice(1, -1);
+				suffix = ul4._repr(suffix).slice(1, -1);
+				text = prefix + code + suffix + "\n" + ul4._str_repeat(" ", prefix.length) + ul4._str_repeat("\u203e", code.length);
+			}
+			return "ul4.Error: " + templateprefix + pos + "\n" + text + "\n\n" + this.cause.toString();
+		}
+	}
+);
+
+
+/// Classes for the syntax tree
 ul4.AST = ul4._inherit(
 	ul4.Proto,
 	{
@@ -1854,13 +1992,52 @@ ul4.AST = ul4._inherit(
 			this._repr(out);
 			return ul4._formatsource(out);
 		},
+		_handle_eval: function(context)
+		{
+			try
+			{
+				return this._eval(context);
+			}
+			catch (exc)
+			{
+				if (!ul4.Error.isprotoof(exc))
+					exc = ul4.Error.create(this, exc);
+				throw exc;
+			}
+		},
+		_handle_eval_set: function(context, value)
+		{
+			try
+			{
+				return this._eval_set(context, value);
+			}
+			catch (exc)
+			{
+				if (!ul4.Error.isprotoof(exc))
+					exc = ul4.Error.create(this, exc);
+				throw exc;
+			}
+		},
 		_eval_set: function(context, value)
 		{
-			throw "lvalue required";
+			throw ul4.LValueRequiredError;
+		},
+		_handle_eval_modify: function(context, operator, value)
+		{
+			try
+			{
+				return this._eval_modify(context, operator, value);
+			}
+			catch (exc)
+			{
+				if (!ul4.Error.isprotoof(exc))
+					exc = ul4.Error.create(this, exc);
+				throw exc;
+			}
 		},
 		_eval_modify: function(context, operator, value)
 		{
-			throw "lvalue required";
+			throw ul4.LValueRequiredError;
 		},
 		_repr: function(out)
 		{
@@ -2110,7 +2287,7 @@ ul4.ListAST = ul4._inherit(
 		{
 			var result = [];
 			for (var i = 0; i < this.items.length; ++i)
-				result.push(this.items[i]._eval(context));
+				result.push(this.items[i]._handle_eval(context));
 			return result;
 		}
 	}
@@ -2147,7 +2324,7 @@ ul4.ListCompAST = ul4._inherit(
 		},
 		_eval: function(context)
 		{
-			var container = this.container._eval(context);
+			var container = this.container._handle_eval(context);
 
 			var localcontext = context.inheritvars();
 
@@ -2159,9 +2336,9 @@ ul4.ListCompAST = ul4._inherit(
 					break;
 				var varitems = ul4._unpackvar(this.varname, item.value);
 				for (var i = 0; i < varitems.length; ++i)
-					varitems[i][0]._eval_set(localcontext, varitems[i][1]);
-				if (this.condition === null || ul4._bool(this.condition._eval(localcontext)))
-					result.push(this.item._eval(localcontext));
+					varitems[i][0]._handle_eval_set(localcontext, varitems[i][1]);
+				if (this.condition === null || ul4._bool(this.condition._handle_eval(localcontext)))
+					result.push(this.item._handle_eval(localcontext));
 			}
 			return result;
 		}
@@ -2198,8 +2375,8 @@ ul4.DictAST = ul4._inherit(
 				result = new Map();
 				for (var i = 0; i < this.items.length; ++i)
 				{
-					var key = this.items[i][0]._eval(context);
-					var value = this.items[i][1]._eval(context);
+					var key = this.items[i][0]._handle_eval(context);
+					var value = this.items[i][1]._handle_eval(context);
 					result.set(key, value);
 				}
 			}
@@ -2208,8 +2385,8 @@ ul4.DictAST = ul4._inherit(
 				result = {};
 				for (var i = 0; i < this.items.length; ++i)
 				{
-					var key = this.items[i][0]._eval(context);
-					var value = this.items[i][1]._eval(context);
+					var key = this.items[i][0]._handle_eval(context);
+					var value = this.items[i][1]._handle_eval(context);
 					result[key] = value;
 				}
 			}
@@ -2252,7 +2429,7 @@ ul4.DictCompAST = ul4._inherit(
 		},
 		_eval: function(context)
 		{
-			var container = this.container._eval(context);
+			var container = this.container._handle_eval(context);
 
 			var localcontext = context.inheritvars();
 
@@ -2267,11 +2444,11 @@ ul4.DictCompAST = ul4._inherit(
 						break;
 					var varitems = ul4._unpackvar(this.varname, item.value);
 					for (var i = 0; i < varitems.length; ++i)
-						varitems[i][0]._eval_set(localcontext, varitems[i][1]);
-					if (this.condition === null || ul4._bool(this.condition._eval(localcontext)))
+						varitems[i][0]._handle_eval_set(localcontext, varitems[i][1]);
+					if (this.condition === null || ul4._bool(this.condition._handle_eval(localcontext)))
 					{
-						var key = this.key._eval(localcontext);
-						var value = this.value._eval(localcontext);
+						var key = this.key._handle_eval(localcontext);
+						var value = this.value._handle_eval(localcontext);
 						result.set(key, value);
 					}
 				}
@@ -2286,11 +2463,11 @@ ul4.DictCompAST = ul4._inherit(
 						break;
 					var varitems = ul4._unpackvar(this.varname, value.value);
 					for (var i = 0; i < varitems.length; ++i)
-						varitems[i][0]._eval_set(localcontext, varitems[i][1]);
-					if (this.condition === null || ul4._bool(this.condition._eval(localcontext)))
+						varitems[i][0]._handle_eval_set(localcontext, varitems[i][1]);
+					if (this.condition === null || ul4._bool(this.condition._handle_eval(localcontext)))
 					{
-						var key = this.key._eval(localcontext);
-						var value = this.value._eval(localcontext);
+						var key = this.key._handle_eval(localcontext);
+						var value = this.value._handle_eval(localcontext);
 						result[key] = value;
 					}
 				}
@@ -2328,7 +2505,7 @@ ul4.SetAST = ul4._inherit(
 			var result = ul4on._haveset ? new Set() : ul4._Set.create();
 
 			for (var i = 0; i < this.items.length; ++i)
-				result.add(this.items[i]._eval(context));
+				result.add(this.items[i]._handle_eval(context));
 
 			return result;
 		}
@@ -2365,7 +2542,7 @@ ul4.SetCompAST = ul4._inherit(
 		},
 		_eval: function(context)
 		{
-			var container = this.container._eval(context);
+			var container = this.container._handle_eval(context);
 
 			var localcontext = context.inheritvars();
 
@@ -2377,9 +2554,9 @@ ul4.SetCompAST = ul4._inherit(
 					break;
 				var varitems = ul4._unpackvar(this.varname, item.value);
 				for (var i = 0; i < varitems.length; ++i)
-					varitems[i][0]._eval_set(localcontext, varitems[i][1]);
-				if (this.condition === null || ul4._bool(this.condition._eval(localcontext)))
-					result.add(this.item._eval(localcontext));
+					varitems[i][0]._handle_eval_set(localcontext, varitems[i][1]);
+				if (this.condition === null || ul4._bool(this.condition._handle_eval(localcontext)))
+					result.add(this.item._handle_eval(localcontext));
 			}
 
 			return result;
@@ -2418,7 +2595,7 @@ ul4.GenExprAST = ul4._inherit(
 		},
 		_eval: function(context)
 		{
-			var container = this.container._eval(context);
+			var container = this.container._handle_eval(context);
 			var iter = ul4._iter(container);
 
 			var localcontext = context.inheritvars();
@@ -2434,10 +2611,10 @@ ul4.GenExprAST = ul4._inherit(
 							return item;
 						var varitems = ul4._unpackvar(self.varname, item.value);
 						for (var i = 0; i < varitems.length; ++i)
-							varitems[i][0]._eval_set(localcontext, varitems[i][1]);
-						if (self.condition === null || ul4._bool(self.condition._eval(localcontext)))
+							varitems[i][0]._handle_eval_set(localcontext, varitems[i][1]);
+						if (self.condition === null || ul4._bool(self.condition._handle_eval(localcontext)))
 						{
-							var value = self.item._eval(localcontext);
+							var value = self.item._handle_eval(localcontext);
 							return {value: value, done: false};
 						}
 					}
@@ -2516,7 +2693,7 @@ ul4.UnaryAST = ul4._inherit(
 		},
 		_eval: function(context)
 		{
-			var obj = this.obj._eval(context);
+			var obj = this.obj._handle_eval(context);
 			return this._do(obj);
 		}
 	}
@@ -2589,11 +2766,11 @@ ul4.IfAST = ul4._inherit(
 		_eval: function(context)
 		{
 			var result;
-			var condvalue = this.objcond._eval(context);
+			var condvalue = this.objcond._handle_eval(context);
 			if (ul4._bool(condvalue))
-				result = this.objif._eval(context);
+				result = this.objif._handle_eval(context);
 			else
-				result = this.objelse._eval(context);
+				result = this.objelse._handle_eval(context);
 			return result;
 		}
 	}
@@ -2604,7 +2781,7 @@ ul4.ReturnAST = ul4._inherit(
 	{
 		_eval: function(context)
 		{
-			var result = this.obj._eval(context);
+			var result = this.obj._handle_eval(context);
 			throw ul4.ReturnException.create(result);
 		},
 		_str: function(out)
@@ -2620,7 +2797,7 @@ ul4.PrintAST = ul4._inherit(
 	{
 		_eval: function(context)
 		{
-			var obj = this.obj._eval(context);
+			var obj = this.obj._handle_eval(context);
 			var output = ul4._str(obj);
 			context.output(output);
 		},
@@ -2637,7 +2814,7 @@ ul4.PrintXAST = ul4._inherit(
 	{
 		_eval: function(context)
 		{
-			var obj = this.obj._eval(context);
+			var obj = this.obj._handle_eval(context);
 			var output = ul4._xmlescape(obj);
 			context.output(output);
 		},
@@ -2672,8 +2849,8 @@ ul4.BinaryAST = ul4._inherit(
 		},
 		_eval: function(context)
 		{
-			var obj1 = this.obj1._eval(context);
-			var obj2 = this.obj2._eval(context);
+			var obj1 = this.obj1._handle_eval(context);
+			var obj2 = this.obj2._handle_eval(context);
 			return this._do(obj1, obj2);
 		}
 	}
@@ -2690,14 +2867,14 @@ ul4.ItemAST = ul4._inherit(
 		},
 		_eval_set: function(context, value)
 		{
-			var obj1 = this.obj1._eval(context);
-			var obj2 = this.obj2._eval(context);
+			var obj1 = this.obj1._handle_eval(context);
+			var obj2 = this.obj2._handle_eval(context);
 			this._set(obj1, obj2, value);
 		},
 		_eval_modify: function(context, operator, value)
 		{
-			var obj1 = this.obj1._eval(context);
-			var obj2 = this.obj2._eval(context);
+			var obj1 = this.obj1._handle_eval(context);
+			var obj2 = this.obj2._handle_eval(context);
 			this._modify(operator, obj1, obj2, value);
 		},
 		_get: function(container, key)
@@ -3282,10 +3459,10 @@ ul4.AndAST = ul4._inherit(
 	{
 		_eval: function(context)
 		{
-			var obj1 = this.obj1._eval(context);
+			var obj1 = this.obj1._handle_eval(context);
 			if (!ul4._bool(obj1))
 				return obj1;
-			var obj2 = this.obj2._eval(context);
+			var obj2 = this.obj2._handle_eval(context);
 			return obj2;
 		}
 	}
@@ -3296,10 +3473,10 @@ ul4.OrAST = ul4._inherit(
 	{
 		_eval: function(context)
 		{
-			var obj1 = this.obj1._eval(context);
+			var obj1 = this.obj1._handle_eval(context);
 			if (ul4._bool(obj1))
 				return obj1;
-			var obj2 = this.obj2._eval(context);
+			var obj2 = this.obj2._handle_eval(context);
 			return obj2;
 		}
 	}
@@ -3327,18 +3504,18 @@ ul4.AttrAST = ul4._inherit(
 		},
 		_eval: function(context)
 		{
-			var obj = this.obj._eval(context);
+			var obj = this.obj._handle_eval(context);
 			var result = this._get(obj, this.attrname);
 			return result;
 		},
 		_eval_set: function(context, value)
 		{
-			var obj = this.obj._eval(context);
+			var obj = this.obj._handle_eval(context);
 			this._set(obj, this.attrname, value);
 		},
 		_eval_modify: function(context, operator, value)
 		{
-			var obj = this.obj._eval(context);
+			var obj = this.obj._handle_eval(context);
 			this._modify(operator, obj, this.attrname, value);
 		},
 		_get: function(object, attrname)
@@ -3549,14 +3726,14 @@ ul4.CallAST = ul4._inherit(
 			for (var i = 0; i < this.args.length; ++i)
 			{
 				var name = this.args[i][0];
-				var value = this.args[i][1]._eval(context);
+				var value = this.args[i][1]._handle_eval(context);
 				args.push([name, value]);
 			}
 			return args;
 		},
 		_eval: function(context)
 		{
-			var obj = this.obj._eval(context);
+			var obj = this.obj._handle_eval(context);
 			var args = this._makeargs(context);
 			var result = ul4._call(context, obj, args);
 			return result;
@@ -3609,7 +3786,7 @@ ul4.RenderAST = ul4._inherit(
 		_eval: function(context)
 		{
 			var localcontext = context.withindent(this.indent !== null ? this.indent._text() : null);
-			var obj = this.obj._eval(localcontext);
+			var obj = this.obj._handle_eval(localcontext);
 			var args = this._makeargs(localcontext);
 			var result = ul4._callrender(localcontext, obj, args);
 			return result;
@@ -3665,8 +3842,8 @@ ul4.SliceAST = ul4._inherit(
 		},
 		_eval: function(context)
 		{
-			var index1 = this.index1 !== null ? this.index1._eval(context) : null;
-			var index2 = this.index2 !== null ? this.index2._eval(context) : null;
+			var index1 = this.index1 !== null ? this.index1._handle_eval(context) : null;
+			var index2 = this.index2 !== null ? this.index2._handle_eval(context) : null;
 			return ul4.slice.create(index1, index2);
 		}
 	}
@@ -3696,12 +3873,12 @@ ul4.SetVarAST = ul4._inherit(
 		},
 		_eval: function(context)
 		{
-			var value = this.value._eval(context);
+			var value = this.value._handle_eval(context);
 			var items = ul4._unpackvar(this.lvalue, value);
 			for (var i = 0; i < items.length; ++i)
 			{
 				var item = items[i];
-				item[0]._eval_set(context, item[1]);
+				item[0]._handle_eval_set(context, item[1]);
 			}
 		}
 	}
@@ -3712,12 +3889,12 @@ ul4.ModifyVarAST = ul4._inherit(
 	{
 		_eval: function(context)
 		{
-			var value = this.value._eval(context);
+			var value = this.value._handle_eval(context);
 			var items = ul4._unpackvar(this.lvalue, value);
 			for (var i = 0; i < items.length; ++i)
 			{
 				var item = items[i];
-				item[0]._eval_modify(context, this._operator, item[1]);
+				item[0]._handle_eval_modify(context, this._operator, item[1]);
 			}
 		}
 	}
@@ -3759,7 +3936,7 @@ ul4.BlockAST = ul4._inherit(
 		_eval: function(context)
 		{
 			for (var i = 0; i < this.content.length; ++i)
-				this.content[i]._eval(context);
+				this.content[i]._handle_eval(context);
 		},
 		_str: function(out)
 		{
@@ -3813,7 +3990,7 @@ ul4.ForBlockAST = ul4._inherit(
 		},
 		_eval: function(context)
 		{
-			var container = this.container._eval(context);
+			var container = this.container._handle_eval(context);
 
 			for (var iter = ul4._iter(container);;)
 			{
@@ -3822,10 +3999,10 @@ ul4.ForBlockAST = ul4._inherit(
 					break;
 				var varitems = ul4._unpackvar(this.varname, value.value);
 				for (var i = 0; i < varitems.length; ++i)
-					varitems[i][0]._eval_set(context, varitems[i][1]);
+					varitems[i][0]._handle_eval_set(context, varitems[i][1]);
 				try
 				{
-					ul4.BlockAST._eval.call(this, context);
+					ul4.BlockAST._handle_eval.call(this, context);
 				}
 				catch (exc)
 				{
@@ -3880,12 +4057,12 @@ ul4.WhileBlockAST = ul4._inherit(
 		{
 			while (true)
 			{
-				var cond = this.condition._eval(context);
+				var cond = this.condition._handle_eval(context);
 				if (!ul4._bool(cond))
 					break;
 				try
 				{
-					ul4.BlockAST._eval.call(this, context);
+					ul4.BlockAST._handle_eval.call(this, context);
 				}
 				catch (exc)
 				{
@@ -3959,7 +4136,7 @@ ul4.CondBlockAST = ul4._inherit(
 				var execute = block._execute(context);
 				if (execute)
 				{
-					block._eval(context);
+					block._handle_eval(context);
 					break;
 				}
 			}
@@ -3997,7 +4174,7 @@ ul4.ConditionalBlockAST = ul4._inherit(
 		},
 		_execute: function(context)
 		{
-			var cond = this.condition._eval(context);
+			var cond = this.condition._handle_eval(context);
 			var result = ul4._bool(cond);
 			return result;
 		}
@@ -4113,7 +4290,7 @@ ul4.Template = ul4._inherit(
 		{
 			var signature = null;
 			if (this.signature !== null)
-				signature = this.signature._eval(context);
+				signature = this.signature._handle_eval(context);
 			var closure = ul4.TemplateClosure.create(this, signature, context.vars);
 			context.set(this.name, closure);
 		},
@@ -4163,7 +4340,10 @@ ul4.Template = ul4._inherit(
 			catch (exc)
 			{
 				if (!ul4.ReturnException.isprotoof(exc))
+				{
+					exc.template = this;
 					throw exc;
+				}
 			}
 		},
 		__render__: function(context, vars)
@@ -4217,14 +4397,17 @@ ul4.Template = ul4._inherit(
 			localcontext.vars = vars;
 			try
 			{
-				ul4.BlockAST._eval.call(this, localcontext);
+				ul4.BlockAST._handle_eval.call(this, localcontext);
 			}
 			catch (exc)
 			{
 				if (ul4.ReturnException.isprotoof(exc))
 					return exc.result;
 				else
+				{
+					exc.template = this;
 					throw exc;
+				}
 			}
 			return null;
 		},
@@ -4294,7 +4477,7 @@ ul4.SignatureAST = ul4._inherit(
 				else
 				{
 					args.push(param[0] + "=");
-					args.push(param[1]._eval(context));
+					args.push(param[1]._handle_eval(context));
 				}
 			}
 			return ul4.Signature.create.apply(ul4.Signature, args);
