@@ -2787,7 +2787,7 @@ ul4.ReturnAST = ul4._inherit(
 		_str: function(out)
 		{
 			out.push("return ");
-			ul4.UnaryAST._str.call(this, out);
+			this.obj._str(out);
 		}
 	}
 );
@@ -2804,7 +2804,7 @@ ul4.PrintAST = ul4._inherit(
 		_str: function(out)
 		{
 			out.push("print ");
-			ul4.UnaryAST._str.call(this, out);
+			this.obj._str(out);
 		}
 	}
 );
@@ -2821,7 +2821,7 @@ ul4.PrintXAST = ul4._inherit(
 		_str: function(out)
 		{
 			out.push("printx ");
-			ul4.UnaryAST._str.call(this, out);
+			this.obj._str(out);
 		}
 	}
 );
