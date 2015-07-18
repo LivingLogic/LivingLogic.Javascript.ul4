@@ -4009,7 +4009,7 @@ ul4.ForBlockAST = ul4._inherit(
 					varitems[i][0]._handle_eval_set(context, varitems[i][1]);
 				try
 				{
-					ul4.BlockAST._handle_eval.call(this, context);
+					ul4.BlockAST._eval.call(this, context); // FIXME: We can't call _handle_eval here
 				}
 				catch (exc)
 				{
@@ -4071,7 +4071,7 @@ ul4.WhileBlockAST = ul4._inherit(
 					break;
 				try
 				{
-					ul4.BlockAST._handle_eval.call(this, context);
+					ul4.BlockAST._eval.call(this, context); // We can't call _handle_eval here
 				}
 				catch (exc)
 				{
@@ -4406,7 +4406,7 @@ ul4.Template = ul4._inherit(
 			localcontext.vars = vars;
 			try
 			{
-				ul4.BlockAST._handle_eval.call(this, localcontext);
+				ul4.BlockAST._eval.call(this, localcontext); // We can't call _handle_eval here
 			}
 			catch (exc)
 			{
