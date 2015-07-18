@@ -3970,7 +3970,7 @@ ul4.ForBlockAST = ul4._inherit(
 		_ul4onattrs: ul4.BlockAST._ul4onattrs.concat(["varname", "container"]),
 		_repr: function(out)
 		{
-			out.push("<ForAST");
+			out.push("<ForBlockAST");
 			out.push(" varname=");
 			out.push(ul4._repr(this.varname));
 			out.push(" container=");
