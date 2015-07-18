@@ -3977,16 +3977,23 @@ ul4.ForBlockAST = ul4._inherit(
 			this.container._repr(out);
 			out.push(">");
 		},
-		_str: function(out)
+		_str_varname: function(out, varname)
 		{
-			out.push("for "),
-			out.push(ul4._repr(this.varname));
-			out.push(" in ");
-			this.container._repr(out);
-			out.push(":");
-			out.push(+1);
-			ul4.BlockAST._str.call(this, out);
-			out.push(-1);
+			if (ul4._islist(varname))
+			{
+				out.push("(");
+				for (var i = 0; i < varname.length; ++i)
+				{
+					if (i)
+						out.push(", ");
+					this._str_varname(out, varname[i]);
+				}
+				if (varname.length == 1)
+					out.push(",");
+				out.push(")");
+			}
+			else
+				varname._str(out);
 		},
 		_eval: function(context)
 		{
@@ -4018,7 +4025,9 @@ ul4.ForBlockAST = ul4._inherit(
 		_str: function(out)
 		{
 			out.push("for ");
-			ul4.AST._str.call(this, out);
+			this._str_varname(out, this.varname);
+			out.push(" in ");
+			this.container._str(out);
 			out.push(":");
 			out.push(+1);
 			ul4.BlockAST._str.call(this, out);
