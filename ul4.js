@@ -1934,6 +1934,7 @@ ul4.Error = ul4._inherit(
 		toString: function()
 		{
 			var templateprefix, pos, text;
+
 			if (this.template !== null)
 			{
 				if (ul4.TemplateClosure.isprotoof(this.template))
