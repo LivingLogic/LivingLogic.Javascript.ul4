@@ -1825,9 +1825,12 @@ ul4.Context = ul4._inherit(
 
 ul4.Exception = ul4._inherit(ul4.Proto, {});
 
+// Exceptions used internally by UL4 for flow control
+ul4.InternalException = ul4._inherit(ul4.Exception, {});
+
 // Control flow exceptions
 ul4.ReturnException = ul4._inherit(
-	ul4.Exception,
+	ul4.InternalException,
 	{
 		create: function(result)
 		{
@@ -1838,9 +1841,9 @@ ul4.ReturnException = ul4._inherit(
 	}
 );
 
-ul4.BreakException = ul4._inherit(ul4.Exception, {});
+ul4.BreakException = ul4._inherit(ul4.InternalException, {});
 
-ul4.ContinueException = ul4._inherit(ul4.Exception, {});
+ul4.ContinueException = ul4._inherit(ul4.InternalException, {});
 
 // Real exceptions raised by various parts of UL4
 ul4.SyntaxError = ul4._inherit(ul4.Exception, {});
@@ -2031,7 +2034,7 @@ ul4.AST = ul4._inherit(
 			}
 			catch (exc)
 			{
-				if (!ul4.Error.isprotoof(exc))
+				if (!ul4.InternalException.isprotoof(exc) && !ul4.Error.isprotoof(exc))
 					exc = ul4.Error.create(this, exc);
 				throw exc;
 			}
