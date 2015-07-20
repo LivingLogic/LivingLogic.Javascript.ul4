@@ -142,21 +142,21 @@ ul4._internal_call = function(context, f, functioncontext, signature, needsconte
 ul4._callfunction = function(context, f, args)
 {
 	if (typeof(f._ul4_signature) === "undefined" || typeof(f._ul4_needsobject) === "undefined" || typeof(f._ul4_needscontext) === "undefined")
-		throw ul4.FunctionNotCallableByUL4Error.create(f);
+		throw ul4.TypeError.create("call", "function " + ul4.repr(f) + " is not callable by UL4");
 	return ul4._internal_call(context, f, ul4, f._ul4_signature, f._ul4_needscontext, f._ul4_needsobject, args);
 }
 
 ul4._callobject = function(context, obj, args)
 {
 	if (typeof(obj._ul4_callsignature) === "undefined" || typeof(obj._ul4_callneedsobject) === "undefined" || typeof(obj._ul4_callneedscontext) === "undefined")
-		throw ul4.ObjectNotCallableByUL4Error.create(f);
+		throw ul4.TypeError.create("call", ul4.type(obj) + " object is not callable by UL4");
 	return ul4._internal_call(context, obj.__call__, obj, obj._ul4_callsignature, obj._ul4_callneedscontext, obj._ul4_callneedsobject, args);
 }
 
 ul4._callrender = function(context, obj, args)
 {
 	if (typeof(obj._ul4_rendersignature) === "undefined" || typeof(obj._ul4_renderneedsobject) === "undefined" || typeof(obj._ul4_renderneedscontext) === "undefined")
-		throw ul4.ObjectNotRenderableByUL4Error.create(f);
+		throw ul4.TypeError.create("render", ul4.type(obj) + " object is not renderable by UL4");
 	return ul4._internal_call(context, obj.__render__, obj, obj._ul4_rendersignature, obj._ul4_renderneedscontext, obj._ul4_renderneedsobject, args);
 }
 
@@ -167,7 +167,7 @@ ul4._call = function(context, f, args)
 	else if (f && typeof(f.__call__) === "function")
 		return ul4._callobject(context, f, args);
 	else
-		throw ul4.NotCallableError.create(f);
+		throw ul4.TypeError.create("call", ul4._type(f) + " is not callable");
 }
 
 ul4._unpackvar = function(lvalue, value)
@@ -188,14 +188,14 @@ ul4._unpackvar = function(lvalue, value)
 				if (i === lvalue.length)
 					break;
 				else
-					throw ul4.TooFewValuesToUnpackError.create(lvalue.length, i);
+					throw ul4.ValueError.create("need " + lvalue.length + " value" + (lvalue.length === 1 ? "" : "s") + " to unpack, got " + i);
 			}
 			else
 			{
 				if (i < lvalue.length)
 					newvalue = newvalue.concat(ul4._unpackvar(lvalue[i], item.value));
 				else
-					throw ul4.TooManyValuesToUnpackError.create(lvalue.length);
+					throw ul4.ValueError.create("too many values to unpack (expected " + lvalue.length + ")");
 			}
 		}
 		return newvalue;
@@ -301,7 +301,7 @@ ul4._iter = function(obj)
 			}
 		};
 	}
-	throw ul4.NotIterableError.create(obj);
+	throw ul4.TypeError.create("iter", ul4._type(this.obj) + " object is not iterable");
 };
 
 ul4._str_repr = function(str)
@@ -1858,181 +1858,36 @@ ul4.LValueRequiredError = ul4._inherit(
 	}
 );
 
-ul4.TypeError = ul4._inherit(ul4.Exception, {});
-
-ul4.NotCallableError = ul4._inherit(
-	ul4.TypeError,
+ul4.TypeError = ul4._inherit(
+	ul4.Exception,
 	{
-		create: function(obj)
+		create: function(operation, message)
 		{
 			var exception = ul4._clone(this);
-			exception.obj = obj;
+			exception.operation = operation;
+			exception.message = message;
 			return exception;
 		},
 		toString: function()
 		{
-			return "ul4.NotCallableError: " + ul4._type(this.obj) + " object is not callable!";
+			return "ul4.TypeError: " + this.message;
 		}
 	}
 );
 
-ul4.FunctionNotCallableByUL4Error = ul4._inherit(
-	ul4.NotCallableError,
+ul4.ValueError = ul4._inherit(
+	ul4.Exception,
 	{
-		toString: function()
-		{
-			return "ul4.FunctionNotCallableByUL4Error: function " + ul4._repr(this.obj) + " is not callable by UL4!";
-		}
-	}
-);
-
-ul4.ObjectNotCallableByUL4Error = ul4._inherit(
-	ul4.NotCallableError,
-	{
-		toString: function()
-		{
-			return "ul4.ObjectNotCallableByUL4Error: " + ul4._type(this.obj) + " object is not callable by UL4!";
-		}
-	}
-);
-
-ul4.ObjectNotRenderableByUL4Error = ul4._inherit(
-	ul4.NotCallableError,
-	{
-		toString: function()
-		{
-			return "ul4.ObjectNotRenderableByUL4Error: " + ul4._type(this.obj) + " object is not renderable by UL4!";
-		}
-	}
-);
-
-ul4.NotIterableError = ul4._inherit(
-	ul4.TypeError,
-	{
-		create: function(obj)
+		create: function(operation, message)
 		{
 			var exception = ul4._clone(this);
-			exception.obj = obj;
+			exception.operation = operation;
+			exception.message = message;
 			return exception;
 		},
 		toString: function()
 		{
-			return "ul4.NotIterableError: " + ul4._type(this.obj) + " object is not iterable!";
-		}
-	}
-);
-
-ul4.ImmutableError = ul4._inherit(
-	ul4.TypeError,
-	{
-		toString: function()
-		{
-			return "ul4.ImmutableError: object is immutable!";
-		}
-	}
-);
-
-ul4.OperationNotSupportedError = ul4._inherit(ul4.TypeError, {});
-
-ul4.AdditionNotSupportedError = ul4._inherit(
-	ul4.TypeError,
-	{
-		create: function(obj1, obj2)
-		{
-			var exception = ul4._clone(this);
-			exception.obj1 = obj1;
-			exception.obj2 = obj2;
-			return exception;
-		},
-		toString: function()
-		{
-			return "ul4.AdditionNotSupportedError: " + ul4._type(this.obj1) + " + " + ul4._type(this.obj2) + " is not supported!";
-		}
-	}
-);
-
-ul4.SubtractionNotSupportedError = ul4._inherit(
-	ul4.TypeError,
-	{
-		create: function(obj1, obj2)
-		{
-			var exception = ul4._clone(this);
-			exception.obj1 = obj1;
-			exception.obj2 = obj2;
-			return exception;
-		},
-		toString: function()
-		{
-			return "ul4.SubtractionNotSupportedError: " + ul4._type(this.obj1) + " - " + ul4._type(this.obj2) + " is not supported!";
-		}
-	}
-);
-
-ul4.NotSubscriptableError = ul4._inherit(
-	ul4.TypeError,
-	{
-		create: function(obj)
-		{
-			var exception = ul4._clone(this);
-			exception.obj = obj;
-			return exception;
-		},
-		toString: function()
-		{
-			return "ul4.NotSubscriptableError: " + ul4._type(this.obj) + " object is not subscriptable!";
-		}
-	}
-);
-
-ul4.UnorderableError = ul4._inherit(
-	ul4.TypeError,
-	{
-		create: function(obj1, obj2, operator)
-		{
-			var exception = ul4._clone(this);
-			exception.obj1 = obj1;
-			exception.obj2 = obj2;
-			exception.operator = operator;
-			return exception;
-		},
-		toString: function()
-		{
-			return "ul4.UnorderableError: " + ul4._type(this.obj1) + " " + this.operator + " " + ul4._type(this.obj2) + " not supported!";
-		}
-	}
-);
-
-ul4.VariableUnpackingError = ul4._inherit(ul4.Exception, {});
-
-ul4.TooManyValuesToUnpackError = ul4._inherit(
-	ul4.VariableUnpackingError,
-	{
-		create: function(expected)
-		{
-			var exception = ul4._clone(this);
-			exception.expected = expected;
-			return exception;
-		},
-		toString: function()
-		{
-			return "ul4.TooManyValuesToUnpackError: too many values to unpack (expected " + ul4._repr(this.expected) + ")";
-		}
-	}
-);
-
-ul4.TooFewValuesToUnpackError = ul4._inherit(
-	ul4.VariableUnpackingError,
-	{
-		create: function(expected, got)
-		{
-			var exception = ul4._clone(this);
-			exception.expected = expected;
-			exception.got = got;
-			return exception;
-		},
-		toString: function()
-		{
-			return "ul4.TooFewValuesToUnpackError: need " + this.expected + " value" + (this.expected === 1 ? "" : "s") + " to unpack, got " + this.got;
+			return "ul4.ValueError: " + this.message;
 		}
 	}
 );
@@ -2176,7 +2031,7 @@ ul4.AST = ul4._inherit(
 		},
 		__setitem__: function(attrname, value)
 		{
-			throw ul4.ImmutableError;
+			throw ul4.TypeError.create("mutate", "object is immutable");
 		},
 		// used in ul4ondump/ul4ondump to automatically dump these attributes
 		_ul4onattrs: ["startpos", "endpos"]
@@ -3024,7 +2879,7 @@ ul4.ItemAST = ul4._inherit(
 			else if (Object.prototype.toString.call(container) === "[object Object]")
 				return container[key];
 			else
-				throw ul4.NotSubscriptableError.create(container);
+				throw ul4.TypeError.create("[]", ul4._type(container) + " object is not subscriptable");
 		},
 		_set: function(container, key, value)
 		{
@@ -3143,12 +2998,12 @@ ul4.LTAST = ul4._inherit(
 				if (obj2 && typeof(obj2.__lt__) === "function")
 					return obj1.__lt__(obj2);
 				else
-					throw ul4.UnorderableError.create(obj1, obj2, "<");
+					throw ul4.TypeError.create("<", ul4._type(this.obj1) + " < " + ul4._type(this.obj2) + " not supported");
 			}
 			else
 			{
 				if (obj2 && typeof(obj2.__lt__) === "function")
-					throw ul4.UnorderableError.create(obj1, obj2, "<");
+					throw ul4.TypeError.create("<", ul4._type(this.obj1) + " < " + ul4._type(this.obj2) + " not supported");
 				else
 					return obj1 < obj2;
 			}
@@ -3167,12 +3022,12 @@ ul4.LEAST = ul4._inherit(
 				if (obj2 && typeof(obj2.__le__) === "function")
 					return obj1.__le__(obj2);
 				else
-					throw ul4.UnorderableError.create(obj1, obj2, "<=");
+					throw ul4.TypeError.create("<=", ul4._type(this.obj1) + " <= " + ul4._type(this.obj2) + " not supported");
 			}
 			else
 			{
 				if (obj2 && typeof(obj2.__lt__) === "function")
-					throw ul4.UnorderableError.create(obj1, obj2, "<=");
+					throw ul4.TypeError.create("<=", ul4._type(this.obj1) + " <= " + ul4._type(this.obj2) + " not supported");
 				else
 					return obj1 <= obj2;
 			}
@@ -3191,12 +3046,12 @@ ul4.GTAST = ul4._inherit(
 				if (obj2 && typeof(obj2.__gt__) === "function")
 					return obj1.__gt__(obj2);
 				else
-					throw ul4.UnorderableError.create(obj1, obj2, ">");
+					throw ul4.TypeError.create(">", ul4._type(this.obj1) + " > " + ul4._type(this.obj2) + " not supported");
 			}
 			else
 			{
 				if (obj2 && typeof(obj2.__lt__) === "function")
-					throw ul4.UnorderableError.create(obj1, obj2, ">");
+					throw ul4.TypeError.create(">", ul4._type(this.obj1) + " > " + ul4._type(this.obj2) + " not supported");
 				else
 					return obj1 > obj2;
 			}
@@ -3215,12 +3070,12 @@ ul4.GEAST = ul4._inherit(
 				if (obj2 && typeof(obj2.__ge__) === "function")
 					return obj1.__ge__(obj2);
 				else
-					throw ul4.UnorderableError.create(obj1, obj2, ">=");
+					throw ul4.TypeError.create(">=", ul4._type(this.obj1) + " >= " + ul4._type(this.obj2) + " not supported");
 			}
 			else
 			{
 				if (obj2 && typeof(obj2.__lt__) === "function")
-					throw ul4.UnorderableError.create(obj1, obj2, ">=");
+					throw ul4.TypeError.create(">=", ul4._type(this.obj1) + " >= " + ul4._type(this.obj2) + " not supported");
 				else
 					return obj1 >= obj2;
 			}
@@ -3286,7 +3141,7 @@ ul4.AddAST = ul4._inherit(
 			else if (obj2 && typeof(obj2.__radd__) === "function")
 				return obj2.__radd__(obj1);
 			if (obj1 === null || obj2 === null)
-				throw ul4.AdditionNotSupportedError.create(obj1, obj2);
+				throw ul4.TypeError.create("+", ul4._type(this.obj1) + " + " + ul4._type(this.obj2) + " is not supported");
 			if (ul4._islist(obj1) && ul4._islist(obj2))
 			{
 				var result = [];
@@ -3321,7 +3176,7 @@ ul4.SubAST = ul4._inherit(
 			else if (obj2 && typeof(obj2.__rsub__) === "function")
 				return obj2.__rsub__(obj1);
 			if (obj1 === null || obj2 === null)
-				throw ul4.SubtractionNotSupportedError.create(obj1, obj2);
+				throw ul4.TypeError.create("-", ul4._type(this.obj1) + " - " + ul4._type(this.obj2) + " is not supported");
 			return obj1 - obj2;
 		},
 		_ido: function(obj1, obj2)
@@ -3915,14 +3770,28 @@ ul4.RenderAST = ul4._inherit(
 		{
 			out.push("render ");
 			out.push(this.tag.source.substring(this.startpos, this.endpos).replace(/\r?\n/g, ' '));
+			if (this.indent !== null)
+			{
+				out.push(" with indent ");
+				out.push(ul4._repr(this.indent._text()));
+			}
 		},
-		_eval: function(context)
+		_handle_eval: function(context)
 		{
 			var localcontext = context.withindent(this.indent !== null ? this.indent._text() : null);
 			var obj = this.obj._handle_eval(localcontext);
 			var args = this._makeargs(localcontext);
-			var result = ul4._callrender(localcontext, obj, args);
-			return result;
+
+			try
+			{
+				var result = ul4._callrender(localcontext, obj, args);
+				return result;
+			}
+			catch (exc)
+			{
+				exc = ul4.Error.create(this, exc);
+				throw exc;
+			}
 		}
 	}
 );
