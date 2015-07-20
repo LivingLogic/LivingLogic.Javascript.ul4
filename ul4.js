@@ -1950,7 +1950,7 @@ ul4.Error = ul4._inherit(
 
 			if (ul4.Tag.isprotoof(this.node))
 			{
-				var code = ul4._repr(this.node._text()).slice(1, 1);
+				var code = ul4._repr(this.node._text()).slice(1, -1);
 				text = code;
 			}
 			else
