@@ -3732,12 +3732,26 @@ ul4.CallAST = ul4._inherit(
 			}
 			return args;
 		},
-		_eval: function(context)
+		_handle_eval: function(context)
 		{
 			var obj = this.obj._handle_eval(context);
 			var args = this._makeargs(context);
-			var result = ul4._call(context, obj, args);
-			return result;
+
+			try
+			{
+				var result = ul4._call(context, obj, args);
+				return result;
+			}
+			catch (exc)
+			{
+				exc = ul4.Error.create(this, exc);
+				throw exc;
+			}
+		},
+
+		_eval: function(context)
+		{
+			return this._handle_eval(context);
 		}
 	}
 );
@@ -4010,7 +4024,9 @@ ul4.ForBlockAST = ul4._inherit(
 					varitems[i][0]._handle_eval_set(context, varitems[i][1]);
 				try
 				{
-					ul4.BlockAST._eval.call(this, context); // FIXME: We can't call _handle_eval here
+					// We can't call _handle_eval() here, as this would in turn call this function again, leading to infinite recursion
+					// But we don't have to, as wrapping original exception in ``Error`` has already been done by the lower levels
+					ul4.BlockAST._eval.call(this, context);
 				}
 				catch (exc)
 				{
@@ -4072,7 +4088,9 @@ ul4.WhileBlockAST = ul4._inherit(
 					break;
 				try
 				{
-					ul4.BlockAST._eval.call(this, context); // We can't call _handle_eval here
+					// We can't call _handle_eval() here, as this would in turn call this function again, leading to infinite recursion
+					// But we don't have to, as wrapping original exception in ``Error`` has already been done by the lower levels
+					ul4.BlockAST._eval.call(this, context);
 				}
 				catch (exc)
 				{
@@ -4407,7 +4425,7 @@ ul4.Template = ul4._inherit(
 			localcontext.vars = vars;
 			try
 			{
-				ul4.BlockAST._eval.call(this, localcontext); // We can't call _handle_eval here
+				ul4.BlockAST._eval.call(this, localcontext);
 			}
 			catch (exc)
 			{
