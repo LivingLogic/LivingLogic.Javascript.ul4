@@ -1765,7 +1765,7 @@ ul4.Context = ul4._inherit(
 		},
 
 		/* Return a clone of the ``Context``, but with a fresh empty ``vars`` objects that inherits from the previous one.
-		 * This is used by the various comprehension to avoid leaking loop variables.
+		 * This is used by the various comprehensions to avoid leaking loop variables.
 		 */
 		inheritvars: function()
 		{
@@ -1786,7 +1786,7 @@ ul4.Context = ul4._inherit(
 			return context;
 		},
 
-		/* Return a clone of the ``Context`` with the output buffer replaced (this is used by ``renders`` so collect the output in a separate buffer) */
+		/* Return a clone of the ``Context`` with the output buffer replaced (this is used by ``renders`` to collect the output in a separate buffer) */
 		replaceoutput: function()
 		{
 			var context = ul4._clone(this);
