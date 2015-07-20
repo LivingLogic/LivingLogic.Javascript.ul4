@@ -1965,7 +1965,7 @@ ul4.Error = ul4._inherit(
 				prefix = ul4._repr(prefix).slice(1, -1);
 				code = ul4._repr(code).slice(1, -1);
 				suffix = ul4._repr(suffix).slice(1, -1);
-				text = prefix + code + suffix + "\n" + ul4._str_repeat(" ", prefix.length) + ul4._str_repeat("\u203e", code.length);
+				text = prefix + code + suffix + "\n" + ul4._str_repeat("\u00a0", prefix.length) + ul4._str_repeat("\u203e", code.length);
 			}
 			return "ul4.Error: " + templateprefix + pos + "\n" + text + "\n\n" + this.cause.toString();
 		}
