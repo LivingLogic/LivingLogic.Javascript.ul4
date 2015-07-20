@@ -5104,13 +5104,13 @@ ul4._enumerate = function(iterable, start)
 // Return an iterator over ``[isfirst, item]`` lists from the iterable object ``iterable`` (``isfirst`` is true for the first item, false otherwise)
 ul4._isfirst = function(iterable)
 {
+	var iter = ul4._iter(iterable);
+	var isfirst = true;
 	return {
-		iter: ul4._iter(iterable),
-		isfirst: true,
 		next: function() {
-			var item = this.iter.next();
-			var result = item.done ? item : {value: [this.isfirst, item.value], done: false};
-			this.isfirst = false;
+			var item = iter.next();
+			var result = item.done ? item : {value: [isfirst, item.value], done: false};
+			isfirst = false;
 			return result;
 		}
 	};
@@ -5131,7 +5131,6 @@ ul4._islast = function(iterable)
 			return result;
 		}
 	};
-	return ul4._markiter(result);
 };
 
 // Return an iterator over ``[isfirst, islast, item]`` lists from the iterable object ``iterable`` (``isfirst`` is true for the first item, ``islast`` is true for the last item. Both are false otherwise)
@@ -5151,7 +5150,6 @@ ul4._isfirstlast = function(iterable)
 			return result;
 		}
 	};
-	return ul4._markiter(result);
 };
 
 // Return an iterator over ``[index, isfirst, islast, item]`` lists from the iterable object ``iterable`` (``isfirst`` is true for the first item, ``islast`` is true for the last item. Both are false otherwise)
@@ -5172,7 +5170,6 @@ ul4._enumfl = function(iterable, start)
 			return result;
 		}
 	};
-	return ul4._markiter(result);
 };
 
 // Return an iterator over lists, where the i'th list consists of all i'th items from the arguments (terminating when the shortest argument ends)
