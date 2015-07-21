@@ -1733,14 +1733,15 @@ ul4.Signature = ul4._inherit(
 );
 
 // Adds name and signature to a function/method and makes the method callable in templates
-ul4.expose = function(name, signature, options, f)
+ul4.expose = function expose(signature, options, f)
 {
 	if (typeof(f) === "undefined")
 	{
 		f = options;
 		options = {};
 	}
-	f._ul4_name = name;
+	if (options.name)
+		f._ul4_name = options.name;
 	if (ul4._islist(signature))
 		signature = ul4.Signature.create.apply(ul4.Signature, signature);
 	f._ul4_signature = signature;
@@ -3499,33 +3500,33 @@ ul4.AttrAST = ul4._inherit(
 				switch (attrname)
 				{
 					case "find":
-						return ul4.expose("find", ["sub", "start=", null, "end=", null], function(sub, start, end){ return ul4._find(object, sub, start, end); });
+						return ul4.expose(["sub", "start=", null, "end=", null], {name: "find"}, function(sub, start, end){ return ul4._find(object, sub, start, end); });
 					case "rfind":
-						return ul4.expose("rfind", ["sub", "start=", null, "end=", null], function(sub, start, end){ return ul4._rfind(object, sub, start, end); });
+						return ul4.expose(["sub", "start=", null, "end=", null], {name: "rfind"}, function(sub, start, end){ return ul4._rfind(object, sub, start, end); });
 					case "replace":
-						return ul4.expose("replace", ["old", "new", "count=", null], function(old, new_, count){ return ul4._replace(object, old, new_, count); });
+						return ul4.expose(["old", "new", "count=", null], {name: "replace"}, function(old, new_, count){ return ul4._replace(object, old, new_, count); });
 					case "strip":
-						return ul4.expose("strip", ["chars=", null], function(chars){ return ul4._strip(object, chars); });
+						return ul4.expose(["chars=", null], {name: "strip"}, function(chars){ return ul4._strip(object, chars); });
 					case "lstrip":
-						return ul4.expose("lstrip", ["chars=", null], function(chars){ return ul4._lstrip(object, chars); });
+						return ul4.expose(["chars=", null], {name: "lstrip"}, function(chars){ return ul4._lstrip(object, chars); });
 					case "rstrip":
-						return ul4.expose("rstrip", ["chars=", null], function(chars){ return ul4._rstrip(object, chars); });
+						return ul4.expose(["chars=", null], {name: "rstrip"}, function(chars){ return ul4._rstrip(object, chars); });
 					case "split":
-						return ul4.expose("split", ["sep=", null, "count=", null], function(sep, count){ return ul4._split(object, sep, count); });
+						return ul4.expose(["sep=", null, "count=", null], {name: "split"}, function(sep, count){ return ul4._split(object, sep, count); });
 					case "rsplit":
-						return ul4.expose("rsplit", ["sep=", null, "count=", null], function(sep, count){ return ul4._rsplit(object, sep, count); });
+						return ul4.expose(["sep=", null, "count=", null], {name: "rsplit"}, function(sep, count){ return ul4._rsplit(object, sep, count); });
 					case "lower":
-						return ul4.expose("lower", [], function(){ return object.toLowerCase(); });
+						return ul4.expose([], {name: "lower"}, function(){ return object.toLowerCase(); });
 					case "upper":
-						return ul4.expose("upper", [], function(){ return object.toUpperCase(); });
+						return ul4.expose([], {name: "upper"}, function(){ return object.toUpperCase(); });
 					case "capitalize":
-						return ul4.expose("capitalize", [], function(){ return ul4._capitalize(object); });
+						return ul4.expose([], {name: "capitalize"}, function(){ return ul4._capitalize(object); });
 					case "join":
-						return ul4.expose("join", ["iterable"], function(iterable){ return ul4._join(object, iterable); });
+						return ul4.expose(["iterable"], {name: "capitalize"}, function(iterable){ return ul4._join(object, iterable); });
 					case "startswith":
-						return ul4.expose("startswith", ["prefix"], function(prefix){ return ul4._startswith(object, prefix); });
+						return ul4.expose(["prefix"], {name: "startswith"}, function(prefix){ return ul4._startswith(object, prefix); });
 					case "endswith":
-						return ul4.expose("endswith", ["suffix"], function(suffix){ return ul4._endswith(object, suffix); });
+						return ul4.expose(["suffix"], {name: "endswith"}, function(suffix){ return ul4._endswith(object, suffix); });
 					default:
 						return ul4.undefined;
 				}
@@ -3535,15 +3536,15 @@ ul4.AttrAST = ul4._inherit(
 				switch (attrname)
 				{
 					case "append":
-						return ul4.expose("append", ["*items"], function(items){ return ul4._append(object, items); });
+						return ul4.expose(["*items"], {name: "append"}, function(items){ return ul4._append(object, items); });
 					case "insert":
-						return ul4.expose("insert", ["pos", "*items"], function(pos, items){ return ul4._insert(object, pos, items); });
+						return ul4.expose(["pos", "*items"], {name: "insert"}, function(pos, items){ return ul4._insert(object, pos, items); });
 					case "pop":
-						return ul4.expose("pop", ["pos=", -1], function(pos){ return ul4._pop(object, pos); });
+						return ul4.expose(["pos=", -1], {name: "pop"}, function(pos){ return ul4._pop(object, pos); });
 					case "find":
-						return ul4.expose("find", ["sub", "start=", null, "end=", null], function(sub, start, end){ return ul4._find(object, sub, start, end); });
+						return ul4.expose(["sub", "start=", null, "end=", null], {name: "find"}, function(sub, start, end){ return ul4._find(object, sub, start, end); });
 					case "rfind":
-						return ul4.expose("rfind", ["sub", "start=", null, "end=", null], function(sub, start, end){ return ul4._rfind(object, sub, start, end); });
+						return ul4.expose(["sub", "start=", null, "end=", null], {name: "rfind"}, function(sub, start, end){ return ul4._rfind(object, sub, start, end); });
 					default:
 						return ul4.undefined;
 				}
@@ -3553,29 +3554,29 @@ ul4.AttrAST = ul4._inherit(
 				switch (attrname)
 				{
 					case "weekday":
-						return ul4.expose("weekday", [], function(){ return ul4._weekday(object); });
+						return ul4.expose([], {name: "weekday"}, function(){ return ul4._weekday(object); });
 					case "week":
-						return ul4.expose("week", ["firstweekday=", null], function(firstweekday){ return ul4._week(object, firstweekday); });
+						return ul4.expose(["firstweekday=", null], {name: "week"}, function(firstweekday){ return ul4._week(object, firstweekday); });
 					case "day":
-						return ul4.expose("day", [], function(){ return object.getDate(); });
+						return ul4.expose([], {name: "day"}, function(){ return object.getDate(); });
 					case "month":
-						return ul4.expose("month", [], function(){ return object.getMonth()+1; });
+						return ul4.expose([], {name: "month"}, function(){ return object.getMonth()+1; });
 					case "year":
-						return ul4.expose("year", [], function(){ return object.getFullYear(); });
+						return ul4.expose([], {name: "year"}, function(){ return object.getFullYear(); });
 					case "hour":
-						return ul4.expose("hour", [], function(){ return object.getHours(); });
+						return ul4.expose([], {name: "hour"}, function(){ return object.getHours(); });
 					case "minute":
-						return ul4.expose("minute", [], function(){ return object.getMinutes(); });
+						return ul4.expose([], {name: "minute"}, function(){ return object.getMinutes(); });
 					case "second":
-						return ul4.expose("second", [], function(){ return object.getSeconds(); });
+						return ul4.expose([], {name: "second"}, function(){ return object.getSeconds(); });
 					case "microsecond":
-						return ul4.expose("microsecond", [], function(){ return object.getMilliseconds() * 1000; });
+						return ul4.expose([], {name: "microsecond"}, function(){ return object.getMilliseconds() * 1000; });
 					case "mimeformat":
-						return ul4.expose("mimeformat", [], function(){ return ul4._mimeformat(object); });
+						return ul4.expose([], {name: "mimeformat"}, function(){ return ul4._mimeformat(object); });
 					case "isoformat":
-						return ul4.expose("isoformat", [], function(){ return ul4._isoformat(object); });
+						return ul4.expose([], {name: "mimeformat"}, function(){ return ul4._isoformat(object); });
 					case "yearday":
-						return ul4.expose("yearday", [], function(){ return ul4._yearday(object); });
+						return ul4.expose([], {name: "yearday"}, function(){ return ul4._yearday(object); });
 					default:
 						return ul4.undefined;
 				}
@@ -3585,13 +3586,13 @@ ul4.AttrAST = ul4._inherit(
 				switch (attrname)
 				{
 					case "get":
-						return ul4.expose("get", ["key", "default=", null], function(key, default_){ return ul4._get(object, key, default_); });
+						return ul4.expose(["key", "default=", null], {name: "get"}, function(key, default_){ return ul4._get(object, key, default_); });
 					case "items":
-						return ul4.expose("items", [], function(){ return ul4._items(object); });
+						return ul4.expose([], {name: "items"}, function(){ return ul4._items(object); });
 					case "values":
-						return ul4.expose("values", [], function(){ return ul4._values(object); });
+						return ul4.expose([], {name: "items"}, function(){ return ul4._values(object); });
 					case "update":
-						return ul4.expose("update", ["*other", "**kwargs"], function(other, kwargs){ return ul4._update(object, other, kwargs); });
+						return ul4.expose(["*other", "**kwargs"], {name: "update"}, function(other, kwargs){ return ul4._update(object, other, kwargs); });
 					default:
 						return object.get(attrname);
 				}
@@ -3601,7 +3602,7 @@ ul4.AttrAST = ul4._inherit(
 				switch (attrname)
 				{
 					case "add":
-						return ul4.expose("add", ["*items"], function(items){ for (var i = 0; i < items.length; ++i) { object.add(items[i]); } } );
+						return ul4.expose(["*items"], {name: "add"}, function(items){ for (var i = 0; i < items.length; ++i) { object.add(items[i]); } } );
 					default:
 						return ul4.undefined;
 				}
@@ -3611,13 +3612,13 @@ ul4.AttrAST = ul4._inherit(
 				switch (attrname)
 				{
 					case "get":
-						return ul4.expose("get", ["key", "default=", null], function(key, default_){ return ul4._get(object, key, default_); });
+						return ul4.expose(["key", "default=", null], {name: "get"}, function(key, default_){ return ul4._get(object, key, default_); });
 					case "items":
-						return ul4.expose("items", [], function(){ return ul4._items(object); });
+						return ul4.expose([], {name: "items"}, function(){ return ul4._items(object); });
 					case "values":
-						return ul4.expose("values", [], function(){ return ul4._values(object); });
+						return ul4.expose([], {name: "values"}, function(){ return ul4._values(object); });
 					case "update":
-						return ul4.expose("update", ["*other", "**kwargs"], function(other, kwargs){ return ul4._update(object, other, kwargs); });
+						return ul4.expose(["*other", "**kwargs"], {name: "update"}, function(other, kwargs){ return ul4._update(object, other, kwargs); });
 					default:
 						var result;
 						if (object && typeof(object.__getattr__) === "function") // test this before the generic object test
@@ -4401,7 +4402,7 @@ ul4.Template = ul4._inherit(
 				case "enddelim":
 					return this.enddelim;
 				case "renders":
-					return ul4.expose("renders", this.signature, {needscontext: true, needsobject: true}, function(context, vars){ return self._rendersbound(context, vars); });
+					return ul4.expose(this.signature, {name: "renders", needscontext: true, needsobject: true}, function(context, vars){ return self._rendersbound(context, vars); });
 				default:
 					return ul4.undefined;
 			}
@@ -4552,7 +4553,7 @@ ul4.TemplateClosure = ul4._inherit(
 			switch (attrname)
 			{
 				case "renders":
-					return ul4.expose("renders", this.signature, {needscontext: true, needsobject: true}, function(context, vars){ return self._rendersbound(context, vars); });
+					return ul4.expose(this.signature, {name: "renders", needscontext: true, needsobject: true}, function(context, vars){ return self._rendersbound(context, vars); });
 				default:
 					return this.template.__getattr__(attrname);
 			}
@@ -5202,75 +5203,75 @@ ul4._utcnow = function()
 };
 
 ul4.functions = {
-	repr: ul4.expose("repr", ["obj"], ul4._repr),
-	str: ul4.expose("str", ["obj=", ""], ul4._str),
-	int: ul4.expose("int", ["obj=", 0, "base=", null], ul4._int),
-	float: ul4.expose("float", ["obj=", 0.0], ul4._float),
-	list: ul4.expose("list", ["iterable=", []], ul4._list),
-	set: ul4.expose("set", ["iterable=", []], ul4._set),
-	bool: ul4.expose("bool", ["obj=", false], ul4._bool),
-	len: ul4.expose("len", ["sequence"], ul4._len),
-	type: ul4.expose("type", ["obj"], ul4._type),
-	format: ul4.expose("format", ["obj", "fmt", "lang=", null], ul4._format),
-	any: ul4.expose("any", ["iterable"], ul4._any),
-	all: ul4.expose("all", ["iterable"], ul4._all),
-	zip: ul4.expose("zip", ["*iterables"], ul4._zip),
-	isundefined: ul4.expose("isundefined", ["obj"], ul4._isundefined),
-	isdefined: ul4.expose("isdefined", ["obj"], ul4._isdefined),
-	isnone: ul4.expose("isnone", ["obj"], ul4._isnone),
-	isbool: ul4.expose("isbool", ["obj"], ul4._isbool),
-	isint: ul4.expose("isint", ["obj"], ul4._isint),
-	isfloat: ul4.expose("isfloat", ["obj"], ul4._isfloat),
-	isstr: ul4.expose("isstr", ["obj"], ul4._isstr),
-	isdate: ul4.expose("isdate", ["obj"], ul4._isdate),
-	iscolor: ul4.expose("iscolor", ["obj"], ul4._iscolor),
-	istimedelta: ul4.expose("istimedelta", ["obj"], ul4._istimedelta),
-	ismonthdelta: ul4.expose("ismonthdelta", ["obj"], ul4._ismonthdelta),
-	istemplate: ul4.expose("istemplate", ["obj"], ul4._istemplate),
-	isfunction: ul4.expose("isfunction", ["obj"], ul4._isfunction),
-	islist: ul4.expose("islist", ["obj"], ul4._islist),
-	isset: ul4.expose("isset", ["obj"], ul4on._haveset ? ul4._isset : ul4._isul4set),
-	isdict: ul4.expose("isdict", ["obj"], ul4._isdict),
-	asjson: ul4.expose("asjson", ["obj"], ul4._asjson),
-	fromjson: ul4.expose("fromjson", ["string"], ul4._fromjson),
-	asul4on: ul4.expose("asul4on", ["obj"], ul4._asul4on),
-	fromul4on: ul4.expose("fromul4on", ["string"], ul4._fromul4on),
-	now: ul4.expose("now", [], ul4._now),
-	utcnow: ul4.expose("utcnow", [], ul4._utcnow),
-	enumerate: ul4.expose("enumerate", ["iterable", "start=", 0], ul4._enumerate),
-	isfirst: ul4.expose("isfirst", ["iterable"], ul4._isfirst),
-	islast: ul4.expose("islast", ["iterable"], ul4._islast),
-	isfirstlast: ul4.expose("isfirstlast", ["iterable"], ul4._isfirstlast),
-	enumfl: ul4.expose("enumfl", ["iterable", "start=", 0], ul4._enumfl),
-	abs: ul4.expose("abs", ["number"], ul4._abs),
-	date: ul4.expose("date", ["year", "month", "day", "hour=", 0, "minute=", 0, "second=", 0, "microsecond=", 0], ul4._date),
-	timedelta: ul4.expose("timedelta", ["days=", 0, "seconds=", 0, "microseconds=", 0], ul4._timedelta),
-	monthdelta: ul4.expose("monthdelta", ["months=", 0], ul4._monthdelta),
-	rgb: ul4.expose("rgb", ["r", "g", "b", "a=", 1.0], ul4._rgb),
-	hls: ul4.expose("hls", ["h", "l", "s", "a=", 1.0], ul4._hls),
-	hsv: ul4.expose("hsv", ["h", "s", "v", "a=", 1.0], ul4._hsv),
-	xmlescape: ul4.expose("xmlescape", ["obj"], ul4._xmlescape),
-	csv: ul4.expose("csv", ["obj"], ul4._csv),
-	chr: ul4.expose("chr", ["i"], ul4._chr),
-	ord: ul4.expose("ord", ["c"], ul4._ord),
-	hex: ul4.expose("hex", ["number"], ul4._hex),
-	oct: ul4.expose("oct", ["number"], ul4._oct),
-	bin: ul4.expose("bin", ["number"], ul4._bin),
-	min: ul4.expose("min", ["*obj"], ul4._min),
-	max: ul4.expose("max", ["*obj"], ul4._max),
-	sum: ul4.expose("sum", ["iterable", "start=", 0], ul4._sum),
-	first: ul4.expose("first", ["iterable", "default=", null], ul4._first),
-	last: ul4.expose("last", ["iterable", "default=", null], ul4._last),
-	sorted: ul4.expose("sorted", ["iterable"], ul4._sorted),
-	range: ul4.expose("range", ["*args"], ul4._range),
-	slice: ul4.expose("slice", ["*args"], ul4._slice),
-	urlquote: ul4.expose("urlquote", ["string"], ul4._urlquote),
-	urlunquote: ul4.expose("urlunquote", ["string"], ul4._urlunquote),
-	reversed: ul4.expose("reversed", ["sequence"], ul4._reversed),
-	random: ul4.expose("random", [], ul4._random),
-	randrange: ul4.expose("randrange", ["*args"], ul4._randrange),
-	randchoice: ul4.expose("randchoice", ["sequence"], ul4._randchoice),
-	round: ul4.expose("round", ["x", "digit=", 0], ul4._round)
+	repr: ul4.expose(["obj"], {name: "repr"}, ul4._repr),
+	str: ul4.expose(["obj=", ""], {name: "str"}, ul4._str),
+	int: ul4.expose(["obj=", 0, "base=", null], {name: "int"}, ul4._int),
+	float: ul4.expose(["obj=", 0.0], {name: "float"}, ul4._float),
+	list: ul4.expose(["iterable=", []], {name: "list"}, ul4._list),
+	set: ul4.expose(["iterable=", []], {name: "set"}, ul4._set),
+	bool: ul4.expose(["obj=", false], {name: "bool"}, ul4._bool),
+	len: ul4.expose(["sequence"], {name: "len"}, ul4._len),
+	type: ul4.expose(["obj"], {name: "type"}, ul4._type),
+	format: ul4.expose(["obj", "fmt", "lang=", null], {name: "format"}, ul4._format),
+	any: ul4.expose(["iterable"], {name: "any"}, ul4._any),
+	all: ul4.expose(["iterable"], {name: "all"}, ul4._all),
+	zip: ul4.expose(["*iterables"], {name: "zip"}, ul4._zip),
+	isundefined: ul4.expose(["obj"], {name: "isundefined"}, ul4._isundefined),
+	isdefined: ul4.expose(["obj"], {name: "isdefined"}, ul4._isdefined),
+	isnone: ul4.expose(["obj"], {name: "isnone"}, ul4._isnone),
+	isbool: ul4.expose(["obj"], {name: "isbool"}, ul4._isbool),
+	isint: ul4.expose(["obj"], {name: "isint"}, ul4._isint),
+	isfloat: ul4.expose(["obj"], {name: "isfloat"}, ul4._isfloat),
+	isstr: ul4.expose(["obj"], {name: "isstr"}, ul4._isstr),
+	isdate: ul4.expose(["obj"], {name: "isdate"}, ul4._isdate),
+	iscolor: ul4.expose(["obj"], {name: "iscolor"}, ul4._iscolor),
+	istimedelta: ul4.expose(["obj"], {name: "istimedelta"}, ul4._istimedelta),
+	ismonthdelta: ul4.expose(["obj"], {name: "ismonthdelta"}, ul4._ismonthdelta),
+	istemplate: ul4.expose(["obj"], {name: "istemplate"}, ul4._istemplate),
+	isfunction: ul4.expose(["obj"], {name: "isfunction"}, ul4._isfunction),
+	islist: ul4.expose(["obj"], {name: "islist"}, ul4._islist),
+	isset: ul4.expose(["obj"], {name: "isset"}, ul4on._haveset ? ul4._isset : ul4._isul4set),
+	isdict: ul4.expose(["obj"], {name: "isdict"}, ul4._isdict),
+	asjson: ul4.expose(["obj"], {name: "asjson"}, ul4._asjson),
+	fromjson: ul4.expose(["string"], {name: "fromjson"}, ul4._fromjson),
+	asul4on: ul4.expose(["obj"], {name: "asul4on"}, ul4._asul4on),
+	fromul4on: ul4.expose(["string"], {name: "fromul4on"}, ul4._fromul4on),
+	now: ul4.expose([], {name: "now"}, ul4._now),
+	utcnow: ul4.expose([], {name: "utcnow"}, ul4._utcnow),
+	enumerate: ul4.expose(["iterable", "start=", 0], {name: "enumerate"}, ul4._enumerate),
+	isfirst: ul4.expose(["iterable"], {name: "isfirst"}, ul4._isfirst),
+	islast: ul4.expose(["iterable"], {name: "islast"}, ul4._islast),
+	isfirstlast: ul4.expose(["iterable"], {name: "isfirstlast"}, ul4._isfirstlast),
+	enumfl: ul4.expose(["iterable", "start=", 0], {name: "enumfl"}, ul4._enumfl),
+	abs: ul4.expose(["number"], {name: "abs"}, ul4._abs),
+	date: ul4.expose(["year", "month", "day", "hour=", 0, "minute=", 0, "second=", 0, "microsecond=", 0], {name: "date"}, ul4._date),
+	timedelta: ul4.expose(["days=", 0, "seconds=", 0, "microseconds=", 0], {name: "timedelta"}, ul4._timedelta),
+	monthdelta: ul4.expose(["months=", 0], {name: "monthdelta"}, ul4._monthdelta),
+	rgb: ul4.expose(["r", "g", "b", "a=", 1.0], {name: "rgb"}, ul4._rgb),
+	hls: ul4.expose(["h", "l", "s", "a=", 1.0], {name: "hls"}, ul4._hls),
+	hsv: ul4.expose(["h", "s", "v", "a=", 1.0], {name: "hsv"}, ul4._hsv),
+	xmlescape: ul4.expose(["obj"], {name: "xmlescape"}, ul4._xmlescape),
+	csv: ul4.expose(["obj"], {name: "csv"}, ul4._csv),
+	chr: ul4.expose(["i"], {name: "chr"}, ul4._chr),
+	ord: ul4.expose(["c"], {name: "ord"}, ul4._ord),
+	hex: ul4.expose(["number"], {name: "hex"}, ul4._hex),
+	oct: ul4.expose(["number"], {name: "oct"}, ul4._oct),
+	bin: ul4.expose(["number"], {name: "bin"}, ul4._bin),
+	min: ul4.expose(["*obj"], {name: "min"}, ul4._min),
+	max: ul4.expose(["*obj"], {name: "max"}, ul4._max),
+	sum: ul4.expose(["iterable", "start=", 0], {name: "sum"}, ul4._sum),
+	first: ul4.expose(["iterable", "default=", null], {name: "first"}, ul4._first),
+	last: ul4.expose(["iterable", "default=", null], {name: "last"}, ul4._last),
+	sorted: ul4.expose(["iterable"], {name: "sorted"}, ul4._sorted),
+	range: ul4.expose(["*args"], {name: "range"}, ul4._range),
+	slice: ul4.expose(["*args"], {name: "slice"}, ul4._slice),
+	urlquote: ul4.expose(["string"], {name: "urlquote"}, ul4._urlquote),
+	urlunquote: ul4.expose(["string"], {name: "urlunquote"}, ul4._urlunquote),
+	reversed: ul4.expose(["sequence"], {name: "reversed"}, ul4._reversed),
+	random: ul4.expose([], {name: "random"}, ul4._random),
+	randrange: ul4.expose(["*args"], {name: "randrange"}, ul4._randrange),
+	randchoice: ul4.expose(["sequence"], {name: "randchoice"}, ul4._randchoice),
+	round: ul4.expose(["x", "digit=", 0], {name: "round"}, ul4._round)
 };
 
 // Functions implementing UL4 methods
@@ -5831,31 +5832,31 @@ ul4.Color = ul4._inherit(
 			switch (attrname)
 			{
 				case "r":
-					return ul4.expose("r", [], function(){ return self._r; });
+					return ul4.expose([], {name: "r"}, function(){ return self._r; });
 				case "g":
-					return ul4.expose("g", [], function(){ return self._g; });
+					return ul4.expose([], {name: "g"}, function(){ return self._g; });
 				case "b":
-					return ul4.expose("b", [], function(){ return self._b; });
+					return ul4.expose([], {name: "b"}, function(){ return self._b; });
 				case "a":
-					return ul4.expose("a", [], function(){ return self._a; });
+					return ul4.expose([], {name: "a"}, function(){ return self._a; });
 				case "lum":
-					return ul4.expose("lum", [], function(){ return self.lum(); });
+					return ul4.expose([], {name: "lum"}, function(){ return self.lum(); });
 				case "hls":
-					return ul4.expose("hls", [], function(){ return self.hls(); });
+					return ul4.expose([], {name: "hls"}, function(){ return self.hls(); });
 				case "hlsa":
-					return ul4.expose("hlsa", [], function(){ return self.hlsa(); });
+					return ul4.expose([], {name: "hlsa"}, function(){ return self.hlsa(); });
 				case "hsv":
-					return ul4.expose("hsv", [], function(){ return self.hsv(); });
+					return ul4.expose([], {name: "hsv"}, function(){ return self.hsv(); });
 				case "hsva":
-					return ul4.expose("hsva", [], function(){ return self.hsva(); });
+					return ul4.expose([], {name: "hsva"}, function(){ return self.hsva(); });
 				case "witha":
-					return ul4.expose("witha", ["a"], function(a){ return self.witha(a); });
+					return ul4.expose(["a"], {name: "witha"}, function(a){ return self.witha(a); });
 				case "withlum":
-					return ul4.expose("withlum", ["lum"], function(lum){ return self.withlum(lum); });
+					return ul4.expose(["lum"], {name: "withlum"}, function(lum){ return self.withlum(lum); });
 				case "abslum":
-					return ul4.expose("abslum", ["lum"], function(lum){ return self.abslum(lum); });
+					return ul4.expose(["lum"], {name: "abslum"}, function(lum){ return self.abslum(lum); });
 				case "rellum":
-					return ul4.expose("rellum", ["lum"], function(lum){ return self.rellum(lum); });
+					return ul4.expose(["lum"], {name: "rellum"}, function(lum){ return self.rellum(lum); });
 				default:
 					return ul4.undefined;
 			}
@@ -5881,42 +5882,22 @@ ul4.Color = ul4._inherit(
 			}
 		},
 
-		r: ul4.expose("r", [],
-			function()
-			{
-				return this._r;
-			}
-		),
+		r: ul4.expose([], {name: "r"}, function() { return this._r; }),
 
-		g: ul4.expose("g", [],
-			function()
-			{
-				return this._g;
-			}
-		),
+		g: ul4.expose([], {name: "g"}, function() { return this._g; }),
 
-		b: ul4.expose("b", [],
-			function()
-			{
-				return this._b;
-			}
-		),
+		b: ul4.expose([], {name: "b"}, function() { return this._b; }),
 
-		a: ul4.expose("a", [],
-			function()
-			{
-				return this._a;
-			}
-		),
+		a: ul4.expose([], {name: "a"}, function() { return this._a; }),
 
-		lum: ul4.expose("lum", [],
+		lum: ul4.expose([], {name: "lum"},
 			function()
 			{
 				return this.hls()[1];
 			}
 		),
 
-		hls: ul4.expose("hls", [],
+		hls: ul4.expose([], {name: "hls"},
 			function()
 			{
 				var r = this._r/255.0;
@@ -5948,7 +5929,7 @@ ul4.Color = ul4._inherit(
 			}
 		),
 
-		hlsa: ul4.expose("hlsa", [],
+		hlsa: ul4.expose([], {name: "hlsa"},
 			function()
 			{
 				var hls = this.hls();
@@ -5956,7 +5937,7 @@ ul4.Color = ul4._inherit(
 			}
 		),
 
-		hsv: ul4.expose("hsv", [],
+		hsv: ul4.expose([], {name: "hsv"},
 			function()
 			{
 				var r = this._r/255.0;
@@ -5983,7 +5964,7 @@ ul4.Color = ul4._inherit(
 			}
 		),
 
-		hsva: ul4.expose("hsva", [],
+		hsva: ul4.expose([], {name: "hsva"},
 			function()
 			{
 				var hsv = this.hsv();
@@ -5991,7 +5972,7 @@ ul4.Color = ul4._inherit(
 			}
 		),
 
-		witha: ul4.expose("witha", ["a"],
+		witha: ul4.expose(["a"], {name: "hsva"},
 			function(a)
 			{
 				if (typeof(a) !== "number")
@@ -6000,7 +5981,7 @@ ul4.Color = ul4._inherit(
 			}
 		),
 
-		withlum: ul4.expose("withlum", ["lum"],
+		withlum: ul4.expose(["lum"], {name: "withlum"},
 			function(lum)
 			{
 				if (typeof(lum) !== "number")
@@ -6221,11 +6202,11 @@ ul4.TimeDelta = ul4._inherit(
 			switch (attrname)
 			{
 				case "days":
-					return ul4.expose("days", [], function(){ return self._days; });
+					return ul4.expose([], {name: "days"}, function(){ return self._days; });
 				case "seconds":
-					return ul4.expose("seconds", [], function(){ return self._seconds; });
+					return ul4.expose([], {name: "seconds"}, function(){ return self._seconds; });
 				case "microseconds":
-					return ul4.expose("microseconds", [], function(){ return self._microseconds; });
+					return ul4.expose([], {name: "seconds"}, function(){ return self._microseconds; });
 				default:
 					return ul4.undefined;
 			}
@@ -6394,7 +6375,7 @@ ul4.MonthDelta = ul4._inherit(
 			switch (attrname)
 			{
 				case "months":
-					return ul4.expose("months", [], function(){ return self._months; });
+					return ul4.expose([], {name: "months"}, function(){ return self._months; });
 				default:
 					return ul4.undefined;
 			}
@@ -6435,7 +6416,7 @@ ul4._Set = ul4._inherit(
 			switch (attrname)
 			{
 				case "add":
-					return ul4.expose("add", ["*items"], function(items){ self.add.apply(self, items); });
+					return ul4.expose(["*items"], {name: "add"}, function(items){ self.add.apply(self, items); });
 				default:
 					return ul4.undefined;
 			}
