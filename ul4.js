@@ -3629,7 +3629,7 @@ ul4.AttrAST = ul4._inherit(
 							var realresult = function() {
 								return result.apply(object, arguments);
 							};
-							realresult._ul4_name = result._ul4_name;
+							realresult._ul4_name = result._ul4_name || result.name;
 							realresult._ul4_signature = result._ul4_signature;
 							realresult._ul4_needsobject = result._ul4_needsobject;
 							realresult._ul4_needscontext = result._ul4_needscontext;
