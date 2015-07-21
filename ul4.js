@@ -3197,19 +3197,19 @@ ul4.MulAST = ul4._inherit(
 			else if (obj2 && typeof(obj2.__rmul__) === "function")
 				return obj2.__rmul__(obj1);
 			if (obj1 === null || obj2 === null)
-				throw ul4._type(obj1) + " * " + ul4._type(obj2) + " not supported";
+				throw ul4.TypeError.create("*", ul4._type(obj1) + " * " + ul4._type(obj2) + " not supported");
 			else if (ul4._isint(obj1) || ul4._isbool(obj1))
 			{
 				if (typeof(obj2) === "string")
 				{
 					if (obj1 < 0)
-						throw "mul() repetition counter must be positive";
+						throw ul4.ValueError.create("repetition counter must be positive");
 					return ul4._str_repeat(obj2, obj1);
 				}
 				else if (ul4._islist(obj2))
 				{
 					if (obj1 < 0)
-						throw "mul() repetition counter must be positive";
+						throw ul4.ValueError.create("repetition counter must be positive");
 					return ul4._list_repeat(obj2, obj1);
 				}
 			}
@@ -3218,13 +3218,13 @@ ul4.MulAST = ul4._inherit(
 				if (typeof(obj1) === "string")
 				{
 					if (obj2 < 0)
-						throw "mul() repetition counter must be positive";
+						throw ul4.ValueError.create("repetition counter must be positive");
 					return ul4._str_repeat(obj1, obj2);
 				}
 				else if (ul4._islist(obj1))
 				{
 					if (obj2 < 0)
-						throw "mul() repetition counter must be positive";
+						throw ul4.ValueError.create("repetition counter must be positive");
 					return ul4._list_repeat(obj1, obj2);
 				}
 			}
@@ -3262,7 +3262,7 @@ ul4.FloorDivAST = ul4._inherit(
 			else if (obj2 && typeof(obj2.__rfloordiv__) === "function")
 				return obj2.__rfloordiv__(obj1);
 			if (obj1 === null || obj2 === null)
-				throw ul4._type(obj1) + " // " + ul4._type(obj2) + " not supported";
+				throw ul4.TypeError.create("//", ul4._type(obj1) + " // " + ul4._type(obj2) + " not supported");
 			return Math.floor(obj1 / obj2);
 		},
 		_ido: function(obj1, obj2)
@@ -3283,7 +3283,7 @@ ul4.TrueDivAST = ul4._inherit(
 			else if (obj2 && typeof(obj2.__rtruediv__) === "function")
 				return obj2.__rtruediv__(obj1);
 			if (obj1 === null || obj2 === null)
-				throw ul4._type(obj1) + " / " + ul4._type(obj2) + " not supported";
+				throw ul4.TypeError.create("/", ul4._type(obj1) + " / " + ul4._type(obj2) + " not supported");
 			return obj1 / obj2;
 		},
 		_ido: function(obj1, obj2)
@@ -3639,7 +3639,7 @@ ul4.AttrAST = ul4._inherit(
 							return result;
 				}
 			}
-			throw "AttrAST._get() needs an object with attributes";
+			throw ul4.TypeError.create("get", ul4._type(object) + " object has no readable attributes");
 		},
 		_set: function(object, attrname, value)
 		{
@@ -3650,7 +3650,7 @@ ul4.AttrAST = ul4._inherit(
 			else if (ul4._isobject(object))
 				object[attrname] = value;
 			else
-				throw "AttrAST._set() needs an object with attributes";
+				throw ul4.TypeError.create("set", ul4._type(object) + " object has no writable attributes");
 		},
 		_modify: function(operator, object, attrname, value)
 		{
@@ -6212,7 +6212,7 @@ ul4.TimeDelta = ul4._inherit(
 				}
 				return myValue/otherValue;
 			}
-			throw ul4._type(this) + " / " + ul4._type(other) + " not supported";
+			throw ul4.TypeError.create("/", ul4._type(this) + " / " + ul4._type(other) + " not supported");
 		},
 
 		__getattr__: function(attrname)
