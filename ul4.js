@@ -85,7 +85,7 @@ ul4._map2object = function(obj)
 		var newobj = {};
 		obj.forEach(function(value, key){
 			if (typeof(key) !== "string")
-				throw "keys must be strings";
+				throw ul4.TypeError.create("keys must be strings");
 			newobj[key] = value;
 		});
 		return newobj;
@@ -107,9 +107,9 @@ ul4._internal_call = function(context, f, functioncontext, signature, needsconte
 				var argname = args[i][0];
 				var argvalue = args[i][1];
 				if (argname === null)
-					throw ul4._repr(f) + " doesn't support positional arguments!";
+					throw ul4.ArgumentError.create(ul4._repr(f) + " doesn't support positional arguments!");
 				else if (argname === "*")
-					throw ul4._repr(f) + " doesn't support a * argument!";
+					throw ul4.ArgumentError.create(ul4._repr(f) + " doesn't support a * argument!");
 				else if (argname === "**")
 				{
 					if (ul4._ismap(argvalue))
@@ -131,7 +131,7 @@ ul4._internal_call = function(context, f, functioncontext, signature, needsconte
 	else
 	{
 		if (signature === null)
-			throw ul4._repr(f) + " doesn't support positional arguments!";
+			throw ul4.ArgumentError.create(ul4._repr(f) + " doesn't support positional arguments!");
 		finalargs = signature.bindArray(f._ul4_name, args);
 	}
 	if (needscontext)
@@ -562,10 +562,10 @@ ul4._int = function(obj, base)
 	if (base !== null)
 	{
 		if (typeof(obj) !== "string" || !ul4._isint(base))
-			throw "int() requires a string and an integer";
+			throw ul4.TypeError.create("int()", "int() requires a string and an integer");
 		result = parseInt(obj, base);
 		if (result.toString() == "NaN")
-			throw "invalid literal for int()";
+			throw ul4.TypeError.create("int()", "invalid literal for int()");
 		return result;
 	}
 	else
@@ -574,7 +574,7 @@ ul4._int = function(obj, base)
 		{
 			result = parseInt(obj);
 			if (result.toString() == "NaN")
-				throw "invalid literal for int()";
+			throw ul4.TypeError.create("int()", "invalid literal for int()");
 			return result;
 		}
 		else if (typeof(obj) == "number")
@@ -583,7 +583,7 @@ ul4._int = function(obj, base)
 			return 1;
 		else if (obj === false)
 			return 0;
-		throw "int() argument must be a string or a number";
+		throw ul4.TypeError.create("int()", "int() argument must be a string or a number");
 	}
 };
 
@@ -598,7 +598,7 @@ ul4._float = function(obj)
 		return 1.0;
 	else if (obj === false)
 		return 0.0;
-	throw "float() argument must be a string or a number";
+	throw ul4.TypeError.create("float()", "float() argument must be a string or a number");
 };
 
 // Convert ``obj`` to a list
@@ -645,7 +645,7 @@ ul4._len = function(sequence)
 			++i;
 		return i;
 	}
-	throw "object of type '" + ul4._type(sequence) + "' has no len()";
+	throw ul4.TypeError.create("len", "object of type '" + ul4._type(sequence) + "' has no len()");
 };
 
 ul4._type = function(obj)
@@ -987,7 +987,7 @@ ul4._asjson = function(obj)
 	{
 		return "ul4.Template.loads(" + ul4._repr(obj.dumps()) + ")";
 	}
-	throw "asjson() requires a serializable object";
+	throw ul4.TypeError.create("asjson()", "asjson() requires a serializable object");
 };
 
 // Decodes the string ``string`` from the Javascript Object Notation (see http://json.org/) and returns the resulting object
@@ -999,7 +999,7 @@ ul4._fromjson = function(string)
 		return window.JSON.parse(string);
 	if (ul4._rvalidchars.test(string.replace(ul4._rvalidescape, "@").replace(ul4._rvalidtokens, "]").replace(ul4._rvalidbraces, "")))
 		return (new Function("return " + string))();
-	throw "invalid JSON";
+	throw ul4.TypeError.create("fromjson()", "invalid JSON");
 };
 
 // Encodes ``obj`` in the UL4 Object Notation format
@@ -1350,14 +1350,14 @@ ul4._format_int = function(obj, fmt, lang)
 	if (/[+ -]$/.test(work))
 	{
 		if (type == 'c')
-			throw "sign not allowed for integer format type 'c'";
+			throw ul4.ValueError.create("sign not allowed for integer format type 'c'");
 		sign = work.substring(work.length-1);
 		work = work.substring(0, work.length-1);
 	}
 
 	// Extract fill and align char
 	if (work.length >= 3)
-		throw "illegal integer format string " + ul4._repr(fmt);
+		throw ul4.ValueError.create("illegal integer format string " + ul4._repr(fmt));
 	else if (work.length == 2)
 	{
 		if (/[<>=^]$/.test(work))
@@ -1366,14 +1366,14 @@ ul4._format_int = function(obj, fmt, lang)
 			fill = work[0];
 		}
 		else
-			throw "illegal integer format string " + ul4._repr(fmt);
+			throw ul4.ValueError.create("illegal integer format string " + ul4._repr(fmt));
 	}
 	else if (work.length == 1)
 	{
 		if (/^[<>=^]$/.test(work))
 			align = work;
 		else
-			throw "illegal integer format string " + ul4._repr(fmt);
+			throw ul4.ValueError.create("illegal integer format string " + ul4._repr(fmt));
 	}
 
 	// Basic number formatting
@@ -1390,7 +1390,7 @@ ul4._format_int = function(obj, fmt, lang)
 			break;
 		case 'c':
 			if (neg || obj > 65535)
-				throw "value out of bounds for c format";
+				throw ul4.ValueError.create("value out of bounds for c format");
 			output = String.fromCharCode(obj);
 			break;
 		case 'd':
@@ -1634,7 +1634,7 @@ ul4.Signature = ul4._inherit(
 				if (typeof(realkwargs[arg.name]) !== "undefined")
 				{
 					if (i < realargs.length)
-						throw (name !== null ? name + "() " : "") + "argument " + ul4._repr(arg.name) + " (position " + i + ") specified multiple times";
+						throw ul4.ArgumentError.create((name !== null ? name + "() " : "") + "argument " + ul4._repr(arg.name) + " (position " + i + ") specified multiple times");
 					finalargs.push(realkwargs[arg.name]);
 				}
 				else
@@ -1642,7 +1642,7 @@ ul4.Signature = ul4._inherit(
 					if (i < realargs.length)
 						finalargs.push(realargs[i]);
 					else if (typeof(arg.defaultValue) === "undefined")
-						throw "required " + (name !== null ? name + "() " : "") + "argument " + ul4._repr(arg.name) + " (position " + i + ") missing";
+						throw ul4.ArgumentError.create("required " + (name !== null ? name + "() " : "") + "argument " + ul4._repr(arg.name) + " (position " + i + ") missing");
 					else
 						finalargs.push(arg.defaultValue);
 				}
@@ -1655,9 +1655,9 @@ ul4.Signature = ul4._inherit(
 				if (realargs.length > this.args.length)
 				{
 					if (name === null)
-						throw "expected at most " + this.args.length + " positional argument" + (this.args.length != 1 ? "s" : "") + ", " + realargs.length + " given";
+						throw ul4.ArgumentError.create("expected at most " + this.args.length + " positional argument" + (this.args.length != 1 ? "s" : "") + ", " + realargs.length + " given");
 					else
-						throw name + "() expects at most " + this.args.length + " positional argument" + (this.args.length != 1 ? "s" : "") + ", " + realargs.length + " given";
+						throw ul4.ArgumentError.create(name + "() expects at most " + this.args.length + " positional argument" + (this.args.length != 1 ? "s" : "") + ", " + realargs.length + " given");
 				}
 			}
 			else
@@ -1675,9 +1675,9 @@ ul4.Signature = ul4._inherit(
 					if (!this.argNames[key])
 					{
 						if (name === null)
-							throw "an argument named " + ul4._repr(key) + " isn't supported";
+							throw ul4.ArgumentError.create("an argument named " + ul4._repr(key) + " isn't supported");
 						else
-							throw name + "() doesn't support an argument named " + ul4._repr(key);
+							throw ul4.ArgumentError.create(name + "() doesn't support an argument named " + ul4._repr(key));
 					}
 				}
 			}
@@ -1879,16 +1879,31 @@ ul4.TypeError = ul4._inherit(
 ul4.ValueError = ul4._inherit(
 	ul4.Exception,
 	{
-		create: function(operation, message)
+		create: function(message)
 		{
 			var exception = ul4._clone(this);
-			exception.operation = operation;
 			exception.message = message;
 			return exception;
 		},
 		toString: function()
 		{
 			return "ul4.ValueError: " + this.message;
+		}
+	}
+);
+
+ul4.ArgumentError = ul4._inherit(
+	ul4.Exception,
+	{
+		create: function(message)
+		{
+			var exception = ul4._clone(this);
+			exception.message = message;
+			return exception;
+		},
+		toString: function()
+		{
+			return "ul4.ArgumentError: " + this.message;
 		}
 	}
 );
@@ -3115,7 +3130,7 @@ ul4.ContainsAST = ul4._inherit(
 			{
 				return container._r === obj || container._g === obj || container._b === obj || container._a === obj;
 			}
-			throw "argument of type '" + ul4._type(container) + "' is not iterable";
+			throw ul4.TypeError.create("in", ul4._type(container) + " object is not iterable");
 		}
 	}
 );
@@ -4284,7 +4299,7 @@ ul4.Template = ul4._inherit(
 			var signature;
 
 			if (version !== ul4.version)
-				throw "invalid version, expected " + ul4.version + ", got " + version;
+				throw ul4.ValueError.create("invalid version, expected " + ul4.version + ", got " + version);
 			this.source = decoder.load();
 			this.name = decoder.load();
 			this.whitespace = decoder.load();
@@ -4596,7 +4611,7 @@ ul4._csv = function(obj)
 ul4._chr = function(i)
 {
 	if (typeof(i) != "number")
-		throw "chr() requires an int";
+		throw ul4.TypeError.create("chr()", "chr() requires an int");
 	return String.fromCharCode(i);
 };
 
@@ -4604,7 +4619,7 @@ ul4._chr = function(i)
 ul4._ord = function(c)
 {
 	if (typeof(c) != "string" || c.length != 1)
-		throw "ord() requires a string of length 1";
+		throw ul4.TypeError.create("ord()", "ord() requires a string of length 1");
 	return c.charCodeAt(0);
 };
 
@@ -4612,7 +4627,7 @@ ul4._ord = function(c)
 ul4._hex = function(number)
 {
 	if (typeof(number) != "number")
-		throw "hex() requires an int";
+		throw ul4.TypeError.create("hex()", "hex() requires an int");
 	if (number < 0)
 		return "-0x" + number.toString(16).substr(1);
 	else
@@ -4623,7 +4638,7 @@ ul4._hex = function(number)
 ul4._oct = function(number)
 {
 	if (typeof(number) != "number")
-		throw "oct() requires an int";
+		throw ul4.TypeError.create("oct()", "oct() requires an int");
 	if (number < 0)
 		return "-0o" + number.toString(8).substr(1);
 	else
@@ -4634,7 +4649,7 @@ ul4._oct = function(number)
 ul4._bin = function(number)
 {
 	if (typeof(number) != "number")
-		throw "bin() requires an int";
+		throw ul4.TypeError.create("bin()", "bin() requires an int");
 	if (number < 0)
 		return "-0b" + number.toString(2).substr(1);
 	else
@@ -4645,7 +4660,7 @@ ul4._bin = function(number)
 ul4._min = function(obj)
 {
 	if (obj.length == 0)
-		throw "min() requires at least 1 argument, 0 given";
+		throw ul4.ArgumentError.create("min() requires at least 1 argument, 0 given");
 	else if (obj.length == 1)
 		obj = obj[0];
 	var iter = ul4._iter(obj);
@@ -4657,7 +4672,7 @@ ul4._min = function(obj)
 		if (item.done)
 		{
 			if (first)
-				throw "min() argument is an empty sequence!";
+				throw ul4.ValueError.create("min() argument is an empty sequence!");
 			return result;
 		}
 		if (first || (item.value < result))
@@ -4670,7 +4685,7 @@ ul4._min = function(obj)
 ul4._max = function(obj)
 {
 	if (obj.length == 0)
-		throw "max() requires at least 1 argument, 0 given";
+		throw ul4.ArgumentError.create("max() requires at least 1 argument, 0 given");
 	else if (obj.length == 1)
 		obj = obj[0];
 	var iter = ul4._iter(obj);
@@ -4682,7 +4697,7 @@ ul4._max = function(obj)
 		if (item.done)
 		{
 			if (first)
-				throw "max() argument is an empty sequence!";
+				throw ul4.ValueError.create("max() argument is an empty sequence!");
 			return result;
 		}
 		if (first || (item.value > result))
@@ -4748,9 +4763,9 @@ ul4._range = function(args)
 {
 	var start, stop, step;
 	if (args.length < 1)
-		throw "required range() argument missing";
+		throw ul4.ArgumentError.create("required range() argument missing");
 	else if (args.length > 3)
-		throw "range() expects at most 3 positional arguments, " + args.length + " given";
+		throw ul4.ArgumentError.create("range() expects at most 3 positional arguments, " + args.length + " given");
 	else if (args.length == 1)
 	{
 		start = 0;
@@ -4771,7 +4786,7 @@ ul4._range = function(args)
 	}
 	var lower, higher;
 	if (step === 0)
-		throw "range() requires a step argument != 0";
+		throw ul4.ValueError.create("range() requires a step argument != 0");
 	else if (step > 0)
 	{
 		lower = start;
@@ -4800,9 +4815,9 @@ ul4._slice = function(args)
 {
 	var iterable, start, stop, step;
 	if (args.length < 2)
-		throw "required slice() argument missing";
+		throw ul4.ArgumentError.create("required slice() argument missing");
 	else if (args.length > 4)
-		throw "slice() expects at most 4 positional arguments, " + args.length + " given";
+		throw ul4.ArgumentError.create("slice() expects at most 4 positional arguments, " + args.length + " given");
 	else if (args.length == 2)
 	{
 		iterable = args[0];
@@ -4826,11 +4841,11 @@ ul4._slice = function(args)
 	}
 	var lower, higher;
 	if (start < 0)
-		throw "slice() requires a start argument >= 0";
+		throw ul4.ValueError.create("slice() requires a start argument >= 0");
 	if (stop < 0)
-		throw "slice() requires a stop argument >= 0";
+		throw ul4.ValueError.create("slice() requires a stop argument >= 0");
 	if (step <= 0)
-		throw "slice() requires a step argument > 0";
+		throw ul4.ValueError.create("slice() requires a step argument > 0");
 
 	var next = start, count = 0;
 	return {
@@ -4894,9 +4909,9 @@ ul4._randrange = function(args)
 {
 	var start, stop, step;
 	if (args.length < 1)
-		throw "required randrange() argument missing";
+		throw ul4.ArgumentError.create("required randrange() argument missing");
 	else if (args.length > 3)
-		throw "randrange() expects at most 3 positional arguments, " + args.length + " given";
+		throw ul4.ArgumentError.create("randrange() expects at most 3 positional arguments, " + args.length + " given");
 	else if (args.length == 1)
 	{
 		start = 0;
@@ -4925,7 +4940,7 @@ ul4._randrange = function(args)
 	else if (step < 0)
 		n = Math.floor((width + step + 1) / step);
 	else
-		throw "randrange() requires a step argument != 0";
+		throw ul4.ValueError.create("randrange() requires a step argument != 0");
 	return start + step*Math.floor(value * n);
 };
 
@@ -4934,7 +4949,7 @@ ul4._randchoice = function(sequence)
 {
 	var iscolor = ul4._iscolor(sequence);
 	if (typeof(sequence) !== "string" && !ul4._islist(sequence) && !iscolor)
-		throw "randchoice() requires a string or list";
+		throw ul4.TypeError.create("randchoice() requires a string or list");
 	if (iscolor)
 		sequence = ul4._list(sequence);
 	return sequence[Math.floor(Math.random() * sequence.length)];
@@ -5185,7 +5200,7 @@ ul4._get = function(container, key, defaultvalue)
 			return defaultvalue;
 		return result;
 	}
-	throw "get() requires a dict";
+	throw ul4.TypeError.create("get()", "get() requires a dict");
 };
 
 // Return a ``Date`` object for the current time
@@ -5301,7 +5316,7 @@ ul4._strip = function(string, chars)
 	if (chars === null)
 		chars = " \r\n\t";
 	else if (typeof(chars) !== "string")
-		throw "strip() requires two strings";
+		throw ul4.TypeError.create("strip()", "strip() requires two strings");
 
 	while (string && chars.indexOf(string[0]) >= 0)
 		string = string.substr(1);
@@ -5315,7 +5330,7 @@ ul4._lstrip = function(string, chars)
 	if (chars === null)
 		chars = " \r\n\t";
 	else if (typeof(chars) !== "string")
-		throw "lstrip() requires two strings";
+		throw ul4.TypeError.create("lstrip()", "lstrip() requires two strings");
 
 	while (string && chars.indexOf(string[0]) >= 0)
 		string = string.substr(1);
@@ -5327,7 +5342,7 @@ ul4._rstrip = function(string, chars)
 	if (chars === null)
 		chars = " \r\n\t";
 	else if (typeof(chars) !== "string")
-		throw "rstrip() requires two strings";
+		throw ul4.TypeError.create("rstrip()", "rstrip() requires two strings");
 
 	while (string && chars.indexOf(string[string.length-1]) >= 0)
 		string = string.substr(0, string.length-1);
@@ -5337,7 +5352,7 @@ ul4._rstrip = function(string, chars)
 ul4._split = function(string, sep, count)
 {
 	if (sep !== null && typeof(sep) !== "string")
-		throw "split() requires a string";
+		throw ul4.TypeError.create("split()", "split() requires a string");
 
 	if (count === null)
 	{
@@ -5392,7 +5407,7 @@ ul4._split = function(string, sep, count)
 ul4._rsplit = function(string, sep, count)
 {
 	if (sep !== null && typeof(sep) !== "string")
-		throw "rsplit() requires a string as second argument";
+		throw ul4.TypeError.create("rsplit()", "rsplit() requires a string as second argument");
 
 	if (count === null)
 	{
@@ -5498,7 +5513,7 @@ ul4._rfind = function(obj, sub, start, end)
 ul4._capitalize = function(obj)
 {
 	if (typeof(obj) != "string")
-		throw "capitalize() requires a string";
+		throw ul4.TypeError.create("capitalize()", "capitalize() requires a string");
 
 	if (obj.length)
 		obj = obj[0].toUpperCase() + obj.slice(1).toLowerCase();
@@ -5522,7 +5537,7 @@ ul4._items = function(obj)
 			result.push([key, obj[key]]);
 		return result;
 	}
-	throw "items() requires a dict";
+	throw ul4.TypeError.create("items()", "items() requires a dict");
 };
 
 ul4._values = function(obj)
@@ -5542,7 +5557,7 @@ ul4._values = function(obj)
 			result.push(obj[key]);
 		return result;
 	}
-	throw "values() requires a dict";
+	throw ul4.TypeError.create("values()", "values() requires a dict");
 };
 
 ul4._join = function(sep, iterable)
@@ -5561,7 +5576,7 @@ ul4._join = function(sep, iterable)
 ul4._startswith = function(string, prefix)
 {
 	if (typeof(prefix) !== "string")
-		throw "startswith() argument must be string";
+		throw ul4.TypeError.create("startswith()", "startswith() argument must be string");
 
 	return string.substr(0, prefix.length) === prefix;
 };
@@ -5569,7 +5584,7 @@ ul4._startswith = function(string, prefix)
 ul4._endswith = function(string, suffix)
 {
 	if (typeof(suffix) !== "string")
-		throw "endswith() argument must be string";
+		throw ul4.TypeError.create("endswith()", "endswith() argument must be string");
 
 	return string.substr(string.length-suffix.length) === suffix;
 };
@@ -5577,7 +5592,7 @@ ul4._endswith = function(string, suffix)
 ul4._isoformat = function(obj)
 {
 	if (!ul4._isdate(obj))
-		throw "isoformat() requires a date";
+		throw ul4.TypeError.create("isoformat()", "isoformat() requires a date");
 
 	var result = obj.getFullYear() + "-" + ul4._lpad((obj.getMonth()+1).toString(), "0", 2) + "-" + ul4._lpad(obj.getDate().toString(), "0", 2);
 	var hour = obj.getHours();
@@ -5706,7 +5721,7 @@ ul4._update = function(obj, others, kwargs)
 			obj[key] = value;
 		};
 	else
-		throw "_update() requires a dict";
+		throw ul4.TypeError.create("update()", "update() requires a dict");
 	for (var i = 0; i < others.length; ++i)
 	{
 		var other = others[i];
@@ -5726,12 +5741,12 @@ ul4._update = function(obj, others, kwargs)
 			for (var j = 0; j < other.length; ++j)
 			{
 				if (!ul4._islist(other[j]) || (other[j].length != 2))
-					throw "update() requires a dict or a list of (key, value) pairs";
+					throw ul4.TypeError.create("update()", "update() requires a dict or a list of (key, value) pairs");
 				set(other[j][0], other[j][1]);
 			}
 		}
 		else
-			throw "update() requires a dict or a list of (key, value) pairs";
+			throw ul4.TypeError.create("update()", "update() requires a dict or a list of (key, value) pairs");
 	}
 	for (var key in kwargs)
 		set(key, kwargs[key]);
@@ -5976,7 +5991,7 @@ ul4.Color = ul4._inherit(
 			function(a)
 			{
 				if (typeof(a) !== "number")
-					throw "witha() requires a number";
+					throw ul4.TypeError.create("witha()", "witha() requires a number");
 				return ul4.Color.create(this._r, this._g, this._b, a);
 			}
 		),
@@ -5985,7 +6000,7 @@ ul4.Color = ul4._inherit(
 			function(lum)
 			{
 				if (typeof(lum) !== "number")
-					throw "witha() requires a number";
+					throw ul4.TypeError.create("witha()", "witha() requires a number");
 				var hlsa = this.hlsa();
 				return ul4._hls(hlsa[0], lum, hlsa[2], hlsa[3]);
 			}
@@ -6101,7 +6116,7 @@ ul4.TimeDelta = ul4._inherit(
 					return false;
 				return this._microseconds < other._microseconds;
 			}
-			throw "unorderable types: " + ul4._type(this) + "() >=< " + ul4._type(other) + "()";
+			throw ul4.TypeError.create("<", ul4._type(this) + " < " + ul4._type(other) + " not supported");
 		},
 
 		__neg__: function()
@@ -6127,28 +6142,28 @@ ul4.TimeDelta = ul4._inherit(
 				return ul4.TimeDelta.create(this._days + other._days, this._seconds + other._seconds, this._microseconds + other._microseconds);
 			else if (ul4._isdate(other))
 				return this._add(other, this._days, this._seconds, this._microseconds);
-			throw ul4._type(this) + " + " + ul4._type(other) + " not supported";
+			throw ul4.TypeError.create("+", ul4._type(this) + " + " + ul4._type(other) + " not supported");
 		},
 
 		__radd__: function(other)
 		{
 			if (ul4._isdate(other))
 				return this._add(other, this._days, this._seconds, this._microseconds);
-			throw ul4._type(this) + " + " + ul4._type(other) + " not supported";
+			throw ul4.TypeError.create("+", ul4._type(this) + " + " + ul4._type(other) + " not supported");
 		},
 
 		__sub__: function(other)
 		{
 			if (ul4._istimedelta(other))
 				return ul4.TimeDelta.create(this._days - other._days, this._seconds - other._seconds, this._microseconds - other._microseconds);
-			throw ul4._type(this) + " - " + ul4._type(other) + " not supported";
+			throw ul4.TypeError.create("-", ul4._type(this) + " - " + ul4._type(other) + " not supported");
 		},
 
 		__rsub__: function(other)
 		{
 			if (ul4._isdate(other))
 				return this._add(other, -this._days, -this._seconds, -this._microseconds);
-			throw ul4._type(this) + " - " + ul4._type(other) + " not supported";
+			throw ul4.TypeError.create("-", ul4._type(this) + " - " + ul4._type(other) + " not supported");
 		},
 
 		__mul__: function(other)
@@ -6157,7 +6172,7 @@ ul4.TimeDelta = ul4._inherit(
 			{
 				return ul4.TimeDelta.create(this._days * other, this._seconds * other, this._microseconds * other);
 			}
-			throw ul4._type(this) + " * " + ul4._type(other) + " not supported";
+			throw ul4.TypeError.create("*", ul4._type(this) + " * " + ul4._type(other) + " not supported");
 		},
 
 		__rmul__: function(other)
@@ -6166,7 +6181,7 @@ ul4.TimeDelta = ul4._inherit(
 			{
 				return ul4.TimeDelta.create(this._days * other, this._seconds * other, this._microseconds * other);
 			}
-			throw ul4._type(this) + " * " + ul4._type(other) + " not supported";
+			throw ul4.TypeError.create("*", ul4._type(this) + " * " + ul4._type(other) + " not supported");
 		},
 
 		__truediv__: function(other)
@@ -6280,7 +6295,7 @@ ul4.MonthDelta = ul4._inherit(
 		{
 			if (ul4._ismonthdelta(other))
 				return this._months < other._months;
-			throw "unorderable types: " + ul4._type(this) + "() >=< " + ul4._type(other) + "()";
+			throw ul4.TypeError.create("<", ul4._type(this) + " < " + ul4._type(other) + " not supported");
 		},
 
 		__neg__: function()
