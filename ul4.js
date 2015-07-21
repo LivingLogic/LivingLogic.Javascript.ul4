@@ -27,6 +27,7 @@
  */
 
 /*jslint vars: true */
+
 var ul4 = {
 	version: "33",
 
@@ -37,10 +38,13 @@ var ul4 = {
 	_rvalidbraces: /(?:^|:|,)(?:\s*\[)+/g
 };
 
+// Protect against someone replacing the ul4 object
+;(function(ul4){
+
 /// Helper functions
 
 // Crockford style object creation
-ul4._simpleclone = function(obj)
+ul4._simpleclone = function _simpleclone(obj)
 {
 	function F(){};
 	F.prototype = obj;
@@ -49,7 +53,7 @@ ul4._simpleclone = function(obj)
 };
 
 // Crockford style object creation + prototype chain + object ids
-ul4._clone = function(obj)
+ul4._clone = function _clone(obj)
 {
 	var result = ul4._simpleclone(obj);
 	result.__prototype__ = obj;
@@ -58,7 +62,7 @@ ul4._clone = function(obj)
 };
 
 // Adds attributes from on object to another and returns it
-ul4._extend = function(obj, attrs)
+ul4._extend = function _extend(obj, attrs)
 {
 	for (var name in attrs)
 		obj[name] = attrs[name];
@@ -66,19 +70,19 @@ ul4._extend = function(obj, attrs)
 };
 
 // Clone an object via ``_simpleclone`` and extend it
-ul4._simpleinherit = function(baseobj, attrs)
+ul4._simpleinherit = function _simpleinherit(baseobj, attrs)
 {
 	return ul4._extend(ul4._simpleclone(baseobj), attrs);
 };
 
 // Clone an object via ``_clone`` and extend it
-ul4._inherit = function(baseobj, attrs)
+ul4._inherit = function _inherit(baseobj, attrs)
 {
 	return ul4._extend(ul4._clone(baseobj), attrs);
 };
 
 // Convert a map to an object
-ul4._map2object = function(obj)
+ul4._map2object = function _map2object(obj)
 {
 	if (ul4._ismap(obj))
 	{
@@ -94,7 +98,7 @@ ul4._map2object = function(obj)
 };
 
 // Call a function ``f`` with UL4 argument handling
-ul4._internal_call = function(context, f, functioncontext, signature, needscontext, needsobject, args)
+ul4._internal_call = function _internal_call(context, f, functioncontext, signature, needscontext, needsobject, args)
 {
 	var finalargs;
 	if (needsobject)
@@ -126,41 +130,41 @@ ul4._internal_call = function(context, f, functioncontext, signature, needsconte
 			finalargs = [finalargs];
 		}
 		else
-			finalargs = [signature.bindObject(f._ul4_name, args)];
+			finalargs = [signature.bindObject(f._ul4_name || f.name, args)];
 	}
 	else
 	{
 		if (signature === null)
 			throw ul4.ArgumentError.create(ul4._repr(f) + " doesn't support positional arguments!");
-		finalargs = signature.bindArray(f._ul4_name, args);
+		finalargs = signature.bindArray(f._ul4_name || f.name, args);
 	}
 	if (needscontext)
 		finalargs.unshift(context);
 	return f.apply(functioncontext, finalargs);
 };
 
-ul4._callfunction = function(context, f, args)
+ul4._callfunction = function _callfunction(context, f, args)
 {
 	if (typeof(f._ul4_signature) === "undefined" || typeof(f._ul4_needsobject) === "undefined" || typeof(f._ul4_needscontext) === "undefined")
 		throw ul4.TypeError.create("call", "function " + ul4.repr(f) + " is not callable by UL4");
 	return ul4._internal_call(context, f, ul4, f._ul4_signature, f._ul4_needscontext, f._ul4_needsobject, args);
 }
 
-ul4._callobject = function(context, obj, args)
+ul4._callobject = function _callobject(context, obj, args)
 {
 	if (typeof(obj._ul4_callsignature) === "undefined" || typeof(obj._ul4_callneedsobject) === "undefined" || typeof(obj._ul4_callneedscontext) === "undefined")
 		throw ul4.TypeError.create("call", ul4.type(obj) + " object is not callable by UL4");
 	return ul4._internal_call(context, obj.__call__, obj, obj._ul4_callsignature, obj._ul4_callneedscontext, obj._ul4_callneedsobject, args);
 }
 
-ul4._callrender = function(context, obj, args)
+ul4._callrender = function _callrender(context, obj, args)
 {
 	if (typeof(obj._ul4_rendersignature) === "undefined" || typeof(obj._ul4_renderneedsobject) === "undefined" || typeof(obj._ul4_renderneedscontext) === "undefined")
 		throw ul4.TypeError.create("render", ul4.type(obj) + " object is not renderable by UL4");
 	return ul4._internal_call(context, obj.__render__, obj, obj._ul4_rendersignature, obj._ul4_renderneedscontext, obj._ul4_renderneedsobject, args);
 }
 
-ul4._call = function(context, f, args)
+ul4._call = function _call(context, f, args)
 {
 	if (typeof(f) === "function")
 		return ul4._callfunction(context, f, args);
@@ -170,7 +174,7 @@ ul4._call = function(context, f, args)
 		throw ul4.TypeError.create("call", ul4._type(f) + " is not callable");
 }
 
-ul4._unpackvar = function(lvalue, value)
+ul4._unpackvar = function _unpackvar(lvalue, value)
 {
 	if (!ul4._islist(lvalue))
 		return [[lvalue, value]];
@@ -202,7 +206,7 @@ ul4._unpackvar = function(lvalue, value)
 	}
 };
 
-ul4._formatsource = function(out)
+ul4._formatsource = function _formatsource(out)
 {
 	var finalout = [];
 	var level = 0, needlf = false;
@@ -231,7 +235,7 @@ ul4._formatsource = function(out)
 };
 
 // Return an iterator for ``obj``
-ul4._iter = function(obj)
+ul4._iter = function _iter(obj)
 {
 	if (typeof(obj) === "string" || ul4._islist(obj))
 	{
@@ -304,7 +308,7 @@ ul4._iter = function(obj)
 	throw ul4.TypeError.create("iter", ul4._type(this.obj) + " object is not iterable");
 };
 
-ul4._str_repr = function(str)
+ul4._str_repr = function _str_repr(str)
 {
 	var result = "";
 	for (var i = 0; i <str.length; ++i)
@@ -354,7 +358,7 @@ ul4._str_repr = function(str)
 	return '"' + result + '"';
 };
 
-ul4._date_repr = function(obj)
+ul4._date_repr = function _date_repr(obj)
 {
 	var year = obj.getFullYear();
 	var month = obj.getMonth()+1;
@@ -376,7 +380,7 @@ ul4._date_repr = function(obj)
 	return result;
 };
 
-ul4._map_repr = function(obj)
+ul4._map_repr = function _map_repr(obj)
 {
 	var v = [];
 	v.push("{");
@@ -394,7 +398,7 @@ ul4._map_repr = function(obj)
 	return v.join("");
 };
 
-ul4._list_repr = function(obj)
+ul4._list_repr = function _list_repr(obj)
 {
 	var v = [];
 	v.push("[");
@@ -408,7 +412,7 @@ ul4._list_repr = function(obj)
 	return v.join("");
 };
 
-ul4._set_repr = function(obj)
+ul4._set_repr = function _set_repr(obj)
 {
 	var v = [];
 	v.push("{");
@@ -427,7 +431,7 @@ ul4._set_repr = function(obj)
 	return v.join("");
 };
 
-ul4._object_repr = function(obj)
+ul4._object_repr = function _object_repr(obj)
 {
 	var v = [];
 	v.push("{");
@@ -447,7 +451,7 @@ ul4._object_repr = function(obj)
 };
 
 // Return a string representation of ``obj``: If possible this should be an object literal supported by UL4, otherwise the output should be bracketed with ``<`` and ``>``
-ul4._repr = function(obj)
+ul4._repr = function _repr(obj)
 {
 	if (obj === null)
 		return "None";
@@ -481,7 +485,7 @@ ul4._repr = function(obj)
 	return "?";
 };
 
-ul4._date_str = function(obj)
+ul4._date_str = function _date_repr(obj)
 {
 	var year = obj.getFullYear();
 	var month = obj.getMonth()+1;
@@ -497,7 +501,7 @@ ul4._date_str = function(obj)
 	return result;
 };
 
-ul4._str = function(obj)
+ul4._str = function _str(obj)
 {
 	if (typeof(obj) === "undefined")
 		return "";
@@ -529,7 +533,7 @@ ul4._str = function(obj)
 };
 
 // Convert ``obj`` to bool, according to its "truth value"
-ul4._bool = function(obj)
+ul4._bool = function _bool(obj)
 {
 	if (typeof(obj) === "undefined" || obj === null || obj === false || obj === 0 || obj === "")
 		return false;
@@ -556,7 +560,7 @@ ul4._bool = function(obj)
 };
 
 // Convert ``obj`` to an integer (if ``base`` is given ``obj`` must be a string and ``base`` is the base for the conversion (default is 10))
-ul4._int = function(obj, base)
+ul4._int = function _int(obj, base)
 {
 	var result;
 	if (base !== null)
@@ -588,7 +592,7 @@ ul4._int = function(obj, base)
 };
 
 // Convert ``obj`` to a float
-ul4._float = function(obj)
+ul4._float = function _float(obj)
 {
 	if (typeof(obj) === "string")
 		return parseFloat(obj);
@@ -602,7 +606,7 @@ ul4._float = function(obj)
 };
 
 // Convert ``obj`` to a list
-ul4._list = function(obj)
+ul4._list = function _list(obj)
 {
 	var iter = ul4._iter(obj);
 
@@ -617,7 +621,7 @@ ul4._list = function(obj)
 };
 
 // Convert ``obj`` to a set
-ul4._set = function(obj)
+ul4._set = function _set(obj)
 {
 	var iter = ul4._iter(obj);
 
@@ -632,7 +636,7 @@ ul4._set = function(obj)
 };
 
 // Return the length of ``sequence``
-ul4._len = function(sequence)
+ul4._len = function _len(sequence)
 {
 	if (typeof(sequence) == "string" || ul4._islist(sequence))
 		return sequence.length;
@@ -648,7 +652,7 @@ ul4._len = function(sequence)
 	throw ul4.TypeError.create("len", "object of type '" + ul4._type(sequence) + "' has no len()");
 };
 
-ul4._type = function(obj)
+ul4._type = function _type(obj)
 {
 	if (obj === null)
 		return "none";
@@ -681,7 +685,7 @@ ul4._type = function(obj)
 
 
 // Return whether any of the items in ``iterable`` are true
-ul4._any = function(iterable)
+ul4._any = function _any(iterable)
 {
 	if (typeof(iterable) == "string")
 	{
@@ -706,7 +710,7 @@ ul4._any = function(iterable)
 };
 
 // Return whether all of the items in ``iterable`` are true
-ul4._all = function(iterable)
+ul4._all = function _all(iterable)
 {
 	if (typeof(iterable) == "string")
 	{
@@ -731,115 +735,115 @@ ul4._all = function(iterable)
 };
 
 // Check if ``obj`` is undefined
-ul4._isundefined = function(obj)
+ul4._isundefined = function _isundefined(obj)
 {
 	return typeof(obj) === "undefined";
 };
 
 
 // Check if ``obj`` is *not* undefined
-ul4._isdefined = function(obj)
+ul4._isdefined = function _isdefined(obj)
 {
 	return typeof(obj) !== "undefined";
 };
 
 // Check if ``obj`` is ``None``
-ul4._isnone = function(obj)
+ul4._isnone = function _isnone(obj)
 {
 	return obj === null;
 };
 
 // Check if ``obj`` is a boolean
-ul4._isbool = function(obj)
+ul4._isbool = function _isbool(obj)
 {
 	return typeof(obj) == "boolean";
 };
 
 // Check if ``obj`` is a int
-ul4._isint = function(obj)
+ul4._isint = function _isint(obj)
 {
 	return (typeof(obj) == "number") && Math.round(obj) == obj;
 };
 
 // Check if ``obj`` is a float
-ul4._isfloat = function(obj)
+ul4._isfloat = function _isfloat(obj)
 {
 	return (typeof(obj) == "number") && Math.round(obj) != obj;
 };
 
 // Check if ``obj`` is a string
-ul4._isstr = function(obj)
+ul4._isstr = function _isstr(obj)
 {
 	return typeof(obj) == "string";
 };
 
 // Check if ``obj`` is a date
-ul4._isdate = function(obj)
+ul4._isdate = function _isdate(obj)
 {
 	return Object.prototype.toString.call(obj) == "[object Date]";
 };
 
 // Check if ``obj`` is a color
-ul4._iscolor = function(obj)
+ul4._iscolor = function _iscolor(obj)
 {
 	return Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "color";
 };
 
 // Check if ``obj`` is a timedelta object
-ul4._istimedelta = function(obj)
+ul4._istimedelta = function _istimedelta(obj)
 {
 	return Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "timedelta";
 };
 
 // Check if ``obj`` is a monthdelta object
-ul4._ismonthdelta = function(obj)
+ul4._ismonthdelta = function _ismonthdelta(obj)
 {
 	return Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "monthdelta";
 };
 
 // Check if ``obj`` is a template
-ul4._istemplate = function(obj)
+ul4._istemplate = function _istemplate(obj)
 {
 	return Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "template";
 };
 
 // Check if ``obj`` is a function
-ul4._isfunction = function(obj)
+ul4._isfunction = function _isfunction(obj)
 {
 	return typeof(obj) === "function" || (Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "template");
 };
 
 // Check if ``obj`` is a list
-ul4._islist = function(obj)
+ul4._islist = function _islist(obj)
 {
 	return Object.prototype.toString.call(obj) == "[object Array]";
 };
 
 // Check if ``obj`` is a set
-ul4._isset = function(obj)
+ul4._isset = function _isset(obj)
 {
 	return Object.prototype.toString.call(obj) == "[object Set]";
 };
 
-ul4._isul4set = function(obj)
+ul4._isul4set = function _isul4set(obj)
 {
 	return Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "set";
 };
 
 // Check if ``obj`` is an iterator
-ul4._isiter = function(obj)
+ul4._isiter = function _isiter(obj)
 {
 	return obj !== null && typeof(obj) === "object" && typeof(obj.next) === "function";
 };
 
 // Check if ``obj`` is a JS object
-ul4._isobject = function(obj)
+ul4._isobject = function _isobject(obj)
 {
 	return Object.prototype.toString.call(obj) == "[object Object]" && typeof(obj.__type__) === "undefined";
 };
 
 // Check if ``obj`` is a map
-ul4._ismap = function(obj)
+ul4._ismap = function _ismap(obj)
 {
 	if (ul4on._havemap)
 		return obj !== null && typeof(obj) === "object" && typeof(obj.__proto__) === "object" && obj.__proto__ === Map.prototype;
@@ -847,14 +851,14 @@ ul4._ismap = function(obj)
 };
 
 // Check if ``obj`` is a dict (i.e. a normal Javascript object or a ``Map``)
-ul4._isdict = function(obj)
+ul4._isdict = function _isdict(obj)
 {
 	return ul4._isobject(obj) || ul4._ismap(obj);
 };
 
 
 // Repeat string ``str`` ``rep`` times
-ul4._str_repeat = function(str, rep)
+ul4._str_repeat = function _str_repeat(str, rep)
 {
 	var result = "";
 	for (; rep>0; --rep)
@@ -862,7 +866,7 @@ ul4._str_repeat = function(str, rep)
 	return result;
 };
 
-ul4._list_repeat = function(list, rep)
+ul4._list_repeat = function _list_repeat(list, rep)
 {
 	var result = [];
 	for (; rep>0; --rep)
@@ -871,7 +875,7 @@ ul4._list_repeat = function(list, rep)
 	return result;
 };
 
-ul4._str_json = function(str)
+ul4._str_json = function _str_json(str)
 {
 	var result = "";
 	for (var i = 0; i < str.length; ++i)
@@ -907,7 +911,7 @@ ul4._str_json = function(str)
 };
 
 // Encodes ``obj`` in the Javascript Object Notation (see http://json.org/; with support for dates, colors and templates)
-ul4._asjson = function(obj)
+ul4._asjson = function _asjson(obj)
 {
 	if (obj === null)
 		return "null";
@@ -991,7 +995,7 @@ ul4._asjson = function(obj)
 };
 
 // Decodes the string ``string`` from the Javascript Object Notation (see http://json.org/) and returns the resulting object
-ul4._fromjson = function(string)
+ul4._fromjson = function _fromjson(string)
 {
 	// The following is from jQuery's parseJSON function
 	string = ul4._strip(string, null);
@@ -1003,18 +1007,18 @@ ul4._fromjson = function(string)
 };
 
 // Encodes ``obj`` in the UL4 Object Notation format
-ul4._asul4on = function(obj)
+ul4._asul4on = function _asul4on(obj)
 {
 	return ul4on.dumps(obj);
 };
 
 // Decodes the string ``string`` from the UL4 Object Notation format and returns the resulting decoded object
-ul4._fromul4on = function(string)
+ul4._fromul4on = function _fromul4on(string)
 {
 	return ul4on.loads(string);
 };
 
-ul4._format_date = function(obj, fmt, lang)
+ul4._format_date = function _format_date(obj, fmt, lang)
 {
 	var translations = {
 		de: {
@@ -1307,7 +1311,7 @@ ul4._format_date = function(obj, fmt, lang)
 	return result.join("");
 };
 
-ul4._format_int = function(obj, fmt, lang)
+ul4._format_int = function _format_int(obj, fmt, lang)
 {
 	var work = fmt;
 
@@ -1457,7 +1461,7 @@ ul4._format_int = function(obj, fmt, lang)
 };
 
 // Format ``obj`` using the format string ``fmt`` in the language ``lang``
-ul4._format = function(obj, fmt, lang)
+ul4._format = function _format(obj, fmt, lang)
 {
 	if (typeof(lang) === "undefined" || lang === null)
 		lang = "en";
@@ -1482,7 +1486,7 @@ ul4._format = function(obj, fmt, lang)
 		return ul4._format_int(0, fmt, lang);
 };
 
-ul4._lpad = function(string, pad, len)
+ul4._lpad = function _lpad(string, pad, len)
 {
 	if (typeof(string) === "number")
 		string = string.toString();
@@ -1491,7 +1495,7 @@ ul4._lpad = function(string, pad, len)
 	return string;
 };
 
-ul4._rpad = function(string, pad, len)
+ul4._rpad = function _rpad(string, pad, len)
 {
 	if (typeof(string) === "number")
 		string = string.toString();
@@ -1504,7 +1508,7 @@ ul4.Proto = {
 	__prototype__: null,
 	__id__: 0,
 	_nextid: 1,
-	isa: function(type)
+	isa: function isa(type)
 	{
 		if (this === type)
 			return true;
@@ -1513,7 +1517,7 @@ ul4.Proto = {
 		return this.__prototype__.isa(type);
 	},
 
-	isprotoof: function(obj)
+	isprotoof: function isprotoof(obj)
 	{
 		while (true)
 		{
@@ -1527,27 +1531,27 @@ ul4.Proto = {
 
 	// To support comparison you only have to implement ``__eq__`` and ``__lt__``
 
-	__ne__: function(other)
+	__ne__: function __ne__(other)
 	{
 		return !this.__eq__(other);
 	},
 
-	__le__: function(other)
+	__le__: function __le__(other)
 	{
 		return this.__eq__(other) || this.__lt__(other);
 	},
 
-	__gt__: function(other)
+	__gt__: function __gt__(other)
 	{
 		return !this.__eq__(other) && !this.__lt__(other);
 	},
 
-	__ge__: function(other)
+	__ge__: function __ge__(other)
 	{
 		return !this.__lt__(other);
 	},
 
-	__bool__: function()
+	__bool__: function __bool__()
 	{
 		return true;
 	}
@@ -1556,7 +1560,7 @@ ul4.Proto = {
 ul4.Signature = ul4._inherit(
 	ul4.Proto,
 	{
-		create: function()
+		create: function create()
 		{
 			var signature = ul4._clone(this);
 			signature.args = [];
@@ -1597,7 +1601,7 @@ ul4.Signature = ul4._inherit(
 		},
 
 		// Create the argument array for calling a function with this signature with the arguments available from ``args``
-		bindArray: function(name, args)
+		bindArray: function bindArray(name, args)
 		{
 			var realargs = [];
 			var realkwargs = {};
@@ -1696,7 +1700,7 @@ ul4.Signature = ul4._inherit(
 		},
 
 		// Create the argument object for calling a function with this signature with the arguments available from ``args``
-		bindObject: function(name, args)
+		bindObject: function bindObject(name, args)
 		{
 			args = this.bindArray(name, args);
 			var argObject = {};
@@ -1711,7 +1715,7 @@ ul4.Signature = ul4._inherit(
 			return argObject;
 		},
 
-		toString: function()
+		toString: function toString()
 		{
 			var v = [];
 			for (var i = 0; i < this.args.length; ++i)
@@ -1754,7 +1758,7 @@ ul4.expose = function expose(signature, options, f)
 ul4.Context = ul4._inherit(
 	ul4.Proto,
 	{
-		create: function(vars)
+		create: function create(vars)
 		{
 			if (vars === null || typeof(vars) === "undefined")
 				vars = {};
@@ -1768,7 +1772,7 @@ ul4.Context = ul4._inherit(
 		/* Return a clone of the ``Context``, but with a fresh empty ``vars`` objects that inherits from the previous one.
 		 * This is used by the various comprehensions to avoid leaking loop variables.
 		 */
-		inheritvars: function()
+		inheritvars: function inheritvars()
 		{
 			var context = ul4._clone(this);
 			context.vars = ul4._simpleclone(this.vars);
@@ -1776,7 +1780,7 @@ ul4.Context = ul4._inherit(
 		},
 
 		/* Return a clone of the ``Context`` with one additional indentation (this is used by ``RenderAST``) */
-		withindent: function(indent)
+		withindent: function withindent(indent)
 		{
 			var context = ul4._clone(this);
 			if (indent !== null)
@@ -1788,34 +1792,34 @@ ul4.Context = ul4._inherit(
 		},
 
 		/* Return a clone of the ``Context`` with the output buffer replaced (this is used by ``renders`` to collect the output in a separate buffer) */
-		replaceoutput: function()
+		replaceoutput: function replaceoutput()
 		{
 			var context = ul4._clone(this);
 			context._output = [];
 			return context;
 		},
 
-		clone: function(vars)
+		clone: function clone(vars)
 		{
 			return ul4._clone(this);
 		},
 
-		output: function(value)
+		output: function output(value)
 		{
 			this._output.push(value);
 		},
 
-		getoutput: function()
+		getoutput: function getoutput()
 		{
 			return this._output.join("");
 		},
 
-		get: function(name)
+		get: function get(name)
 		{
 			return this.vars[name];
 		},
 
-		set: function(name, value)
+		set: function set(name, value)
 		{
 			this.vars[name] = value;
 		}
@@ -1833,7 +1837,7 @@ ul4.InternalException = ul4._inherit(ul4.Exception, {});
 ul4.ReturnException = ul4._inherit(
 	ul4.InternalException,
 	{
-		create: function(result)
+		create: function create(result)
 		{
 			var exception = ul4._clone(this);
 			exception.result = result;
@@ -1852,7 +1856,7 @@ ul4.SyntaxError = ul4._inherit(ul4.Exception, {});
 ul4.LValueRequiredError = ul4._inherit(
 	ul4.SyntaxError,
 	{
-		toString: function()
+		toString: function toString()
 		{
 			return "ul4.LValueRequiredError: lvalue required!";
 		}
@@ -1862,14 +1866,14 @@ ul4.LValueRequiredError = ul4._inherit(
 ul4.TypeError = ul4._inherit(
 	ul4.Exception,
 	{
-		create: function(operation, message)
+		create: function create(operation, message)
 		{
 			var exception = ul4._clone(this);
 			exception.operation = operation;
 			exception.message = message;
 			return exception;
 		},
-		toString: function()
+		toString: function toString()
 		{
 			return "ul4.TypeError: " + this.message;
 		}
@@ -1879,13 +1883,13 @@ ul4.TypeError = ul4._inherit(
 ul4.ValueError = ul4._inherit(
 	ul4.Exception,
 	{
-		create: function(message)
+		create: function create(message)
 		{
 			var exception = ul4._clone(this);
 			exception.message = message;
 			return exception;
 		},
-		toString: function()
+		toString: function toString()
 		{
 			return "ul4.ValueError: " + this.message;
 		}
@@ -1895,13 +1899,13 @@ ul4.ValueError = ul4._inherit(
 ul4.ArgumentError = ul4._inherit(
 	ul4.Exception,
 	{
-		create: function(message)
+		create: function create(message)
 		{
 			var exception = ul4._clone(this);
 			exception.message = message;
 			return exception;
 		},
-		toString: function()
+		toString: function toString()
 		{
 			return "ul4.ArgumentError: " + this.message;
 		}
@@ -1912,7 +1916,7 @@ ul4.ArgumentError = ul4._inherit(
 ul4.Error = ul4._inherit(
 	ul4.Exception,
 	{
-		create: function(node, cause)
+		create: function create(node, cause)
 		{
 			var exception = ul4._clone(this);
 			exception.node = node;
@@ -1920,7 +1924,7 @@ ul4.Error = ul4._inherit(
 			exception.cause = cause;
 			return exception;
 		},
-		toString: function()
+		toString: function toString()
 		{
 			var templateprefix, pos, text;
 
@@ -1963,26 +1967,26 @@ ul4.Error = ul4._inherit(
 ul4.AST = ul4._inherit(
 	ul4.Proto,
 	{
-		create: function(startpos, endpos)
+		create: function create(startpos, endpos)
 		{
 			var ast = ul4._clone(this);
 			ast.startpos = startpos;
 			ast.endpos = endpos;
 			return ast;
 		},
-		__str__: function()
+		__str__: function __str__()
 		{
 			var out = [];
 			this._str(out);
 			return ul4._formatsource(out);
 		},
-		__repr__: function()
+		__repr__: function __repr__()
 		{
 			var out = [];
 			this._repr(out);
 			return ul4._formatsource(out);
 		},
-		_handle_eval: function(context)
+		_handle_eval: function _handle_eval(context)
 		{
 			try
 			{
@@ -1995,7 +1999,7 @@ ul4.AST = ul4._inherit(
 				throw exc;
 			}
 		},
-		_handle_eval_set: function(context, value)
+		_handle_eval_set: function _handle_eval_set(context, value)
 		{
 			try
 			{
@@ -2008,11 +2012,11 @@ ul4.AST = ul4._inherit(
 				throw exc;
 			}
 		},
-		_eval_set: function(context, value)
+		_eval_set: function _eval_set(context, value)
 		{
 			throw ul4.LValueRequiredError;
 		},
-		_handle_eval_modify: function(context, operator, value)
+		_handle_eval_modify: function _handle_eval_modify(context, operator, value)
 		{
 			try
 			{
@@ -2025,27 +2029,27 @@ ul4.AST = ul4._inherit(
 				throw exc;
 			}
 		},
-		_eval_modify: function(context, operator, value)
+		_eval_modify: function _eval_modify(context, operator, value)
 		{
 			throw ul4.LValueRequiredError;
 		},
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 		},
-		_str: function(out)
+		_str: function _str(out)
 		{
 		},
-		ul4ondump: function(encoder)
+		ul4ondump: function ul4ondump(encoder)
 		{
 			for (var i = 0; i < this._ul4onattrs.length; ++i)
 				encoder.dump(this[this._ul4onattrs[i]]);
 		},
-		ul4onload: function(decoder)
+		ul4onload: function ul4onload(decoder)
 		{
 			for (var i = 0; i < this._ul4onattrs.length; ++i)
 				this[this._ul4onattrs[i]] = decoder.load();
 		},
-		__setitem__: function(attrname, value)
+		__setitem__: function __setitem__(attrname, value)
 		{
 			throw ul4.TypeError.create("mutate", "object is immutable");
 		},
@@ -2057,27 +2061,27 @@ ul4.AST = ul4._inherit(
 ul4.TextAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(source, startpos, endpos)
+		create: function create(source, startpos, endpos)
 		{
 			var text = ul4.AST.create.call(this, startpos, endpos);
 			text.source = source;
 			return text;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["source"]),
-		_text: function()
+		_text: function _text()
 		{
 			return this.source.substring(this.startpos, this.endpos);
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			context.output(this._text());
 		},
-		_str: function(out)
+		_str: function _str(out)
 		{
 			out.push("text ");
 			out.push(ul4._repr(this._text()));
 		},
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<TextAST ");
 			out.push(ul4._repr(this._text()));
@@ -2089,13 +2093,13 @@ ul4.TextAST = ul4._inherit(
 ul4.IndentAST = ul4._inherit(
 	ul4.TextAST,
 	{
-		create: function(source, startpos, endpos, text)
+		create: function create(source, startpos, endpos, text)
 		{
 			var indent = ul4.TextAST.create.call(this, source, startpos, endpos);
 			indent._maketext(text);
 			return indent;
 		},
-		_maketext: function(text)
+		_maketext: function _maketext(text)
 		{
 			if (typeof(this.source) !== "undefined")
 			{
@@ -2107,20 +2111,20 @@ ul4.IndentAST = ul4._inherit(
 			else
 				this.text = null;
 		},
-		_text: function()
+		_text: function _text()
 		{
 			if (this.text === null)
 				return this.source.substring(this.startpos, this.endpos);
 			else
 				return this.text;
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			for (var i = 0; i < context.indents.length; ++i)
 				context.output(context.indents[i]);
 			context.output(this._text());
 		},
-		ul4ondump: function(encoder)
+		ul4ondump: function ul4ondump(encoder)
 		{
 			ul4.TextAST.ul4ondump.call(this, encoder);
 
@@ -2129,18 +2133,18 @@ ul4.IndentAST = ul4._inherit(
 			else
 				encoder.dump(this.text);
 		},
-		ul4onload: function(decoder)
+		ul4onload: function ul4onload(decoder)
 		{
 			ul4.TextAST.ul4onload.call(this, decoder);
 			// Recreate ``text`` attribute
 			this._maketext(decoder.load());
 		},
-		_str: function(out)
+		_str: function _str(out)
 		{
 			out.push("indent ");
 			out.push(ul4._repr(this._text()));
 		},
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<IndentAST ");
 			out.push(ul4._repr(this._text()));
@@ -2152,12 +2156,12 @@ ul4.IndentAST = ul4._inherit(
 ul4.LineEndAST = ul4._inherit(
 	ul4.TextAST,
 	{
-		_str: function(out)
+		_str: function _str(out)
 		{
 			out.push("lineend ");
 			out.push(ul4._repr(this._text()));
 		},
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<LineEndAST ");
 			out.push(ul4._repr(this._text()));
@@ -2169,7 +2173,7 @@ ul4.LineEndAST = ul4._inherit(
 ul4.Tag = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(source, tag, startpos, endpos, startposcode, endposcode)
+		create: function create(source, tag, startpos, endpos, startposcode, endposcode)
 		{
 			var tago = ul4.AST.create.call(this, startpos, endpos);
 			tago.source = source;
@@ -2179,7 +2183,7 @@ ul4.Tag = ul4._inherit(
 			tago._maketext();
 			return tago;
 		},
-		_maketext: function()
+		_maketext: function _maketext()
 		{
 			if (typeof(this.source) !== "undefined")
 			{
@@ -2192,7 +2196,7 @@ ul4.Tag = ul4._inherit(
 				this.code = null;
 			}
 		},
-		ul4ondump: function(encoder)
+		ul4ondump: function ul4ondump(encoder)
 		{
 			ul4.AST.ul4ondump.call(this, encoder);
 			encoder.dump(this.source);
@@ -2200,7 +2204,7 @@ ul4.Tag = ul4._inherit(
 			encoder.dump(this.startposcode);
 			encoder.dump(this.endposcode);
 		},
-		ul4onload: function(decoder)
+		ul4onload: function ul4onload(decoder)
 		{
 			ul4.TextAST.ul4onload.call(this, decoder);
 			this.source = decoder.load();
@@ -2216,14 +2220,14 @@ ul4.Tag = ul4._inherit(
 ul4.CodeAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function(tag, startpos, endpos)
+		create: function create(tag, startpos, endpos)
 		{
 			var code = ul4.AST.create.call(this, startpos, endpos);
 			code.tag = tag;
 			return code;
 		},
 		_ul4onattrs: ul4.AST._ul4onattrs.concat(["tag"]),
-		_str: function(out)
+		_str: function _str(out)
 		{
 			out.push(this.tag.source.substring(this.startpos, this.endpos).replace(/\r?\n/g, ' '));
 		}
@@ -2233,20 +2237,20 @@ ul4.CodeAST = ul4._inherit(
 ul4.ConstAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		create: function(tag, startpos, endpos, value)
+		create: function create(tag, startpos, endpos, value)
 		{
 			var constant = ul4.CodeAST.create.call(this, tag, startpos, endpos);
 			constant.value = value;
 			return constant;
 		},
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["value"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<ConstAST value=");
 			out.push(ul4._repr(this.value));
 			out.push(">");
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			return this.value;
 		}
@@ -2256,14 +2260,14 @@ ul4.ConstAST = ul4._inherit(
 ul4.ListAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		create: function(tag, startpos, endpos)
+		create: function create(tag, startpos, endpos)
 		{
 			var list = ul4.CodeAST.create.call(this, tag, startpos, endpos);
 			list.items = [];
 			return list;
 		},
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["items"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<ListAST");
 			for (var i = 0; i < this.items.length; ++i)
@@ -2273,7 +2277,7 @@ ul4.ListAST = ul4._inherit(
 			}
 			out.push(">");
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var result = [];
 			for (var i = 0; i < this.items.length; ++i)
@@ -2286,7 +2290,7 @@ ul4.ListAST = ul4._inherit(
 ul4.ListCompAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		create: function(tag, startpos, endpos, item, varname, container, condition)
+		create: function create(tag, startpos, endpos, item, varname, container, condition)
 		{
 			var listcomp = ul4.CodeAST.create.call(this, tag, startpos, endpos);
 			listcomp.item = item;
@@ -2296,7 +2300,7 @@ ul4.ListCompAST = ul4._inherit(
 			return listcomp;
 		},
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["item", "varname", "container", "condition"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<ListCompAST");
 			out.push(" item=");
@@ -2312,7 +2316,7 @@ ul4.ListCompAST = ul4._inherit(
 			}
 			out.push(">");
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var container = this.container._handle_eval(context);
 
@@ -2338,14 +2342,14 @@ ul4.ListCompAST = ul4._inherit(
 ul4.DictAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		create: function(tag, startpos, endpos)
+		create: function create(tag, startpos, endpos)
 		{
 			var dict = ul4.CodeAST.create.call(this, tag, startpos, endpos);
 			dict.items = [];
 			return dict;
 		},
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["items"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<DictAST");
 			for (var i = 0; i < this.items.length; ++i)
@@ -2357,7 +2361,7 @@ ul4.DictAST = ul4._inherit(
 			}
 			out.push(">");
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var result;
 			if (ul4on._havemap)
@@ -2388,7 +2392,7 @@ ul4.DictAST = ul4._inherit(
 ul4.DictCompAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		create: function(tag, startpos, endpos, key, value, varname, container, condition)
+		create: function create(tag, startpos, endpos, key, value, varname, container, condition)
 		{
 			var listcomp = ul4.CodeAST.create.call(this, tag, startpos, endpos);
 			listcomp.key = key;
@@ -2399,7 +2403,7 @@ ul4.DictCompAST = ul4._inherit(
 			return listcomp;
 		},
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["key", "value", "varname", "container", "condition"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<DictCompAST");
 			out.push(" key=");
@@ -2417,7 +2421,7 @@ ul4.DictCompAST = ul4._inherit(
 			}
 			out.push(">");
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var container = this.container._handle_eval(context);
 
@@ -2471,14 +2475,14 @@ ul4.DictCompAST = ul4._inherit(
 ul4.SetAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		create: function(tag, startpos, endpos)
+		create: function create(tag, startpos, endpos)
 		{
 			var set = ul4.CodeAST.create.call(this, tag, startpos, endpos);
 			set.items = [];
 			return set;
 		},
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["items"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<SetAST");
 			for (var i = 0; i < this.items.length; ++i)
@@ -2490,7 +2494,7 @@ ul4.SetAST = ul4._inherit(
 			}
 			out.push(">");
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var result = ul4on._haveset ? new Set() : ul4._Set.create();
 
@@ -2505,7 +2509,7 @@ ul4.SetAST = ul4._inherit(
 ul4.SetCompAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		create: function(tag, startpos, endpos, item, varname, container, condition)
+		create: function create(tag, startpos, endpos, item, varname, container, condition)
 		{
 			var setcomp = ul4.CodeAST.create.call(this, tag, startpos, endpos);
 			setcomp.item = item;
@@ -2514,7 +2518,7 @@ ul4.SetCompAST = ul4._inherit(
 			return setcomp;
 		},
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["item", "varname", "container", "condition"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<SetCompAST");
 			out.push(" item=");
@@ -2530,7 +2534,7 @@ ul4.SetCompAST = ul4._inherit(
 			}
 			out.push(">");
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var container = this.container._handle_eval(context);
 
@@ -2557,7 +2561,7 @@ ul4.SetCompAST = ul4._inherit(
 ul4.GenExprAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		create: function(tag, startpos, endpos, item, varname, container, condition)
+		create: function create(tag, startpos, endpos, item, varname, container, condition)
 		{
 			var genexp = ul4.CodeAST.create.call(this, tag, startpos, endpos);
 			genexp.item = item;
@@ -2567,7 +2571,7 @@ ul4.GenExprAST = ul4._inherit(
 			return genexp;
 		},
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["item", "varname", "container", "condition"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<GenExprAST");
 			out.push(" item=");
@@ -2583,7 +2587,7 @@ ul4.GenExprAST = ul4._inherit(
 			}
 			out.push(">");
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var container = this.container._handle_eval(context);
 			var iter = ul4._iter(container);
@@ -2619,43 +2623,43 @@ ul4.GenExprAST = ul4._inherit(
 ul4.VarAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		create: function(tag, startpos, endpos, name)
+		create: function create(tag, startpos, endpos, name)
 		{
 			var variable = ul4.CodeAST.create.call(this, tag, startpos, endpos);
 			variable.name = name;
 			return variable;
 		},
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["name"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<VarAST name=");
 			out.push(ul4._repr(this.name));
 			out.push(">");
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			return this._get(context, this.name);
 		},
-		_eval_set: function(context, value)
+		_eval_set: function _eval_set(context, value)
 		{
 			this._set(context, this.name, value);
 		},
-		_eval_modify: function(context, operator, value)
+		_eval_modify: function _eval_modify(context, operator, value)
 		{
 			this._modify(context, operator, this.name, value);
 		},
-		_get: function(context, name)
+		_get: function _get(context, name)
 		{
 			var result = context.get(name);
 			if (typeof(result) === "undefined")
 				result = ul4.functions[name];
 			return result;
 		},
-		_set: function(context, name, value)
+		_set: function _set(context, name, value)
 		{
 			context.set(name, value);
 		},
-		_modify: function(context, operator, name, value)
+		_modify: function _modify(context, operator, name, value)
 		{
 			var newvalue = operator._ido(context.get(name), value)
 			context.set(name, newvalue);
@@ -2666,14 +2670,14 @@ ul4.VarAST = ul4._inherit(
 ul4.UnaryAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		create: function(tag, startpos, endpos, obj)
+		create: function create(tag, startpos, endpos, obj)
 		{
 			var unary = ul4.CodeAST.create.call(this, tag, startpos, endpos);
 			unary.obj = obj;
 			return unary;
 		},
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["obj"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<");
 			out.push(this.typename);
@@ -2681,7 +2685,7 @@ ul4.UnaryAST = ul4._inherit(
 			this.obj._repr(out);
 			out.push(">");
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var obj = this.obj._handle_eval(context);
 			return this._do(obj);
@@ -2693,7 +2697,7 @@ ul4.UnaryAST = ul4._inherit(
 ul4.NegAST = ul4._inherit(
 	ul4.UnaryAST,
 	{
-		_do: function(obj)
+		_do: function _do(obj)
 		{
 			if (obj !== null && typeof(obj.__neg__) === "function")
 				return obj.__neg__();
@@ -2706,7 +2710,7 @@ ul4.NegAST = ul4._inherit(
 ul4.BitNotAST = ul4._inherit(
 	ul4.UnaryAST,
 	{
-		_do: function(obj)
+		_do: function _do(obj)
 		{
 			return -obj-1;
 		}
@@ -2717,7 +2721,7 @@ ul4.BitNotAST = ul4._inherit(
 ul4.NotAST = ul4._inherit(
 	ul4.UnaryAST,
 	{
-		_do: function(obj)
+		_do: function _do(obj)
 		{
 			return !ul4._bool(obj);
 		}
@@ -2728,7 +2732,7 @@ ul4.NotAST = ul4._inherit(
 ul4.IfAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		create: function(tag, startpos, endpos, objif, objcond, objelse)
+		create: function create(tag, startpos, endpos, objif, objcond, objelse)
 		{
 			var ifexpr = ul4.CodeAST.create.call(this, tag, startpos, endpos);
 			ifexpr.objif = objif;
@@ -2737,7 +2741,7 @@ ul4.IfAST = ul4._inherit(
 			return ifexpr;
 		},
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["objif", "objcond", "objelse"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<");
 			out.push(this.typename);
@@ -2753,7 +2757,7 @@ ul4.IfAST = ul4._inherit(
 			out.push(-1);
 			out.push(">");
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var result;
 			var condvalue = this.objcond._handle_eval(context);
@@ -2769,12 +2773,12 @@ ul4.IfAST = ul4._inherit(
 ul4.ReturnAST = ul4._inherit(
 	ul4.UnaryAST,
 	{
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var result = this.obj._handle_eval(context);
 			throw ul4.ReturnException.create(result);
 		},
-		_str: function(out)
+		_str: function _str(out)
 		{
 			out.push("return ");
 			this.obj._str(out);
@@ -2785,13 +2789,13 @@ ul4.ReturnAST = ul4._inherit(
 ul4.PrintAST = ul4._inherit(
 	ul4.UnaryAST,
 	{
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var obj = this.obj._handle_eval(context);
 			var output = ul4._str(obj);
 			context.output(output);
 		},
-		_str: function(out)
+		_str: function _str(out)
 		{
 			out.push("print ");
 			this.obj._str(out);
@@ -2802,13 +2806,13 @@ ul4.PrintAST = ul4._inherit(
 ul4.PrintXAST = ul4._inherit(
 	ul4.UnaryAST,
 	{
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var obj = this.obj._handle_eval(context);
 			var output = ul4._xmlescape(obj);
 			context.output(output);
 		},
-		_str: function(out)
+		_str: function _str(out)
 		{
 			out.push("printx ");
 			this.obj._str(out);
@@ -2819,7 +2823,7 @@ ul4.PrintXAST = ul4._inherit(
 ul4.BinaryAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		create: function(tag, startpos, endpos, obj1, obj2)
+		create: function create(tag, startpos, endpos, obj1, obj2)
 		{
 			var binary = ul4.CodeAST.create.call(this, tag, startpos, endpos);
 			binary.obj1 = obj1;
@@ -2827,7 +2831,7 @@ ul4.BinaryAST = ul4._inherit(
 			return binary;
 		},
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["obj1", "obj2"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<");
 			out.push(this.type);
@@ -2837,7 +2841,7 @@ ul4.BinaryAST = ul4._inherit(
 			this.obj2._repr(out);
 			out.push(">");
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var obj1 = this.obj1._handle_eval(context);
 			var obj2 = this.obj2._handle_eval(context);
@@ -2850,24 +2854,24 @@ ul4.BinaryAST = ul4._inherit(
 ul4.ItemAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj1, obj2)
+		_do: function _do(obj1, obj2)
 		{
 			var result = this._get(obj1, obj2);
 			return result;
 		},
-		_eval_set: function(context, value)
+		_eval_set: function _eval_set(context, value)
 		{
 			var obj1 = this.obj1._handle_eval(context);
 			var obj2 = this.obj2._handle_eval(context);
 			this._set(obj1, obj2, value);
 		},
-		_eval_modify: function(context, operator, value)
+		_eval_modify: function _eval_modify(context, operator, value)
 		{
 			var obj1 = this.obj1._handle_eval(context);
 			var obj2 = this.obj2._handle_eval(context);
 			this._modify(operator, obj1, obj2, value);
 		},
-		_get: function(container, key)
+		_get: function _get(container, key)
 		{
 			if (typeof(container) === "string" || ul4._islist(container))
 			{
@@ -2897,7 +2901,7 @@ ul4.ItemAST = ul4._inherit(
 			else
 				throw ul4.TypeError.create("[]", ul4._type(container) + " object is not subscriptable");
 		},
-		_set: function(container, key, value)
+		_set: function _set(container, key, value)
 		{
 			if (ul4._islist(container))
 			{
@@ -2948,7 +2952,7 @@ ul4.ItemAST = ul4._inherit(
 			else
 				throw ul4.NotSubscriptableError.create(container);
 		},
-		_modify: function(operator, container, key, value)
+		_modify: function _modify(operator, container, key, value)
 		{
 			this._set(container, key, operator._ido(this._get(container, key), value));
 		}
@@ -2959,7 +2963,7 @@ ul4.ItemAST = ul4._inherit(
 ul4.EQAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj1, obj2)
+		_do: function _do(obj1, obj2)
 		{
 			if (obj1 && typeof(obj1.__eq__) === "function")
 			{
@@ -2983,7 +2987,7 @@ ul4.EQAST = ul4._inherit(
 ul4.NEAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj1, obj2)
+		_do: function _do(obj1, obj2)
 		{
 			if (obj1 && typeof(obj1.__ne__) === "function")
 			{
@@ -3007,7 +3011,7 @@ ul4.NEAST = ul4._inherit(
 ul4.LTAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj1, obj2)
+		_do: function _do(obj1, obj2)
 		{
 			if (obj1 && typeof(obj1.__lt__) === "function")
 			{
@@ -3031,7 +3035,7 @@ ul4.LTAST = ul4._inherit(
 ul4.LEAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj1, obj2)
+		_do: function _do(obj1, obj2)
 		{
 			if (obj1 && typeof(obj1.__le__) === "function")
 			{
@@ -3055,7 +3059,7 @@ ul4.LEAST = ul4._inherit(
 ul4.GTAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj1, obj2)
+		_do: function _do(obj1, obj2)
 		{
 			if (obj1 && typeof(obj1.__gt__) === "function")
 			{
@@ -3079,7 +3083,7 @@ ul4.GTAST = ul4._inherit(
 ul4.GEAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj1, obj2)
+		_do: function _do(obj1, obj2)
 		{
 			if (obj1 && typeof(obj1.__ge__) === "function")
 			{
@@ -3103,7 +3107,7 @@ ul4.GEAST = ul4._inherit(
 ul4.ContainsAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj, container)
+		_do: function _do(obj, container)
 		{
 			if (typeof(obj) === "string" && typeof(container) === "string")
 			{
@@ -3139,7 +3143,7 @@ ul4.ContainsAST = ul4._inherit(
 ul4.NotContainsAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj, container)
+		_do: function _do(obj, container)
 		{
 			return !ul4.ContainsAST._do(obj, container);
 		}
@@ -3150,7 +3154,7 @@ ul4.NotContainsAST = ul4._inherit(
 ul4.AddAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj1, obj2)
+		_do: function _do(obj1, obj2)
 		{
 			if (obj1 && typeof(obj1.__add__) === "function")
 				return obj1.__add__(obj2);
@@ -3168,7 +3172,7 @@ ul4.AddAST = ul4._inherit(
 			else
 				return obj1 + obj2;
 		},
-		_ido: function(obj1, obj2)
+		_ido: function _ido(obj1, obj2)
 		{
 			if (ul4._islist(obj1) && ul4._islist(obj2))
 			{
@@ -3185,7 +3189,7 @@ ul4.AddAST = ul4._inherit(
 ul4.SubAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj1, obj2)
+		_do: function _do(obj1, obj2)
 		{
 			if (obj1 && typeof(obj1.__sub__) === "function")
 				return obj1.__sub__(obj2);
@@ -3195,7 +3199,7 @@ ul4.SubAST = ul4._inherit(
 				throw ul4.TypeError.create("-", ul4._type(this.obj1) + " - " + ul4._type(this.obj2) + " is not supported");
 			return obj1 - obj2;
 		},
-		_ido: function(obj1, obj2)
+		_ido: function _ido(obj1, obj2)
 		{
 			return this._do(obj1, obj2);
 		}
@@ -3206,7 +3210,7 @@ ul4.SubAST = ul4._inherit(
 ul4.MulAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj1, obj2)
+		_do: function _do(obj1, obj2)
 		{
 			if (obj1 && typeof(obj1.__mul__) === "function")
 				return obj1.__mul__(obj2);
@@ -3246,7 +3250,7 @@ ul4.MulAST = ul4._inherit(
 			}
 			return obj1 * obj2;
 		},
-		_ido: function(obj1, obj2)
+		_ido: function _ido(obj1, obj2)
 		{
 			if (ul4._islist(obj1) && ul4._isint(obj2))
 			{
@@ -3271,7 +3275,7 @@ ul4.MulAST = ul4._inherit(
 ul4.FloorDivAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj1, obj2)
+		_do: function _do(obj1, obj2)
 		{
 			if (obj1 && typeof(obj1.__floordiv__) === "function")
 				return obj1.__floordiv__(obj2);
@@ -3281,7 +3285,7 @@ ul4.FloorDivAST = ul4._inherit(
 				throw ul4.TypeError.create("//", ul4._type(obj1) + " // " + ul4._type(obj2) + " not supported");
 			return Math.floor(obj1 / obj2);
 		},
-		_ido: function(obj1, obj2)
+		_ido: function _ido(obj1, obj2)
 		{
 			return this._do(obj1, obj2);
 		}
@@ -3292,7 +3296,7 @@ ul4.FloorDivAST = ul4._inherit(
 ul4.TrueDivAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj1, obj2)
+		_do: function _do(obj1, obj2)
 		{
 			if (obj1 && typeof(obj1.__truediv__) === "function")
 				return obj1.__truediv__(obj2);
@@ -3302,7 +3306,7 @@ ul4.TrueDivAST = ul4._inherit(
 				throw ul4.TypeError.create("/", ul4._type(obj1) + " / " + ul4._type(obj2) + " not supported");
 			return obj1 / obj2;
 		},
-		_ido: function(obj1, obj2)
+		_ido: function _ido(obj1, obj2)
 		{
 			return this._do(obj1, obj2);
 		}
@@ -3314,7 +3318,7 @@ ul4.ModAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
 		// (this is non-trivial, because it follows the Python semantic of ``-5 % 2`` being ``1``)
-		_do: function(obj1, obj2)
+		_do: function _do(obj1, obj2)
 		{
 			var div = Math.floor(obj1 / obj2);
 			var mod = obj1 - div * obj2;
@@ -3326,7 +3330,7 @@ ul4.ModAST = ul4._inherit(
 			}
 			return obj1 - div * obj2;
 		},
-		_ido: function(obj1, obj2)
+		_ido: function _ido(obj1, obj2)
 		{
 			return this._do(obj1, obj2);
 		}
@@ -3337,7 +3341,7 @@ ul4.ModAST = ul4._inherit(
 ul4.ShiftLeftAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj1, obj2)
+		_do: function _do(obj1, obj2)
 		{
 			if (obj2 === false)
 				obj2 = 0;
@@ -3353,7 +3357,7 @@ ul4.ShiftLeftAST = ul4._inherit(
 				obj1 *= 2;
 			return obj1;
 		},
-		_ido: function(obj1, obj2)
+		_ido: function _ido(obj1, obj2)
 		{
 			return this._do(obj1, obj2);
 		}
@@ -3364,7 +3368,7 @@ ul4.ShiftLeftAST = ul4._inherit(
 ul4.ShiftRightAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj1, obj2)
+		_do: function _do(obj1, obj2)
 		{
 			if (obj2 === false)
 				obj2 = 0;
@@ -3380,7 +3384,7 @@ ul4.ShiftRightAST = ul4._inherit(
 				obj1 /= 2;
 			return Math.floor(obj1);
 		},
-		_ido: function(obj1, obj2)
+		_ido: function _ido(obj1, obj2)
 		{
 			return this._do(obj1, obj2);
 		}
@@ -3391,7 +3395,7 @@ ul4.ShiftRightAST = ul4._inherit(
 ul4.BitAndAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj1, obj2)
+		_do: function _do(obj1, obj2)
 		{
 			if (obj2 === false)
 				obj2 = 0;
@@ -3399,7 +3403,7 @@ ul4.BitAndAST = ul4._inherit(
 				obj2 = 1;
 			return obj1 & obj2;
 		},
-		_ido: function(obj1, obj2)
+		_ido: function _ido(obj1, obj2)
 		{
 			return this._do(obj1, obj2);
 		}
@@ -3410,7 +3414,7 @@ ul4.BitAndAST = ul4._inherit(
 ul4.BitXOrAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj1, obj2)
+		_do: function _do(obj1, obj2)
 		{
 			if (obj2 === false)
 				obj2 = 0;
@@ -3418,7 +3422,7 @@ ul4.BitXOrAST = ul4._inherit(
 				obj2 = 1;
 			return obj1 ^ obj2;
 		},
-		_ido: function(obj1, obj2)
+		_ido: function _ido(obj1, obj2)
 		{
 			return this._do(obj1, obj2);
 		}
@@ -3429,7 +3433,7 @@ ul4.BitXOrAST = ul4._inherit(
 ul4.BitOrAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_do: function(obj1, obj2)
+		_do: function _do(obj1, obj2)
 		{
 			if (obj2 === false)
 				obj2 = 0;
@@ -3437,7 +3441,7 @@ ul4.BitOrAST = ul4._inherit(
 				obj2 = 1;
 			return obj1 | obj2;
 		},
-		_ido: function(obj1, obj2)
+		_ido: function _ido(obj1, obj2)
 		{
 			return this._do(obj1, obj2);
 		}
@@ -3447,7 +3451,7 @@ ul4.BitOrAST = ul4._inherit(
 ul4.AndAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var obj1 = this.obj1._handle_eval(context);
 			if (!ul4._bool(obj1))
@@ -3461,7 +3465,7 @@ ul4.AndAST = ul4._inherit(
 ul4.OrAST = ul4._inherit(
 	ul4.BinaryAST,
 	{
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var obj1 = this.obj1._handle_eval(context);
 			if (ul4._bool(obj1))
@@ -3475,7 +3479,7 @@ ul4.OrAST = ul4._inherit(
 ul4.AttrAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		create: function(tag, startpos, endpos, obj, attrname)
+		create: function create(tag, startpos, endpos, obj, attrname)
 		{
 			var attr = ul4.CodeAST.create.call(this, tag, startpos, endpos);
 			attr.obj = obj;
@@ -3483,7 +3487,7 @@ ul4.AttrAST = ul4._inherit(
 			return attr;
 		},
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["obj", "attrname"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<AttrAST");
 			out.push(" obj=");
@@ -3492,56 +3496,56 @@ ul4.AttrAST = ul4._inherit(
 			out.push(ul4._repr(this.attrname));
 			out.push(">");
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var obj = this.obj._handle_eval(context);
 			var result = this._get(obj, this.attrname);
 			return result;
 		},
-		_eval_set: function(context, value)
+		_eval_set: function _eval_set(context, value)
 		{
 			var obj = this.obj._handle_eval(context);
 			this._set(obj, this.attrname, value);
 		},
-		_eval_modify: function(context, operator, value)
+		_eval_modify: function _eval_modify(context, operator, value)
 		{
 			var obj = this.obj._handle_eval(context);
 			this._modify(operator, obj, this.attrname, value);
 		},
-		_get: function(object, attrname)
+		_get: function _get(object, attrname)
 		{
 			if (typeof(object) === "string")
 			{
 				switch (attrname)
 				{
 					case "find":
-						return ul4.expose(["sub", "start=", null, "end=", null], {name: "find"}, function(sub, start, end){ return ul4._find(object, sub, start, end); });
+						return ul4.expose(["sub", "start=", null, "end=", null], function find(sub, start, end){ return ul4._find(object, sub, start, end); });
 					case "rfind":
-						return ul4.expose(["sub", "start=", null, "end=", null], {name: "rfind"}, function(sub, start, end){ return ul4._rfind(object, sub, start, end); });
+						return ul4.expose(["sub", "start=", null, "end=", null], function rfind(sub, start, end){ return ul4._rfind(object, sub, start, end); });
 					case "replace":
-						return ul4.expose(["old", "new", "count=", null], {name: "replace"}, function(old, new_, count){ return ul4._replace(object, old, new_, count); });
+						return ul4.expose(["old", "new", "count=", null], function replace(old, new_, count){ return ul4._replace(object, old, new_, count); });
 					case "strip":
-						return ul4.expose(["chars=", null], {name: "strip"}, function(chars){ return ul4._strip(object, chars); });
+						return ul4.expose(["chars=", null], function strip(chars){ return ul4._strip(object, chars); });
 					case "lstrip":
-						return ul4.expose(["chars=", null], {name: "lstrip"}, function(chars){ return ul4._lstrip(object, chars); });
+						return ul4.expose(["chars=", null], function lstrip(chars){ return ul4._lstrip(object, chars); });
 					case "rstrip":
-						return ul4.expose(["chars=", null], {name: "rstrip"}, function(chars){ return ul4._rstrip(object, chars); });
+						return ul4.expose(["chars=", null], function rstrip(chars){ return ul4._rstrip(object, chars); });
 					case "split":
-						return ul4.expose(["sep=", null, "count=", null], {name: "split"}, function(sep, count){ return ul4._split(object, sep, count); });
+						return ul4.expose(["sep=", null, "count=", null], function split(sep, count){ return ul4._split(object, sep, count); });
 					case "rsplit":
-						return ul4.expose(["sep=", null, "count=", null], {name: "rsplit"}, function(sep, count){ return ul4._rsplit(object, sep, count); });
+						return ul4.expose(["sep=", null, "count=", null], function rsplit(sep, count){ return ul4._rsplit(object, sep, count); });
 					case "lower":
-						return ul4.expose([], {name: "lower"}, function(){ return object.toLowerCase(); });
+						return ul4.expose([], function lower(){ return object.toLowerCase(); });
 					case "upper":
-						return ul4.expose([], {name: "upper"}, function(){ return object.toUpperCase(); });
+						return ul4.expose([], function upper(){ return object.toUpperCase(); });
 					case "capitalize":
-						return ul4.expose([], {name: "capitalize"}, function(){ return ul4._capitalize(object); });
+						return ul4.expose([], function capitalize(){ return ul4._capitalize(object); });
 					case "join":
-						return ul4.expose(["iterable"], {name: "capitalize"}, function(iterable){ return ul4._join(object, iterable); });
+						return ul4.expose(["iterable"], function join(iterable){ return ul4._join(object, iterable); });
 					case "startswith":
-						return ul4.expose(["prefix"], {name: "startswith"}, function(prefix){ return ul4._startswith(object, prefix); });
+						return ul4.expose(["prefix"], function startswith(prefix){ return ul4._startswith(object, prefix); });
 					case "endswith":
-						return ul4.expose(["suffix"], {name: "endswith"}, function(suffix){ return ul4._endswith(object, suffix); });
+						return ul4.expose(["suffix"], function endswith(suffix){ return ul4._endswith(object, suffix); });
 					default:
 						return ul4.undefined;
 				}
@@ -3551,15 +3555,15 @@ ul4.AttrAST = ul4._inherit(
 				switch (attrname)
 				{
 					case "append":
-						return ul4.expose(["*items"], {name: "append"}, function(items){ return ul4._append(object, items); });
+						return ul4.expose(["*items"], function append(items){ return ul4._append(object, items); });
 					case "insert":
-						return ul4.expose(["pos", "*items"], {name: "insert"}, function(pos, items){ return ul4._insert(object, pos, items); });
+						return ul4.expose(["pos", "*items"], function insert(pos, items){ return ul4._insert(object, pos, items); });
 					case "pop":
-						return ul4.expose(["pos=", -1], {name: "pop"}, function(pos){ return ul4._pop(object, pos); });
+						return ul4.expose(["pos=", -1], function pop(pos){ return ul4._pop(object, pos); });
 					case "find":
-						return ul4.expose(["sub", "start=", null, "end=", null], {name: "find"}, function(sub, start, end){ return ul4._find(object, sub, start, end); });
+						return ul4.expose(["sub", "start=", null, "end=", null], function find(sub, start, end){ return ul4._find(object, sub, start, end); });
 					case "rfind":
-						return ul4.expose(["sub", "start=", null, "end=", null], {name: "rfind"}, function(sub, start, end){ return ul4._rfind(object, sub, start, end); });
+						return ul4.expose(["sub", "start=", null, "end=", null], function rfind(sub, start, end){ return ul4._rfind(object, sub, start, end); });
 					default:
 						return ul4.undefined;
 				}
@@ -3569,29 +3573,29 @@ ul4.AttrAST = ul4._inherit(
 				switch (attrname)
 				{
 					case "weekday":
-						return ul4.expose([], {name: "weekday"}, function(){ return ul4._weekday(object); });
+						return ul4.expose([], function weekday(){ return ul4._weekday(object); });
 					case "week":
-						return ul4.expose(["firstweekday=", null], {name: "week"}, function(firstweekday){ return ul4._week(object, firstweekday); });
+						return ul4.expose(["firstweekday=", null], function week(firstweekday){ return ul4._week(object, firstweekday); });
 					case "day":
-						return ul4.expose([], {name: "day"}, function(){ return object.getDate(); });
+						return ul4.expose([], function day(){ return object.getDate(); });
 					case "month":
-						return ul4.expose([], {name: "month"}, function(){ return object.getMonth()+1; });
+						return ul4.expose([], function month(){ return object.getMonth()+1; });
 					case "year":
-						return ul4.expose([], {name: "year"}, function(){ return object.getFullYear(); });
+						return ul4.expose([], function year(){ return object.getFullYear(); });
 					case "hour":
-						return ul4.expose([], {name: "hour"}, function(){ return object.getHours(); });
+						return ul4.expose([], function hour(){ return object.getHours(); });
 					case "minute":
-						return ul4.expose([], {name: "minute"}, function(){ return object.getMinutes(); });
+						return ul4.expose([], function minute(){ return object.getMinutes(); });
 					case "second":
-						return ul4.expose([], {name: "second"}, function(){ return object.getSeconds(); });
+						return ul4.expose([], function second(){ return object.getSeconds(); });
 					case "microsecond":
-						return ul4.expose([], {name: "microsecond"}, function(){ return object.getMilliseconds() * 1000; });
+						return ul4.expose([], function microsecond(){ return object.getMilliseconds() * 1000; });
 					case "mimeformat":
-						return ul4.expose([], {name: "mimeformat"}, function(){ return ul4._mimeformat(object); });
+						return ul4.expose([], function mimeformat(){ return ul4._mimeformat(object); });
 					case "isoformat":
-						return ul4.expose([], {name: "mimeformat"}, function(){ return ul4._isoformat(object); });
+						return ul4.expose([], function isoformat(){ return ul4._isoformat(object); });
 					case "yearday":
-						return ul4.expose([], {name: "yearday"}, function(){ return ul4._yearday(object); });
+						return ul4.expose([], function yearday(){ return ul4._yearday(object); });
 					default:
 						return ul4.undefined;
 				}
@@ -3601,13 +3605,13 @@ ul4.AttrAST = ul4._inherit(
 				switch (attrname)
 				{
 					case "get":
-						return ul4.expose(["key", "default=", null], {name: "get"}, function(key, default_){ return ul4._get(object, key, default_); });
+						return ul4.expose(["key", "default=", null], function get(key, default_){ return ul4._get(object, key, default_); });
 					case "items":
-						return ul4.expose([], {name: "items"}, function(){ return ul4._items(object); });
+						return ul4.expose([], function items(){ return ul4._items(object); });
 					case "values":
-						return ul4.expose([], {name: "items"}, function(){ return ul4._values(object); });
+						return ul4.expose([], function values(){ return ul4._values(object); });
 					case "update":
-						return ul4.expose(["*other", "**kwargs"], {name: "update"}, function(other, kwargs){ return ul4._update(object, other, kwargs); });
+						return ul4.expose(["*other", "**kwargs"], function update(other, kwargs){ return ul4._update(object, other, kwargs); });
 					default:
 						return object.get(attrname);
 				}
@@ -3617,7 +3621,7 @@ ul4.AttrAST = ul4._inherit(
 				switch (attrname)
 				{
 					case "add":
-						return ul4.expose(["*items"], {name: "add"}, function(items){ for (var i = 0; i < items.length; ++i) { object.add(items[i]); } } );
+						return ul4.expose(["*items"], function add(items){ for (var i = 0; i < items.length; ++i) { object.add(items[i]); } } );
 					default:
 						return ul4.undefined;
 				}
@@ -3627,13 +3631,13 @@ ul4.AttrAST = ul4._inherit(
 				switch (attrname)
 				{
 					case "get":
-						return ul4.expose(["key", "default=", null], {name: "get"}, function(key, default_){ return ul4._get(object, key, default_); });
+						return ul4.expose(["key", "default=", null], function get(key, default_){ return ul4._get(object, key, default_); });
 					case "items":
-						return ul4.expose([], {name: "items"}, function(){ return ul4._items(object); });
+						return ul4.expose([], function items(){ return ul4._items(object); });
 					case "values":
-						return ul4.expose([], {name: "values"}, function(){ return ul4._values(object); });
+						return ul4.expose([], function values(){ return ul4._values(object); });
 					case "update":
-						return ul4.expose(["*other", "**kwargs"], {name: "update"}, function(other, kwargs){ return ul4._update(object, other, kwargs); });
+						return ul4.expose(["*other", "**kwargs"], function update(other, kwargs){ return ul4._update(object, other, kwargs); });
 					default:
 						var result;
 						if (object && typeof(object.__getattr__) === "function") // test this before the generic object test
@@ -3657,7 +3661,7 @@ ul4.AttrAST = ul4._inherit(
 			}
 			throw ul4.TypeError.create("get", ul4._type(object) + " object has no readable attributes");
 		},
-		_set: function(object, attrname, value)
+		_set: function _set(object, attrname, value)
 		{
 			if (typeof(object) === "object" && typeof(object.__setattr__) === "function")
 				object.__setattr__(attrname, value);
@@ -3668,7 +3672,7 @@ ul4.AttrAST = ul4._inherit(
 			else
 				throw ul4.TypeError.create("set", ul4._type(object) + " object has no writable attributes");
 		},
-		_modify: function(operator, object, attrname, value)
+		_modify: function _modify(operator, object, attrname, value)
 		{
 			var oldvalue = this._get(object, attrname);
 			var newvalue = operator._ido(oldvalue, value);
@@ -3680,7 +3684,7 @@ ul4.AttrAST = ul4._inherit(
 ul4.CallAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		create: function(tag, startpos, endpos, obj, args)
+		create: function create(tag, startpos, endpos, obj, args)
 		{
 			var call = ul4.CodeAST.create.call(this, tag, startpos, endpos);
 			call.obj = obj;
@@ -3688,7 +3692,7 @@ ul4.CallAST = ul4._inherit(
 			return call;
 		},
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["obj", "args"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<CallAST");
 			out.push(" obj=");
@@ -3710,7 +3714,7 @@ ul4.CallAST = ul4._inherit(
 			}
 			out.push(">");
 		},
-		_makeargs: function(context)
+		_makeargs: function _makeargs(context)
 		{
 			var args = [];
 			for (var i = 0; i < this.args.length; ++i)
@@ -3721,7 +3725,7 @@ ul4.CallAST = ul4._inherit(
 			}
 			return args;
 		},
-		_handle_eval: function(context)
+		_handle_eval: function _handle_eval(context)
 		{
 			var obj = this.obj._handle_eval(context);
 			var args = this._makeargs(context);
@@ -3738,7 +3742,7 @@ ul4.CallAST = ul4._inherit(
 			}
 		},
 
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			return this._handle_eval(context);
 		}
@@ -3748,14 +3752,14 @@ ul4.CallAST = ul4._inherit(
 ul4.RenderAST = ul4._inherit(
 	ul4.CallAST,
 	{
-		create: function(tag, startpos, endpos, obj, args)
+		create: function create(tag, startpos, endpos, obj, args)
 		{
 			var render = ul4.CallAST.create.call(this, tag, startpos, endpos, obj, args);
 			render.indent = null;
 			return render;
 		},
 		_ul4onattrs: ul4.CallAST._ul4onattrs.concat(["indent"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<RenderAST");
 			out.push(" indent=");
@@ -3782,7 +3786,7 @@ ul4.RenderAST = ul4._inherit(
 			out.push(-1);
 			out.push(">");
 		},
-		_str: function(out)
+		_str: function _str(out)
 		{
 			out.push("render ");
 			out.push(this.tag.source.substring(this.startpos, this.endpos).replace(/\r?\n/g, ' '));
@@ -3792,7 +3796,7 @@ ul4.RenderAST = ul4._inherit(
 				out.push(ul4._repr(this.indent._text()));
 			}
 		},
-		_handle_eval: function(context)
+		_handle_eval: function _handle_eval(context)
 		{
 			var localcontext = context.withindent(this.indent !== null ? this.indent._text() : null);
 			var obj = this.obj._handle_eval(localcontext);
@@ -3816,14 +3820,14 @@ ul4.RenderAST = ul4._inherit(
 ul4.slice = ul4._inherit(
 	ul4.Proto,
 	{
-		create: function(start, stop)
+		create: function create(start, stop)
 		{
 			var slice = ul4._clone(this);
 			slice.start = start;
 			slice.stop = stop;
 			return slice;
 		},
-		__repr__: function()
+		__repr__: function __repr__()
 		{
 			return "slice(" + ul4._repr(this.start) + ", " + ul4._repr(this.stop) + ")";
 		}
@@ -3835,7 +3839,7 @@ ul4.slice = ul4._inherit(
 ul4.SliceAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		create: function(tag, startpos, endpos, index1, index2)
+		create: function create(tag, startpos, endpos, index1, index2)
 		{
 			var slice = ul4.CodeAST.create.call(this, tag, startpos, endpos);
 			slice.index1 = index1;
@@ -3843,7 +3847,7 @@ ul4.SliceAST = ul4._inherit(
 			return slice;
 		},
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["index1", "index2"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<SliceAST");
 			if (this.index1 !== null)
@@ -3858,7 +3862,7 @@ ul4.SliceAST = ul4._inherit(
 			}
 			out.push(">");
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var index1 = this.index1 !== null ? this.index1._handle_eval(context) : null;
 			var index2 = this.index2 !== null ? this.index2._handle_eval(context) : null;
@@ -3871,7 +3875,7 @@ ul4.SliceAST = ul4._inherit(
 ul4.SetVarAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		create: function(tag, startpos, endpos, lvalue, value)
+		create: function create(tag, startpos, endpos, lvalue, value)
 		{
 			var changevar = ul4.CodeAST.create.call(this, tag, startpos, endpos);
 			changevar.lvalue = lvalue;
@@ -3879,7 +3883,7 @@ ul4.SetVarAST = ul4._inherit(
 			return changevar;
 		},
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["lvalue", "value"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<");
 			out.push(this.typename);
@@ -3889,7 +3893,7 @@ ul4.SetVarAST = ul4._inherit(
 			this.value._repr(out);
 			out.push(">");
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var value = this.value._handle_eval(context);
 			var items = ul4._unpackvar(this.lvalue, value);
@@ -3905,7 +3909,7 @@ ul4.SetVarAST = ul4._inherit(
 ul4.ModifyVarAST = ul4._inherit(
 	ul4.SetVarAST,
 	{
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var value = this.value._handle_eval(context);
 			var items = ul4._unpackvar(this.lvalue, value);
@@ -3943,7 +3947,7 @@ ul4.BitOrVarAST = ul4._inherit(ul4.ModifyVarAST, { _operator: ul4.BitOrAST });
 ul4.BlockAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		create: function(tag, startpos, endpos)
+		create: function create(tag, startpos, endpos)
 		{
 			var block = ul4.CodeAST.create.call(this, tag, startpos, endpos);
 			block.endtag = null;
@@ -3951,12 +3955,12 @@ ul4.BlockAST = ul4._inherit(
 			return block;
 		},
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["endtag", "content"]),
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			for (var i = 0; i < this.content.length; ++i)
 				this.content[i]._handle_eval(context);
 		},
-		_str: function(out)
+		_str: function _str(out)
 		{
 			if (this.content.length)
 			{
@@ -3978,7 +3982,7 @@ ul4.BlockAST = ul4._inherit(
 ul4.ForBlockAST = ul4._inherit(
 	ul4.BlockAST,
 	{
-		create: function(tag, startpos, endpos, varname, container)
+		create: function create(tag, startpos, endpos, varname, container)
 		{
 			var for_ = ul4.BlockAST.create.call(this, tag, startpos, endpos);
 			for_.varname = varname;
@@ -3986,7 +3990,7 @@ ul4.ForBlockAST = ul4._inherit(
 			return for_;
 		},
 		_ul4onattrs: ul4.BlockAST._ul4onattrs.concat(["varname", "container"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<ForBlockAST");
 			out.push(" varname=");
@@ -3995,7 +3999,7 @@ ul4.ForBlockAST = ul4._inherit(
 			this.container._repr(out);
 			out.push(">");
 		},
-		_str_varname: function(out, varname)
+		_str_varname: function _str_varname(out, varname)
 		{
 			if (ul4._islist(varname))
 			{
@@ -4013,7 +4017,7 @@ ul4.ForBlockAST = ul4._inherit(
 			else
 				varname._str(out);
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var container = this.container._handle_eval(context);
 
@@ -4042,7 +4046,7 @@ ul4.ForBlockAST = ul4._inherit(
 				}
 			}
 		},
-		_str: function(out)
+		_str: function _str(out)
 		{
 			out.push("for ");
 			this._str_varname(out, this.varname);
@@ -4059,21 +4063,21 @@ ul4.ForBlockAST = ul4._inherit(
 ul4.WhileBlockAST = ul4._inherit(
 	ul4.BlockAST,
 	{
-		create: function(tag, startpos, endpos, condition)
+		create: function create(tag, startpos, endpos, condition)
 		{
 			var while_ = ul4.BlockAST.create.call(this, tag, startpos, endpos);
 			while_.condition = condition;
 			return while_;
 		},
 		_ul4onattrs: ul4.BlockAST._ul4onattrs.concat(["condition"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<WhileAST");
 			out.push(" condition=");
 			this.condition._repr(out);
 			out.push(">");
 		},
-		_str: function(out)
+		_str: function _str(out)
 		{
 			out.push("while "),
 			this.container._repr(out);
@@ -4082,7 +4086,7 @@ ul4.WhileBlockAST = ul4._inherit(
 			ul4.BlockAST._str.call(this, out);
 			out.push(-1);
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			while (true)
 			{
@@ -4106,7 +4110,7 @@ ul4.WhileBlockAST = ul4._inherit(
 				}
 			}
 		},
-		_str: function(out)
+		_str: function _str(out)
 		{
 			out.push("while ");
 			ul4.AST._str.call(this, out);
@@ -4121,16 +4125,16 @@ ul4.WhileBlockAST = ul4._inherit(
 ul4.BreakAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			throw ul4.BreakException;
 		},
-		_str: function(out)
+		_str: function _str(out)
 		{
 			out.push("break");
 			out.push(0);
 		},
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<BreakAST>");
 		}
@@ -4140,16 +4144,16 @@ ul4.BreakAST = ul4._inherit(
 ul4.ContinueAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			throw ul4.ContinueException;
 		},
-		_str: function(out)
+		_str: function _str(out)
 		{
 			out.push("continue");
 			out.push(0);
 		},
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<ContinueAST>");
 		}
@@ -4159,7 +4163,7 @@ ul4.ContinueAST = ul4._inherit(
 ul4.CondBlockAST = ul4._inherit(
 	ul4.BlockAST,
 	{
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			for (var i = 0; i < this.content.length; ++i)
 			{
@@ -4178,14 +4182,14 @@ ul4.CondBlockAST = ul4._inherit(
 ul4.ConditionalBlockAST = ul4._inherit(
 	ul4.BlockAST,
 	{
-		create: function(tag, startpos, endpos, condition)
+		create: function create(tag, startpos, endpos, condition)
 		{
 			var block = ul4.BlockAST.create.call(this, tag, startpos, endpos);
 			block.condition = condition;
 			return block;
 		},
 		_ul4onattrs: ul4.BlockAST._ul4onattrs.concat(["condition"]),
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<");
 			out.push(this.typename);
@@ -4193,7 +4197,7 @@ ul4.ConditionalBlockAST = ul4._inherit(
 			this.condition._repr(out);
 			out.push(">");
 		},
-		_str: function(out)
+		_str: function _str(out)
 		{
 			out.push(this._strname);
 			out.push(" ");
@@ -4203,7 +4207,7 @@ ul4.ConditionalBlockAST = ul4._inherit(
 			ul4.BlockAST._str.call(this, out);
 			out.push(-1);
 		},
-		_execute: function(context)
+		_execute: function _execute(context)
 		{
 			var cond = this.condition._handle_eval(context);
 			var result = ul4._bool(cond);
@@ -4219,23 +4223,23 @@ ul4.ElIfBlockAST = ul4._inherit(ul4.ConditionalBlockAST, {_strname: "else if"});
 ul4.ElseBlockAST = ul4._inherit(
 	ul4.BlockAST,
 	{
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<ElseAST");
 			out.push(">");
 		},
-		_str: function(out)
+		_str: function _str(out)
 		{
 			out.push("else:"),
 			out.push(+1);
 			ul4.BlockAST._str.call(this, out);
 			out.push(-1);
 		},
-		_execute: function(context)
+		_execute: function _execute(context)
 		{
 			return true;
 		},
-		_str: function(out)
+		_str: function _str(out)
 		{
 			out.push("else:");
 			out.push(+1);
@@ -4248,7 +4252,7 @@ ul4.ElseBlockAST = ul4._inherit(
 ul4.Template = ul4._inherit(
 	ul4.BlockAST,
 	{
-		create: function(tag, startpos, endpos, source, name, whitespace, startdelim, enddelim, signature)
+		create: function create(tag, startpos, endpos, source, name, whitespace, startdelim, enddelim, signature)
 		{
 			var template = ul4.BlockAST.create.call(this, tag, startpos, endpos);
 			template.source = source;
@@ -4263,7 +4267,7 @@ ul4.Template = ul4._inherit(
 			template._ul4_rendersignature = signature;
 			return template;
 		},
-		ul4ondump: function(encoder)
+		ul4ondump: function ul4ondump(encoder)
 		{
 			var signature;
 			encoder.dump(ul4.version);
@@ -4293,7 +4297,7 @@ ul4.Template = ul4._inherit(
 			encoder.dump(signature);
 			ul4.BlockAST.ul4ondump.call(this, encoder);
 		},
-		ul4onload: function(decoder)
+		ul4onload: function ul4onload(decoder)
 		{
 			var version = decoder.load();
 			var signature;
@@ -4313,11 +4317,11 @@ ul4.Template = ul4._inherit(
 			this._ul4_rendersignature = signature;
 			ul4.BlockAST.ul4onload.call(this, decoder);
 		},
-		loads: function(string)
+		loads: function loads(string)
 		{
 			return ul4on.loads(string);
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var signature = null;
 			if (this.signature !== null)
@@ -4325,7 +4329,7 @@ ul4.Template = ul4._inherit(
 			var closure = ul4.TemplateClosure.create(this, signature, context.vars);
 			context.set(this.name, closure);
 		},
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<Template");
 			if (this.name !== null)
@@ -4347,7 +4351,7 @@ ul4.Template = ul4._inherit(
 			}
 			out.push(">");
 		},
-		_str: function(out)
+		_str: function _str(out)
 		{
 			out.push("def ");
 			out.push(this.name ? this.name : "unnamed");
@@ -4360,7 +4364,7 @@ ul4.Template = ul4._inherit(
 		_ul4_callneedscontext: true,
 		_ul4_renderneedsobject: true,
 		_ul4_renderneedscontext: true,
-		_renderbound: function(context, vars)
+		_renderbound: function _renderbound(context, vars)
 		{
 			var localcontext = context.clone();
 			localcontext.vars = vars;
@@ -4377,17 +4381,17 @@ ul4.Template = ul4._inherit(
 				}
 			}
 		},
-		__render__: function(context, vars)
+		__render__: function __render__(context, vars)
 		{
 			this._renderbound(context, vars);
 		},
-		_rendersbound: function(context, vars)
+		_rendersbound: function _rendersbound(context, vars)
 		{
 			var localcontext = context.replaceoutput();
 			this._renderbound(localcontext, vars);
 			return localcontext.getoutput();
 		},
-		renders: function(vars)
+		renders: function renders(vars)
 		{
 			vars = vars || {};
 			var context = ul4.Context.create();
@@ -4395,7 +4399,7 @@ ul4.Template = ul4._inherit(
 				vars = this.signature.bindObject(this.name, [["**", vars]]);
 			return this._rendersbound(context, vars);
 		},
-		__getattr__: function(attrname)
+		__getattr__: function __getattr__(attrname)
 		{
 			var self = this;
 			switch (attrname)
@@ -4417,12 +4421,12 @@ ul4.Template = ul4._inherit(
 				case "enddelim":
 					return this.enddelim;
 				case "renders":
-					return ul4.expose(this.signature, {name: "renders", needscontext: true, needsobject: true}, function(context, vars){ return self._rendersbound(context, vars); });
+					return ul4.expose(this.signature, {needscontext: true, needsobject: true}, function renders(context, vars){ return self._rendersbound(context, vars); });
 				default:
 					return ul4.undefined;
 			}
 		},
-		_callbound: function(context, vars)
+		_callbound: function _callbound(context, vars)
 		{
 			var localcontext = context.clone();
 			localcontext.vars = vars;
@@ -4442,7 +4446,7 @@ ul4.Template = ul4._inherit(
 			}
 			return null;
 		},
-		call: function(vars)
+		call: function call(vars)
 		{
 			vars = vars || {};
 			var context = ul4.Context.create();
@@ -4450,7 +4454,7 @@ ul4.Template = ul4._inherit(
 				vars = this.signature.bindObject(this.name, [["**", vars]]);
 			return this._callbound(context, vars);
 		},
-		__call__: function(context, vars)
+		__call__: function __call__(context, vars)
 		{
 			return this._callbound(context, vars);
 		},
@@ -4461,13 +4465,13 @@ ul4.Template = ul4._inherit(
 ul4.SignatureAST = ul4._inherit(
 	ul4.CodeAST,
 	{
-		create: function(tag, startpos, endpos)
+		create: function create(tag, startpos, endpos)
 		{
 			var signature = ul4.CodeAST.create.call(this, tag, startpos, endpos);
 			signature.params = [];
 			return signature;
 		},
-		ul4ondump: function(encoder)
+		ul4ondump: function ul4ondump(encoder)
 		{
 			ul4.CodeAST.ul4ondump.call(this, encoder);
 
@@ -4483,7 +4487,7 @@ ul4.SignatureAST = ul4._inherit(
 			}
 			encoder.dump(dump);
 		},
-		ul4onload: function(decoder)
+		ul4onload: function ul4onload(decoder)
 		{
 			ul4.AST.ul4onload.call(this, decoder);
 			var dump = decoder.load();
@@ -4497,7 +4501,7 @@ ul4.SignatureAST = ul4._inherit(
 					this.params.push(param);
 			}
 		},
-		_eval: function(context)
+		_eval: function _eval(context)
 		{
 			var args = [];
 			for (var i = 0; i < this.params.length; ++i)
@@ -4513,7 +4517,7 @@ ul4.SignatureAST = ul4._inherit(
 			}
 			return ul4.Signature.create.apply(ul4.Signature, args);
 		},
-		_repr: function(out)
+		_repr: function _repr(out)
 		{
 			out.push("<");
 			out.push(this.typename);
@@ -4527,7 +4531,7 @@ ul4.SignatureAST = ul4._inherit(
 ul4.TemplateClosure = ul4._inherit(
 	ul4.Proto,
 	{
-		create: function(template, signature, vars)
+		create: function create(template, signature, vars)
 		{
 			var closure = ul4._clone(this);
 			closure.template = template;
@@ -4550,25 +4554,25 @@ ul4.TemplateClosure = ul4._inherit(
 		_ul4_callneedscontext: true,
 		_ul4_renderneedsobject: true,
 		_ul4_renderneedscontext: true,
-		__render__: function(context, vars)
+		__render__: function __render__(context, vars)
 		{
 			this.template._renderbound(context, ul4._simpleinherit(this.vars, vars));
 		},
-		__call__: function(context, vars)
+		__call__: function __call__(context, vars)
 		{
 			return this.template._callbound(context, ul4._simpleinherit(this.vars, vars));
 		},
-		_rendersbound: function(context, vars)
+		_rendersbound: function _rendersbound(context, vars)
 		{
 			return this.template._rendersbound(context, ul4._simpleinherit(this.vars, vars));
 		},
-		__getattr__: function(attrname)
+		__getattr__: function __getattr__(attrname)
 		{
 			var self = this;
 			switch (attrname)
 			{
 				case "renders":
-					return ul4.expose(this.signature, {name: "renders", needscontext: true, needsobject: true}, function(context, vars){ return self._rendersbound(context, vars); });
+					return ul4.expose(this.signature, {needscontext: true, needsobject: true}, function renders(context, vars){ return self._rendersbound(context, vars); });
 				default:
 					return this.template.__getattr__(attrname);
 			}
@@ -4578,13 +4582,13 @@ ul4.TemplateClosure = ul4._inherit(
 );
 
 // Create a color object from the red, green, blue and alpha values ``r``, ``g``, ``b`` and ``b``
-ul4._rgb = function(r, g, b, a)
+ul4._rgb = function _rgb(r, g, b, a)
 {
 	return this.Color.create(255*r, 255*g, 255*b, 255*a);
 };
 
 // Convert ``obj`` to a string and escape the characters ``&``, ``<``, ``>``, ``'`` and ``"`` with their XML character/entity reference
-ul4._xmlescape = function(obj)
+ul4._xmlescape = function _xmlescape(obj)
 {
 	obj = ul4._str(obj);
 	obj = obj.replace(/&/g, "&amp;");
@@ -4596,7 +4600,7 @@ ul4._xmlescape = function(obj)
 };
 
 // Convert ``obj`` to a string suitable for output into a CSV file
-ul4._csv = function(obj)
+ul4._csv = function _csv(obj)
 {
 	if (obj === null)
 		return "";
@@ -4608,7 +4612,7 @@ ul4._csv = function(obj)
 };
 
 // Return a string containing one character with the codepoint ``i``
-ul4._chr = function(i)
+ul4._chr = function _chr(i)
 {
 	if (typeof(i) != "number")
 		throw ul4.TypeError.create("chr()", "chr() requires an int");
@@ -4616,7 +4620,7 @@ ul4._chr = function(i)
 };
 
 // Return the codepoint for the one and only character in the string ``c``
-ul4._ord = function(c)
+ul4._ord = function _ord(c)
 {
 	if (typeof(c) != "string" || c.length != 1)
 		throw ul4.TypeError.create("ord()", "ord() requires a string of length 1");
@@ -4624,7 +4628,7 @@ ul4._ord = function(c)
 };
 
 // Convert an integer to a hexadecimal string
-ul4._hex = function(number)
+ul4._hex = function _hex(number)
 {
 	if (typeof(number) != "number")
 		throw ul4.TypeError.create("hex()", "hex() requires an int");
@@ -4635,7 +4639,7 @@ ul4._hex = function(number)
 };
 
 // Convert an integer to a octal string
-ul4._oct = function(number)
+ul4._oct = function _oct(number)
 {
 	if (typeof(number) != "number")
 		throw ul4.TypeError.create("oct()", "oct() requires an int");
@@ -4646,7 +4650,7 @@ ul4._oct = function(number)
 };
 
 // Convert an integer to a binary string
-ul4._bin = function(number)
+ul4._bin = function _bin(number)
 {
 	if (typeof(number) != "number")
 		throw ul4.TypeError.create("bin()", "bin() requires an int");
@@ -4657,7 +4661,7 @@ ul4._bin = function(number)
 };
 
 // Return the minimum value
-ul4._min = function(obj)
+ul4._min = function _min(obj)
 {
 	if (obj.length == 0)
 		throw ul4.ArgumentError.create("min() requires at least 1 argument, 0 given");
@@ -4682,7 +4686,7 @@ ul4._min = function(obj)
 };
 
 // Return the maximum value
-ul4._max = function(obj)
+ul4._max = function _max(obj)
 {
 	if (obj.length == 0)
 		throw ul4.ArgumentError.create("max() requires at least 1 argument, 0 given");
@@ -4707,7 +4711,7 @@ ul4._max = function(obj)
 };
 
 // Return the of the values from the iterable starting with ``start`` (default ``0``)
-ul4._sum = function(iterable, start)
+ul4._sum = function _sum(iterable, start)
 {
 	if (typeof(start) === "undefined")
 		start = 0;
@@ -4723,7 +4727,7 @@ ul4._sum = function(iterable, start)
 };
 
 // Return the first value produced by iterating through ``iterable`` (defaulting to ``defaultValue`` if the iterator is empty)
-ul4._first = function(iterable, defaultValue)
+ul4._first = function _first(iterable, defaultValue)
 {
 	if (typeof(defaultValue) === "undefined")
 		defaultValue = null;
@@ -4733,7 +4737,7 @@ ul4._first = function(iterable, defaultValue)
 };
 
 // Return the last value produced by iterating through ``iterable`` (defaulting to ``defaultValue`` if the iterator is empty)
-ul4._last = function(iterable, defaultValue)
+ul4._last = function _last(iterable, defaultValue)
 {
 	if (typeof(defaultValue) === "undefined")
 		defaultValue = null;
@@ -4751,7 +4755,7 @@ ul4._last = function(iterable, defaultValue)
 };
 
 // Return a sorted version of ``iterable``
-ul4._sorted = function(iterable)
+ul4._sorted = function _sorted(iterable)
 {
 	var result = ul4._list(iterable);
 	result.sort();
@@ -4759,7 +4763,7 @@ ul4._sorted = function(iterable)
 };
 
 // Return a iterable object iterating from ``start`` upto (but not including) ``stop`` with a step size of ``step``
-ul4._range = function(args)
+ul4._range = function _range(args)
 {
 	var start, stop, step;
 	if (args.length < 1)
@@ -4811,7 +4815,7 @@ ul4._range = function(args)
 };
 
 // Return a iterable object returning a slice from the argument
-ul4._slice = function(args)
+ul4._slice = function _slice(args)
 {
 	var iterable, start, stop, step;
 	if (args.length < 2)
@@ -4839,7 +4843,6 @@ ul4._slice = function(args)
 		stop = args[2];
 		step = args[3] !== null ? args[3] : 1;
 	}
-	var lower, higher;
 	if (start < 0)
 		throw ul4.ValueError.create("slice() requires a start argument >= 0");
 	if (stop < 0)
@@ -4848,20 +4851,20 @@ ul4._slice = function(args)
 		throw ul4.ValueError.create("slice() requires a step argument > 0");
 
 	var next = start, count = 0;
+	var iter = ul4._iter(iterable);
 	return {
-		iter: ul4._iter(iterable),
 		next: function() {
 			var result;
 			while (count < next)
 			{
-				result = this.iter.next();
+				result = iter.next();
 				if (result.done)
 					return result;
 				++count;
 			}
 			if (stop !== null && count >= stop)
 				return {done: true};
-			result = this.iter.next();
+			result = iter.next();
 			if (result.done)
 				return result;
 			++count;
@@ -4874,19 +4877,19 @@ ul4._slice = function(args)
 };
 
 // ``%`` escape unsafe characters in the string ``string``
-ul4._urlquote = function(string)
+ul4._urlquote = function _urlquote(string)
 {
 	return encodeURIComponent(string);
 };
 
 // The inverse function of ``urlquote``
-ul4._urlunquote = function(string)
+ul4._urlunquote = function _urlunquote(string)
 {
 	return decodeURIComponent(string);
 };
 
 // Return a reverse iterator over ``sequence``
-ul4._reversed = function(sequence)
+ul4._reversed = function _reversed(sequence)
 {
 	if (typeof(sequence) != "string" && !ul4._islist(sequence)) // We don't have to materialize strings or lists
 		sequence = ul4._list(sequence);
@@ -4899,13 +4902,13 @@ ul4._reversed = function(sequence)
 };
 
 // Returns a random number in the interval ``[0;1[``
-ul4._random = function()
+ul4._random = function _random()
 {
 	return Math.random();
 };
 
 // Return a randomly select item from ``range(start, stop, step)``
-ul4._randrange = function(args)
+ul4._randrange = function _randrange(args)
 {
 	var start, stop, step;
 	if (args.length < 1)
@@ -4945,7 +4948,7 @@ ul4._randrange = function(args)
 };
 
 // Return a random item/char from the list/string ``sequence``
-ul4._randchoice = function(sequence)
+ul4._randchoice = function _randchoice(sequence)
 {
 	var iscolor = ul4._iscolor(sequence);
 	if (typeof(sequence) !== "string" && !ul4._islist(sequence) && !iscolor)
@@ -4956,7 +4959,7 @@ ul4._randchoice = function(sequence)
 };
 
 // Round a number ``x`` to ``digits`` decimal places (may be negative)
-ul4._round = function(x, digits)
+ul4._round = function _round(x, digits)
 {
 	if (typeof(digits) === "undefined")
 		digits = 0;
@@ -4971,7 +4974,7 @@ ul4._round = function(x, digits)
 }
 
 // Return an iterator over ``[index, item]`` lists from the iterable object ``iterable``. ``index`` starts at ``start`` (defaulting to 0)
-ul4._enumerate = function(iterable, start)
+ul4._enumerate = function _enumerate(iterable, start)
 {
 	if (typeof(start) === "undefined")
 		start = 0;
@@ -4987,7 +4990,7 @@ ul4._enumerate = function(iterable, start)
 };
 
 // Return an iterator over ``[isfirst, item]`` lists from the iterable object ``iterable`` (``isfirst`` is true for the first item, false otherwise)
-ul4._isfirst = function(iterable)
+ul4._isfirst = function _isfirst(iterable)
 {
 	var iter = ul4._iter(iterable);
 	var isfirst = true;
@@ -5002,7 +5005,7 @@ ul4._isfirst = function(iterable)
 };
 
 // Return an iterator over ``[islast, item]`` lists from the iterable object ``iterable`` (``islast`` is true for the last item, false otherwise)
-ul4._islast = function(iterable)
+ul4._islast = function _islast(iterable)
 {
 	var iter = ul4._iter(iterable);
 	var lastitem = iter.next();
@@ -5019,7 +5022,7 @@ ul4._islast = function(iterable)
 };
 
 // Return an iterator over ``[isfirst, islast, item]`` lists from the iterable object ``iterable`` (``isfirst`` is true for the first item, ``islast`` is true for the last item. Both are false otherwise)
-ul4._isfirstlast = function(iterable)
+ul4._isfirstlast = function _isfirstlast(iterable)
 {
 	var iter = ul4._iter(iterable);
 	var isfirst = true;
@@ -5038,7 +5041,7 @@ ul4._isfirstlast = function(iterable)
 };
 
 // Return an iterator over ``[index, isfirst, islast, item]`` lists from the iterable object ``iterable`` (``isfirst`` is true for the first item, ``islast`` is true for the last item. Both are false otherwise)
-ul4._enumfl = function(iterable, start)
+ul4._enumfl = function _enumfl(iterable, start)
 {
 	var iter = ul4._iter(iterable);
 	var i = start;
@@ -5058,7 +5061,7 @@ ul4._enumfl = function(iterable, start)
 };
 
 // Return an iterator over lists, where the i'th list consists of all i'th items from the arguments (terminating when the shortest argument ends)
-ul4._zip = function(iterables)
+ul4._zip = function _zip(iterables)
 {
 	var result;
 	if (iterables.length)
@@ -5092,7 +5095,7 @@ ul4._zip = function(iterables)
 };
 
 // Return the absolute value for the number ``number``
-ul4._abs = function(number)
+ul4._abs = function _abs(number)
 {
 	if (number !== null && typeof(number.__abs__) === "function")
 		return number.__abs__();
@@ -5100,7 +5103,7 @@ ul4._abs = function(number)
 };
 
 // Return a ``Date`` object from the arguments passed in
-ul4._date = function(year, month, day, hour, minute, second, microsecond)
+ul4._date = function _date(year, month, day, hour, minute, second, microsecond)
 {
 	if (typeof(hour) === "undefined")
 		hour = 0;
@@ -5118,19 +5121,19 @@ ul4._date = function(year, month, day, hour, minute, second, microsecond)
 };
 
 // Return a ``TimeDelta`` object from the arguments passed in
-ul4._timedelta = function(days, seconds, microseconds)
+ul4._timedelta = function _timedelta(days, seconds, microseconds)
 {
 	return this.TimeDelta.create(days, seconds, microseconds);
 };
 
 // Return a ``MonthDelta`` object from the arguments passed in
-ul4._monthdelta = function(months)
+ul4._monthdelta = function _monthdelta(months)
 {
 	return this.MonthDelta.create(months);
 };
 
 // Return a ``Color`` object from the hue, luminescence, saturation and alpha values ``h``, ``l``, ``s`` and ``a`` (i.e. using the HLS color model)
-ul4._hls = function(h, l, s, a)
+ul4._hls = function _hls(h, l, s, a)
 {
 	var _v = function(m1, m2, hue)
 	{
@@ -5158,7 +5161,7 @@ ul4._hls = function(h, l, s, a)
 };
 
 // Return a ``Color`` object from the hue, saturation, value and alpha values ``h``, ``s``, ``v`` and ``a`` (i.e. using the HSV color model)
-ul4._hsv = function(h, s, v, a)
+ul4._hsv = function _hsv(h, s, v, a)
 {
 	if (s === 0.0)
 		return ul4._rgb(v, v, v, a);
@@ -5185,7 +5188,7 @@ ul4._hsv = function(h, s, v, a)
 };
 
 // Return the item with the key ``key`` from the dict ``container``. If ``container`` doesn't have this key, return ``defaultvalue``
-ul4._get = function(container, key, defaultvalue)
+ul4._get = function _get(container, key, defaultvalue)
 {
 	if (ul4._ismap(container))
 	{
@@ -5204,13 +5207,13 @@ ul4._get = function(container, key, defaultvalue)
 };
 
 // Return a ``Date`` object for the current time
-ul4._now = function()
+ul4.now = function now()
 {
 	return new Date();
 };
 
 // Return a ``Date`` object for the current time in UTC
-ul4._utcnow = function()
+ul4.utcnow = function utcnow()
 {
 	var now = new Date();
 	// FIXME: The timezone is wrong for the new ``Date`` object.
@@ -5251,8 +5254,8 @@ ul4.functions = {
 	fromjson: ul4.expose(["string"], {name: "fromjson"}, ul4._fromjson),
 	asul4on: ul4.expose(["obj"], {name: "asul4on"}, ul4._asul4on),
 	fromul4on: ul4.expose(["string"], {name: "fromul4on"}, ul4._fromul4on),
-	now: ul4.expose([], {name: "now"}, ul4._now),
-	utcnow: ul4.expose([], {name: "utcnow"}, ul4._utcnow),
+	now: ul4.expose([], ul4.now),
+	utcnow: ul4.expose([], ul4.utcnow),
 	enumerate: ul4.expose(["iterable", "start=", 0], {name: "enumerate"}, ul4._enumerate),
 	isfirst: ul4.expose(["iterable"], {name: "isfirst"}, ul4._isfirst),
 	islast: ul4.expose(["iterable"], {name: "islast"}, ul4._islast),
@@ -5290,7 +5293,7 @@ ul4.functions = {
 };
 
 // Functions implementing UL4 methods
-ul4._replace = function(string, old, new_, count)
+ul4._replace = function _replace(string, old, new_, count)
 {
 	if (count === null)
 		count = string.length;
@@ -5311,7 +5314,7 @@ ul4._replace = function(string, old, new_, count)
 	return result.join("");
 };
 
-ul4._strip = function(string, chars)
+ul4._strip = function _strip(string, chars)
 {
 	if (chars === null)
 		chars = " \r\n\t";
@@ -5325,7 +5328,7 @@ ul4._strip = function(string, chars)
 	return string;
 };
 
-ul4._lstrip = function(string, chars)
+ul4._lstrip = function _lstrip(string, chars)
 {
 	if (chars === null)
 		chars = " \r\n\t";
@@ -5337,7 +5340,7 @@ ul4._lstrip = function(string, chars)
 	return string;
 };
 
-ul4._rstrip = function(string, chars)
+ul4._rstrip = function _rstrip(string, chars)
 {
 	if (chars === null)
 		chars = " \r\n\t";
@@ -5349,7 +5352,7 @@ ul4._rstrip = function(string, chars)
 	return string;
 };
 
-ul4._split = function(string, sep, count)
+ul4._split = function _split(string, sep, count)
 {
 	if (sep !== null && typeof(sep) !== "string")
 		throw ul4.TypeError.create("split()", "split() requires a string");
@@ -5404,7 +5407,7 @@ ul4._split = function(string, sep, count)
 	}
 };
 
-ul4._rsplit = function(string, sep, count)
+ul4._rsplit = function _rsplit(string, sep, count)
 {
 	if (sep !== null && typeof(sep) !== "string")
 		throw ul4.TypeError.create("rsplit()", "rsplit() requires a string as second argument");
@@ -5462,7 +5465,7 @@ ul4._rsplit = function(string, sep, count)
 	}
 };
 
-ul4._find = function(obj, sub, start, end)
+ul4._find = function _find(obj, sub, start, end)
 {
 	if (start < 0)
 		start += obj.length;
@@ -5486,7 +5489,7 @@ ul4._find = function(obj, sub, start, end)
 	return result;
 };
 
-ul4._rfind = function(obj, sub, start, end)
+ul4._rfind = function _rfind(obj, sub, start, end)
 {
 	if (start < 0)
 		start += obj.length;
@@ -5510,7 +5513,7 @@ ul4._rfind = function(obj, sub, start, end)
 	return result;
 };
 
-ul4._capitalize = function(obj)
+ul4._capitalize = function _capitalize(obj)
 {
 	if (typeof(obj) != "string")
 		throw ul4.TypeError.create("capitalize()", "capitalize() requires a string");
@@ -5520,7 +5523,7 @@ ul4._capitalize = function(obj)
 	return obj;
 };
 
-ul4._items = function(obj)
+ul4._items = function _items(obj)
 {
 	if (ul4._ismap(obj))
 	{
@@ -5540,7 +5543,7 @@ ul4._items = function(obj)
 	throw ul4.TypeError.create("items()", "items() requires a dict");
 };
 
-ul4._values = function(obj)
+ul4._values = function _values(obj)
 {
 	if (ul4._ismap(obj))
 	{
@@ -5560,7 +5563,7 @@ ul4._values = function(obj)
 	throw ul4.TypeError.create("values()", "values() requires a dict");
 };
 
-ul4._join = function(sep, iterable)
+ul4._join = function _join(sep, iterable)
 {
 	var resultlist = [];
 	for (var iter = ul4._iter(iterable);;)
@@ -5573,7 +5576,7 @@ ul4._join = function(sep, iterable)
 	return resultlist.join(sep);
 };
 
-ul4._startswith = function(string, prefix)
+ul4._startswith = function _startswith(string, prefix)
 {
 	if (typeof(prefix) !== "string")
 		throw ul4.TypeError.create("startswith()", "startswith() argument must be string");
@@ -5581,7 +5584,7 @@ ul4._startswith = function(string, prefix)
 	return string.substr(0, prefix.length) === prefix;
 };
 
-ul4._endswith = function(string, suffix)
+ul4._endswith = function _endswith(string, suffix)
 {
 	if (typeof(suffix) !== "string")
 		throw ul4.TypeError.create("endswith()", "endswith() argument must be string");
@@ -5589,7 +5592,7 @@ ul4._endswith = function(string, suffix)
 	return string.substr(string.length-suffix.length) === suffix;
 };
 
-ul4._isoformat = function(obj)
+ul4._isoformat = function _isoformat(obj)
 {
 	if (!ul4._isdate(obj))
 		throw ul4.TypeError.create("isoformat()", "isoformat() requires a date");
@@ -5608,7 +5611,7 @@ ul4._isoformat = function(obj)
 	return result;
 };
 
-ul4._mimeformat = function(obj)
+ul4._mimeformat = function _mimeformat(obj)
 {
 	var weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 	var monthname = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -5616,13 +5619,13 @@ ul4._mimeformat = function(obj)
 	return weekdayname[ul4._weekday(obj)] + ", " + ul4._lpad(obj.getDate(), "0", 2) + " " + monthname[obj.getMonth()] + " " + obj.getFullYear() + " " + ul4._lpad(obj.getHours(), "0", 2) + ":" + ul4._lpad(obj.getMinutes(), "0", 2) + ":" + ul4._lpad(obj.getSeconds(), "0", 2) + " GMT";
 };
 
-ul4._weekday = function(obj)
+ul4._weekday = function _weekday(obj)
 {
 	var d = obj.getDay();
 	return d ? d-1 : 6;
 };
 
-ul4._week = function(obj, firstweekday)
+ul4._week = function _week(obj, firstweekday)
 {
 	if (firstweekday === null)
 		firstweekday = 0;
@@ -5644,12 +5647,12 @@ ul4._week = function(obj, firstweekday)
 	return Math.floor(yearday/7);
 };
 
-ul4._isleap = function(obj)
+ul4._isleap = function _isleap(obj)
 {
 	return new Date(obj.getFullYear(), 1, 29).getMonth() === 1;
 };
 
-ul4._yearday = function(obj)
+ul4._yearday = function _yearday(obj)
 {
 	var leap = ul4._isleap(obj) ? 1 : 0;
 	var day = obj.getDate();
@@ -5682,14 +5685,14 @@ ul4._yearday = function(obj)
 	}
 };
 
-ul4._append = function(obj, items)
+ul4._append = function _append(obj, items)
 {
 	for (var i = 0; i < items.length; ++i)
 		obj.push(items[i]);
 	return null;
 };
 
-ul4._insert = function(obj, pos, items)
+ul4._insert = function _insert(obj, pos, items)
 {
 	if (pos < 0)
 		pos += obj.length;
@@ -5699,7 +5702,7 @@ ul4._insert = function(obj, pos, items)
 	return null;
 };
 
-ul4._pop = function(obj, pos)
+ul4._pop = function _pop(obj, pos)
 {
 	if (pos < 0)
 		pos += obj.length;
@@ -5709,7 +5712,7 @@ ul4._pop = function(obj, pos)
 	return result;
 };
 
-ul4._update = function(obj, others, kwargs)
+ul4._update = function _update(obj, others, kwargs)
 {
 	var set;
 	if (ul4._ismap(obj))
@@ -5758,7 +5761,7 @@ ul4.Color = ul4._inherit(
 	{
 		__type__: "color",
 
-		create: function(r, g, b, a)
+		create: function create(r, g, b, a)
 		{
 			var c = ul4._clone(this);
 			c._r = typeof(r) !== "undefined" ? r : 0;
@@ -5768,7 +5771,7 @@ ul4.Color = ul4._inherit(
 			return c;
 		},
 
-		__repr__: function()
+		__repr__: function __repr__()
 		{
 			var r = ul4._lpad(this._r.toString(16), "0", 2);
 			var g = ul4._lpad(this._g.toString(16), "0", 2);
@@ -5790,7 +5793,7 @@ ul4.Color = ul4._inherit(
 			}
 		},
 
-		__str__: function()
+		__str__: function __str__()
 		{
 			if (this._a !== 0xff)
 			{
@@ -5809,7 +5812,7 @@ ul4.Color = ul4._inherit(
 			}
 		},
 
-		__iter__: function()
+		__iter__: function __iter__()
 		{
 			return {
 				obj: this,
@@ -5841,43 +5844,43 @@ ul4.Color = ul4._inherit(
 			};
 		},
 
-		__getattr__: function(attrname)
+		__getattr__: function __getattr__(attrname)
 		{
 			var self = this;
 			switch (attrname)
 			{
 				case "r":
-					return ul4.expose([], {name: "r"}, function(){ return self._r; });
+					return ul4.expose([], function r(){ return self._r; });
 				case "g":
-					return ul4.expose([], {name: "g"}, function(){ return self._g; });
+					return ul4.expose([], function g(){ return self._g; });
 				case "b":
-					return ul4.expose([], {name: "b"}, function(){ return self._b; });
+					return ul4.expose([], function b(){ return self._b; });
 				case "a":
-					return ul4.expose([], {name: "a"}, function(){ return self._a; });
+					return ul4.expose([], function a(){ return self._a; });
 				case "lum":
-					return ul4.expose([], {name: "lum"}, function(){ return self.lum(); });
+					return ul4.expose([], function lum(){ return self.lum(); });
 				case "hls":
-					return ul4.expose([], {name: "hls"}, function(){ return self.hls(); });
+					return ul4.expose([], function hls(){ return self.hls(); });
 				case "hlsa":
-					return ul4.expose([], {name: "hlsa"}, function(){ return self.hlsa(); });
+					return ul4.expose([], function hlsa(){ return self.hlsa(); });
 				case "hsv":
-					return ul4.expose([], {name: "hsv"}, function(){ return self.hsv(); });
+					return ul4.expose([], function hsv(){ return self.hsv(); });
 				case "hsva":
-					return ul4.expose([], {name: "hsva"}, function(){ return self.hsva(); });
+					return ul4.expose([], function hsva(){ return self.hsva(); });
 				case "witha":
-					return ul4.expose(["a"], {name: "witha"}, function(a){ return self.witha(a); });
+					return ul4.expose(["a"], function witha(a){ return self.witha(a); });
 				case "withlum":
-					return ul4.expose(["lum"], {name: "withlum"}, function(lum){ return self.withlum(lum); });
+					return ul4.expose(["lum"], function withlum(lum){ return self.withlum(lum); });
 				case "abslum":
-					return ul4.expose(["lum"], {name: "abslum"}, function(lum){ return self.abslum(lum); });
+					return ul4.expose(["lum"], function abslum(lum){ return self.abslum(lum); });
 				case "rellum":
-					return ul4.expose(["lum"], {name: "rellum"}, function(lum){ return self.rellum(lum); });
+					return ul4.expose(["lum"], function rellum(lum){ return self.rellum(lum); });
 				default:
 					return ul4.undefined;
 			}
 		},
 
-		__getitem__: function(key)
+		__getitem__: function __getitem__(key)
 		{
 			var orgkey = key;
 			if (key < 0)
@@ -5897,23 +5900,23 @@ ul4.Color = ul4._inherit(
 			}
 		},
 
-		r: ul4.expose([], {name: "r"}, function() { return this._r; }),
+		r: ul4.expose([], function r() { return this._r; }),
 
-		g: ul4.expose([], {name: "g"}, function() { return this._g; }),
+		g: ul4.expose([], function g() { return this._g; }),
 
-		b: ul4.expose([], {name: "b"}, function() { return this._b; }),
+		b: ul4.expose([], function b() { return this._b; }),
 
-		a: ul4.expose([], {name: "a"}, function() { return this._a; }),
+		a: ul4.expose([], function a() { return this._a; }),
 
-		lum: ul4.expose([], {name: "lum"},
-			function()
+		lum: ul4.expose([],
+			function lum()
 			{
 				return this.hls()[1];
 			}
 		),
 
-		hls: ul4.expose([], {name: "hls"},
-			function()
+		hls: ul4.expose([],
+			function hls()
 			{
 				var r = this._r/255.0;
 				var g = this._g/255.0;
@@ -5944,16 +5947,16 @@ ul4.Color = ul4._inherit(
 			}
 		),
 
-		hlsa: ul4.expose([], {name: "hlsa"},
-			function()
+		hlsa: ul4.expose([],
+			function hlsa()
 			{
 				var hls = this.hls();
 				return hls.concat(this._a/255.0);
 			}
 		),
 
-		hsv: ul4.expose([], {name: "hsv"},
-			function()
+		hsv: ul4.expose([],
+			function hsv()
 			{
 				var r = this._r/255.0;
 				var g = this._g/255.0;
@@ -5979,16 +5982,16 @@ ul4.Color = ul4._inherit(
 			}
 		),
 
-		hsva: ul4.expose([], {name: "hsva"},
-			function()
+		hsva: ul4.expose([],
+			function hsva()
 			{
 				var hsv = this.hsv();
 				return hsv.concat(this._a/255.0);
 			}
 		),
 
-		witha: ul4.expose(["a"], {name: "hsva"},
-			function(a)
+		witha: ul4.expose(["a"],
+			function witha(a)
 			{
 				if (typeof(a) !== "number")
 					throw ul4.TypeError.create("witha()", "witha() requires a number");
@@ -5996,8 +5999,8 @@ ul4.Color = ul4._inherit(
 			}
 		),
 
-		withlum: ul4.expose(["lum"], {name: "withlum"},
-			function(lum)
+		withlum: ul4.expose(["lum"],
+			function withlum(lum)
 			{
 				if (typeof(lum) !== "number")
 					throw ul4.TypeError.create("witha()", "witha() requires a number");
@@ -6013,7 +6016,7 @@ ul4.TimeDelta = ul4._inherit(
 	{
 		__type__: "timedelta",
 
-		create: function(days, seconds, microseconds)
+		create: function create(days, seconds, microseconds)
 		{
 			var td = ul4._clone(this);
 			if (typeof(days) === "undefined")
@@ -6042,7 +6045,7 @@ ul4.TimeDelta = ul4._inherit(
 			return td;
 		},
 
-		__repr__: function()
+		__repr__: function __repr__()
 		{
 			if (!this._microseconds)
 			{
@@ -6057,7 +6060,7 @@ ul4.TimeDelta = ul4._inherit(
 			return "timedelta(" + this._days + ", " + this._seconds + ", " + this._microseconds + ")";
 		},
 
-		__str__: function()
+		__str__: function __str__()
 		{
 			var v = [];
 			if (this._days)
@@ -6085,24 +6088,24 @@ ul4.TimeDelta = ul4._inherit(
 			return v.join("");
 		},
 
-		__bool__: function()
+		__bool__: function __bool__()
 		{
 			return this._days !== 0 || this._seconds !== 0 || this._microseconds !== 0;
 		},
 
-		__abs__: function()
+		__abs__: function __abs__()
 		{
 			return this._days < 0 ? ul4.TimeDelta.create(-this._days, -this._seconds, -this._microseconds) : this;
 		},
 
-		__eq__: function(other)
+		__eq__: function __eq__(other)
 		{
 			if (ul4._istimedelta(other))
 				return (this._days === other._days) && (this._seconds === other._seconds) && (this._microseconds === other._microseconds);
 			return false;
 		},
 
-		__lt__: function(other)
+		__lt__: function __lt__(other)
 		{
 			if (ul4._istimedelta(other))
 			{
@@ -6119,12 +6122,12 @@ ul4.TimeDelta = ul4._inherit(
 			throw ul4.TypeError.create("<", ul4._type(this) + " < " + ul4._type(other) + " not supported");
 		},
 
-		__neg__: function()
+		__neg__: function __neg__()
 		{
 			return ul4.TimeDelta.create(-this._days, -this._seconds, -this._microseconds);
 		},
 
-		_add: function(date, days, seconds, microseconds)
+		_add: function _add(date, days, seconds, microseconds)
 		{
 			var year = date.getFullYear();
 			var month = date.getMonth();
@@ -6136,7 +6139,7 @@ ul4.TimeDelta = ul4._inherit(
 			return new Date(year, month, day, hour, minute, second, millisecond);
 		},
 
-		__add__: function(other)
+		__add__: function __add__(other)
 		{
 			if (ul4._istimedelta(other))
 				return ul4.TimeDelta.create(this._days + other._days, this._seconds + other._seconds, this._microseconds + other._microseconds);
@@ -6145,28 +6148,28 @@ ul4.TimeDelta = ul4._inherit(
 			throw ul4.TypeError.create("+", ul4._type(this) + " + " + ul4._type(other) + " not supported");
 		},
 
-		__radd__: function(other)
+		__radd__: function __radd__(other)
 		{
 			if (ul4._isdate(other))
 				return this._add(other, this._days, this._seconds, this._microseconds);
 			throw ul4.TypeError.create("+", ul4._type(this) + " + " + ul4._type(other) + " not supported");
 		},
 
-		__sub__: function(other)
+		__sub__: function __sub__(other)
 		{
 			if (ul4._istimedelta(other))
 				return ul4.TimeDelta.create(this._days - other._days, this._seconds - other._seconds, this._microseconds - other._microseconds);
 			throw ul4.TypeError.create("-", ul4._type(this) + " - " + ul4._type(other) + " not supported");
 		},
 
-		__rsub__: function(other)
+		__rsub__: function __rsub__(other)
 		{
 			if (ul4._isdate(other))
 				return this._add(other, -this._days, -this._seconds, -this._microseconds);
 			throw ul4.TypeError.create("-", ul4._type(this) + " - " + ul4._type(other) + " not supported");
 		},
 
-		__mul__: function(other)
+		__mul__: function __mul__(other)
 		{
 			if (typeof(other) === "number")
 			{
@@ -6175,7 +6178,7 @@ ul4.TimeDelta = ul4._inherit(
 			throw ul4.TypeError.create("*", ul4._type(this) + " * " + ul4._type(other) + " not supported");
 		},
 
-		__rmul__: function(other)
+		__rmul__: function __rmul__(other)
 		{
 			if (typeof(other) === "number")
 			{
@@ -6184,7 +6187,7 @@ ul4.TimeDelta = ul4._inherit(
 			throw ul4.TypeError.create("*", ul4._type(this) + " * " + ul4._type(other) + " not supported");
 		},
 
-		__truediv__: function(other)
+		__truediv__: function __truediv__(other)
 		{
 			if (typeof(other) === "number")
 			{
@@ -6211,33 +6214,33 @@ ul4.TimeDelta = ul4._inherit(
 			throw ul4.TypeError.create("/", ul4._type(this) + " / " + ul4._type(other) + " not supported");
 		},
 
-		__getattr__: function(attrname)
+		__getattr__: function __getattr__(attrname)
 		{
 			var self = this;
 			switch (attrname)
 			{
 				case "days":
-					return ul4.expose([], {name: "days"}, function(){ return self._days; });
+					return ul4.expose([], function days(){ return self._days; });
 				case "seconds":
-					return ul4.expose([], {name: "seconds"}, function(){ return self._seconds; });
+					return ul4.expose([], function seconds(){ return self._seconds; });
 				case "microseconds":
-					return ul4.expose([], {name: "seconds"}, function(){ return self._microseconds; });
+					return ul4.expose([], function microseconds(){ return self._microseconds; });
 				default:
 					return ul4.undefined;
 			}
 		},
 
-		days: function()
+		days: function days()
 		{
 			return this._days;
 		},
 
-		seconds: function()
+		seconds: function seconds()
 		{
 			return this._seconds;
 		},
 
-		microseconds: function()
+		microseconds: function microseconds()
 		{
 			return this._microseconds;
 		}
@@ -6249,21 +6252,21 @@ ul4.MonthDelta = ul4._inherit(
 	{
 		__type__: "monthdelta",
 
-		create: function(months)
+		create: function create(months)
 		{
 			var md = ul4._clone(this);
 			md._months = typeof(months) !== "undefined" ? months : 0;
 			return md;
 		},
 
-		__repr__: function()
+		__repr__: function __repr__()
 		{
 			if (!this._months)
 				return "monthdelta()";
 			return "monthdelta(" + this._months + ")";
 		},
 
-		__str__: function()
+		__str__: function __str__()
 		{
 			if (this._months)
 			{
@@ -6274,36 +6277,36 @@ ul4.MonthDelta = ul4._inherit(
 			return "0 months";
 		},
 
-		__bool__: function()
+		__bool__: function __bool__()
 		{
 			return this._months !== 0;
 		},
 
-		__abs__: function()
+		__abs__: function __abs__()
 		{
 			return this._months < 0 ? ul4.MonthDelta.create(-this._months) : this;
 		},
 
-		__eq__: function(other)
+		__eq__: function __eq__(other)
 		{
 			if (ul4._ismonthdelta(other))
 				return this._months === other._months;
 			return false;
 		},
 
-		__lt__: function(other)
+		__lt__: function __lt__(other)
 		{
 			if (ul4._ismonthdelta(other))
 				return this._months < other._months;
 			throw ul4.TypeError.create("<", ul4._type(this) + " < " + ul4._type(other) + " not supported");
 		},
 
-		__neg__: function()
+		__neg__: function __neg__()
 		{
 			return ul4.MonthDelta.create(-this._months);
 		},
 
-		_add: function(date, months)
+		_add: function _add(date, months)
 		{
 			var year = date.getFullYear();
 			var month = date.getMonth() + months;
@@ -6324,7 +6327,7 @@ ul4.MonthDelta = ul4._inherit(
 			}
 		},
 
-		__add__: function(other)
+		__add__: function __add__(other)
 		{
 			if (ul4._ismonthdelta(other))
 				return ul4.MonthDelta.create(this._months + other._months);
@@ -6333,42 +6336,42 @@ ul4.MonthDelta = ul4._inherit(
 			throw ul4._type(this) + " + " + ul4._type(other) + " not supported";
 		},
 
-		__radd__: function(other)
+		__radd__: function __radd__(other)
 		{
 			if (ul4._isdate(other))
 				return this._add(other, this._months);
 			throw ul4._type(this) + " + " + ul4._type(other) + " not supported";
 		},
 
-		__sub__: function(other)
+		__sub__: function __sub__(other)
 		{
 			if (ul4._ismonthdelta(other))
 				return ul4.MonthDelta.create(this._months - other._months);
 			throw ul4._type(this) + " - " + ul4._type(other) + " not supported";
 		},
 
-		__rsub__: function(other)
+		__rsub__: function __rsub__(other)
 		{
 			if (ul4._isdate(other))
 				return this._add(other, -this._months);
 			throw ul4._type(this) + " - " + ul4._type(other) + " not supported";
 		},
 
-		__mul__: function(other)
+		__mul__: function __mul__(other)
 		{
 			if (typeof(other) === "number")
 				return ul4.MonthDelta.create(this._months * Math.floor(other));
 			throw ul4._type(this) + " * " + ul4._type(other) + " not supported";
 		},
 
-		__rmul__: function(other)
+		__rmul__: function __rmul__(other)
 		{
 			if (typeof(other) === "number")
 				return ul4.MonthDelta.create(this._months * Math.floor(other));
 			throw ul4._type(this) + " * " + ul4._type(other) + " not supported";
 		},
 
-		__floordiv__: function(other)
+		__floordiv__: function __floordiv__(other)
 		{
 			if (typeof(other) === "number")
 				return ul4.MonthDelta.create(Math.floor(this._months / other));
@@ -6377,26 +6380,26 @@ ul4.MonthDelta = ul4._inherit(
 			throw ul4._type(this) + " // " + ul4._type(other) + " not supported";
 		},
 
-		__truediv__: function(other)
+		__truediv__: function __truediv__(other)
 		{
 			if (ul4._ismonthdelta(other))
 				return this._months / other._months;
 			throw ul4._type(this) + " / " + ul4._type(other) + " not supported";
 		},
 
-		__getattr__: function(attrname)
+		__getattr__: function __getattr__(attrname)
 		{
 			var self = this;
 			switch (attrname)
 			{
 				case "months":
-					return ul4.expose([], {name: "months"}, function(){ return self._months; });
+					return ul4.expose([], function months(){ return self._months; });
 				default:
 					return ul4.undefined;
 			}
 		},
 
-		months: function()
+		months: function months()
 		{
 			return this._months;
 		}
@@ -6409,7 +6412,7 @@ ul4._Set = ul4._inherit(
 	{
 		__type__: "set",
 
-		create: function()
+		create: function create()
 		{
 			var set = ul4._clone(this);
 			set.items = {};
@@ -6417,7 +6420,7 @@ ul4._Set = ul4._inherit(
 			return set;
 		},
 
-		add: function()
+		add: function add()
 		{
 			for (var i = 0; i < arguments.length; ++i)
 			{
@@ -6425,24 +6428,24 @@ ul4._Set = ul4._inherit(
 			}
 		},
 
-		__getattr__: function(attrname)
+		__getattr__: function __getattr__(attrname)
 		{
 			var self = this;
 			switch (attrname)
 			{
 				case "add":
-					return ul4.expose(["*items"], {name: "add"}, function(items){ self.add.apply(self, items); });
+					return ul4.expose(["*items"], function add(items){ self.add.apply(self, items); });
 				default:
 					return ul4.undefined;
 			}
 		},
 
-		__contains__: function(item)
+		__contains__: function __contains__(item)
 		{
 			return this.items[item] || false;
 		},
 
-		__bool__: function()
+		__bool__: function __bool__()
 		{
 			for (var item in this.items)
 			{
@@ -6453,7 +6456,7 @@ ul4._Set = ul4._inherit(
 			return false;
 		},
 
-		__repr__: function()
+		__repr__: function __repr__()
 		{
 			var v = [];
 			v.push("{");
@@ -6559,3 +6562,5 @@ ul4._Set = ul4._inherit(
 		ul4on.register("de.livinglogic.ul4." + ul4onname, object);
 	}
 })();
+
+})(ul4);
