@@ -6477,90 +6477,88 @@ ul4._Set = ul4._inherit(
 	}
 );
 
-(function(){
-	var classes = [
-		"TextAST",
-		"IndentAST",
-		"LineEndAST",
-		"Tag",
-		"ConstAST",
-		"ListAST",
-		"ListCompAST",
-		"DictAST",
-		"DictCompAST",
-		"SetAST",
-		"SetCompAST",
-		"GenExprAST",
-		"VarAST",
-		"NotAST",
-		"NegAST",
-		"BitNotAST",
-		"IfAST",
-		"ReturnAST",
-		"PrintAST",
-		"PrintXAST",
-		"ItemAST",
-		"EQAST",
-		"NEAST",
-		"LTAST",
-		"LEAST",
-		"GTAST",
-		"GEAST",
-		"NotContainsAST",
-		"ContainsAST",
-		"AddAST",
-		"SubAST",
-		"MulAST",
-		"FloorDivAST",
-		"TrueDivAST",
-		"ModAST",
-		"ShiftLeftAST",
-		"ShiftRightAST",
-		"BitAndAST",
-		"BitXOrAST",
-		"BitOrAST",
-		"AndAST",
-		"OrAST",
-		"SliceAST",
-		"AttrAST",
-		"CallAST",
-		"RenderAST",
-		"SetVarAST",
-		"AddVarAST",
-		"SubVarAST",
-		"MulVarAST",
-		"TrueDivVarAST",
-		"FloorDivVarAST",
-		"ModVarAST",
-		"ShiftLeftVarAST",
-		"ShiftRightVarAST",
-		"BitAndVarAST",
-		"BitXOrVarAST",
-		"BitOrVarAST",
-		"ForBlockAST",
-		"WhileBlockAST",
-		"BreakAST",
-		"ContinueAST",
-		"CondBlockAST",
-		"IfBlockAST",
-		"ElIfBlockAST",
-		"ElseBlockAST",
-		"SignatureAST",
-		"Template"
-	];
+var classes = [
+	"TextAST",
+	"IndentAST",
+	"LineEndAST",
+	"Tag",
+	"ConstAST",
+	"ListAST",
+	"ListCompAST",
+	"DictAST",
+	"DictCompAST",
+	"SetAST",
+	"SetCompAST",
+	"GenExprAST",
+	"VarAST",
+	"NotAST",
+	"NegAST",
+	"BitNotAST",
+	"IfAST",
+	"ReturnAST",
+	"PrintAST",
+	"PrintXAST",
+	"ItemAST",
+	"EQAST",
+	"NEAST",
+	"LTAST",
+	"LEAST",
+	"GTAST",
+	"GEAST",
+	"NotContainsAST",
+	"ContainsAST",
+	"AddAST",
+	"SubAST",
+	"MulAST",
+	"FloorDivAST",
+	"TrueDivAST",
+	"ModAST",
+	"ShiftLeftAST",
+	"ShiftRightAST",
+	"BitAndAST",
+	"BitXOrAST",
+	"BitOrAST",
+	"AndAST",
+	"OrAST",
+	"SliceAST",
+	"AttrAST",
+	"CallAST",
+	"RenderAST",
+	"SetVarAST",
+	"AddVarAST",
+	"SubVarAST",
+	"MulVarAST",
+	"TrueDivVarAST",
+	"FloorDivVarAST",
+	"ModVarAST",
+	"ShiftLeftVarAST",
+	"ShiftRightVarAST",
+	"BitAndVarAST",
+	"BitXOrVarAST",
+	"BitOrVarAST",
+	"ForBlockAST",
+	"WhileBlockAST",
+	"BreakAST",
+	"ContinueAST",
+	"CondBlockAST",
+	"IfBlockAST",
+	"ElIfBlockAST",
+	"ElseBlockAST",
+	"SignatureAST",
+	"Template"
+];
 
-	for (var i = 0; i < classes.length; ++i)
-	{
-		var name = classes[i];
-		var ul4onname = name;
-		if (ul4onname.substr(ul4onname.length-3) === "AST")
-			ul4onname = ul4onname.substr(0, ul4onname.length-3);
-		ul4onname = ul4onname.toLowerCase();
-		var object = ul4[name];
-		object.typename = name;
-		object.type = ul4onname;
-		ul4on.register("de.livinglogic.ul4." + ul4onname, object);
-	}
-})();
+for (var i = 0; i < classes.length; ++i)
+{
+	var name = classes[i];
+	var ul4onname = name;
+	if (ul4onname.substr(ul4onname.length-3) === "AST")
+		ul4onname = ul4onname.substr(0, ul4onname.length-3);
+	ul4onname = ul4onname.toLowerCase();
+	var object = ul4[name];
+	object.typename = name;
+	object.type = ul4onname;
+	ul4on.register("de.livinglogic.ul4." + ul4onname, object);
+}
 
 })(ul4);
