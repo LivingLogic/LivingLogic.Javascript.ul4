@@ -14,8 +14,8 @@ UL4 is a cross-platform templating language.
 Implementations
 ===============
 
-Apart from the Javascript implementation (see ``ul4on.js`` and ``ul4.js``)
-there are implementations of UL4ON and UL4 for Python_, Java_ and PHP_.
+Apart from this Javascript implementation there are implementations of UL4ON
+and UL4 for Python_, Java_ and PHP_.
 
 .. _Python: https://github.com/LivingLogic/LivingLogic.Python.xist
 .. _Java: https://github.com/LivingLogic/LivingLogic.Java.ul4
