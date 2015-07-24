@@ -5070,8 +5070,7 @@ ul4.TemplateClosure = ul4._inherit(
 			var closure = ul4._clone(this);
 			closure.template = template;
 			closure.signature = signature;
-			// Store a frozen copy of the current values of the parent template
-			closure.vars = ul4._extend({}, vars);
+			closure.vars = vars;
 			closure._ul4_callsignature = signature;
 			closure._ul4_rendersignature = signature;
 			// Copy over the required attribute from the template
