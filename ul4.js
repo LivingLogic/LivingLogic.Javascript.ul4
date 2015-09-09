@@ -199,22 +199,24 @@ ul4on.Encoder = {
 			this._line("m", obj.months());
 		else if (typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4.slice))
 			this._line("r", obj.start, obj.stop);
-		else if (obj.__id__ && obj.ul4onname && obj.ul4ondump)
+		else if (obj.ul4onname && obj.ul4ondump)
 		{
-			var index = this._ids2index[obj.__id__];
-			if (typeof(index) != "undefined")
+			if (obj.__id__)
 			{
-				this._line("^" + index);
+				var index = this._ids2index[obj.__id__];
+				if (typeof(index) != "undefined")
+				{
+					this._line("^" + index);
+					return;
+				}
 			}
-			else
-			{
+			if (obj.__id__)
 				this._ids2index[obj.__id__] = this._backrefs++;
-				this._line("O", obj.ul4onname);
-				++this._level;
-				obj.ul4ondump(this);
-				--this._level;
-				this._line(")");
-			}
+			this._line("O", obj.ul4onname);
+			++this._level;
+			obj.ul4ondump(this);
+			--this._level;
+			this._line(")");
 		}
 		else if (ul4._islist(obj))
 		{
