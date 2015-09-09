@@ -159,7 +159,7 @@ ul4on.Encoder = {
 			this.data.push("\n");
 	},
 
-	// Returned the complete string written to the buffer
+	// Return the complete string written to the buffer
 	finish: function finish()
 	{
 		return this.data.join("");
