@@ -3758,7 +3758,7 @@ ul4.SubAST = ul4._inherit(
 
 			while (year1 > year2)
 			{
-				diffdays += ul4.yearday(ul4._date(year2, 12, 31));
+				diffdays += ul4._yearday(ul4._date(year2, 12, 31));
 				++year2;
 			}
 			diffdays += yearday1 - yearday2;
