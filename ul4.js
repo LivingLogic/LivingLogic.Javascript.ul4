@@ -3731,9 +3731,56 @@ ul4.SubAST = ul4._inherit(
 				return obj1.__sub__(obj2);
 			else if (obj2 && typeof(obj2.__rsub__) === "function")
 				return obj2.__rsub__(obj1);
+			else if (ul4._isdate(obj1) && ul4._isdate(obj2))
+				return this._date_sub(obj1, obj2);
 			if (obj1 === null || obj2 === null)
 				throw ul4.TypeError.create("-", ul4._type(this.obj1) + " - " + ul4._type(this.obj2) + " is not supported");
 			return obj1 - obj2;
+		},
+		_date_sub: function _date_sub(obj1, obj2)
+		{
+			var swap = (obj2 > obj1);
+
+			if (swap)
+			{
+				var t = obj1;
+				obj1 = obj2;
+				obj2 = t;
+			}
+			// From now on obj1 is > than obj2
+
+			var year1 = obj1.getFullYear();
+			var yearday1 = ul4._yearday(obj1);
+			var year2 = obj2.getFullYear();
+			var yearday2 = ul4._yearday(obj2);
+
+			var diffdays = 0;
+
+			while (year1 > year2)
+			{
+				diffdays += ul4.yearday(ul4._date(year2, 12, 31));
+				++year2;
+			}
+			diffdays += yearday1 - yearday2;
+
+			var hours1 = obj1.getHours();
+			var minutes1 = obj1.getMinutes();
+			var seconds1 = obj1.getSeconds();
+			var hours2 = obj2.getHours();
+			var minutes2 = obj2.getMinutes();
+			var seconds2 = obj2.getSeconds();
+
+			var diffseconds = (seconds1 - seconds2) + 60 * ((minutes1 - minutes2) + 60 * (hours1 - hours2));
+
+			var diffmilliseconds = obj1.getMilliseconds() - obj2.getMilliseconds();
+
+			if (swap)
+			{
+				diffdays = -diffdays;
+				diffseconds = -diffseconds;
+				diffmilliseconds = -diffmilliseconds;
+			}
+			return ul4.TimeDelta.create(diffdays, diffseconds, 1000*diffmilliseconds);
 		},
 		_ido: function _ido(obj1, obj2)
 		{
