@@ -872,20 +872,22 @@ ul4._eq = function _eq(obj1, obj2)
 		if (ul4._isobject(obj2))
 		{
 			// Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
-			for (var key in obj1)
-			{
-				if (obj2.hasOwnProperty(key))
+			var result = true;
+			obj1.forEach(function(value, key){
+				if (result) // Skip code, if result is already ``false``
 				{
-					if (!ul4.EQAST._do(obj1[key], obj2[key]))
-						return false;
+					if (!obj2.hasOwnProperty(key))
+						result = false;
+					else if (!ul4.EQAST._do(obj1.get(key), obj2[key]))
+						result = false;
 				}
-				else
-					return false;
-			}
+			});
+			if (!result)
+				return false;
 			// Test that each attribute of ``obj2`` is alos in ``obj1`` (the value has been tested before)
 			for (var key in obj2)
 			{
-				if (!obj1.hasOwnProperty(key))
+				if (!obj1.has(key))
 					return false;
 			}
 			return true;
