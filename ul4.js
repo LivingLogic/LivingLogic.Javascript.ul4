@@ -897,7 +897,7 @@ ul4._eq = function _eq(obj1, obj2)
 			// Shortcut, if it's the same object
 			if (obj1 === obj2)
 				return true;
-			if (obj1.length != obj2.length)
+			if (obj1.size != obj2.size)
 				return false;
 			// Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
 			var result = true;
