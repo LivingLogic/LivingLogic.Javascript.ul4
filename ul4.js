@@ -6487,12 +6487,7 @@ ul4.Color = ul4._inherit(
 
 		a: ul4.expose([], function a() { return this._a; }),
 
-		lum: ul4.expose([],
-			function lum()
-			{
-				return this.hls()[1];
-			}
-		),
+		lum: ul4.expose([], function lum() {return this.hls()[1]; }),
 
 		hls: ul4.expose([],
 			function hls()
