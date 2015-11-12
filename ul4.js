@@ -915,10 +915,27 @@ ul4._eq = function _eq(obj1, obj2)
 		else
 			return false;
 	}
-	else if (ul4._isset(obj1) && ul4._isset(obj2))
+	else if (ul4._isset(obj1))
 	{
-		// ???
-		return obj1 === obj2;
+		if (ul4._isset(obj2))
+		{
+			// Shortcut, if it's the same object
+			if (obj1 === obj2)
+				return true;
+			if (obj1.size != obj2.size)
+				return false;
+			var result = true;
+			obj1.forEach(function(value){
+				if (result) // Skip code, if result is already ``false``
+				{
+					if (!obj2.has(value))
+						result = false;
+				}
+			});
+			return result;
+		}
+		else
+			return false;
 	}
 	else
 		return obj1 === obj2;
