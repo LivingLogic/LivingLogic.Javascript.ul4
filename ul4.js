@@ -6472,6 +6472,13 @@ ul4.Color = ul4._inherit(
 			}
 		},
 
+		__eq__: function __eq__(other)
+		{
+			if (ul4._iscolor(other))
+				return this._r == other._r && this._g == other._g && this._b == other._b && this._a == other._a;
+			return false;
+		},
+
 		r: ul4.expose([], function r() { return this._r; }),
 
 		g: ul4.expose([], function g() { return this._g; }),
