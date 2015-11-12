@@ -770,6 +770,12 @@ ul4._formatsource = function _formatsource(out)
 	return finalout.join("");
 };
 
+// Compare ``obj1`` and ``obj2`` if they have the same value
+ul4._eq = function _eq(obj1, obj2)
+{
+	return obj1 === obj2;
+};
+
 // Return an iterator for ``obj``
 ul4._iter = function _iter(obj)
 {
@@ -3502,19 +3508,11 @@ ul4.EQAST = ul4._inherit(
 		_do: function _do(obj1, obj2)
 		{
 			if (obj1 && typeof(obj1.__eq__) === "function")
-			{
-				if (obj2 && typeof(obj2.__eq__) === "function")
-					return obj1.__eq__(obj2);
-				else
-					return false;
-			}
+				return obj1.__eq__(obj2);
+			else if (obj2 && typeof(obj2.__eq__) === "function")
+				return obj2.__eq__(obj1);
 			else
-			{
-				if (obj2 && typeof(obj2.__eq__) === "function")
-					return false;
-				else
-					return obj1 === obj2;
-			}
+				return ul4._eq(obj1, obj2);
 		}
 	}
 );
@@ -3526,19 +3524,11 @@ ul4.NEAST = ul4._inherit(
 		_do: function _do(obj1, obj2)
 		{
 			if (obj1 && typeof(obj1.__ne__) === "function")
-			{
-				if (obj2 && typeof(obj2.__ne__) === "function")
-					return obj1.__ne__(obj2);
-				else
-					return true;
-			}
+				return obj1.__ne__(obj2);
+			else if (obj2 && typeof(obj2.__ne__) === "function")
+				return obj2.__ne__(obj1);
 			else
-			{
-				if (obj2 && typeof(obj2.__ne__) === "function")
-					return true;
-				else
-					return obj1 !== obj2;
-			}
+				return !ul4.EQAST._do(obj1, obj2);
 		}
 	}
 );
