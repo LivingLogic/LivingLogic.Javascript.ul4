@@ -770,10 +770,156 @@ ul4._formatsource = function _formatsource(out)
 	return finalout.join("");
 };
 
-// Compare ``obj1`` and ``obj2`` if they have the same value
+// Compare ``obj1`` and ``obj2`` if they have the same value (and neither of them implements ``__eq__``)
 ul4._eq = function _eq(obj1, obj2)
 {
-	return obj1 === obj2;
+	var numbertypes = ["boolean", "number"];
+
+	if (obj1 === null)
+		return obj2 === null;
+	else if (numbertypes.indexOf(typeof(obj1)) != -1)
+	{
+		if (numbertypes.indexOf(typeof(obj2)) != -1)
+			return obj1 == obj2
+		else
+			return false;
+	}
+	else if (typeof(obj1) === "string")
+	{
+		if (typeof(obj2) === "string")
+			return obj1 == obj2;
+		else
+			return false;
+	}
+	else if (ul4._isdate(obj1))
+	{
+		if (ul4._isdate(obj2))
+			return obj1.getTime() == obj2.getTime();
+		else
+			return false;
+	}
+	else if (ul4._islist(obj1))
+	{
+		if (ul4._islist(obj2))
+		{
+			// Shortcut, if it's the same object
+			if (obj1 === obj2)
+				return true;
+			if (obj1.length != obj2.length)
+				return false;
+			for (var i = 0; i < obj1.length; ++i)
+			{
+				if (!ul4.EQAST._do(obj1[i], obj2[i])) // This might lead to infinite recursion and a stackoverflow, but it does in all implementations
+					return false;
+			}
+			return true;
+		}
+		else
+			return false;
+	}
+	else if (ul4._isobject(obj1))
+	{
+		if (ul4._isobject(obj2))
+		{
+			// Shortcut, if it's the same object
+			if (obj1 === obj2)
+				return true;
+			// Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
+			for (var key in obj1)
+			{
+				if (obj2.hasOwnProperty(key))
+				{
+					if (!ul4.EQAST._do(obj1[key], obj2[key]))
+						return false;
+				}
+				else
+					return false;
+			}
+			// Test that each attribute of ``obj2`` is alos in ``obj1`` (the value has been tested before)
+			for (var key in obj2)
+			{
+				if (!obj1.hasOwnProperty(key))
+					return false;
+			}
+			return true;
+		}
+		else if (ul4._ismap(obj2))
+		{
+			// Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
+			for (var key in obj1)
+			{
+				if (obj2.has(key))
+				{
+					if (!ul4.EQAST._do(obj1[key], obj2.get(key)))
+						return false;
+				}
+				else
+					return false;
+			}
+			// Test that each attribute of ``obj2`` is alos in ``obj1`` (the value has been tested before)
+			var result = true;
+			obj2.forEach(function(value, key){
+				if (!obj1.hasOwnProperty(key))
+					result = false;
+			});
+			return result;
+		}
+		else
+			return false;
+	}
+	else if (ul4._ismap(obj1))
+	{
+		if (ul4._isobject(obj2))
+		{
+			// Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
+			for (var key in obj1)
+			{
+				if (obj2.hasOwnProperty(key))
+				{
+					if (!ul4.EQAST._do(obj1[key], obj2[key]))
+						return false;
+				}
+				else
+					return false;
+			}
+			// Test that each attribute of ``obj2`` is alos in ``obj1`` (the value has been tested before)
+			for (var key in obj2)
+			{
+				if (!obj1.hasOwnProperty(key))
+					return false;
+			}
+			return true;
+		}
+		else if (ul4._ismap(obj2))
+		{
+			// Shortcut, if it's the same object
+			if (obj1 === obj2)
+				return true;
+			if (obj1.length != obj2.length)
+				return false;
+			// Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
+			var result = true;
+			obj1.forEach(function(value, key){
+				if (result) // Skip code, if result is already ``false``
+				{
+					if (!obj2.has(key))
+						result = false;
+					else if (!ul4.EQAST._do(obj1.get(key), obj2.get(key)))
+						result = false;
+				}
+			});
+			return result;
+		}
+		else
+			return false;
+	}
+	else if (ul4._isset(obj1) && ul4._isset(obj2))
+	{
+		// ???
+		return obj1 === obj2;
+	}
+	else
+		return obj1 === obj2;
 };
 
 // Return an iterator for ``obj``
