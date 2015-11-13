@@ -917,6 +917,7 @@ ul4._eq = function _eq(obj1, obj2)
 	}
 	else if (ul4._isset(obj1))
 	{
+		// We don't have to test for ``ul4._Set`` as ``ul4._Set`` implements ``__eq__``
 		if (ul4._isset(obj2))
 		{
 			// Shortcut, if it's the same object
@@ -7212,6 +7213,41 @@ ul4._Set = ul4._inherit(
 				v.push("/");
 			v.push("}");
 			return v.join("");
+		},
+
+		__eq__: function(other)
+		{
+			// We'll check that everything in ``this`` is in ``other``
+			// and if both have the same number of items they are equal
+			if (ul4._isset(other))
+			{
+				var count = 0;
+				for (var item in this.items)
+				{
+					if (!other.has(item))
+						return false;
+					// count the number of items we have
+					++count;
+				}
+				return other.size == count;
+			}
+			else if (ul4._isul4set(other))
+			{
+				var count = 0;
+				for (var item in this.items)
+				{
+					if (!other[item])
+						return false;
+					// count the number of items we have
+					++count;
+				}
+				// Substract the number of items that ``other`` has
+				for (var item in other.items)
+					--count;
+				return count == 0;
+			}
+			else
+				return false;
 		}
 	}
 );
