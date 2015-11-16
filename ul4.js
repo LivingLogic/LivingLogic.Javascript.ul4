@@ -1503,7 +1503,7 @@ ul4._ge = function _ge(obj1, obj2)
 
 	if (obj1 && typeof(obj1.__ge__) === "function")
 		return obj1.__ge__(obj2);
-	if (numbertypes.indexOf(typeof(obj1)) != -1)
+	else if (numbertypes.indexOf(typeof(obj1)) != -1)
 	{
 		if (numbertypes.indexOf(typeof(obj2)) != -1)
 			return obj1 >= obj2;
@@ -4387,10 +4387,7 @@ ul4.LEAST = ul4._inherit(
 	{
 		_do: function _do(obj1, obj2)
 		{
-			if (obj1 && typeof(obj1.__le__) === "function")
-				return obj1.__le__(obj2);
-			else
-				return ul4._le(obj1, obj2);
+			return ul4._le(obj1, obj2);
 		}
 	}
 );
@@ -4401,20 +4398,7 @@ ul4.GTAST = ul4._inherit(
 	{
 		_do: function _do(obj1, obj2)
 		{
-			if (obj1 && typeof(obj1.__gt__) === "function")
-			{
-				if (obj2 && typeof(obj2.__gt__) === "function")
-					return obj1.__gt__(obj2);
-				else
-					throw ul4.TypeError.create(">", ul4._type(this.obj1) + " > " + ul4._type(this.obj2) + " not supported");
-			}
-			else
-			{
-				if (obj2 && typeof(obj2.__lt__) === "function")
-					throw ul4.TypeError.create(">", ul4._type(this.obj1) + " > " + ul4._type(this.obj2) + " not supported");
-				else
-					return obj1 > obj2;
-			}
+			return ul4._get(obj1, obj2);
 		}
 	}
 );
@@ -4425,20 +4409,7 @@ ul4.GEAST = ul4._inherit(
 	{
 		_do: function _do(obj1, obj2)
 		{
-			if (obj1 && typeof(obj1.__ge__) === "function")
-			{
-				if (obj2 && typeof(obj2.__ge__) === "function")
-					return obj1.__ge__(obj2);
-				else
-					throw ul4.TypeError.create(">=", ul4._type(this.obj1) + " >= " + ul4._type(this.obj2) + " not supported");
-			}
-			else
-			{
-				if (obj2 && typeof(obj2.__lt__) === "function")
-					throw ul4.TypeError.create(">=", ul4._type(this.obj1) + " >= " + ul4._type(this.obj2) + " not supported");
-				else
-					return obj1 >= obj2;
-			}
+			return ul4._ge(obj1, obj2);
 		}
 	}
 );
