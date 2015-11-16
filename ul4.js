@@ -770,12 +770,16 @@ ul4._formatsource = function _formatsource(out)
 	return finalout.join("");
 };
 
-// Compare ``obj1`` and ``obj2`` if they have the same value (and neither of them implements ``__eq__``)
+// Compare ``obj1`` and ``obj2`` if they have the same value
 ul4._eq = function _eq(obj1, obj2)
 {
 	var numbertypes = ["boolean", "number"];
 
-	if (obj1 === null)
+	if (obj1 && typeof(obj1.__eq__) === "function")
+		return obj1.__eq__(obj2);
+	else if (obj2 && typeof(obj2.__eq__) === "function")
+		return obj2.__eq__(obj1);
+	else if (obj1 === null)
 		return obj2 === null;
 	else if (numbertypes.indexOf(typeof(obj1)) != -1)
 	{
@@ -809,7 +813,7 @@ ul4._eq = function _eq(obj1, obj2)
 				return false;
 			for (var i = 0; i < obj1.length; ++i)
 			{
-				if (!ul4.EQAST._do(obj1[i], obj2[i])) // This might lead to infinite recursion and a stackoverflow, but it does in all implementations
+				if (!ul4._eq(obj1[i], obj2[i])) // This might lead to infinite recursion and a stackoverflow, but it does in all implementations
 					return false;
 			}
 			return true;
@@ -829,7 +833,7 @@ ul4._eq = function _eq(obj1, obj2)
 			{
 				if (obj2.hasOwnProperty(key))
 				{
-					if (!ul4.EQAST._do(obj1[key], obj2[key]))
+					if (!ul4._eq(obj1[key], obj2[key]))
 						return false;
 				}
 				else
@@ -850,7 +854,7 @@ ul4._eq = function _eq(obj1, obj2)
 			{
 				if (obj2.has(key))
 				{
-					if (!ul4.EQAST._do(obj1[key], obj2.get(key)))
+					if (!ul4._eq(obj1[key], obj2.get(key)))
 						return false;
 				}
 				else
@@ -878,7 +882,7 @@ ul4._eq = function _eq(obj1, obj2)
 				{
 					if (!obj2.hasOwnProperty(key))
 						result = false;
-					else if (!ul4.EQAST._do(obj1.get(key), obj2[key]))
+					else if (!ul4._eq(obj1.get(key), obj2[key]))
 						result = false;
 				}
 			});
@@ -906,7 +910,7 @@ ul4._eq = function _eq(obj1, obj2)
 				{
 					if (!obj2.has(key))
 						result = false;
-					else if (!ul4.EQAST._do(obj1.get(key), obj2.get(key)))
+					else if (!ul4._eq(obj1.get(key), obj2.get(key)))
 						result = false;
 				}
 			});
@@ -940,6 +944,688 @@ ul4._eq = function _eq(obj1, obj2)
 	}
 	else
 		return obj1 === obj2;
+};
+
+// Compare ``obj1`` and ``obj2`` if they don't have the same value
+ul4._ne = function _ne(obj1, obj2)
+{
+	if (obj1 && typeof(obj1.__ne__) === "function")
+		return obj1.__ne__(obj2);
+	else if (obj2 && typeof(obj2.__ne__) === "function")
+		return obj2.__ne__(obj1);
+	else
+		return !ul4._eq(obj1, obj2);
+}
+
+ul4._unorderable = function _unorderable(operator, obj1, obj2)
+{
+	throw ul4.TypeError.create(operator, "unorderable types: " + ul4._type(obj1) + " " + operator + " " + ul4._type(obj2));
+};
+
+// Return:
+// -1 when ``obj1 < obj2``,
+//  0 when ``obj1 == obj2``,
+//  1 when ``obj1 > obj2``,
+//  null when ``obj1`` and ``obj2`` are comparable, but neither of the previous cases holds (only for sets)
+// raise TypeError if objects are uncomparable
+// This the purpose of ``_cmp`` is to support implementation of <, <=, > and >=
+// and dicts/maps are not comparable with the operator ``_cmp`` does not support dicts/maps
+
+ul4._cmp = function _cmp(operator, obj1, obj2)
+{
+	var numbertypes = ["boolean", "number"];
+
+	if (numbertypes.indexOf(typeof(obj1)) != -1)
+	{
+		if (numbertypes.indexOf(typeof(obj2)) != -1)
+			return (obj1 > obj2) - (obj1 < obj2);
+	}
+	else if (typeof(obj1) === "string")
+	{
+		if (typeof(obj2) === "string")
+			return (obj1 > obj2) - (obj1 < obj2);
+	}
+	else if (ul4._isdate(obj1))
+	{
+		if (ul4._isdate(obj2))
+		{
+			var v1 = obj1.getTime(), v2 = obj2.getTime();
+			return (v1 > v2) - (v1 < v2);
+		}
+	}
+	else if (ul4._islist(obj1))
+	{
+		if (ul4._islist(obj2))
+		{
+			if (obj1 === obj2)
+				return 0;
+			for (var i = 0; i < obj1.length; ++i)
+			{
+				if (i >= obj2.length)
+					return 1;
+				var res = ul4._cmp(obj1[i], obj2[i]);
+				if (res)
+					return result;
+			}
+			return obj2.length > obj1.length ? -1 : 0;
+		}
+	}
+	else if (ul4._isset(obj1) || ul4._isul4set(obj1))
+	{
+		var in1only = false;
+		var in2only = false;
+
+		if (ul4._isset(obj2))
+		{
+			if (ul4._isset(obj2))
+			{
+				obj1.forEach(function(value){
+					if (!obj2.has(value))
+						in1only = true;
+				});
+				obj2.forEach(function(value){
+					if (!obj1.has(value))
+						in2only = true;
+				});
+			}
+			else if (ul4._isul4set(obj2))
+			{
+				obj1.forEach(function(value){
+					if (!obj2.items[value])
+						in1only = true;
+				});
+				for (var value in obj2.items)
+				{
+					if (!obj1.has(value))
+					{
+						in2only = true;
+						break;
+					}
+				}
+			}
+		}
+		else if (ul4._isul4set(obj2))
+		{
+			if (ul4._isset(obj2))
+			{
+				for (var value in obj1.items)
+				{
+					if (!obj2.has(value))
+					{
+						in1only = true;
+						break;
+					}
+				}
+				obj2.forEach(function(value){
+					if (!obj1.items[value])
+						in2only = true;
+				});
+			}
+			else if (ul4._isul4set(obj2))
+			{
+				for (var value in obj1.items)
+				{
+					if (!obj2.items[value])
+					{
+						in1only = true;
+						break;
+					}
+				}
+				for (var value in obj2.items)
+				{
+					if (!obj1.items[value])
+					{
+						in2only = true;
+						break;
+					}
+				}
+			}
+		}
+		else
+			ul4._unorderable(operator, obj1, obj2);
+
+		if (in1only)
+		{
+			if (in2only)
+				return null;
+			else
+				return 1;
+		}
+		else
+		{
+			if (in2only)
+				return -1;
+			else
+				return 0;
+		}
+	}
+	else
+		ul4._unorderable(operator, obj1, obj2);
+}
+
+// Return whether ``obj1 < obj2``
+ul4._lt = function _lt(obj1, obj2)
+{
+	var numbertypes = ["boolean", "number"];
+
+	if (obj1 && typeof(obj1.__lt__) === "function")
+		return obj1.__lt__(obj2);
+	else if (numbertypes.indexOf(typeof(obj1)) != -1)
+	{
+		if (numbertypes.indexOf(typeof(obj2)) != -1)
+			return obj1 < obj2;
+	}
+	else if (typeof(obj1) === "string")
+	{
+		if (typeof(obj2) === "string")
+			return obj1 < obj2;
+	}
+	else if (ul4._isdate(obj1))
+	{
+		if (ul4._isdate(obj2))
+			return obj1.getTime() < obj2.getTime();
+	}
+	else if (ul4._islist(obj1))
+	{
+		if (ul4._islist(obj2))
+		{
+			if (obj1 === obj2)
+				return false;
+			for (var i = 0; i < obj1.length; ++i)
+			{
+				if (i >= obj2.length)
+					return false;
+				var eq = ul4._eq(obj1[i], obj2[i]);
+				if (!eq)
+					return ul4._lt(obj1[i], obj2[i]);
+			}
+			return obj1.length < obj2.length;
+		}
+	}
+	// FIXME: Set comparison
+	else if (ul4._isset(obj1))
+	{
+		if (ul4._isset(obj2))
+		{
+			if (ul4._isset(obj2))
+			{
+				obj1.forEach(function(value){
+					if (!obj2.has(value))
+						in1only = true;
+				});
+				obj2.forEach(function(value){
+					if (!obj1.has(value))
+						in2only = true;
+				});
+			}
+			else if (ul4._isul4set(obj2))
+			{
+				obj1.forEach(function(value){
+					if (!obj2.items[value])
+						in1only = true;
+				});
+				for (var value in obj2.items)
+				{
+					if (!obj1.has(value))
+					{
+						in2only = true;
+						break;
+					}
+				}
+			}
+		}
+		else if (ul4._isul4set(obj2))
+		{
+			if (ul4._isset(obj2))
+			{
+				for (var value in obj1.items)
+				{
+					if (!obj2.has(value))
+					{
+						in1only = true;
+						break;
+					}
+				}
+				obj2.forEach(function(value){
+					if (!obj1.items[value])
+						in2only = true;
+				});
+			}
+			else if (ul4._isul4set(obj2))
+			{
+				for (var value in obj1.items)
+				{
+					if (!obj2.items[value])
+					{
+						in1only = true;
+						break;
+					}
+				}
+				for (var value in obj2.items)
+				{
+					if (!obj1.items[value])
+					{
+						in2only = true;
+						break;
+					}
+				}
+			}
+		}
+		else
+			ul4._unorderable(operator, obj1, obj2);
+
+		if (in1only)
+		{
+			if (in2only)
+				return null;
+			else
+				return 1;
+		}
+		else
+		{
+			if (in2only)
+				return -1;
+			else
+				return 0;
+		}
+	}
+	ul4._unorderable("<", obj1, obj2);
+};
+
+// Return whether ``obj1 <= obj2``
+ul4._le = function _le(obj1, obj2)
+{
+	var numbertypes = ["boolean", "number"];
+
+	if (obj1 && typeof(obj1.__le__) === "function")
+		return obj1.__le__(obj2);
+	if (numbertypes.indexOf(typeof(obj1)) != -1)
+	{
+		if (numbertypes.indexOf(typeof(obj2)) != -1)
+			return obj1 <= obj2;
+	}
+	else if (typeof(obj1) === "string")
+	{
+		if (typeof(obj2) === "string")
+			return obj1 <= obj2;
+	}
+	else if (ul4._isdate(obj1))
+	{
+		if (ul4._isdate(obj2))
+			return obj1.getTime() <= obj2.getTime();
+	}
+	else if (ul4._islist(obj1))
+	{
+		if (ul4._islist(obj2))
+		{
+			if (obj1 === obj2)
+				return true;
+			for (var i = 0; i < obj1.length; ++i)
+			{
+				if (i >= obj2.length)
+					return false;
+				var eq = ul4._eq(obj1[i], obj2[i]);
+				if (!eq)
+					return ul4._lt(obj1[i], obj2[i]);
+			}
+			return obj1.length <= obj2.length;
+		}
+	}
+	// FIXME: Set comparison
+	else if (ul4._isset(obj1) || ul4._isul4set(obj1))
+	{
+		var in1only = false;
+		var in2only = false;
+
+		if (ul4._isset(obj2))
+		{
+			if (ul4._isset(obj2))
+			{
+				obj1.forEach(function(value){
+					if (!obj2.has(value))
+						in1only = true;
+				});
+				obj2.forEach(function(value){
+					if (!obj1.has(value))
+						in2only = true;
+				});
+			}
+			else if (ul4._isul4set(obj2))
+			{
+				obj1.forEach(function(value){
+					if (!obj2.items[value])
+						in1only = true;
+				});
+				for (var value in obj2.items)
+				{
+					if (!obj1.has(value))
+					{
+						in2only = true;
+						break;
+					}
+				}
+			}
+		}
+		else if (ul4._isul4set(obj2))
+		{
+			if (ul4._isset(obj2))
+			{
+				for (var value in obj1.items)
+				{
+					if (!obj2.has(value))
+					{
+						in1only = true;
+						break;
+					}
+				}
+				obj2.forEach(function(value){
+					if (!obj1.items[value])
+						in2only = true;
+				});
+			}
+			else if (ul4._isul4set(obj2))
+			{
+				for (var value in obj1.items)
+				{
+					if (!obj2.items[value])
+					{
+						in1only = true;
+						break;
+					}
+				}
+				for (var value in obj2.items)
+				{
+					if (!obj1.items[value])
+					{
+						in2only = true;
+						break;
+					}
+				}
+			}
+		}
+		else
+			ul4._unorderable(operator, obj1, obj2);
+
+		if (in1only)
+		{
+			if (in2only)
+				return null;
+			else
+				return 1;
+		}
+		else
+		{
+			if (in2only)
+				return -1;
+			else
+				return 0;
+		}
+	}
+	ul4._unorderable("<=", obj1, obj2);
+};
+
+// Return whether ``obj1 > obj2``
+ul4._gt = function _gt(obj1, obj2)
+{
+	var numbertypes = ["boolean", "number"];
+
+	if (obj1 && typeof(obj1.__gt__) === "function")
+		return obj1.__gt__(obj2);
+	if (numbertypes.indexOf(typeof(obj1)) != -1)
+	{
+		if (numbertypes.indexOf(typeof(obj2)) != -1)
+			return obj1 > obj2;
+	}
+	else if (typeof(obj1) === "string")
+	{
+		if (typeof(obj2) === "string")
+			return obj1 > obj2;
+	}
+	else if (ul4._isdate(obj1))
+	{
+		if (ul4._isdate(obj2))
+			return obj1.getTime() > obj2.getTime();
+	}
+	else if (ul4._islist(obj1))
+	{
+		if (ul4._islist(obj2))
+		{
+			if (obj1 === obj2)
+				return false;
+			for (var i = 0; i < obj1.length; ++i)
+			{
+				if (i >= obj2.length)
+					return true;
+				var eq = ul4._eq(obj1[i], obj2[i]);
+				if (!eq)
+					return ul4._gt(obj1[i], obj2[i]);
+			}
+			return obj1.length > obj2.length;
+		}
+	}
+	// FIXME: Set comparison
+	else if (ul4._isset(obj1) || ul4._isul4set(obj1))
+	{
+		var in1only = false;
+		var in2only = false;
+
+		if (ul4._isset(obj2))
+		{
+			if (ul4._isset(obj2))
+			{
+				obj1.forEach(function(value){
+					if (!obj2.has(value))
+						in1only = true;
+				});
+				obj2.forEach(function(value){
+					if (!obj1.has(value))
+						in2only = true;
+				});
+			}
+			else if (ul4._isul4set(obj2))
+			{
+				obj1.forEach(function(value){
+					if (!obj2.items[value])
+						in1only = true;
+				});
+				for (var value in obj2.items)
+				{
+					if (!obj1.has(value))
+					{
+						in2only = true;
+						break;
+					}
+				}
+			}
+		}
+		else if (ul4._isul4set(obj2))
+		{
+			if (ul4._isset(obj2))
+			{
+				for (var value in obj1.items)
+				{
+					if (!obj2.has(value))
+					{
+						in1only = true;
+						break;
+					}
+				}
+				obj2.forEach(function(value){
+					if (!obj1.items[value])
+						in2only = true;
+				});
+			}
+			else if (ul4._isul4set(obj2))
+			{
+				for (var value in obj1.items)
+				{
+					if (!obj2.items[value])
+					{
+						in1only = true;
+						break;
+					}
+				}
+				for (var value in obj2.items)
+				{
+					if (!obj1.items[value])
+					{
+						in2only = true;
+						break;
+					}
+				}
+			}
+		}
+		else
+			ul4._unorderable(operator, obj1, obj2);
+
+		if (in1only)
+		{
+			if (in2only)
+				return null;
+			else
+				return 1;
+		}
+		else
+		{
+			if (in2only)
+				return -1;
+			else
+				return 0;
+		}
+	}
+	ul4._unorderable(">", obj1, obj2);
+};
+
+// Return whether ``obj1 >= obj2``
+ul4._ge = function _ge(obj1, obj2)
+{
+	var numbertypes = ["boolean", "number"];
+
+	if (obj1 && typeof(obj1.__ge__) === "function")
+		return obj1.__ge__(obj2);
+	if (numbertypes.indexOf(typeof(obj1)) != -1)
+	{
+		if (numbertypes.indexOf(typeof(obj2)) != -1)
+			return obj1 >= obj2;
+	}
+	else if (typeof(obj1) === "string")
+	{
+		if (typeof(obj2) === "string")
+			return obj1 >= obj2;
+	}
+	else if (ul4._isdate(obj1))
+	{
+		if (ul4._isdate(obj2))
+			return obj1.getTime() >= obj2.getTime();
+	}
+	else if (ul4._islist(obj1))
+	{
+		if (ul4._islist(obj2))
+		{
+			if (obj1 === obj2)
+				return true;
+			for (var i = 0; i < obj1.length; ++i)
+			{
+				if (i >= obj2.length)
+					return true;
+				var eq = ul4._eq(obj1[i], obj2[i]);
+				if (!eq)
+					return ul4._gt(obj1[i], obj2[i]);
+			}
+			return obj1.length >= obj2.length;
+		}
+	}
+	// FIXME: Set comparison
+	else if (ul4._isset(obj1) || ul4._isul4set(obj1))
+	{
+		var in1only = false;
+		var in2only = false;
+
+		if (ul4._isset(obj2))
+		{
+			if (ul4._isset(obj2))
+			{
+				obj1.forEach(function(value){
+					if (!obj2.has(value))
+						in1only = true;
+				});
+				obj2.forEach(function(value){
+					if (!obj1.has(value))
+						in2only = true;
+				});
+			}
+			else if (ul4._isul4set(obj2))
+			{
+				obj1.forEach(function(value){
+					if (!obj2.items[value])
+						in1only = true;
+				});
+				for (var value in obj2.items)
+				{
+					if (!obj1.has(value))
+					{
+						in2only = true;
+						break;
+					}
+				}
+			}
+		}
+		else if (ul4._isul4set(obj2))
+		{
+			if (ul4._isset(obj2))
+			{
+				for (var value in obj1.items)
+				{
+					if (!obj2.has(value))
+					{
+						in1only = true;
+						break;
+					}
+				}
+				obj2.forEach(function(value){
+					if (!obj1.items[value])
+						in2only = true;
+				});
+			}
+			else if (ul4._isul4set(obj2))
+			{
+				for (var value in obj1.items)
+				{
+					if (!obj2.items[value])
+					{
+						in1only = true;
+						break;
+					}
+				}
+				for (var value in obj2.items)
+				{
+					if (!obj1.items[value])
+					{
+						in2only = true;
+						break;
+					}
+				}
+			}
+		}
+		else
+			ul4._unorderable(operator, obj1, obj2);
+
+		if (in1only)
+		{
+			if (in2only)
+				return null;
+			else
+				return 1;
+		}
+		else
+		{
+			if (in2only)
+				return -1;
+			else
+				return 0;
+		}
+	}
+	ul4._unorderable(">=", obj1, obj2);
 };
 
 // Return an iterator for ``obj``
@@ -2237,27 +2923,22 @@ ul4.Proto = {
 		}
 	},
 
-	// To support comparison you only have to implement ``__eq__`` and ``__lt__``
+	// equality comparison of objects defaults to identity comparison
+	__eq__: function __eq__(other)
+	{
+		return this === other;
+	},
 
+	// To overwrite equality comparison, you only have to overwrite ``__eq__``,
+	// ``__ne__`` will be synthesized from that
 	__ne__: function __ne__(other)
 	{
 		return !this.__eq__(other);
 	},
 
-	__le__: function __le__(other)
-	{
-		return this.__eq__(other) || this.__lt__(other);
-	},
-
-	__gt__: function __gt__(other)
-	{
-		return !this.__eq__(other) && !this.__lt__(other);
-	},
-
-	__ge__: function __ge__(other)
-	{
-		return !this.__lt__(other);
-	},
+	// For other comparison operators, each method has to be implemented:
+	// ``<`` calls ``__lt__``, ``<=`` calls ``__le__``, ``>`` calls ``__gt__`` and
+	// ``>=`` calls ``__ge__``
 
 	__bool__: function __bool__()
 	{
@@ -3673,12 +4354,7 @@ ul4.EQAST = ul4._inherit(
 	{
 		_do: function _do(obj1, obj2)
 		{
-			if (obj1 && typeof(obj1.__eq__) === "function")
-				return obj1.__eq__(obj2);
-			else if (obj2 && typeof(obj2.__eq__) === "function")
-				return obj2.__eq__(obj1);
-			else
-				return ul4._eq(obj1, obj2);
+			return ul4._eq(obj1, obj2);
 		}
 	}
 );
@@ -3689,12 +4365,7 @@ ul4.NEAST = ul4._inherit(
 	{
 		_do: function _do(obj1, obj2)
 		{
-			if (obj1 && typeof(obj1.__ne__) === "function")
-				return obj1.__ne__(obj2);
-			else if (obj2 && typeof(obj2.__ne__) === "function")
-				return obj2.__ne__(obj1);
-			else
-				return !ul4.EQAST._do(obj1, obj2);
+			return ul4._ne(obj1, obj2);
 		}
 	}
 );
@@ -3705,20 +4376,7 @@ ul4.LTAST = ul4._inherit(
 	{
 		_do: function _do(obj1, obj2)
 		{
-			if (obj1 && typeof(obj1.__lt__) === "function")
-			{
-				if (obj2 && typeof(obj2.__lt__) === "function")
-					return obj1.__lt__(obj2);
-				else
-					throw ul4.TypeError.create("<", ul4._type(this.obj1) + " < " + ul4._type(this.obj2) + " not supported");
-			}
-			else
-			{
-				if (obj2 && typeof(obj2.__lt__) === "function")
-					throw ul4.TypeError.create("<", ul4._type(this.obj1) + " < " + ul4._type(this.obj2) + " not supported");
-				else
-					return obj1 < obj2;
-			}
+			return ul4._lt(obj1, obj2);
 		}
 	}
 );
@@ -3730,19 +4388,9 @@ ul4.LEAST = ul4._inherit(
 		_do: function _do(obj1, obj2)
 		{
 			if (obj1 && typeof(obj1.__le__) === "function")
-			{
-				if (obj2 && typeof(obj2.__le__) === "function")
-					return obj1.__le__(obj2);
-				else
-					throw ul4.TypeError.create("<=", ul4._type(this.obj1) + " <= " + ul4._type(this.obj2) + " not supported");
-			}
+				return obj1.__le__(obj2);
 			else
-			{
-				if (obj2 && typeof(obj2.__lt__) === "function")
-					throw ul4.TypeError.create("<=", ul4._type(this.obj1) + " <= " + ul4._type(this.obj2) + " not supported");
-				else
-					return obj1 <= obj2;
-			}
+				return ul4._le(obj1, obj2);
 		}
 	}
 );
@@ -6849,17 +7497,52 @@ ul4.TimeDelta = ul4._inherit(
 		{
 			if (ul4._istimedelta(other))
 			{
-				if (this._days < other._days)
-					return true;
-				if (this._days > other._days)
-					return false;
-				if (this._seconds < other._seconds)
-					return true;
-				if (this._seconds > other._seconds)
-					return false;
+				if (this._days != other._days)
+					return this._days < other._days;
+				if (this._seconds != other._seconds)
+					return this._seconds < other._seconds;
 				return this._microseconds < other._microseconds;
 			}
-			throw ul4.TypeError.create("<", ul4._type(this) + " < " + ul4._type(other) + " not supported");
+			ul4._unorderable("<", this, other);
+		},
+
+		__le__: function __le__(other)
+		{
+			if (ul4._istimedelta(other))
+			{
+				if (this._days != other._days)
+					return this._days < other._days;
+				if (this._seconds != other._seconds)
+					return this._seconds < other._seconds;
+				return this._microseconds <= other._microseconds;
+			}
+			ul4._unorderable("<=", this, other);
+		},
+
+		__gt__: function __gt__(other)
+		{
+			if (ul4._istimedelta(other))
+			{
+				if (this._days != other._days)
+					return this._days > other._days;
+				if (this._seconds != other._seconds)
+					return this._seconds > other._seconds;
+				return this._microseconds > other._microseconds;
+			}
+			ul4._unorderable(">", this, other);
+		},
+
+		__ge__: function __ge__(other)
+		{
+			if (ul4._istimedelta(other))
+			{
+				if (this._days != other._days)
+					return this._days > other._days;
+				if (this._seconds != other._seconds)
+					return this._seconds > other._seconds;
+				return this._microseconds >= other._microseconds;
+			}
+			ul4._unorderable(">=", this, other);
 		},
 
 		__neg__: function __neg__()
@@ -7038,7 +7721,28 @@ ul4.MonthDelta = ul4._inherit(
 		{
 			if (ul4._ismonthdelta(other))
 				return this._months < other._months;
-			throw ul4.TypeError.create("<", ul4._type(this) + " < " + ul4._type(other) + " not supported");
+			ul4._unorderable("<", this, other);
+		},
+
+		__le__: function __le__(other)
+		{
+			if (ul4._ismonthdelta(other))
+				return this._months <= other._months;
+			ul4._unorderable("<=", this, other);
+		},
+
+		__gt__: function __gt__(other)
+		{
+			if (ul4._ismonthdelta(other))
+				return this._months > other._months;
+			ul4._unorderable(">", this, other);
+		},
+
+		__ge__: function __ge__(other)
+		{
+			if (ul4._ismonthdelta(other))
+				return this._months >= other._months;
+			ul4._unorderable(">=", this, other);
 		},
 
 		__neg__: function __neg__()
@@ -7248,6 +7952,61 @@ ul4._Set = ul4._inherit(
 			}
 			else
 				return false;
+		},
+
+		__le__: function(other)
+		{
+			// check that ``this`` is a subset of ``other``,
+			// i.e. everything in ``this`` is also in ``other``
+			if (ul4._isset(other))
+			{
+				var count = 0;
+				for (var item in this.items)
+				{
+					if (!other.has(item))
+						return false;
+				}
+				return true;
+			}
+			else if (ul4._isul4set(other))
+			{
+				var count = 0;
+				for (var item in this.items)
+				{
+					if (!other.items[item])
+						return false;
+				}
+				return true;
+			}
+			else
+				ul4._unorderable("<", this, other);
+		},
+
+		__ge__: function(other)
+		{
+			// check that ``this`` is a superset of ``other``,
+			// i.e. everything in ``other`` is also in ``this``
+			if (ul4._isset(other))
+			{
+				var result = true;
+				other.forEach(function(value) {
+					if (!this.items[value])
+						result = false;
+				});
+				return result;
+			}
+			else if (ul4._isul4set(other))
+			{
+				var count = 0;
+				for (var item in other.items)
+				{
+					if (!this.items[item])
+						return false;
+				}
+				return true;
+			}
+			else
+				ul4._unorderable("<=", this, other);
 		}
 	}
 );
