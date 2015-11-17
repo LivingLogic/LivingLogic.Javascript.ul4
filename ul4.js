@@ -4398,7 +4398,7 @@ ul4.GTAST = ul4._inherit(
 	{
 		_do: function _do(obj1, obj2)
 		{
-			return ul4._get(obj1, obj2);
+			return ul4._gt(obj1, obj2);
 		}
 	}
 );
