@@ -1699,7 +1699,7 @@ ul4._iter = function _iter(obj)
 			}
 		};
 	}
-	throw ul4.TypeError.create("iter", ul4._type(this.obj) + " object is not iterable");
+	throw ul4.TypeError.create("iter", ul4._type(obj) + " object is not iterable");
 };
 
 ul4._str_repr = function _str_repr(str)
