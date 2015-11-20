@@ -4348,6 +4348,28 @@ ul4.ItemAST = ul4._inherit(
 	}
 );
 
+// Identifty test operator ``is``
+ul4.IsAST = ul4._inherit(
+	ul4.BinaryAST,
+	{
+		_do: function _do(obj1, obj2)
+		{
+			return obj1 === obj2;
+		}
+	}
+);
+
+// Inverted tdentifty test operator ``is not``
+ul4.IsNotAST = ul4._inherit(
+	ul4.BinaryAST,
+	{
+		_do: function _do(obj1, obj2)
+		{
+			return obj1 !== obj2;
+		}
+	}
+);
+
 // Comparison operator ==
 ul4.EQAST = ul4._inherit(
 	ul4.BinaryAST,
@@ -8004,6 +8026,8 @@ var classes = [
 	"PrintAST",
 	"PrintXAST",
 	"ItemAST",
+	"IsAST",
+	"IsNotAST",
 	"EQAST",
 	"NEAST",
 	"LTAST",
