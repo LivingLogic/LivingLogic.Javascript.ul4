@@ -6135,11 +6135,60 @@ ul4._last = function _last(iterable, defaultValue)
 };
 
 // Return a sorted version of ``iterable``
-ul4._sorted = function _sorted(iterable)
+ul4._sorted = function _sorted(context, iterable, key, reverse)
 {
-	var result = ul4._list(iterable);
-	result.sort();
-	return result;
+	var cmp;
+	if (key === null)
+	{
+		// FIXME: stability
+		if (reverse)
+		{
+			cmp = function cmp(a, b)
+			{
+				return -ul4._cmp("<=>", a, b);
+			}
+		}
+		else
+		{
+			cmp = function cmp(a, b)
+			{
+				return ul4._cmp("<=>", a, b);
+			}
+		}
+		var result = ul4._list(iterable);
+		result.sort(cmp);
+		return result;
+	}
+	else
+	{
+		var sort = [];
+
+		for (var i = 0, iter = ul4._iter(iterable);;++i)
+		{
+			var item = iter.next();
+			if (item.done)
+				break;
+			var keyvalue = ul4._call(context, key, [[null, item.value]]);
+			sort.push([keyvalue, i, item.value]);
+		}
+		cmp = function cmp(s1, s2)
+		{
+			var res = ul4._cmp("<=>", s1[0], s2[0]);
+			if (res)
+				return reverse ? -res : res;
+			return ul4._cmp(s1[1], s2[1]);
+			// return reverse ? -res : res;
+		}
+
+		sort.sort(cmp);
+
+		var result = [];
+		for (var i = 0; i < sort.length; ++i)
+		{
+			result.push(sort[i][2]);
+		}
+		return result;
+	}
 };
 
 // Return a iterable object iterating from ``start`` upto (but not including) ``stop`` with a step size of ``step``
@@ -6660,7 +6709,7 @@ ul4.functions = {
 	sum: ul4.expose(["iterable", "start=", 0], {name: "sum"}, ul4._sum),
 	first: ul4.expose(["iterable", "default=", null], {name: "first"}, ul4._first),
 	last: ul4.expose(["iterable", "default=", null], {name: "last"}, ul4._last),
-	sorted: ul4.expose(["iterable"], {name: "sorted"}, ul4._sorted),
+	sorted: ul4.expose(["iterable", "key=", null, "reverse=", false], {name: "sorted", needscontext: true}, ul4._sorted),
 	range: ul4.expose(["*args"], {name: "range"}, ul4._range),
 	slice: ul4.expose(["*args"], {name: "slice"}, ul4._slice),
 	urlquote: ul4.expose(["string"], {name: "urlquote"}, ul4._urlquote),
