@@ -634,7 +634,7 @@ ul4._map2object = function _map2object(obj)
 };
 
 // Call a function ``f`` with UL4 argument handling
-ul4._internal_call = function _internal_call(context, f, functioncontext, signature, needscontext, needsobject, args)
+ul4._internal_call = function _internal_call(context, f, name, functioncontext, signature, needscontext, needsobject, args)
 {
 	var finalargs;
 	if (needsobject)
@@ -666,13 +666,13 @@ ul4._internal_call = function _internal_call(context, f, functioncontext, signat
 			finalargs = [finalargs];
 		}
 		else
-			finalargs = [signature.bindObject(f._ul4_name || f.name, args)];
+			finalargs = [signature.bindObject(name, args)];
 	}
 	else
 	{
 		if (signature === null)
 			throw ul4.ArgumentError.create(ul4._repr(f) + " doesn't support positional arguments!");
-		finalargs = signature.bindArray(f._ul4_name || f.name, args);
+		finalargs = signature.bindArray(name, args);
 	}
 	if (needscontext)
 		finalargs.unshift(context);
@@ -681,23 +681,24 @@ ul4._internal_call = function _internal_call(context, f, functioncontext, signat
 
 ul4._callfunction = function _callfunction(context, f, args)
 {
+	var name = f._ul4_name || f.name;
 	if (typeof(f._ul4_signature) === "undefined" || typeof(f._ul4_needsobject) === "undefined" || typeof(f._ul4_needscontext) === "undefined")
 		throw ul4.TypeError.create("call", "function " + ul4.repr(f) + " is not callable by UL4");
-	return ul4._internal_call(context, f, ul4, f._ul4_signature, f._ul4_needscontext, f._ul4_needsobject, args);
+	return ul4._internal_call(context, f, name, ul4, f._ul4_signature, f._ul4_needscontext, f._ul4_needsobject, args);
 }
 
 ul4._callobject = function _callobject(context, obj, args)
 {
 	if (typeof(obj._ul4_callsignature) === "undefined" || typeof(obj._ul4_callneedsobject) === "undefined" || typeof(obj._ul4_callneedscontext) === "undefined")
 		throw ul4.TypeError.create("call", ul4.type(obj) + " object is not callable by UL4");
-	return ul4._internal_call(context, obj.__call__, obj, obj._ul4_callsignature, obj._ul4_callneedscontext, obj._ul4_callneedsobject, args);
+	return ul4._internal_call(context, obj.__call__, obj.name, obj, obj._ul4_callsignature, obj._ul4_callneedscontext, obj._ul4_callneedsobject, args);
 }
 
 ul4._callrender = function _callrender(context, obj, args)
 {
 	if (typeof(obj._ul4_rendersignature) === "undefined" || typeof(obj._ul4_renderneedsobject) === "undefined" || typeof(obj._ul4_renderneedscontext) === "undefined")
 		throw ul4.TypeError.create("render", ul4.type(obj) + " object is not renderable by UL4");
-	return ul4._internal_call(context, obj.__render__, obj, obj._ul4_rendersignature, obj._ul4_renderneedscontext, obj._ul4_renderneedsobject, args);
+	return ul4._internal_call(context, obj.__render__, obj.name, obj, obj._ul4_rendersignature, obj._ul4_renderneedscontext, obj._ul4_renderneedsobject, args);
 }
 
 ul4._call = function _call(context, f, args)
