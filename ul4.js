@@ -634,79 +634,59 @@ ul4._map2object = function _map2object(obj)
 };
 
 // Call a function ``f`` with UL4 argument handling
-ul4._internal_call = function _internal_call(context, f, name, functioncontext, signature, needscontext, needsobject, args)
+ul4._internal_call = function _internal_call(context, f, name, functioncontext, signature, needscontext, needsobject, args, kwargs)
 {
 	var finalargs;
 	if (needsobject)
 	{
 		if (signature === null)
 		{
-			finalargs = {};
-			for (var i = 0; i < args.length; ++i)
-			{
-				var argname = args[i][0];
-				var argvalue = args[i][1];
-				if (argname === null)
-					throw ul4.ArgumentError.create(ul4._repr(f) + " doesn't support positional arguments!");
-				else if (argname === "*")
-					throw ul4.ArgumentError.create(ul4._repr(f) + " doesn't support a * argument!");
-				else if (argname === "**")
-				{
-					if (ul4._ismap(argvalue))
-					{
-						argvalue.forEach(function(value, key){
-							finalargs[key] = value;
-						});
-					}
-					else
-						ul4._extend(finalargs, argvalue);
-				}
-				finalargs[argname] = argvalue;
-			}
-			finalargs = [finalargs];
+			if (args.length)
+				throw ul4.ArgumentError.create(ul4._repr(f) + " doesn't support positional arguments!");
+			finalargs = [kwargs];
 		}
 		else
-			finalargs = [signature.bindObject(name, args)];
+			finalargs = [signature.bindObject(name, args, kwargs)];
 	}
 	else
 	{
 		if (signature === null)
 			throw ul4.ArgumentError.create(ul4._repr(f) + " doesn't support positional arguments!");
-		finalargs = signature.bindArray(name, args);
+		finalargs = signature.bindArray(name, args, kwargs);
 	}
 	if (needscontext)
 		finalargs.unshift(context);
 	return f.apply(functioncontext, finalargs);
 };
 
-ul4._callfunction = function _callfunction(context, f, args)
+ul4._callfunction = function _callfunction(context, f, args, kwargs)
 {
 	var name = f._ul4_name || f.name;
 	if (typeof(f._ul4_signature) === "undefined" || typeof(f._ul4_needsobject) === "undefined" || typeof(f._ul4_needscontext) === "undefined")
 		throw ul4.TypeError.create("call", "function " + ul4.repr(f) + " is not callable by UL4");
-	return ul4._internal_call(context, f, name, ul4, f._ul4_signature, f._ul4_needscontext, f._ul4_needsobject, args);
+	return ul4._internal_call(context, f, name, ul4, f._ul4_signature, f._ul4_needscontext, f._ul4_needsobject, args, kwargs);
 }
 
-ul4._callobject = function _callobject(context, obj, args)
+ul4._callobject = function _callobject(context, obj, args, kwargs)
 {
 	if (typeof(obj._ul4_callsignature) === "undefined" || typeof(obj._ul4_callneedsobject) === "undefined" || typeof(obj._ul4_callneedscontext) === "undefined")
 		throw ul4.TypeError.create("call", ul4.type(obj) + " object is not callable by UL4");
-	return ul4._internal_call(context, obj.__call__, obj.name, obj, obj._ul4_callsignature, obj._ul4_callneedscontext, obj._ul4_callneedsobject, args);
+	return ul4._internal_call(context, obj.__call__, obj.name, obj, obj._ul4_callsignature, obj._ul4_callneedscontext, obj._ul4_callneedsobject, args, kwargs);
 }
 
-ul4._callrender = function _callrender(context, obj, args)
+ul4._callrender = function _callrender(context, obj, args, kwargs)
 {
 	if (typeof(obj._ul4_rendersignature) === "undefined" || typeof(obj._ul4_renderneedsobject) === "undefined" || typeof(obj._ul4_renderneedscontext) === "undefined")
 		throw ul4.TypeError.create("render", ul4.type(obj) + " object is not renderable by UL4");
-	return ul4._internal_call(context, obj.__render__, obj.name, obj, obj._ul4_rendersignature, obj._ul4_renderneedscontext, obj._ul4_renderneedsobject, args);
+	return ul4._internal_call(context, obj.__render__, obj.name, obj, obj._ul4_rendersignature, obj._ul4_renderneedscontext, obj._ul4_renderneedsobject, args, kwargs);
 }
 
-ul4._call = function _call(context, f, args)
+ul4._call = function _call(context, f, args, kwargs)
 {
 	if (typeof(f) === "function")
-		return ul4._callfunction(context, f, args);
+		return ul4._callfunction(context, f, args, kwargs);
 	else if (f && typeof(f.__call__) === "function")
-		return ul4._callobject(context, f, args);
+		return ul4._callobject(context, f, args, kwargs);
 	else
 		throw ul4.TypeError.create("call", ul4._type(f) + " is not callable");
 }
@@ -1004,9 +984,9 @@ ul4._cmp = function _cmp(operator, obj1, obj2)
 			{
 				if (i >= obj2.length)
 					return 1;
-				var res = ul4._cmp(obj1[i], obj2[i]);
+				var res = ul4._cmp(operator, obj1[i], obj2[i]);
 				if (res)
-					return result;
+					return res;
 			}
 			return obj2.length > obj1.length ? -1 : 0;
 		}
@@ -2991,54 +2971,31 @@ ul4.Signature = ul4._inherit(
 		},
 
 		// Create the argument array for calling a function with this signature with the arguments available from ``args``
-		bindArray: function bindArray(name, args)
+		bindArray: function bindArray(name, args, kwargs)
 		{
-			var realargs = [];
-			var realkwargs = {};
-
-			for (var i = 0; i < args.length; ++i)
-			{
-				var argname = args[i][0];
-				var argvalue = args[i][1];
-				if (argname === null)
-					realargs.push(argvalue);
-				else if (argname === "*")
-					realargs = realargs.concat(argvalue);
-				else if (argname === "**")
-				{
-					if (ul4._ismap(argvalue))
-					{
-						argvalue.forEach(function(value, key){
-							realkwargs[key] = value;
-						});
-					}
-					else
-						ul4._extend(realkwargs, argvalue);
-				}
-				else
-					realkwargs[argname] = argvalue;
-			}
-
 			var finalargs = [];
+			var decname = name !== null ? name + "() " : "";
 
 			for (var i = 0; i < this.args.length; ++i)
 			{
 				var arg = this.args[i];
-
-				if (typeof(realkwargs[arg.name]) !== "undefined")
+				if (i < args.length)
 				{
-					if (i < realargs.length)
-						throw ul4.ArgumentError.create((name !== null ? name + "() " : "") + "argument " + ul4._repr(arg.name) + " (position " + i + ") specified multiple times");
-					finalargs.push(realkwargs[arg.name]);
+					if (kwargs.hasOwnProperty(arg.name))
+						throw ul4.ArgumentError.create(decname + "argument " + ul4._repr(arg.name) + " (position " + i + ") specified multiple times");
+					finalargs.push(args[i]);
 				}
 				else
 				{
-					if (i < realargs.length)
-						finalargs.push(realargs[i]);
-					else if (typeof(arg.defaultValue) === "undefined")
-						throw ul4.ArgumentError.create("required " + (name !== null ? name + "() " : "") + "argument " + ul4._repr(arg.name) + " (position " + i + ") missing");
+					if (kwargs.hasOwnProperty(arg.name))
+						finalargs.push(kwargs[arg.name]);
 					else
-						finalargs.push(arg.defaultValue);
+					{
+						if (arg.hasOwnProperty("defaultValue"))
+							finalargs.push(arg.defaultValue);
+						else
+							throw ul4.ArgumentError.create("required " + decname + "argument " + ul4._repr(arg.name) + " (position " + i + ") missing");
+					}
 				}
 			}
 
@@ -3046,25 +3003,23 @@ ul4.Signature = ul4._inherit(
 			if (this.remargs === null)
 			{
 				// No, but we have them -> complain
-				if (realargs.length > this.args.length)
+				if (args.length > this.args.length)
 				{
-					if (name === null)
-						throw ul4.ArgumentError.create("expected at most " + this.args.length + " positional argument" + (this.args.length != 1 ? "s" : "") + ", " + realargs.length + " given");
-					else
-						throw ul4.ArgumentError.create(name + "() expects at most " + this.args.length + " positional argument" + (this.args.length != 1 ? "s" : "") + ", " + realargs.length + " given");
+					var prefix = name === null ? "expected" : name + "() expects";
+					throw ul4.ArgumentError.create(prefix + " at most " + this.args.length + " positional argument" + (this.args.length != 1 ? "s" : "") + ", " + args.length + " given");
 				}
 			}
 			else
 			{
 				// Put additional positional arguments in the call into the ``*`` argument (if there are none, this pushes an empty list)
-				finalargs.push(realargs.slice(this.args.length));
+				finalargs.push(args.slice(this.args.length));
 			}
 
 			// Do we accept arbitrary keyword arguments?
 			if (this.remkwargs === null)
 			{
 				// No => complain about unknown ones
-				for (var key in realkwargs)
+				for (var key in kwargs)
 				{
 					if (!this.argNames[key])
 					{
@@ -3077,31 +3032,31 @@ ul4.Signature = ul4._inherit(
 			}
 			else
 			{
-				// Yes => Put the unknown ones into a dict and add that to the arguments array
+				// Yes => Put the unknown ones into an object and add that to the arguments array
 				var remkwargs = {};
-				for (var key in realkwargs)
+				for (var key in kwargs)
 				{
 					if (!this.argNames[key])
-						remkwargs[key] = realkwargs[key];
+						remkwargs[key] = kwargs[key];
 				}
 				finalargs.push(remkwargs);
 			}
+
 			return finalargs;
 		},
 
 		// Create the argument object for calling a function with this signature with the arguments available from ``args``
-		bindObject: function bindObject(name, args)
+		bindObject: function bindObject(name, args, kwargs)
 		{
-			args = this.bindArray(name, args);
+			args = this.bindArray(name, args, kwargs);
 			var argObject = {};
-
-			for (var i = 0; i < this.args.length; ++i)
+			var i;
+			for (i = 0; i < this.args.length; ++i)
 				argObject[this.args[i].name] = args[i];
-			if (this.remkwargs !== null)
-				argObject[this.remkwargs] = args[args.length-1];
 			if (this.remargs !== null)
-				argObject[this.remargs] = args[args.length-(this.remkwargs !== null ? 2 : 1)];
-
+				argObject[this.remargs] = args[i++];
+			if (this.remkwargs !== null)
+				argObject[this.remkwargs] = args[i++];
 			return argObject;
 		},
 
@@ -3112,14 +3067,14 @@ ul4.Signature = ul4._inherit(
 			{
 				var arg = this.args[i];
 
-				if (typeof(arg.defaultValue) === "undefined")
-					v.push(arg.name)
+				if (arg.hasOwnProperty("defaultValue"))
+					v.push(arg.name + "=" + ul4._repr(arg.defaultValue));
 				else
-					v.push(arg.name + "=" + ul4._repr(arg.defaultValue))
+					v.push(arg.name);
 			}
-			if (this.remargs != null)
+			if (this.remargs !== null)
 				v.push("*" + this.remargs);
-			if (this.remkwargs != null)
+			if (this.remkwargs !== null)
 				v.push("**" + this.remkwargs);
 			return "(" + v.join(", ") + ")";
 		}
@@ -3647,6 +3602,351 @@ ul4.ConstAST = ul4._inherit(
 	}
 );
 
+ul4.ItemArgBase = ul4._inherit(
+	ul4.CodeAST,
+	{
+		_handle_eval_list: function _handle_eval_list(context, result)
+		{
+			try
+			{
+				return this._eval_list(context, result);
+			}
+			catch (exc)
+			{
+				if (!ul4.InternalException.isprotoof(exc) && !ul4.Error.isprotoof(exc))
+					exc = ul4.Error.create(this, exc);
+				throw exc;
+			}
+		},
+		_handle_eval_set: function _handle_eval_set(context, result)
+		{
+			try
+			{
+				return this._eval_set(context, result);
+			}
+			catch (exc)
+			{
+				if (!ul4.InternalException.isprotoof(exc) && !ul4.Error.isprotoof(exc))
+					exc = ul4.Error.create(this, exc);
+				throw exc;
+			}
+		},
+		_handle_eval_dict: function _handle_eval_dict(context, result)
+		{
+			try
+			{
+				return this._eval_dict(context, result);
+			}
+			catch (exc)
+			{
+				if (!ul4.InternalException.isprotoof(exc) && !ul4.Error.isprotoof(exc))
+					exc = ul4.Error.create(this, exc);
+				throw exc;
+			}
+		},
+		_handle_eval_call: function _handle_eval_call(context, args, kwargs)
+		{
+			try
+			{
+				return this._eval_call(context, args, kwargs);
+			}
+			catch (exc)
+			{
+				if (!ul4.InternalException.isprotoof(exc) && !ul4.Error.isprotoof(exc))
+					exc = ul4.Error.create(this, exc);
+				throw exc;
+			}
+		}
+	}
+);
+
+ul4.SeqItemAST = ul4._inherit(
+	ul4.ItemArgBase,
+	{
+		create: function create(tag, startpos, endpos, value)
+		{
+			var seqitem = ul4.ItemArgBase.create.call(this, tag, startpos, endpos);
+			seqitem.value = value;
+			return seqitem;
+		},
+		_ul4onattrs: ul4.ItemArgBase._ul4onattrs.concat(["value"]),
+		_repr: function _repr(out)
+		{
+			out.push("<SeqItemAST value=");
+			out.push(ul4._repr(this.value));
+			out.push(">");
+		},
+		_eval_list: function _eval_list(context, result)
+		{
+			var value = this.value._handle_eval(context);
+			result.push(value);
+		},
+		_eval_set: function _eval_set(context, result)
+		{
+			var value = this.value._handle_eval(context);
+			result.add(value);
+		}
+	}
+);
+
+
+ul4.UnpackSeqItemAST = ul4._inherit(
+	ul4.ItemArgBase,
+	{
+		create: function create(tag, startpos, endpos, value)
+		{
+			var unpackseqitem = ul4.ItemArgBase.create.call(this, tag, startpos, endpos);
+			unpackseqitem.value = value;
+			return unpackseqitem;
+		},
+		_ul4onattrs: ul4.ItemArgBase._ul4onattrs.concat(["value"]),
+		_repr: function _repr(out)
+		{
+			out.push("<UnpackSeqItemAST value=");
+			out.push(ul4._repr(this.value));
+			out.push(">");
+		},
+		_eval_list: function _eval_list(context, result)
+		{
+			var value = this.value._handle_eval(context);
+			for (var iter = ul4._iter(value);;)
+			{
+				var item = iter.next();
+				if (item.done)
+					break;
+				result.push(item.value);
+			}
+		},
+		_eval_set: function _eval_set(context, result)
+		{
+			var value = this.value._handle_eval(context);
+			for (var iter = ul4._iter(value);;)
+			{
+				var item = iter.next();
+				if (item.done)
+					break;
+				result.add(item.value);
+			}
+		}
+	}
+);
+
+ul4.DictItemAST = ul4._inherit(
+	ul4.ItemArgBase,
+	{
+		create: function create(tag, startpos, endpos, key, value)
+		{
+			var dictitem = ul4.ItemArgBase.create.call(this, tag, startpos, endpos);
+			dictitem.key = key;
+			dictitem.value = value;
+			return dictitem;
+		},
+		_ul4onattrs: ul4.ItemArgBase._ul4onattrs.concat(["key", "value"]),
+		_repr: function _repr(out)
+		{
+			out.push("<DictItemAST key=");
+			out.push(ul4._repr(this.key));
+			out.push(" value=");
+			out.push(ul4._repr(this.value));
+			out.push(">");
+		},
+		_eval_dict: function _eval_dict(context, result)
+		{
+			var key = this.key._handle_eval(context);
+			var value = this.value._handle_eval(context);
+			if (ul4._ismap(result))
+				result.set(key, value)
+			else
+				result[key] = value;
+		}
+	}
+);
+
+ul4.UnpackDictItemAST = ul4._inherit(
+	ul4.ItemArgBase,
+	{
+		create: function create(tag, startpos, endpos, item)
+		{
+			var unpackdictitem = ul4.ItemArgBase.create.call(this, tag, startpos, endpos);
+			unpackdictitem.item = item;
+			return unpackdictitem;
+		},
+		_ul4onattrs: ul4.ItemArgBase._ul4onattrs.concat(["item"]),
+		_repr: function _repr(out)
+		{
+			out.push("<UnpackDictItemAST item=");
+			out.push(ul4._repr(this.item));
+			out.push(">");
+		},
+		_eval_dict: function _eval_dict(context, result)
+		{
+			var item = this.item._handle_eval(context);
+			if (ul4._islist(item))
+			{
+				for (var i = 0; i < item.length; ++i)
+				{
+					if (!ul4._islist(item[i]) || item[i].length != 2)
+						throw ul4.ArgumentError.create("** requires a list of (key, value) pairs");
+					var key = item[i][0], value = item[i][1];
+					if (ul4._ismap(result))
+						result.set(key, value)
+					else
+						result[key] = value;
+				}
+			}
+			else if (ul4._ismap(item))
+			{
+				item.forEach(function(value, key){
+					if (ul4._ismap(result))
+						result.set(key, value)
+					else
+						result[key] = value;
+				});
+			}
+			else if (ul4._isobject(item))
+			{
+				for (var key in item)
+				{
+					var value = item[key];
+					if (ul4._ismap(result))
+						result.set(key, value)
+					else
+						result[key] = value;
+				}
+			}
+		}
+	}
+);
+
+ul4.PosArgAST = ul4._inherit(
+	ul4.ItemArgBase,
+	{
+		create: function create(tag, startpos, endpos, value)
+		{
+			var arg = ul4.ItemArgBase.create.call(this, tag, startpos, endpos);
+			arg.value = value;
+			return arg;
+		},
+		_ul4onattrs: ul4.ItemArgBase._ul4onattrs.concat(["value"]),
+		_repr: function _repr(out)
+		{
+			out.push("<PosArgAST value=");
+			this.value._repr(out);
+			out.push(">");
+		},
+		_eval_call: function _eval_call(context, args, kwargs)
+		{
+			var value = this.value._handle_eval(context);
+			args.push(value);
+		}
+	}
+);
+
+ul4.KeywordArgAST = ul4._inherit(
+	ul4.ItemArgBase,
+	{
+		create: function create(tag, startpos, endpos, name, value)
+		{
+			var arg = ul4.ItemArgBase.create.call(this, tag, startpos, endpos);
+			arg.name = name;
+			arg.value = value;
+			return arg;
+		},
+		_ul4onattrs: ul4.ItemArgBase._ul4onattrs.concat(["name", "value"]),
+		_repr: function _repr(out)
+		{
+			out.push("<KeywordArgAST name=");
+			out.push(ul4._repr(this.name));
+			out.push(" value=");
+			this.value._repr(out);
+			out.push(">");
+		},
+		_eval_call: function _eval_call(context, args, kwargs)
+		{
+			if (kwargs.hasOwnProperty(this.name))
+				throw ul4.ArgumentError.create("duplicate keyword argument " + this.name);
+			var value = this.value._handle_eval(context);
+			kwargs[this.name] = value;
+		}
+	}
+);
+
+ul4.UnpackListArgAST = ul4._inherit(
+	ul4.ItemArgBase,
+	{
+		create: function create(tag, startpos, endpos, item)
+		{
+			var arg = ul4.ItemArgBase.create.call(this, tag, startpos, endpos);
+			arg.item = item;
+			return arg;
+		},
+		_ul4onattrs: ul4.ItemArgBase._ul4onattrs.concat(["item"]),
+		_repr: function _repr(out)
+		{
+			out.push("<UnpackListArgAST item=");
+			this.item._repr(out);
+			out.push(">");
+		},
+		_eval_call: function _eval_call(context, args, kwargs)
+		{
+			var item = this.item._handle_eval(context);
+			args.push.apply(args, item);
+		}
+	}
+);
+
+ul4.UnpackDictArgAST = ul4._inherit(
+	ul4.ItemArgBase,
+	{
+		create: function create(tag, startpos, endpos, item)
+		{
+			var arg = ul4.ItemArgBase.create.call(this, tag, startpos, endpos);
+			arg.item = item;
+			return arg;
+		},
+		_ul4onattrs: ul4.ItemArgBase._ul4onattrs.concat(["item"]),
+		_repr: function _repr(out)
+		{
+			out.push("<UnpackDictArgAST item=");
+			this.item._repr(out);
+			out.push(">");
+		},
+		_eval_call: function _eval_call(context, args, kwargs)
+		{
+			var item = this.item._handle_eval(context);
+			if (ul4._islist(item))
+			{
+				for (var i = 0; i < item.length; ++i)
+				{
+					if (!ul4._islist(item[i]) || item[i].length != 2)
+						throw ul4.ArgumentError.create("** requires a list of (key, value) pairs");
+					var key = item[i][0], value = item[i][1];
+					if (kwargs.hasOwnProperty(key))
+						throw ul4.ArgumentError.create("duplicate keyword argument " + key);
+					kwargs[key] = value;
+				}
+			}
+			else if (ul4._ismap(item))
+			{
+				item.forEach(function(value, key){
+					if (kwargs.hasOwnProperty(key))
+						throw ul4.ArgumentError.create("duplicate keyword argument " + key);
+					kwargs[key] = value;
+				});
+			}
+			else if (ul4._isobject(item))
+			{
+				for (var key in item)
+				{
+					if (kwargs.hasOwnProperty(key))
+						throw ul4.ArgumentError.create("duplicate keyword argument " + key);
+					kwargs[key] = item[key];
+				}
+			}
+		}
+	}
+);
+
 ul4.ListAST = ul4._inherit(
 	ul4.CodeAST,
 	{
@@ -3671,7 +3971,7 @@ ul4.ListAST = ul4._inherit(
 		{
 			var result = [];
 			for (var i = 0; i < this.items.length; ++i)
-				result.push(this.items[i]._handle_eval(context));
+				this.items[i]._handle_eval_list(context, result);
 			return result;
 		}
 	}
@@ -3753,27 +4053,9 @@ ul4.DictAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var result;
-			if (ul4on._havemap)
-			{
-				result = new Map();
-				for (var i = 0; i < this.items.length; ++i)
-				{
-					var key = this.items[i][0]._handle_eval(context);
-					var value = this.items[i][1]._handle_eval(context);
-					result.set(key, value);
-				}
-			}
-			else
-			{
-				result = {};
-				for (var i = 0; i < this.items.length; ++i)
-				{
-					var key = this.items[i][0]._handle_eval(context);
-					var value = this.items[i][1]._handle_eval(context);
-					result[key] = value;
-				}
-			}
+			var result = ul4on._havemap? new Map() : {};
+			for (var i = 0; i < this.items.length; ++i)
+				this.items[i]._handle_eval_dict(context, result);
 			return result;
 		}
 	}
@@ -3889,7 +4171,7 @@ ul4.SetAST = ul4._inherit(
 			var result = ul4on._haveset ? new Set() : ul4._Set.create();
 
 			for (var i = 0; i < this.items.length; ++i)
-				result.add(this.items[i]._handle_eval(context));
+				this.items[i]._handle_eval_set(context, result);
 
 			return result;
 		}
@@ -5025,19 +5307,16 @@ ul4.AttrAST = ul4._inherit(
 							result = object.__getattr__(attrname);
 						else
 							result = object[attrname];
-						if (typeof(result) === "function")
-						{
-							var realresult = function() {
-								return result.apply(object, arguments);
-							};
-							realresult._ul4_name = result._ul4_name || result.name;
-							realresult._ul4_signature = result._ul4_signature;
-							realresult._ul4_needsobject = result._ul4_needsobject;
-							realresult._ul4_needscontext = result._ul4_needscontext;
-							return realresult;
-						}
-						else
+						if (typeof(result) !== "function")
 							return result;
+						var realresult = function() {
+							return result.apply(object, arguments);
+						};
+						realresult._ul4_name = result._ul4_name || result.name;
+						realresult._ul4_signature = result._ul4_signature;
+						realresult._ul4_needsobject = result._ul4_needsobject;
+						realresult._ul4_needscontext = result._ul4_needscontext;
+						return realresult;
 				}
 			}
 			throw ul4.TypeError.create("get", ul4._type(object) + " object has no readable attributes");
@@ -5080,41 +5359,24 @@ ul4.CallAST = ul4._inherit(
 			this.obj._repr(out);
 			for (var i = 0; i < this.args.length; ++i)
 			{
-				var name = this.args[i][0];
-				var arg = this.args[i][1];
+				var arg = this.args[i];
 				out.push(" ");
-				if (name === null)
-					;
-				else if (name === "*")
-					out.push("*");
-				else if (name === "**")
-					out.push("**");
-				else
-					out.push(name + "=");
 				arg._repr(out);
 			}
 			out.push(">");
 		},
 		_makeargs: function _makeargs(context)
 		{
-			var args = [];
+			var args = [], kwargs = {};
 			for (var i = 0; i < this.args.length; ++i)
-			{
-				var name = this.args[i][0];
-				var value = this.args[i][1]._handle_eval(context);
-				args.push([name, value]);
-			}
-			return args;
+				this.args[i]._handle_eval_call(context, args, kwargs);
+			return {args: args, kwargs: kwargs};
 		},
 		_handle_eval: function _handle_eval(context)
 		{
-			var obj = this.obj._handle_eval(context);
-			var args = this._makeargs(context);
-
 			try
 			{
-				var result = ul4._call(context, obj, args);
-				return result;
+				return this._eval(context);
 			}
 			catch (exc)
 			{
@@ -5122,10 +5384,12 @@ ul4.CallAST = ul4._inherit(
 				throw exc;
 			}
 		},
-
 		_eval: function _eval(context)
 		{
-			return this._handle_eval(context);
+			var obj = this.obj._handle_eval(context);
+			var args = this._makeargs(context);
+			var result = ul4._call(context, obj, args.args, args.kwargs);
+			return result;
 		}
 	}
 );
@@ -5185,7 +5449,7 @@ ul4.RenderAST = ul4._inherit(
 
 			try
 			{
-				var result = ul4._callrender(localcontext, obj, args);
+				var result = ul4._callrender(localcontext, obj, args.args, args.kwargs);
 				return result;
 			}
 			catch (exc)
@@ -5777,7 +6041,7 @@ ul4.Template = ul4._inherit(
 			vars = vars || {};
 			var context = ul4.Context.create();
 			if (this.signature !== null)
-				vars = this.signature.bindObject(this.name, [["**", vars]]);
+				vars = this.signature.bindObject(this.name, [], vars);
 			return this._rendersbound(context, vars);
 		},
 		__getattr__: function __getattr__(attrname)
@@ -5832,7 +6096,7 @@ ul4.Template = ul4._inherit(
 			vars = vars || {};
 			var context = ul4.Context.create();
 			if (this.signature !== null)
-				vars = this.signature.bindObject(this.name, [["**", vars]]);
+				vars = this.signature.bindObject(this.name, [], vars);
 			return this._callbound(context, vars);
 		},
 		__call__: function __call__(context, vars)
@@ -6168,7 +6432,7 @@ ul4._sorted = function _sorted(context, iterable, key, reverse)
 			var item = iter.next();
 			if (item.done)
 				break;
-			var keyvalue = ul4._call(context, key, [[null, item.value]]);
+			var keyvalue = ul4._call(context, key, [item.value], {});
 			sort.push([keyvalue, i, item.value]);
 		}
 		cmp = function cmp(s1, s2)
@@ -6176,8 +6440,8 @@ ul4._sorted = function _sorted(context, iterable, key, reverse)
 			var res = ul4._cmp("<=>", s1[0], s2[0]);
 			if (res)
 				return reverse ? -res : res;
-			return ul4._cmp(s1[1], s2[1]);
-			// return reverse ? -res : res;
+			res = ul4._cmp(s1[1], s2[1]);
+			return reverse ? -res : res;
 		}
 
 		sort.sort(cmp);
@@ -8060,6 +8324,14 @@ var classes = [
 	"LineEndAST",
 	"Tag",
 	"ConstAST",
+	"SeqItemAST",
+	"UnpackSeqItemAST",
+	"DictItemAST",
+	"UnpackDictItemAST",
+	"PosArgAST",
+	"KeywordArgAST",
+	"UnpackListArgAST",
+	"UnpackDictArgAST",
 	"ListAST",
 	"ListCompAST",
 	"DictAST",
