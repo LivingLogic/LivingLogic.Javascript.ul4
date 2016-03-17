@@ -5235,6 +5235,8 @@ ul4.AttrAST = ul4._inherit(
 						return ul4.expose(["sep=", null, "count=", null], function split(sep, count){ return ul4._split(object, sep, count); });
 					case "rsplit":
 						return ul4.expose(["sep=", null, "count=", null], function rsplit(sep, count){ return ul4._rsplit(object, sep, count); });
+					case "splitlines":
+						return ul4.expose(["keepends=", false], function splitlines(keepends){ return ul4._splitlines(object, keepends); });
 					case "lower":
 						return ul4.expose([], function lower(){ return object.toLowerCase(); });
 					case "upper":
@@ -7193,6 +7195,47 @@ ul4._rsplit = function _rsplit(string, sep, count)
 				string = string.substr(0, string.length-part.length);
 			}
 			return result;
+		}
+	}
+};
+
+ul4._splitlines = function _splitlines(string, keepends)
+{
+	var lookingAtLineEnd = function lookingAtLineEnd()
+	{
+		var c = string[pos];
+		if (c === '\n' || c == '\u000B' || c == '\u000C' || c == '\u001C' || c == '\u001D' || c == '\u001E' || c == '\u0085' || c == '\u2028' || c == '\u2029')
+			return 1;
+		if (c === '\r')
+		{
+			if (pos == length-1)
+				return 1;
+			if (string[pos+1] === '\n')
+				return 2;
+			return 1;
+		}
+		return 0;
+	};
+
+	var result = [], length = string.length;
+
+	for (var pos = 0, startpos = 0;;)
+	{
+		if (pos >= length)
+		{
+			if (startpos != pos)
+				result.push(string.substring(startpos));
+			return result;
+		}
+		var lineendlen = lookingAtLineEnd();
+		if (!lineendlen)
+			++pos;
+		else
+		{
+			var endpos = pos + (keepends ? lineendlen : 0);
+			result.push(string.substring(startpos, endpos));
+			pos += lineendlen;
+			startpos = pos;
 		}
 	}
 };
