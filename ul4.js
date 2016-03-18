@@ -1847,7 +1847,7 @@ ul4._object_repr = function _object_repr(obj, ascii)
 			v.push(", ");
 		v.push(ul4._repr_internal(key, ascii));
 		v.push(": ");
-		v.push(ul4._repr_internal(obj[key, ascii]));
+		v.push(ul4._repr_internal(obj[key], ascii));
 	}
 	v.push("}");
 	return v.join("");
