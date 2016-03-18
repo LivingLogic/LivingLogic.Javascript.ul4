@@ -569,7 +569,7 @@ ul4on.Decoder = {
 // UL4
 //
 
-ul4.version = "33";
+ul4.version = "34";
 
 // REs for parsing JSON
 ul4._rvalidchars = /^[\],:{}\s]*$/;
