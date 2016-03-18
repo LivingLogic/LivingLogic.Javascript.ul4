@@ -3,8 +3,8 @@
  * http://www.livinglogic.de/Python/ul4c/
  * http://www.livinglogic.de/Python/ul4on/
  *
- * Copyright 2011-2015 by LivingLogic AG, Bayreuth/Germany
- * Copyright 2011-2015 by Walter Dörwald
+ * Copyright 2011-2016 by LivingLogic AG, Bayreuth/Germany
+ * Copyright 2011-2016 by Walter Dörwald
  *
  * All Rights Reserved
  *
