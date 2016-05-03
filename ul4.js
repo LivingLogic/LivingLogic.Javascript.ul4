@@ -33,6 +33,8 @@ var ul4on = {};
 
 var ul4 = {};
 
+ul4.version = "35";
+
 // Protect against someone replacing the ul4on or ul4 objects
 (function(ul4on, ul4){
 
@@ -568,8 +570,6 @@ ul4on.Decoder = {
 //
 // UL4
 //
-
-ul4.version = "34";
 
 // REs for parsing JSON
 ul4._rvalidchars = /^[\],:{}\s]*$/;
@@ -3303,44 +3303,73 @@ ul4.Error = ul4._inherit(
 		{
 			var exception = ul4._clone(this);
 			exception.node = node;
-			exception.template = null; // Will be filled in when the exception bubbles up
 			exception.cause = cause;
 			return exception;
 		},
+
+		_templateprefix: function(template)
+		{
+			if (template.parenttemplate !== null)
+				return "in local template " + ul4._repr(template.name);
+			else if (template.name !== null)
+				return "in template " + ul4._repr(template.name);
+			else
+				return "in unnamed template";
+		},
+
 		toString: function toString()
 		{
-			var templateprefix, pos, text;
-
-			if (this.template !== null)
-			{
-				if (ul4.TemplateClosure.isprotoof(this.template))
-					templateprefix = "in local template " + ul4._repr(this.template.name) + ": ";
-				else if (this.template.name !== null)
-					templateprefix = "in template " + ul4._repr(this.template.name) + ": ";
-				else
-					templateprefix = "in unnamed template: ";
-			}
-			else
-				templateprefix = "";
-
-			pos = "offset " + this.node.startpos + ":" + this.node.endpos;
+			var template, templateprefix, pos, text, underline;
 
 			if (ul4.Tag.isprotoof(this.node))
 			{
-				var code = ul4._repr(this.node._text()).slice(1, -1);
-				text = code;
+				template = this.node.template;
+				text = ul4._repr(this.node._text()).slice(1, -1);
+				underline = ul4._str_repeat("~", text.length);
 			}
 			else
 			{
-				var prefix = this.node.tag.source.substring(this.node.tag.startpos, this.node.startpos);
-				var code = this.node.tag.source.substring(this.node.startpos, this.node.endpos);
-				var suffix = this.node.tag.source.substring(this.node.endpos, this.node.tag.endpos);
+				var startpos, endpos;
+				if (this.node.tag === null) // top level template
+				{
+					template = this.node;
+					startpos = 0;
+					endpos = template.source.length;
+				}
+				else
+				{
+					template = this.node.tag.template;
+					startpos = this.node.tag.startpos;
+					endpos = this.node.tag.endpos;
+				}
+				var prefix = template.source.substring(startpos, this.node.startpos);
+				var code = template.source.substring(this.node.startpos, this.node.endpos);
+				var suffix = template.source.substring(this.node.endpos, endpos);
 				prefix = ul4._repr(prefix).slice(1, -1);
 				code = ul4._repr(code).slice(1, -1);
 				suffix = ul4._repr(suffix).slice(1, -1);
-				text = prefix + code + suffix + "\n" + ul4._str_repeat("\u00a0", prefix.length) + ul4._str_repeat("~", code.length);
+				text = prefix + code + suffix;
+				underline = ul4._str_repeat("\u00a0", prefix.length) + ul4._str_repeat("~", code.length);
 			}
-			return "ul4.Error: " + templateprefix + pos + "\n" + text + "\n\n" + this.cause.toString();
+
+			templateprefix = this._templateprefix(template);
+
+			// find line numbers
+			var lineno = 1, colno = 1;
+			for (var i = 0; i < this.node.startpos; ++i)
+			{
+				if (template.source[i] == "\n")
+				{
+					++lineno;
+					colno = 1;
+				}
+				else
+					++colno;
+			}
+
+			pos = "offset " + this.node.startpos + ":" + this.node.endpos + "; line " + lineno + "; col " + colno;
+
+			return "ul4.Error: " + templateprefix + " " + pos + "\n" + text + "\n" + underline + "\n\n" + this.cause.toString();
 		}
 	}
 );
@@ -3444,16 +3473,16 @@ ul4.AST = ul4._inherit(
 ul4.TextAST = ul4._inherit(
 	ul4.AST,
 	{
-		create: function create(source, startpos, endpos)
+		create: function create(template, startpos, endpos)
 		{
 			var text = ul4.AST.create.call(this, startpos, endpos);
-			text.source = source;
+			text.template = template;
 			return text;
 		},
-		_ul4onattrs: ul4.AST._ul4onattrs.concat(["source"]),
+		_ul4onattrs: ul4.AST._ul4onattrs.concat(["template"]),
 		_text: function _text()
 		{
-			return this.source.substring(this.startpos, this.endpos);
+			return this.template.source.substring(this.startpos, this.endpos);
 		},
 		_eval: function _eval(context)
 		{
@@ -3476,18 +3505,18 @@ ul4.TextAST = ul4._inherit(
 ul4.IndentAST = ul4._inherit(
 	ul4.TextAST,
 	{
-		create: function create(source, startpos, endpos, text)
+		create: function create(template, startpos, endpos, text)
 		{
-			var indent = ul4.TextAST.create.call(this, source, startpos, endpos);
+			var indent = ul4.TextAST.create.call(this, template, startpos, endpos);
 			indent._maketext(text);
 			return indent;
 		},
 		_maketext: function _maketext(text)
 		{
-			if (typeof(this.source) !== "undefined")
+			if (typeof(this.template) !== "undefined")
 			{
 				if (text === null)
-					this.text = this.source.substring(this.startpos, this.endpos);
+					this.text = this.template.source.substring(this.startpos, this.endpos);
 				else
 					this.text = text;
 			}
@@ -3497,7 +3526,7 @@ ul4.IndentAST = ul4._inherit(
 		_text: function _text()
 		{
 			if (this.text === null)
-				return this.source.substring(this.startpos, this.endpos);
+				return this.template.source.substring(this.startpos, this.endpos);
 			else
 				return this.text;
 		},
@@ -3511,7 +3540,7 @@ ul4.IndentAST = ul4._inherit(
 		{
 			ul4.TextAST.ul4ondump.call(this, encoder);
 
-			if (this.text === this.source.substring(this.startpos, this.endpos))
+			if (this.text === this.template.source.substring(this.startpos, this.endpos))
 				encoder.dump(null);
 			else
 				encoder.dump(this.text);
@@ -3556,10 +3585,10 @@ ul4.LineEndAST = ul4._inherit(
 ul4.Tag = ul4._inherit(
 	ul4.AST,
 	{
-		create: function create(source, tag, startpos, endpos, startposcode, endposcode)
+		create: function create(template, tag, startpos, endpos, startposcode, endposcode)
 		{
 			var tago = ul4.AST.create.call(this, startpos, endpos);
-			tago.source = source;
+			tago.template = template;
 			tago.tag = tag;
 			tago.startposcode = startposcode;
 			tago.endposcode = endposcode;
@@ -3568,10 +3597,10 @@ ul4.Tag = ul4._inherit(
 		},
 		_maketext: function _maketext()
 		{
-			if (typeof(this.source) !== "undefined")
+			if (typeof(this.template) !== "undefined")
 			{
-				this.text = this.source.substring(this.startpos, this.endpos);
-				this.code = this.source.substring(this.startposcode, this.endposcode);
+				this.text = this.template.source.substring(this.startpos, this.endpos);
+				this.code = this.template.source.substring(this.startposcode, this.endposcode);
 			}
 			else
 			{
@@ -3582,7 +3611,7 @@ ul4.Tag = ul4._inherit(
 		ul4ondump: function ul4ondump(encoder)
 		{
 			ul4.AST.ul4ondump.call(this, encoder);
-			encoder.dump(this.source);
+			encoder.dump(this.template);
 			encoder.dump(this.tag);
 			encoder.dump(this.startposcode);
 			encoder.dump(this.endposcode);
@@ -3590,7 +3619,7 @@ ul4.Tag = ul4._inherit(
 		ul4onload: function ul4onload(decoder)
 		{
 			ul4.TextAST.ul4onload.call(this, decoder);
-			this.source = decoder.load();
+			this.template = decoder.load();
 			this.tag = decoder.load();
 			this.startposcode = decoder.load();
 			this.endposcode = decoder.load();
@@ -5950,17 +5979,19 @@ ul4.Template = ul4._inherit(
 			template._asts = null;
 			template._ul4_callsignature = signature;
 			template._ul4_rendersignature = signature;
+			template.parenttemplate = null;
 			return template;
 		},
 		ul4ondump: function ul4ondump(encoder)
 		{
 			var signature;
 			encoder.dump(ul4.version);
-			encoder.dump(this.source);
 			encoder.dump(this.name);
+			encoder.dump(this.source);
 			encoder.dump(this.whitespace);
 			encoder.dump(this.startdelim);
 			encoder.dump(this.enddelim);
+			encoder.dump(this.parenttemplate);
 			if (this.signature === null || ul4.SignatureAST.isprotoof(this.signature))
 				signature = this.signature;
 			else
@@ -5989,11 +6020,12 @@ ul4.Template = ul4._inherit(
 
 			if (version !== ul4.version)
 				throw ul4.ValueError.create("invalid version, expected " + ul4.version + ", got " + version);
-			this.source = decoder.load();
 			this.name = decoder.load();
+			this.source = decoder.load();
 			this.whitespace = decoder.load();
 			this.startdelim = decoder.load();
 			this.enddelim = decoder.load();
+			this.parenttemplate = decoder.load();
 			signature = decoder.load();
 			if (ul4._islist(signature))
 				signature = ul4.Signature.create.apply(ul4.Signature, signature);
@@ -6060,10 +6092,7 @@ ul4.Template = ul4._inherit(
 			catch (exc)
 			{
 				if (!ul4.ReturnException.isprotoof(exc))
-				{
-					exc.template = this;
 					throw exc;
-				}
 			}
 		},
 		__render__: function __render__(context, vars)
@@ -6124,10 +6153,7 @@ ul4.Template = ul4._inherit(
 				if (ul4.ReturnException.isprotoof(exc))
 					return exc.result;
 				else
-				{
-					exc.template = this;
 					throw exc;
-				}
 			}
 			return null;
 		},
