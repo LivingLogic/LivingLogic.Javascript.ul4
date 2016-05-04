@@ -3309,12 +3309,22 @@ ul4.Error = ul4._inherit(
 
 		_templateprefix: function(template)
 		{
+			var out = [];
 			if (template.parenttemplate !== null)
-				return "in local template " + ul4._repr(template.name);
-			else if (template.name !== null)
-				return "in template " + ul4._repr(template.name);
+				out.push("in local template ");
 			else
-				return "in unnamed template";
+				out.push("in template ");
+			var first = true;
+			while (template != null)
+			{
+				if (first)
+					first = false;
+				else
+					out.push(" in ");
+				out.push(template.name !== null ? ul4._repr(template.name) : "(unnamed)");
+				template = template.parenttemplate;
+			}
+			return out.join("");
 		},
 
 		toString: function toString()
@@ -3369,7 +3379,7 @@ ul4.Error = ul4._inherit(
 
 			pos = "offset " + this.node.startpos + ":" + this.node.endpos + "; line " + lineno + "; col " + colno;
 
-			return "ul4.Error: " + templateprefix + " " + pos + "\n" + text + "\n" + underline + "\n\n" + this.cause.toString();
+			return "ul4.Error: " + templateprefix + ": " + pos + "\n" + text + "\n" + underline + "\n\n" + this.cause.toString();
 		}
 	}
 );
