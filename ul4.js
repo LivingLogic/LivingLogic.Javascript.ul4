@@ -6144,6 +6144,8 @@ ul4.Template = ul4._inherit(
 					return this.startdelim;
 				case "enddelim":
 					return this.enddelim;
+				case "parenttemplate":
+					return this.parenttemplate;
 				case "renders":
 					return ul4.expose(this.signature, {needscontext: true, needsobject: true}, function renders(context, vars){ return self._rendersbound(context, vars); });
 				default:
