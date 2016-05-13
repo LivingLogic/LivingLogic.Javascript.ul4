@@ -2199,31 +2199,31 @@ ul4._isdate = function _isdate(obj)
 // Check if ``obj`` is a color
 ul4._iscolor = function _iscolor(obj)
 {
-	return Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "color";
+	return (typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4.Color));
 };
 
 // Check if ``obj`` is a timedelta object
 ul4._istimedelta = function _istimedelta(obj)
 {
-	return Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "timedelta";
+	return (typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4.TimeDelta));
 };
 
 // Check if ``obj`` is a monthdelta object
 ul4._ismonthdelta = function _ismonthdelta(obj)
 {
-	return Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "monthdelta";
+	return (typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4.MonthDelta));
 };
 
 // Check if ``obj`` is a template
 ul4._istemplate = function _istemplate(obj)
 {
-	return Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "template";
+	return Object.prototype.toString.call(obj) == "[object Object]" && (obj.__type__ === "ul4.Template" || obj.__type__ === "ul4.TemplateClosure");
 };
 
 // Check if ``obj`` is a function
 ul4._isfunction = function _isfunction(obj)
 {
-	return typeof(obj) === "function" || (Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "template");
+	return typeof(obj) === "function" || (Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "ul4.Template");
 };
 
 // Check if ``obj`` is a list
@@ -2238,9 +2238,15 @@ ul4._isset = function _isset(obj)
 	return Object.prototype.toString.call(obj) == "[object Set]";
 };
 
+// Check if ``obj`` is an exception (at least a UL4 exception)
+ul4._isexception = function _isexception(obj)
+{
+	return (typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4.Exception));
+};
+
 ul4._isul4set = function _isul4set(obj)
 {
-	return Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "set";
+	return (typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4._Set));
 };
 
 // Check if ``obj`` is an iterator
@@ -3211,7 +3217,24 @@ ul4.Context = ul4._inherit(
 
 /// Exceptions
 
-ul4.Exception = ul4._inherit(ul4.Proto, {});
+ul4.Exception = ul4._inherit(
+	ul4.Proto,
+	{
+		__type__: "exception",
+		"cause": null,
+
+		__getattr__: function __getattr__(attrname)
+		{
+			switch (attrname)
+			{
+				case "cause":
+					return this.cause;
+				default:
+					return ul4.undefined;
+			}
+		}
+	}
+);
 
 // Exceptions used internally by UL4 for flow control
 ul4.InternalException = ul4._inherit(ul4.Exception, {});
@@ -3241,7 +3264,7 @@ ul4.LValueRequiredError = ul4._inherit(
 	{
 		toString: function toString()
 		{
-			return "ul4.LValueRequiredError: lvalue required!";
+			return "lvalue required!";
 		}
 	}
 );
@@ -3258,7 +3281,7 @@ ul4.TypeError = ul4._inherit(
 		},
 		toString: function toString()
 		{
-			return "ul4.TypeError: " + this.message;
+			return this.message;
 		}
 	}
 );
@@ -3274,7 +3297,7 @@ ul4.ValueError = ul4._inherit(
 		},
 		toString: function toString()
 		{
-			return "ul4.ValueError: " + this.message;
+			return this.message;
 		}
 	}
 );
@@ -3290,7 +3313,7 @@ ul4.ArgumentError = ul4._inherit(
 		},
 		toString: function toString()
 		{
-			return "ul4.ArgumentError: " + this.message;
+			return this.message;
 		}
 	}
 );
@@ -3299,10 +3322,10 @@ ul4.ArgumentError = ul4._inherit(
 ul4.Error = ul4._inherit(
 	ul4.Exception,
 	{
-		create: function create(node, cause)
+		create: function create(location, cause)
 		{
 			var exception = ul4._clone(this);
-			exception.node = node;
+			exception.location = location;
 			exception.cause = cause;
 			return exception;
 		},
@@ -3327,48 +3350,55 @@ ul4.Error = ul4._inherit(
 			return out.join("");
 		},
 
-		toString: function toString()
+		_template: function _template()
 		{
-			var template, templateprefix, pos, text, underline;
+			if (ul4.Tag.isprotoof(this.location))
+				return this.location.template;
+			else
+				return this.location.tag.template;
+		},
 
-			if (ul4.Tag.isprotoof(this.node))
-			{
-				template = this.node.template;
-				text = ul4._repr(this.node._text()).slice(1, -1);
-				underline = ul4._str_repeat("~", text.length);
-			}
+		_outerpos: function _outerpos()
+		{
+			if (ul4.Tag.isprotoof(this.location))
+				return this.location.pos;
 			else
 			{
-				var startpos, stoppos;
-				if (this.node.tag === null) // top level template
-				{
-					template = this.node;
-					startpos = 0;
-					stoppos = template.source.length;
-				}
+				var tag = this.location.tag;
+				if (tag === null) // A top level template as no tag
+					return this.location.pos;
 				else
-				{
-					template = this.node.tag.template;
-					startpos = this.node.tag.pos.start;
-					stoppos = this.node.tag.pos.stop;
-				}
-				var prefix = template.source.substring(startpos, this.node.pos.start);
-				var code = template.source.substring(this.node.pos.start, this.node.pos.stop);
-				var suffix = template.source.substring(this.node.pos.stop, stoppos);
-				prefix = ul4._repr(prefix).slice(1, -1);
-				code = ul4._repr(code).slice(1, -1);
-				suffix = ul4._repr(suffix).slice(1, -1);
-				text = prefix + code + suffix;
-				underline = ul4._str_repeat("\u00a0", prefix.length) + ul4._str_repeat("~", code.length);
+					return tag.pos;
 			}
+		},
 
-			templateprefix = this._templateprefix(template);
+		_innerpos: function _innerpos()
+		{
+			return this.location.pos;
+		},
+
+		toString: function toString()
+		{
+			var template = this._template();
+			var templateprefix = this._templateprefix(template);
+			var outerpos = this._outerpos();
+			var innerpos = this._innerpos();
+
+			var prefix = template.source.substring(outerpos.start, innerpos.start);
+			var code = template.source.substring(innerpos.start, innerpos.stop);
+			var suffix = template.source.substring(innerpos.stop, outerpos.stop);
+			prefix = ul4._repr(prefix).slice(1, -1);
+			code = ul4._repr(code).slice(1, -1);
+			suffix = ul4._repr(suffix).slice(1, -1);
+			var text = prefix + code + suffix;
+			var underline = ul4._str_repeat("\u00a0", prefix.length) + ul4._str_repeat("~", code.length);
 
 			// find line numbers
 			var lineno = 1, colno = 1;
-			for (var i = 0; i < this.node.pos.start; ++i)
+			console.log(template.source);
+			for (var i = 0; i < innerpos.start; ++i)
 			{
-				if (template.source[i] == "\n")
+				if (template.source[i] === "\n")
 				{
 					++lineno;
 					colno = 1;
@@ -3377,9 +3407,28 @@ ul4.Error = ul4._inherit(
 					++colno;
 			}
 
-			pos = "offset " + this.node.pos.start + ":" + this.node.pos.stop + "; line " + lineno + "; col " + colno;
+			pos = "offset " + this.location.pos.start + ":" + this.location.pos.stop + "; line " + lineno + "; col " + colno;
 
-			return "ul4.Error: " + templateprefix + ": " + pos + "\n" + text + "\n" + underline + "\n\n" + this.cause.toString();
+			return templateprefix + ": " + pos + "\n" + text + "\n" + underline;
+		},
+
+		__getattr__: function __getattr__(attrname)
+		{
+			switch (attrname)
+			{
+				case "cause":
+					return this.cause;
+				case "location":
+					return this.location;
+				case "template":
+					return this._template;
+				case "outerpos":
+					return this._outerpos;
+				case "innerpos":
+					return this._innerpos;
+				default:
+					return ul4.undefined;
+			}
 		}
 	}
 );
@@ -5254,6 +5303,8 @@ ul4.AttrAST = ul4._inherit(
 			{
 				switch (attrname)
 				{
+					case "count":
+						return ul4.expose(["sub", "start=", null, "end=", null], function count(sub, start, end){ return ul4._count(object, sub, start, end); });
 					case "find":
 						return ul4.expose(["sub", "start=", null, "end=", null], function find(sub, start, end){ return ul4._find(object, sub, start, end); });
 					case "rfind":
@@ -5298,6 +5349,8 @@ ul4.AttrAST = ul4._inherit(
 						return ul4.expose(["pos", "*items"], function insert(pos, items){ return ul4._insert(object, pos, items); });
 					case "pop":
 						return ul4.expose(["pos=", -1], function pop(pos){ return ul4._pop(object, pos); });
+					case "count":
+						return ul4.expose(["sub", "start=", null, "end=", null], function count(sub, start, end){ return ul4._count(object, sub, start, end); });
 					case "find":
 						return ul4.expose(["sub", "start=", null, "end=", null], function find(sub, start, end){ return ul4._find(object, sub, start, end); });
 					case "rfind":
@@ -6177,7 +6230,7 @@ ul4.Template = ul4._inherit(
 		{
 			return this._callbound(context, vars);
 		},
-		__type__: "template" // used by ``istemplate()``
+		__type__: "ul4.Template" // used by ``istemplate()``
 	}
 );
 
@@ -6295,7 +6348,7 @@ ul4.TemplateClosure = ul4._inherit(
 					return this.template.__getattr__(attrname);
 			}
 		},
-		__type__: "template" // used by ``istemplate()``
+		__type__: "ul4.TemplateClose" // used by ``istemplate()``
 	}
 );
 
@@ -7018,6 +7071,7 @@ ul4.functions = {
 	islist: ul4.expose(["obj"], {name: "islist"}, ul4._islist),
 	isset: ul4.expose(["obj"], {name: "isset"}, ul4on._haveset ? ul4._isset : ul4._isul4set),
 	isdict: ul4.expose(["obj"], {name: "isdict"}, ul4._isdict),
+	isexception: ul4.expose(["obj"], {name: "isexception"}, ul4._isexception),
 	asjson: ul4.expose(["obj"], {name: "asjson"}, ul4._asjson),
 	fromjson: ul4.expose(["string"], {name: "fromjson"}, ul4._fromjson),
 	asul4on: ul4.expose(["obj"], {name: "asul4on"}, ul4._asul4on),
@@ -7271,6 +7325,63 @@ ul4._splitlines = function _splitlines(string, keepends)
 			pos += lineendlen;
 			startpos = pos;
 		}
+	}
+};
+
+ul4._count = function _count(obj, sub, start, end)
+{
+	if (start < 0)
+		start += obj.length;
+	if (start === null)
+		start = 0;
+
+	if (end < 0)
+		end += obj.length;
+	if (end === null)
+		end = obj.length;
+
+	var isstr = ul4._isstr(obj);
+
+	if (isstr && !sub.length)
+	{
+		if (end < 0 || start > length || start > end)
+			return 0;
+		var result = end - start + 1;
+		if (result > length + 1)
+			result = length + 1;
+		return result;
+	}
+
+	if (start < 0)
+		start = 0;
+	if (end < 0)
+		end = obj.length;
+
+	var count = 0;
+	if (ul4._islist(obj))
+	{
+		for (var i = start; i < end; ++i)
+		{
+			if (ul4._eq(obj[i], sub))
+				++count;
+		}
+		return count;
+	}
+	else // string
+	{
+		var lastIndex = start;
+
+		for (;;)
+		{
+			lastIndex = obj.indexOf(sub, lastIndex);
+			if (lastIndex == -1)
+				break;
+			if (lastIndex + sub.length > end)
+				break;
+			++count;
+			lastIndex += sub.length;
+		}
+		return count;
 	}
 };
 
@@ -7568,7 +7679,7 @@ ul4._update = function _update(obj, others, kwargs)
 ul4.Color = ul4._inherit(
 	ul4.Proto,
 	{
-		__type__: "color",
+		__type__: "ul4.Color",
 
 		create: function create(r, g, b, a)
 		{
@@ -7825,7 +7936,7 @@ ul4.Color = ul4._inherit(
 ul4.TimeDelta = ul4._inherit(
 	ul4.Proto,
 	{
-		__type__: "timedelta",
+		__type__: "ul4.TimeDelta",
 
 		create: function create(days, seconds, microseconds)
 		{
@@ -8096,7 +8207,7 @@ ul4.TimeDelta = ul4._inherit(
 ul4.MonthDelta = ul4._inherit(
 	ul4.Proto,
 	{
-		__type__: "monthdelta",
+		__type__: "ul4.MonthDelta",
 
 		create: function create(months)
 		{
@@ -8277,7 +8388,7 @@ ul4.MonthDelta = ul4._inherit(
 ul4._Set = ul4._inherit(
 	ul4.Proto,
 	{
-		__type__: "set",
+		__type__: "ul4._Set",
 
 		create: function create()
 		{
