@@ -2211,19 +2211,19 @@ ul4._isdate = function _isdate(obj)
 // Check if ``obj`` is a color
 ul4._iscolor = function _iscolor(obj)
 {
-	return (typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4.Color));
+	return (obj !== null && typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4.Color));
 };
 
 // Check if ``obj`` is a timedelta object
 ul4._istimedelta = function _istimedelta(obj)
 {
-	return (typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4.TimeDelta));
+	return (obj !== null && typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4.TimeDelta));
 };
 
 // Check if ``obj`` is a monthdelta object
 ul4._ismonthdelta = function _ismonthdelta(obj)
 {
-	return (typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4.MonthDelta));
+	return obj !== null && typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4.MonthDelta);
 };
 
 // Check if ``obj`` is a template
@@ -2235,7 +2235,7 @@ ul4._istemplate = function _istemplate(obj)
 // Check if ``obj`` is a function
 ul4._isfunction = function _isfunction(obj)
 {
-	return typeof(obj) === "function" || (Object.prototype.toString.call(obj) == "[object Object]" && obj.__type__ === "ul4.Template");
+	return typeof(obj) === "function" || (Object.prototype.toString.call(obj) == "[object Object]" && (obj.__type__ === "ul4.Template" || obj.__type__ === "ul4.TemplateClosure"));
 };
 
 // Check if ``obj`` is a list
@@ -2253,12 +2253,12 @@ ul4._isset = function _isset(obj)
 // Check if ``obj`` is an exception (at least a UL4 exception)
 ul4._isexception = function _isexception(obj)
 {
-	return (typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4.Exception));
+	return obj !== null && typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4.Error);
 };
 
 ul4._isul4set = function _isul4set(obj)
 {
-	return (typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4._Set));
+	return obj !== null && typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4._Set);
 };
 
 // Check if ``obj`` is an iterator
