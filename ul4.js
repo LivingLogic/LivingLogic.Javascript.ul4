@@ -6387,7 +6387,7 @@ ul4.TemplateClosure = ul4._inherit(
 					return this.template.__getattr__(attrname);
 			}
 		},
-		__type__: "ul4.TemplateClose" // used by ``istemplate()``
+		__type__: "ul4.TemplateClosure" // used by ``istemplate()``
 	}
 );
 
