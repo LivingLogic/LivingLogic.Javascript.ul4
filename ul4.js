@@ -3503,8 +3503,8 @@ ul4.AST = ul4._inherit(
 			}
 			catch (exc)
 			{
-				if (!ul4.InternalException.isprotoof(exc) && !ul4.Error.isprotoof(exc))
-					exc = ul4.Error.create(this, exc);
+				if (!ul4.InternalException.isprotoof(exc) && !ul4.LocationError.isprotoof(exc))
+					exc = ul4.LocationError.create(this, exc);
 				throw exc;
 			}
 		},
@@ -3516,8 +3516,8 @@ ul4.AST = ul4._inherit(
 			}
 			catch (exc)
 			{
-				if (!ul4.Error.isprotoof(exc))
-					exc = ul4.Error.create(this, exc);
+				if (!ul4.LocationError.isprotoof(exc))
+					exc = ul4.LocationError.create(this, exc);
 				throw exc;
 			}
 		},
@@ -3533,8 +3533,8 @@ ul4.AST = ul4._inherit(
 			}
 			catch (exc)
 			{
-				if (!ul4.Error.isprotoof(exc))
-					exc = ul4.Error.create(this, exc);
+				if (!ul4.LocationError.isprotoof(exc))
+					exc = ul4.LocationError.create(this, exc);
 				throw exc;
 			}
 		},
@@ -3774,8 +3774,8 @@ ul4.ItemArgBase = ul4._inherit(
 			}
 			catch (exc)
 			{
-				if (!ul4.InternalException.isprotoof(exc) && !ul4.Error.isprotoof(exc))
-					exc = ul4.Error.create(this, exc);
+				if (!ul4.InternalException.isprotoof(exc) && !ul4.LocationError.isprotoof(exc))
+					exc = ul4.LocationError.create(this, exc);
 				throw exc;
 			}
 		},
@@ -3787,8 +3787,8 @@ ul4.ItemArgBase = ul4._inherit(
 			}
 			catch (exc)
 			{
-				if (!ul4.InternalException.isprotoof(exc) && !ul4.Error.isprotoof(exc))
-					exc = ul4.Error.create(this, exc);
+				if (!ul4.InternalException.isprotoof(exc) && !ul4.LocationError.isprotoof(exc))
+					exc = ul4.LocationError.create(this, exc);
 				throw exc;
 			}
 		},
