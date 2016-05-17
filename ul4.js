@@ -3232,7 +3232,7 @@ ul4.Context = ul4._inherit(
 ul4.Exception = ul4._inherit(
 	ul4.Proto,
 	{
-		__type__: "exception",
+		__type__: "ul4.Exception",
 		"cause": null,
 
 		__getattr__: function __getattr__(attrname)
@@ -3255,6 +3255,8 @@ ul4.InternalException = ul4._inherit(ul4.Exception, {});
 ul4.ReturnException = ul4._inherit(
 	ul4.InternalException,
 	{
+		__type__: "ul4.ReturnException",
+
 		create: function create(result)
 		{
 			var exception = ul4._clone(this);
@@ -3264,16 +3266,33 @@ ul4.ReturnException = ul4._inherit(
 	}
 );
 
-ul4.BreakException = ul4._inherit(ul4.InternalException, {});
+ul4.BreakException = ul4._inherit(
+	ul4.InternalException,
+	{
+		__type__: "ul4.BreakException"
+	}
+);
 
-ul4.ContinueException = ul4._inherit(ul4.InternalException, {});
+ul4.ContinueException = ul4._inherit(
+	ul4.InternalException,
+	{
+		__type__: "ul4.ContinueException"
+	}
+);
 
 // Real exceptions raised by various parts of UL4
-ul4.SyntaxError = ul4._inherit(ul4.Exception, {});
+ul4.SyntaxError = ul4._inherit(
+	ul4.Exception,
+	{
+		__type__: "ul4.SyntaxError"
+	}
+);
 
 ul4.LValueRequiredError = ul4._inherit(
 	ul4.SyntaxError,
 	{
+		__type__: "ul4.LValueRequiredError",
+
 		toString: function toString()
 		{
 			return "lvalue required!";
@@ -3284,6 +3303,8 @@ ul4.LValueRequiredError = ul4._inherit(
 ul4.TypeError = ul4._inherit(
 	ul4.Exception,
 	{
+		__type__: "ul4.TypeError",
+
 		create: function create(operation, message)
 		{
 			var exception = ul4._clone(this);
@@ -3301,6 +3322,8 @@ ul4.TypeError = ul4._inherit(
 ul4.ValueError = ul4._inherit(
 	ul4.Exception,
 	{
+		__type__: "ul4.ValueError",
+
 		create: function create(message)
 		{
 			var exception = ul4._clone(this);
@@ -3317,6 +3340,8 @@ ul4.ValueError = ul4._inherit(
 ul4.ArgumentError = ul4._inherit(
 	ul4.Exception,
 	{
+		__type__: "ul4.ArgumentError",
+
 		create: function create(message)
 		{
 			var exception = ul4._clone(this);
@@ -3331,9 +3356,11 @@ ul4.ArgumentError = ul4._inherit(
 );
 
 /// Exception that wraps other exceptions while they bubble up the stack
-ul4.Error = ul4._inherit(
+ul4.LocationError = ul4._inherit(
 	ul4.Exception,
 	{
+		__type__: "ul4.LocationError",
+
 		create: function create(location, cause)
 		{
 			var exception = ul4._clone(this);
@@ -3773,8 +3800,8 @@ ul4.ItemArgBase = ul4._inherit(
 			}
 			catch (exc)
 			{
-				if (!ul4.InternalException.isprotoof(exc) && !ul4.Error.isprotoof(exc))
-					exc = ul4.Error.create(this, exc);
+				if (!ul4.InternalException.isprotoof(exc) && !ul4.LocationError.isprotoof(exc))
+					exc = ul4.LocationError.create(this, exc);
 				throw exc;
 			}
 		},
@@ -3786,8 +3813,8 @@ ul4.ItemArgBase = ul4._inherit(
 			}
 			catch (exc)
 			{
-				if (!ul4.InternalException.isprotoof(exc) && !ul4.Error.isprotoof(exc))
-					exc = ul4.Error.create(this, exc);
+				if (!ul4.InternalException.isprotoof(exc) && !ul4.LocationError.isprotoof(exc))
+					exc = ul4.LocationError.create(this, exc);
 				throw exc;
 			}
 		}
@@ -5520,7 +5547,7 @@ ul4.CallAST = ul4._inherit(
 			}
 			catch (exc)
 			{
-				exc = ul4.Error.create(this, exc);
+				exc = ul4.LocationError.create(this, exc);
 				throw exc;
 			}
 		},
@@ -5594,7 +5621,7 @@ ul4.RenderAST = ul4._inherit(
 			}
 			catch (exc)
 			{
-				exc = ul4.Error.create(this, exc);
+				exc = ul4.LocationError.create(this, exc);
 				throw exc;
 			}
 		}
