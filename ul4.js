@@ -3434,7 +3434,6 @@ ul4.LocationError = ul4._inherit(
 
 			// find line numbers
 			var lineno = 1, colno = 1;
-			console.log(template.source);
 			for (var i = 0; i < innerpos.start; ++i)
 			{
 				if (template.source[i] === "\n")
