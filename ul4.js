@@ -633,6 +633,18 @@ ul4._map2object = function _map2object(obj)
 	return obj;
 };
 
+// Create a pretty stacktrace from an exception
+ul4._stacktrace = function _stacktrace(exc)
+{
+	var output = ul4._type(exc);
+	var s = exc.toString();
+	if (s)
+		output += ": " + s;
+	if (exc.cause)
+		output += "\n\n" + ul4._stacktrace(exc.cause);
+	return output;
+};
+
 // Call a function ``f`` with UL4 argument handling
 ul4._internal_call = function _internal_call(context, f, name, functioncontext, signature, needscontext, needsobject, args, kwargs)
 {
