@@ -633,6 +633,17 @@ ul4._map2object = function _map2object(obj)
 	return obj;
 };
 
+// Clip a number to the range [0;max)
+ul4._bound = function _bound(value, upper)
+{
+	if (value < 0)
+		return 0;
+	else if (value > upper)
+		return upper;
+	else
+		return value;
+};
+
 // Create a pretty stacktrace from an exception
 ul4._stacktrace = function _stacktrace(exc)
 {
@@ -7382,18 +7393,16 @@ ul4._count = function _count(obj, sub, start, end)
 
 	if (isstr && !sub.length)
 	{
-		if (end < 0 || start > length || start > end)
+		if (end < 0 || start > obj.length || start > end)
 			return 0;
 		var result = end - start + 1;
-		if (result > length + 1)
-			result = length + 1;
+		if (result > obj.length + 1)
+			result = obj.length + 1;
 		return result;
 	}
 
-	if (start < 0)
-		start = 0;
-	if (end < 0)
-		end = obj.length;
+	start = ul4._bound(start, obj.length);
+	end = ul4._bound(end, obj.length);
 
 	var count = 0;
 	if (ul4._islist(obj))
@@ -7427,12 +7436,14 @@ ul4._find = function _find(obj, sub, start, end)
 {
 	if (start < 0)
 		start += obj.length;
-	if (start < 0)
-		start = 0;
 	if (start === null)
 		start = 0;
+	if (end < 0)
+		end += obj.length;
 	if (end === null)
 		end = obj.length;
+	start = ul4._bound(start, obj.length);
+	end = ul4._bound(end, obj.length);
 
 	if (start !== 0 || end !== obj.length)
 	{
@@ -7451,12 +7462,14 @@ ul4._rfind = function _rfind(obj, sub, start, end)
 {
 	if (start < 0)
 		start += obj.length;
-	if (start < 0)
-		start = 0;
 	if (start === null)
 		start = 0;
+	if (end < 0)
+		end += obj.length;
 	if (end === null)
 		end = obj.length;
+	start = ul4._bound(start, obj.length);
+	end = ul4._bound(end, obj.length);
 
 	if (start !== 0 || end !== obj.length)
 	{
