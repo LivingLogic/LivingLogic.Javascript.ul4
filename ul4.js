@@ -5452,6 +5452,8 @@ ul4.AttrAST = ul4._inherit(
 						return ul4.expose([], function values(){ return ul4._values(object); });
 					case "update":
 						return ul4.expose(["*other", "**kwargs"], function update(other, kwargs){ return ul4._update(object, other, kwargs); });
+					case "clear":
+						return ul4.expose([], function clear(){ return ul4._clear(object); });
 					default:
 						return object.get(attrname);
 				}
@@ -5462,6 +5464,8 @@ ul4.AttrAST = ul4._inherit(
 				{
 					case "add":
 						return ul4.expose(["*items"], function add(items){ for (var i = 0; i < items.length; ++i) { object.add(items[i]); } } );
+					case "clear":
+						return ul4.expose([], function clear(){ return ul4._clear(object); });
 					default:
 						return ul4.undefined;
 				}
@@ -5478,6 +5482,8 @@ ul4.AttrAST = ul4._inherit(
 						return ul4.expose([], function values(){ return ul4._values(object); });
 					case "update":
 						return ul4.expose(["*other", "**kwargs"], function update(other, kwargs){ return ul4._update(object, other, kwargs); });
+					case "clear":
+						return ul4.expose([], function clear(){ return ul4._clear(object); });
 					default:
 						var result;
 						if (object && typeof(object.__getattr__) === "function") // test this before the generic object test
@@ -7724,6 +7730,22 @@ ul4._update = function _update(obj, others, kwargs)
 	}
 	for (var key in kwargs)
 		set(key, kwargs[key]);
+	return null;
+};
+
+ul4._clear = function _clear(obj)
+{
+	if (ul4._ismap(obj))
+		obj.clear();
+	else if (ul4._isset(obj))
+		obj.clear();
+	else if (ul4._isobject(obj))
+	{
+		for (var key in obj)
+			delete obj[key];
+	}
+	else
+		throw ul4.TypeError.create("clear()", "clear() requires a dict or set");
 	return null;
 };
 
