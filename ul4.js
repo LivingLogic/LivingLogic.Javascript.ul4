@@ -29,14 +29,15 @@
 
 /*jslint vars: true */
 
-var ul4on = {};
+(function(undefined){
 
-var ul4 = {};
+var root = this;
+
+root.ul4 = {};
+
+root.ul4on = {};
 
 ul4.version = "36";
-
-// Protect against someone replacing the ul4on or ul4 objects
-(function(ul4on, ul4){
 
 //
 // UL4ON
@@ -2441,8 +2442,8 @@ ul4._fromjson = function _fromjson(string)
 {
 	// The following is from jQuery's parseJSON function
 	string = ul4._strip(string, null);
-	if (typeof(window) !== "undefined" && window.JSON && window.JSON.parse)
-		return window.JSON.parse(string);
+	if (root.JSON && root.JSON.parse)
+		return root.JSON.parse(string);
 	if (ul4._rvalidchars.test(string.replace(ul4._rvalidescape, "@").replace(ul4._rvalidtokens, "]").replace(ul4._rvalidbraces, "")))
 		return (new Function("return " + string))();
 	throw ul4.TypeError.create("fromjson()", "invalid JSON");
@@ -3253,7 +3254,7 @@ ul4.Exception = ul4._inherit(
 				case "cause":
 					return this.cause;
 				default:
-					return ul4.undefined;
+					return undefined;
 			}
 		}
 	}
@@ -3476,7 +3477,7 @@ ul4.LocationError = ul4._inherit(
 				case "innerpos":
 					return this._innerpos;
 				default:
-					return ul4.undefined;
+					return undefined;
 			}
 		}
 	}
@@ -5385,7 +5386,7 @@ ul4.AttrAST = ul4._inherit(
 					case "endswith":
 						return ul4.expose(["suffix"], function endswith(suffix){ return ul4._endswith(object, suffix); });
 					default:
-						return ul4.undefined;
+						return undefined;
 				}
 			}
 			else if (ul4._islist(object))
@@ -5405,7 +5406,7 @@ ul4.AttrAST = ul4._inherit(
 					case "rfind":
 						return ul4.expose(["sub", "start=", null, "end=", null], function rfind(sub, start, end){ return ul4._rfind(object, sub, start, end); });
 					default:
-						return ul4.undefined;
+						return undefined;
 				}
 			}
 			else if (ul4._isdate(object))
@@ -5437,7 +5438,7 @@ ul4.AttrAST = ul4._inherit(
 					case "yearday":
 						return ul4.expose([], function yearday(){ return ul4._yearday(object); });
 					default:
-						return ul4.undefined;
+						return undefined;
 				}
 			}
 			else if (ul4._ismap(object))
@@ -5467,7 +5468,7 @@ ul4.AttrAST = ul4._inherit(
 					case "clear":
 						return ul4.expose([], function clear(){ return ul4._clear(object); });
 					default:
-						return ul4.undefined;
+						return undefined;
 				}
 			}
 			else if (Object.prototype.toString.call(object) === "[object Object]")
@@ -6253,7 +6254,7 @@ ul4.Template = ul4._inherit(
 				case "renders":
 					return ul4.expose(this.signature, {needscontext: true, needsobject: true}, function renders(context, vars){ return self._rendersbound(context, vars); });
 				default:
-					return ul4.undefined;
+					return undefined;
 			}
 		},
 		_callbound: function _callbound(context, vars)
@@ -7869,7 +7870,7 @@ ul4.Color = ul4._inherit(
 				case "rellum":
 					return ul4.expose(["lum"], function rellum(lum){ return self.rellum(lum); });
 				default:
-					return ul4.undefined;
+					return undefined;
 			}
 		},
 
@@ -8256,7 +8257,7 @@ ul4.TimeDelta = ul4._inherit(
 				case "microseconds":
 					return ul4.expose([], function microseconds(){ return self._microseconds; });
 				default:
-					return ul4.undefined;
+					return undefined;
 			}
 		},
 
@@ -8446,7 +8447,7 @@ ul4.MonthDelta = ul4._inherit(
 				case "months":
 					return ul4.expose([], function months(){ return self._months; });
 				default:
-					return ul4.undefined;
+					return undefined;
 			}
 		},
 
@@ -8487,7 +8488,7 @@ ul4._Set = ul4._inherit(
 				case "add":
 					return ul4.expose(["*items"], function add(items){ self.add.apply(self, items); });
 				default:
-					return ul4.undefined;
+					return undefined;
 			}
 		},
 
@@ -8712,4 +8713,4 @@ for (var i = 0; i < classes.length; ++i)
 	ul4on.register("de.livinglogic.ul4." + ul4onname, object);
 }
 
-})(ul4on, ul4);
+})();
