@@ -6846,8 +6846,14 @@ ul4._round = function _round(x, digits)
 	}
 	else
 		return Math.round(x);
+};
 
-}
+// Return a hex-encode MD5 hash of the argument
+// This uses the m55 function from https://github.com/blueimp/JavaScript-MD5
+ul4._md5 = function _md5(string)
+{
+	return md5(string);
+};
 
 // Return an iterator over ``[index, item]`` lists from the iterable object ``iterable``. ``index`` starts at ``start`` (defaulting to 0)
 ul4._enumerate = function _enumerate(iterable, start)
@@ -7167,7 +7173,8 @@ ul4.functions = {
 	random: ul4.expose([], {name: "random"}, ul4._random),
 	randrange: ul4.expose(["*args"], {name: "randrange"}, ul4._randrange),
 	randchoice: ul4.expose(["sequence"], {name: "randchoice"}, ul4._randchoice),
-	round: ul4.expose(["x", "digit=", 0], {name: "round"}, ul4._round)
+	round: ul4.expose(["x", "digit=", 0], {name: "round"}, ul4._round),
+	md5: ul4.expose(["string"], {name: "md5"}, ul4._md5)
 };
 
 // Functions implementing UL4 methods
