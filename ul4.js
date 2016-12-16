@@ -37,7 +37,7 @@ root.ul4 = {};
 
 root.ul4on = {};
 
-ul4.version = "36";
+ul4.version = "37";
 
 //
 // UL4ON
@@ -232,7 +232,7 @@ ul4on.Encoder = {
 		}
 		else if (ul4._ismap(obj))
 		{
-			this._line("d");
+			this._line("e");
 			++this._level;
 			obj.forEach(function(value, key) {
 				this.dump(key);
@@ -513,8 +513,12 @@ ul4on.Decoder = {
 				return result;
 			case "d":
 			case "D":
+			case "e":
+			case "E":
+				if (!ul4on._havemap && (typecode == "e" || typecode == "E"))
+					throw "ordered dictionaries are not supported!";
 				result = ul4on._havemap ? new Map() : {};
-				if (typecode === "D")
+				if (typecode === "D" || typecode === "E")
 					this.backrefs.push(result);
 				for (;;)
 				{
