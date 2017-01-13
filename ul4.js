@@ -4229,7 +4229,7 @@ ul4.DictAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var result = ul4on._havemap? new Map() : {};
+			var result = ul4on._havemap ? new Map() : {};
 			for (var i = 0; i < this.items.length; ++i)
 				this.items[i]._handle_eval_dict(context, result);
 			return result;
