@@ -31,13 +31,13 @@
 
 (function(undefined){
 
-var root = this;
+var root = this, ul4 = {}, ul4on = {};
 
-root.ul4 = {};
+root.ul4 = ul4;
 
-root.ul4on = {};
+root.ul4on = ul4on;
 
-ul4.version = "37";
+ul4.version = "38";
 
 //
 // UL4ON
@@ -84,15 +84,28 @@ ul4on._makemap = function _makemap()
 	return map;
 };
 
+// Function that creates en empty Map (if supported) or an empty object
+ul4on._emptymap = function _emptymap()
+{
+	return ul4on._havemap ? new Map() : {};
+};
+
+// Function that adds a (key, value) item to a map or object
+ul4on._setmap = function _setmap(map, key, value)
+{
+	if (map.__proto__ === Map.prototype)
+		map.set(key, value);
+	else
+		map[key] = value;
+};
+
 // Function used for making sets, when the Set constructor doesn't work
 ul4on._makeset = function _makeset()
 {
 	var set = this._haveset ? new Set() : ul4._Set.create();
 
 	for (var i = 0; i < arguments.length; ++i)
-	{
 		set.add(arguments[i]);
-	}
 	return set;
 };
 
@@ -517,7 +530,7 @@ ul4on.Decoder = {
 			case "E":
 				if (!ul4on._havemap && (typecode == "e" || typecode == "E"))
 					throw "ordered dictionaries are not supported!";
-				result = ul4on._havemap ? new Map() : {};
+				result = ul4on._emptymap();
 				if (typecode === "D" || typecode === "E")
 					this.backrefs.push(result);
 				for (;;)
@@ -528,10 +541,7 @@ ul4on.Decoder = {
 					this.backup();
 					var key = this.load();
 					var value = this.load();
-					if (ul4on._havemap)
-						result.set(key, value);
-					else
-						result[key] = value;
+					ul4on._setmap(result, key, value);
 				}
 				return result;
 			case "y":
@@ -3930,10 +3940,7 @@ ul4.DictItemAST = ul4._inherit(
 		{
 			var key = this.key._handle_eval(context);
 			var value = this.value._handle_eval(context);
-			if (ul4._ismap(result))
-				result.set(key, value)
-			else
-				result[key] = value;
+			ul4on._setmap(result, key, value);
 		}
 	}
 );
@@ -3964,31 +3971,19 @@ ul4.UnpackDictItemAST = ul4._inherit(
 					if (!ul4._islist(item[i]) || item[i].length != 2)
 						throw ul4.ArgumentError.create("** requires a list of (key, value) pairs");
 					var key = item[i][0], value = item[i][1];
-					if (ul4._ismap(result))
-						result.set(key, value)
-					else
-						result[key] = value;
+					ul4on._setmap(result, key, value);
 				}
 			}
 			else if (ul4._ismap(item))
 			{
 				item.forEach(function(value, key){
-					if (ul4._ismap(result))
-						result.set(key, value)
-					else
-						result[key] = value;
+					ul4on._setmap(result, key, value);
 				});
 			}
 			else if (ul4._isobject(item))
 			{
 				for (var key in item)
-				{
-					var value = item[key];
-					if (ul4._ismap(result))
-						result.set(key, value)
-					else
-						result[key] = value;
-				}
+					ul4on._setmap(result, key, item[key]);
 			}
 		}
 	}
@@ -4229,7 +4224,7 @@ ul4.DictAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var result = ul4on._havemap ? new Map() : {};
+			var result = ul4on._emptymap();
 			for (var i = 0; i < this.items.length; ++i)
 				this.items[i]._handle_eval_dict(context, result);
 			return result;
@@ -4275,43 +4270,21 @@ ul4.DictCompAST = ul4._inherit(
 
 			var localcontext = context.inheritvars();
 
-			var result;
-			if (ul4on._havemap)
+			var result = ul4on._emptymap();
+
+			for (var iter = ul4._iter(container);;)
 			{
-				result = new Map();
-				for (var iter = ul4._iter(container);;)
+				var item = iter.next();
+				if (item.done)
+					break;
+				var varitems = ul4._unpackvar(this.varname, item.value);
+				for (var i = 0; i < varitems.length; ++i)
+					varitems[i][0]._handle_eval_set(localcontext, varitems[i][1]);
+				if (this.condition === null || ul4._bool(this.condition._handle_eval(localcontext)))
 				{
-					var item = iter.next();
-					if (item.done)
-						break;
-					var varitems = ul4._unpackvar(this.varname, item.value);
-					for (var i = 0; i < varitems.length; ++i)
-						varitems[i][0]._handle_eval_set(localcontext, varitems[i][1]);
-					if (this.condition === null || ul4._bool(this.condition._handle_eval(localcontext)))
-					{
-						var key = this.key._handle_eval(localcontext);
-						var value = this.value._handle_eval(localcontext);
-						result.set(key, value);
-					}
-				}
-			}
-			else
-			{
-				result = {};
-				for (var iter = ul4._iter(container);;)
-				{
-					var item = iter.next();
-					if (item.done)
-						break;
-					var varitems = ul4._unpackvar(this.varname, value.value);
-					for (var i = 0; i < varitems.length; ++i)
-						varitems[i][0]._handle_eval_set(localcontext, varitems[i][1]);
-					if (this.condition === null || ul4._bool(this.condition._handle_eval(localcontext)))
-					{
-						var key = this.key._handle_eval(localcontext);
-						var value = this.value._handle_eval(localcontext);
-						result[key] = value;
-					}
+					var key = this.key._handle_eval(localcontext);
+					var value = this.value._handle_eval(localcontext);
+					ul4on._setmap(result, key, value);
 				}
 			}
 
@@ -7703,16 +7676,7 @@ ul4._pop = function _pop(obj, pos)
 
 ul4._update = function _update(obj, others, kwargs)
 {
-	var set;
-	if (ul4._ismap(obj))
-		set = function(key, value){
-			obj.set(key, value);
-		};
-	else if (ul4._isobject(obj))
-		set = function(key, value){
-			obj[key] = value;
-		};
-	else
+	if (!ul4._isdict(obj))
 		throw ul4.TypeError.create("update()", "update() requires a dict");
 	for (var i = 0; i < others.length; ++i)
 	{
@@ -7720,13 +7684,13 @@ ul4._update = function _update(obj, others, kwargs)
 		if (ul4._ismap(other))
 		{
 			other.forEach(function(value, key){
-				set(key, value);
+				ul4on._setmap(obj, key, value);
 			});
 		}
 		else if (ul4._isobject(other))
 		{
 			for (var key in other)
-				set(key, other[key]);
+				ul4on._setmap(obj, key, other[key]);
 		}
 		else if (ul4._islist(other))
 		{
@@ -7734,14 +7698,14 @@ ul4._update = function _update(obj, others, kwargs)
 			{
 				if (!ul4._islist(other[j]) || (other[j].length != 2))
 					throw ul4.TypeError.create("update()", "update() requires a dict or a list of (key, value) pairs");
-				set(other[j][0], other[j][1]);
+				ul4on._setmap(obj, other[j][0], other[j][1]);
 			}
 		}
 		else
 			throw ul4.TypeError.create("update()", "update() requires a dict or a list of (key, value) pairs");
 	}
 	for (var key in kwargs)
-		set(key, kwargs[key]);
+		ul4on._setmap(obj, key, kwargs[key]);
 	return null;
 };
 
