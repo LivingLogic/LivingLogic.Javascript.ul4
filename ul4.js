@@ -3,8 +3,8 @@
  * http://www.livinglogic.de/Python/ul4c/
  * http://www.livinglogic.de/Python/ul4on/
  *
- * Copyright 2011-2016 by LivingLogic AG, Bayreuth/Germany
- * Copyright 2011-2016 by Walter Dörwald
+ * Copyright 2011-2017 by LivingLogic AG, Bayreuth/Germany
+ * Copyright 2011-2017 by Walter Dörwald
  *
  * All Rights Reserved
  *
@@ -37,7 +37,7 @@ root.ul4 = ul4;
 
 root.ul4on = ul4on;
 
-ul4.version = "38";
+ul4.version = "39";
 
 //
 // UL4ON
@@ -6109,6 +6109,9 @@ ul4.Template = ul4._inherit(
 		{
 			var version = decoder.load();
 			var signature;
+
+			if (version === null)
+				throw ul4.ValueError.create("UL4ON doesn't support templates in 'source' format in Javascript implementation");
 
 			if (version !== ul4.version)
 				throw ul4.ValueError.create("invalid version, expected " + ul4.version + ", got " + version);
