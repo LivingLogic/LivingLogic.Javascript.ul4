@@ -6194,6 +6194,10 @@ ul4.Template = ul4._inherit(
 		{
 			this._renderbound(context, vars);
 		},
+		render: function render(context, vars)
+		{
+			this._renderbound(context, vars);
+		},
 		_rendersbound: function _rendersbound(context, vars)
 		{
 			var localcontext = context.replaceoutput();
@@ -6231,6 +6235,8 @@ ul4.Template = ul4._inherit(
 					return this.enddelim;
 				case "parenttemplate":
 					return this.parenttemplate;
+				case "render":
+					return ul4.expose(this.signature, {needscontext: true, needsobject: true}, function render(context, vars){ self._renderbound(context, vars); });
 				case "renders":
 					return ul4.expose(this.signature, {needscontext: true, needsobject: true}, function renders(context, vars){ return self._rendersbound(context, vars); });
 				default:
@@ -6365,6 +6371,10 @@ ul4.TemplateClosure = ul4._inherit(
 		{
 			this.template._renderbound(context, ul4._simpleinherit(this.vars, vars));
 		},
+		render: function render(context, vars)
+		{
+			this.template._renderbound(context, ul4._simpleinherit(this.vars, vars));
+		},
 		__call__: function __call__(context, vars)
 		{
 			return this.template._callbound(context, ul4._simpleinherit(this.vars, vars));
@@ -6378,6 +6388,8 @@ ul4.TemplateClosure = ul4._inherit(
 			var self = this;
 			switch (attrname)
 			{
+				case "render":
+					return ul4.expose(this.signature, {needscontext: true, needsobject: true}, function render(context, vars){ self._renderbound(context, vars); });
 				case "renders":
 					return ul4.expose(this.signature, {needscontext: true, needsobject: true}, function renders(context, vars){ return self._rendersbound(context, vars); });
 				default:
