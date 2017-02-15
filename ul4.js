@@ -6379,6 +6379,10 @@ ul4.TemplateClosure = ul4._inherit(
 		{
 			return this.template._callbound(context, ul4._simpleinherit(this.vars, vars));
 		},
+		_renderbound: function _renderbound(context, vars)
+		{
+			this.template._renderbound(context, ul4._simpleinherit(this.vars, vars));
+		},
 		_rendersbound: function _rendersbound(context, vars)
 		{
 			return this.template._rendersbound(context, ul4._simpleinherit(this.vars, vars));
