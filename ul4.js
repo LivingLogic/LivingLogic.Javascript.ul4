@@ -37,7 +37,7 @@ root.ul4 = ul4;
 
 root.ul4on = ul4on;
 
-ul4.version = "40";
+ul4.version = "41";
 
 //
 // UL4ON
@@ -1977,7 +1977,7 @@ ul4._str = function _str(obj)
 	else if (typeof(obj) === "object" && typeof(obj.__str__) === "function")
 		return obj.__str__();
 	else if (typeof(obj) === "object" && typeof(obj.__repr__) === "function")
-			return obj.__repr__();
+		return obj.__repr__();
 	else if (ul4._isobject(obj))
 		return ul4._object_repr(obj);
 	return "?";
@@ -3140,6 +3140,16 @@ ul4.Signature = ul4._inherit(
 			if (this.remkwargs !== null)
 				argObject[this.remkwargs] = args[i++];
 			return argObject;
+		},
+
+		__repr__: function __repr__()
+		{
+			return "<Signature " + this.toString() + ">";
+		},
+
+		__str__: function __str__()
+		{
+			return this.toString();
 		},
 
 		toString: function toString()
@@ -6242,6 +6252,8 @@ ul4.Template = ul4._inherit(
 					return this.enddelim;
 				case "doc":
 					return this.doc();
+				case "signature":
+					return this.signature;
 				case "parenttemplate":
 					return this.parenttemplate;
 				case "render":
@@ -6406,6 +6418,8 @@ ul4.TemplateClosure = ul4._inherit(
 					return ul4.expose(this.signature, {needscontext: true, needsobject: true}, function render(context, vars){ self._renderbound(context, vars); });
 				case "renders":
 					return ul4.expose(this.signature, {needscontext: true, needsobject: true}, function renders(context, vars){ return self._rendersbound(context, vars); });
+				case "signature":
+					return this.signature;
 				default:
 					return this.template.__getattr__(attrname);
 			}
