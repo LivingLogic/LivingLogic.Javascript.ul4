@@ -37,7 +37,7 @@ root.ul4 = ul4;
 
 root.ul4on = ul4on;
 
-ul4.version = "39";
+ul4.version = "40";
 
 //
 // UL4ON
@@ -6066,6 +6066,7 @@ ul4.Template = ul4._inherit(
 			template.whitespace = whitespace;
 			template.startdelim = startdelim;
 			template.enddelim = enddelim;
+			template.docpos = null;
 			template.signature = signature;
 			template._jsfunction = null;
 			template._asts = null;
@@ -6083,6 +6084,7 @@ ul4.Template = ul4._inherit(
 			encoder.dump(this.whitespace);
 			encoder.dump(this.startdelim);
 			encoder.dump(this.enddelim);
+			encoder.dump(this.docpos);
 			encoder.dump(this.parenttemplate);
 			if (this.signature === null || ul4.SignatureAST.isprotoof(this.signature))
 				signature = this.signature;
@@ -6120,6 +6122,7 @@ ul4.Template = ul4._inherit(
 			this.whitespace = decoder.load();
 			this.startdelim = decoder.load();
 			this.enddelim = decoder.load();
+			this.docpos = decoder.load();
 			this.parenttemplate = decoder.load();
 			signature = decoder.load();
 			if (ul4._islist(signature))
@@ -6212,6 +6215,10 @@ ul4.Template = ul4._inherit(
 				vars = this.signature.bindObject(this.name, [], vars);
 			return this._rendersbound(context, vars);
 		},
+		doc: function doc()
+		{
+			return this.docpos != null ? this.source.substring(this.docpos.start, this.docpos.stop) : null;
+		},
 		__getattr__: function __getattr__(attrname)
 		{
 			var self = this;
@@ -6233,6 +6240,8 @@ ul4.Template = ul4._inherit(
 					return this.startdelim;
 				case "enddelim":
 					return this.enddelim;
+				case "doc":
+					return this.doc();
 				case "parenttemplate":
 					return this.parenttemplate;
 				case "render":
@@ -6360,6 +6369,7 @@ ul4.TemplateClosure = ul4._inherit(
 			closure.source = template.source;
 			closure.startdelim = template.startdelim;
 			closure.enddelim = template.enddelim;
+			closure.docpos = template.docpos;
 			closure.content = template.content;
 			return closure;
 		},
