@@ -124,10 +124,12 @@ ul4on.dumps = function dumps(obj, indent)
 	return encoder.finish();
 },
 
-// Load an object from the string ``data``. ``data`` must contain the object in the UL4ON serialization format
-ul4on.loads = function loads(data)
+// Load an object from the string ``data``.
+// ``data`` must contain the object in the UL4ON serialization format
+// ``registry`` may be null or a dictionary mapping type names to objects with a create method
+ul4on.loads = function loads(data, registry)
 {
-	var decoder = ul4on.Decoder.create(data);
+	var decoder = ul4on.Decoder.create(data, registry);
 	return decoder.load();
 },
 
@@ -284,12 +286,13 @@ ul4on.Encoder = {
 // Helper "class" for decoding
 ul4on.Decoder = {
 	// Creates a new decoder for reading from the string ``data``
-	create: function create(data)
+	create: function create(data, registry)
 	{
 		var decoder = ul4._clone(this);
 		decoder.data = data;
 		decoder.pos = 0;
 		decoder.backrefs = [];
+		decoder.registry = registry;
 		return decoder;
 	},
 
@@ -564,7 +567,15 @@ ul4on.Decoder = {
 				if (typecode === "O")
 					oldpos = this._beginfakeloading();
 				var name = this.load();
-				var proto = ul4on._registry[name];
+				var proto;
+				if (this.registry !== null)
+				{
+					proto = this.registry[name];
+					if (typeof(proto) === "undefined")
+						proto = ul4on._registry[name];
+				}
+				else
+					proto = ul4on._registry[name];
 				if (typeof(proto) === "undefined")
 					throw "can't load object of type " + ul4._repr(name);
 				result = proto();
