@@ -49,26 +49,32 @@ ul4on._havemap = (typeof(Map) === "function" && typeof(Map.prototype.forEach) ==
 
 ul4on._havemapconstructor = false;
 
-try
+if (ul4on._havemap)
 {
-	if (new Map([[1, 2]]).size == 1)
-		ul4on._havemapconstructor = true;
-}
-catch (error)
-{
+	try
+	{
+		if (new Map([[1, 2]]).size == 1)
+			ul4on._havemapconstructor = true;
+	}
+	catch (error)
+	{
+	}
 }
 
 ul4on._haveset = (typeof(Set) === "function" && typeof(Set.prototype.forEach) === "function");
 
 ul4on._havesetconstructor = false;
 
-try
+if (ul4on._haveset)
 {
-	if (new Set([1, 2]).size == 2)
-		ul4on._havesetconstructor = true;
-}
-catch (error)
-{
+	try
+	{
+		if (new Set([1, 2]).size == 2)
+			ul4on._havesetconstructor = true;
+	}
+	catch (error)
+	{
+	}
 }
 
 // Function used for making maps, when the Map constructor doesn't work
@@ -90,24 +96,48 @@ ul4on._emptymap = function _emptymap()
 	return ul4on._havemap ? new Map() : {};
 };
 
-// Function that adds a (key, value) item to a map or object
-ul4on._setmap = function _setmap(map, key, value)
+// Function that adds a (key, value) item to an object (or map)
+if (ul4on._havemap)
 {
-	if (map.__proto__ === Map.prototype)
-		map.set(key, value);
-	else
+	ul4on._setmap = function _setmap(map, key, value)
+	{
+		if (map.__proto__ === Map.prototype)
+			map.set(key, value);
+		else
+			map[key] = value;
+	};
+}
+else
+{
+	ul4on._setmap = function _setmap(map, key, value)
+	{
 		map[key] = value;
-};
+	};
+}
 
-// Function used for making sets, when the Set constructor doesn't work
-ul4on._makeset = function _makeset()
+// Function used for making sets, when the Set constructor doesn't work (or we don't have sets)
+if (ul4on._haveset)
 {
-	var set = this._haveset ? new Set() : ul4._Set.create();
+	ul4on._makeset = function _makeset()
+	{
+		var set = this._haveset ? new Set() : ul4._Set.create();
 
-	for (var i = 0; i < arguments.length; ++i)
-		set.add(arguments[i]);
-	return set;
-};
+		for (var i = 0; i < arguments.length; ++i)
+			set.add(arguments[i]);
+		return set;
+	};
+}
+else
+{
+	ul4on._makeset = function _makeset()
+	{
+		var set = ul4._Set.create();
+
+		for (var i = 0; i < arguments.length; ++i)
+			set.add(arguments[i]);
+		return set;
+	};
+}
 
 // Register the object ``obj`` under the name ``name`` with the UL4ON machinery
 ul4on.register = function register(name, obj)
