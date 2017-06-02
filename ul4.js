@@ -292,7 +292,7 @@ ul4on.Decoder = {
 		decoder.data = data;
 		decoder.pos = 0;
 		decoder.backrefs = [];
-		decoder.registry = registry || null;
+		decoder.registry = typeof(registry) === "undefined" ? null : registry;
 		return decoder;
 	},
 
