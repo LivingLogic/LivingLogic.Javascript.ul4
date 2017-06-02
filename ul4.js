@@ -113,7 +113,7 @@ ul4on._makeset = function _makeset()
 ul4on.register = function register(name, obj)
 {
 	obj.ul4onname = name;
-	this._registry[name] = function(){return obj.create();};
+	ul4on._registry[name] = function(){return obj.create();};
 },
 
 // Return a string that contains the object ``obj`` in the UL4ON serialization format
