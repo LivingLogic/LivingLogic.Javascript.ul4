@@ -549,7 +549,7 @@ ul4on.Decoder = {
 				return result;
 			case "y":
 			case "Y":
-				result = ul4on._haveset ? new Set() : ul4._Set.create();
+				result = ul4on._makeset();
 				if (typecode === "Y")
 					this.backrefs.push(result);
 				for (;;)
