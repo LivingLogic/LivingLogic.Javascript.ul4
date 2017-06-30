@@ -34,7 +34,6 @@
 var root = this, ul4 = {}, ul4on = {};
 
 root.ul4 = ul4;
-
 root.ul4on = ul4on;
 
 ul4.version = "41";
@@ -77,28 +76,21 @@ if (ul4on._haveset)
 	}
 }
 
-// Function used for making maps, when the Map constructor doesn't work
-ul4on._makemap = function _makemap()
-{
-	var map = new Map();
-
-	for (var i = 0; i < arguments.length; ++i)
-	{
-		var argument = arguments[i];
-		map.set(argument[0], argument[1]);
-	}
-	return map;
-};
-
-// Function that creates en empty Map (if supported) or an empty object
-ul4on._emptymap = function _emptymap()
-{
-	return ul4on._havemap ? new Map() : {};
-};
-
-// Function that adds a (key, value) item to an object (or map)
+// helper functions that work with Maps and objects
 if (ul4on._havemap)
 {
+	ul4on._makemap = function _makemap()
+	{
+		var map = new Map();
+
+		for (var i = 0; i < arguments.length; ++i)
+		{
+			var argument = arguments[i];
+			map.set(argument[0], argument[1]);
+		}
+		return map;
+	};
+
 	ul4on._setmap = function _setmap(map, key, value)
 	{
 		if (map.__proto__ === Map.prototype)
@@ -106,38 +98,74 @@ if (ul4on._havemap)
 		else
 			map[key] = value;
 	};
+
+	ul4on._emptymap = function _emptymap()
+	{
+		return new Map();
+	};
+
+	ul4on._getmap = function _getmap(map, key, value)
+	{
+		if (map.__proto__ === Map.prototype)
+			return map.get(key);
+		else
+			return map[key];
+	};
 }
 else
 {
+	ul4on._makemap = function _makemap()
+	{
+		var map = {};
+
+		for (var i = 0; i < arguments.length; ++i)
+		{
+			var argument = arguments[i];
+			map[argument[0]] = argument[1];
+		}
+		return map;
+	};
+
 	ul4on._setmap = function _setmap(map, key, value)
 	{
 		map[key] = value;
+	};
+
+	ul4on._emptymap = function _emptymap()
+	{
+		return {};
+	};
+
+	ul4on._getmap = function _getmap(map, key, value)
+	{
+		return map[key];
 	};
 }
 
 // Function used for making sets, when the Set constructor doesn't work (or we don't have sets)
 if (ul4on._haveset)
 {
-	ul4on._makeset = function _makeset()
+	ul4on._emptyset = function _emptyset()
 	{
-		var set = this._haveset ? new Set() : ul4._Set.create();
-
-		for (var i = 0; i < arguments.length; ++i)
-			set.add(arguments[i]);
-		return set;
+		return new Set();
 	};
 }
 else
 {
 	ul4on._makeset = function _makeset()
 	{
-		var set = ul4._Set.create();
-
-		for (var i = 0; i < arguments.length; ++i)
-			set.add(arguments[i]);
-		return set;
+		return ul4._Set.create();
 	};
 }
+
+ul4on._makeset = function _makeset()
+{
+	var set = ul4on._emptyset();
+
+	for (var i = 0; i < arguments.length; ++i)
+		set.add(arguments[i]);
+	return set;
+};
 
 // Register the object ``obj`` under the name ``name`` with the UL4ON machinery
 ul4on.register = function register(name, obj)
@@ -742,21 +770,21 @@ ul4._callfunction = function _callfunction(context, f, args, kwargs)
 {
 	var name = f._ul4_name || f.name;
 	if (typeof(f._ul4_signature) === "undefined" || typeof(f._ul4_needsobject) === "undefined" || typeof(f._ul4_needscontext) === "undefined")
-		throw ul4.TypeError.create("call", "function " + ul4.repr(f) + " is not callable by UL4");
+		throw ul4.TypeError.create("call", ul4._repr(f) + " is not callable by UL4");
 	return ul4._internal_call(context, f, name, ul4, f._ul4_signature, f._ul4_needscontext, f._ul4_needsobject, args, kwargs);
 }
 
 ul4._callobject = function _callobject(context, obj, args, kwargs)
 {
 	if (typeof(obj._ul4_callsignature) === "undefined" || typeof(obj._ul4_callneedsobject) === "undefined" || typeof(obj._ul4_callneedscontext) === "undefined")
-		throw ul4.TypeError.create("call", ul4.type(obj) + " object is not callable by UL4");
+		throw ul4.TypeError.create("call", ul4._repr(obj) + " is not callable by UL4");
 	return ul4._internal_call(context, obj.__call__, obj.name, obj, obj._ul4_callsignature, obj._ul4_callneedscontext, obj._ul4_callneedsobject, args, kwargs);
 }
 
 ul4._callrender = function _callrender(context, obj, args, kwargs)
 {
 	if (typeof(obj._ul4_rendersignature) === "undefined" || typeof(obj._ul4_renderneedsobject) === "undefined" || typeof(obj._ul4_renderneedscontext) === "undefined")
-		throw ul4.TypeError.create("render", ul4.type(obj) + " object is not renderable by UL4");
+		throw ul4.TypeError.create("render", ul4._repr(obj) + " is not renderable by UL4");
 	return ul4._internal_call(context, obj.__render__, obj.name, obj, obj._ul4_rendersignature, obj._ul4_renderneedscontext, obj._ul4_renderneedsobject, args, kwargs);
 }
 
@@ -2340,20 +2368,32 @@ ul4._isobject = function _isobject(obj)
 	return Object.prototype.toString.call(obj) == "[object Object]" && typeof(obj.__type__) === "undefined";
 };
 
-// Check if ``obj`` is a map
-ul4._ismap = function _ismap(obj)
+if (ul4on._havemap)
 {
-	if (ul4on._havemap)
+	// Check if ``obj`` is a ``Map``
+	ul4._ismap = function _ismap(obj)
+	{
 		return obj !== null && typeof(obj) === "object" && typeof(obj.__proto__) === "object" && obj.__proto__ === Map.prototype;
-	return false;
-};
+	};
 
-// Check if ``obj`` is a dict (i.e. a normal Javascript object or a ``Map``)
-ul4._isdict = function _isdict(obj)
+	// Check if ``obj`` is a dict (i.e. a normal Javascript object or a ``Map``)
+	ul4._isdict = function _isdict(obj)
+	{
+		return ul4._isobject(obj) || ul4._ismap(obj);
+	};
+}
+else
 {
-	return ul4._isobject(obj) || ul4._ismap(obj);
-};
+	ul4._ismap = function _ismap(obj)
+	{
+		return false;
+	};
 
+	ul4._isdict = function _isdict(obj)
+	{
+		return ul4._isobject(obj);
+	};
+}
 
 // Repeat string ``str`` ``rep`` times
 ul4._str_repeat = function _str_repeat(str, rep)
@@ -3156,11 +3196,11 @@ ul4.Signature = ul4._inherit(
 			else
 			{
 				// Yes => Put the unknown ones into an object and add that to the arguments array
-				var remkwargs = {};
+				var remkwargs = ul4on._emptymap();
 				for (var key in kwargs)
 				{
 					if (!this.argNames[key])
-						remkwargs[key] = kwargs[key];
+						ul4on._setmap(remkwargs, key, kwargs[key]);
 				}
 				finalargs.push(remkwargs);
 			}
@@ -3232,6 +3272,316 @@ ul4.expose = function expose(signature, options, f)
 
 	return f;
 };
+
+// Protocol objects for all builtin types
+ul4.Protocol = {
+	attrs: ul4on._emptyset(),
+
+	dir: function dir() {
+		return this.attrs;
+	},
+
+	get: function get(obj)
+	{
+		if (ul4._isstr(obj))
+			return ul4.StrProtocol;
+		else if (ul4._islist(obj))
+			return ul4.ListProtocol;
+		else if (ul4._isset(obj))
+			return ul4.SetProtocol;
+		else if (ul4._ismap(obj))
+			return ul4.MapProtocol;
+		else if (ul4._isobject(obj))
+			return ul4.ObjectProtocol;
+		else if (ul4._isdate(obj))
+			return ul4.DateProtocol;
+		else
+			return ul4.Protocol;
+	},
+
+	getattr: function getattr(obj, attrname)
+	{
+		if (obj === null || typeof(obj) === "undefined")
+			return undefined;
+		else if (typeof(obj.__getattr__) === "function")
+			return obj.__getattr__(attrname);
+		else if (this.attrs.has(attrname))
+		{
+			var attr = this[attrname];
+			var realattr = function realattr() {
+				var args = [obj];
+				args.push.apply(args, arguments);
+				return attr.apply(this, args);
+			};
+			realattr.name = attr.name;
+			realattr._ul4_name = attr._ul4_name || attr.name;
+			realattr._ul4_signature = attr._ul4_signature;
+			realattr._ul4_needsobject = attr._ul4_needsobject;
+			realattr._ul4_needscontext = attr._ul4_needscontext;
+			return realattr;
+		}
+		else
+			return undefined;
+	}
+};
+
+ul4.StrProtocol = ul4._inherit(ul4.Protocol, {
+	name: "str",
+
+	attrs: ul4on._makeset(
+		"split",
+		"rsplit",
+		"splitlines",
+		"strip",
+		"lstrip",
+		"rstrip",
+		"upper",
+		"lower",
+		"capitalize",
+		"startswith",
+		"endswith",
+		"replace",
+		"count",
+		"find",
+		"rfind",
+		"join"
+	),
+
+	count: ul4.expose(["sub", "start=", null, "end=", null], function count(obj, sub, start, end){
+		return ul4._count(obj, sub, start, end);
+	}),
+
+	find: ul4.expose(["sub", "start=", null, "end=", null], function find(obj, sub, start, end){
+		return ul4._find(obj, sub, start, end);
+	}),
+
+	rfind: ul4.expose(["sub", "start=", null, "end=", null], function rfind(obj, sub, start, end){
+		return ul4._rfind(obj, sub, start, end);
+	}),
+
+	replace: ul4.expose(["old", "new", "count=", null], function replace(obj, old, new_, count){
+		return ul4._replace(obj, old, new_, count);
+	}),
+
+	strip: ul4.expose(["chars=", null], function strip(obj, chars){
+		return ul4._strip(obj, chars);
+	}),
+
+	lstrip: ul4.expose(["chars=", null], function lstrip(obj, chars){
+		return ul4._lstrip(obj, chars);
+	}),
+
+	rstrip: ul4.expose(["chars=", null], function rstrip(obj, chars){
+		return ul4._rstrip(obj, chars);
+	}),
+
+	split: ul4.expose(["sep=", null, "count=", null], function split(obj, sep, count){
+		return ul4._split(obj, sep, count);
+	}),
+
+	rsplit: ul4.expose(["sep=", null, "count=", null], function rsplit(obj, sep, count){
+		return ul4._rsplit(obj, sep, count);
+	}),
+
+	splitlines: ul4.expose(["keepends=", false], function splitlines(obj, keepends){
+		return ul4._splitlines(obj, keepends);
+	}),
+
+	lower: ul4.expose([], function lower(obj){
+		return obj.toLowerCase();
+	}),
+
+	upper: ul4.expose([], function upper(obj){
+		return obj.toUpperCase();
+	}),
+
+	capitalize: ul4.expose([], function capitalize(obj){
+		return ul4._capitalize(obj);
+	}),
+
+	join: ul4.expose(["iterable"], function join(obj, iterable){
+		return ul4._join(obj, iterable);
+	}),
+
+	startswith: ul4.expose(["prefix"], function startswith(obj, prefix){
+		return ul4._startswith(obj, prefix);
+	}),
+
+	endswith: ul4.expose(["suffix"], function endswith(obj, suffix){
+		return ul4._endswith(obj, suffix);
+	})
+});
+
+ul4.ListProtocol = ul4._inherit(ul4.Protocol, {
+	name: "list",
+
+	attrs: ul4on._makeset("append", "insert", "pop", "count", "find", "rfind"),
+
+	append: ul4.expose(["*items"], function append(obj, items){
+		return ul4._append(obj, items);
+	}),
+
+	insert: ul4.expose(["pos", "*items"], function insert(obj, pos, items){
+		return ul4._insert(obj, pos, items);
+	}),
+
+	pop: ul4.expose(["pos=", -1], function pop(obj, pos){
+		return ul4._pop(obj, pos);
+	}),
+
+	count: ul4.expose(["sub", "start=", null, "end=", null], function count(obj, sub, start, end){
+		return ul4._count(obj, sub, start, end);
+	}),
+
+	find: ul4.expose(["sub", "start=", null, "end=", null], function find(obj, sub, start, end){
+		return ul4._find(obj, sub, start, end);
+	}),
+
+	rfind: ul4.expose(["sub", "start=", null, "end=", null], function rfind(obj, sub, start, end){
+		return ul4._rfind(obj, sub, start, end);
+	})
+});
+
+
+ul4.MapProtocol = ul4._inherit(ul4.Protocol, {
+	name: "dict",
+
+	attrs: ul4on._makeset("get", "items", "values", "update", "clear"),
+
+	getattr: function getattr(obj, attrname)
+	{
+		if (this.attrs.has(attrname))
+		{
+			var attr = this[attrname];
+			var realattr = function realattr() {
+				var args = [obj];
+				args.push.apply(args, arguments);
+				return attr.apply(this, args);
+			};
+			realattr.name = attr.name;
+			realattr._ul4_name = attr._ul4_name || attr.name;
+			realattr._ul4_signature = attr._ul4_signature;
+			realattr._ul4_needsobject = attr._ul4_needsobject;
+			realattr._ul4_needscontext = attr._ul4_needscontext;
+			return realattr;
+		}
+		else
+			return obj.get(attrname);
+	},
+
+	get: ul4.expose(["key", "default=", null], function get(obj, key, default_){
+		return ul4._get(obj, key, default_);
+	}),
+
+	items: ul4.expose([], function items(obj){
+		return ul4._items(obj);
+	}),
+
+	values: ul4.expose([], function values(obj){
+		return ul4._values(obj);
+	}),
+
+	update: ul4.expose(["*other", "**kwargs"], function update(obj, other, kwargs){
+		return ul4._update(obj, other, kwargs);
+	}),
+
+	clear: ul4.expose([], function clear(obj){
+		return ul4._clear(obj);
+	})
+});
+
+ul4.SetProtocol = ul4._inherit(ul4.Protocol, {
+	name: "set",
+
+	attrs: ul4on._makeset("add", "clear"),
+
+	add: ul4.expose(["*items"], function add(obj, items){
+		for (var i = 0; i < items.length; ++i)
+			obj.add(items[i]);
+	}),
+
+	clear: ul4.expose([], function clear(obj){
+		return ul4._clear(obj);
+	})
+});
+
+ul4.DateProtocol = ul4._inherit(ul4.Protocol, {
+	name: "date",
+
+	attrs: ul4on._makeset("weekday", "week", "day", "month", "year", "hour", "minute", "second", "microsecond", "mimeformat", "isoformat", "yearday"),
+
+	weekday: ul4.expose([], function weekday(obj){
+		return ul4._weekday(obj);
+	}),
+
+	week: ul4.expose(["firstweekday=", null], function week(obj, firstweekday){
+		return ul4._week(obj, firstweekday);
+	}),
+
+	day: ul4.expose([], function day(obj){
+		return obj.getDate();
+	}),
+
+	month: ul4.expose([], function month(obj){
+		return obj.getMonth()+1;
+	}),
+
+	year: ul4.expose([], function year(obj){
+		return obj.getFullYear();
+	}),
+
+	hour: ul4.expose([], function hour(obj){
+		return obj.getHours();
+	}),
+
+	minute: ul4.expose([], function minute(obj){
+		return obj.getMinutes();
+	}),
+
+	second: ul4.expose([], function second(obj){
+		return obj.getSeconds();
+	}),
+
+	microsecond: ul4.expose([], function microsecond(obj){
+		return obj.getMilliseconds() * 1000;
+	}),
+
+	mimeformat: ul4.expose([], function mimeformat(obj){
+		return ul4._mimeformat(obj);
+	}),
+
+	isoformat: ul4.expose([], function isoformat(obj){
+		return ul4._isoformat(obj);
+	}),
+
+	yearday: ul4.expose([], function yearday(obj){
+		return ul4._yearday(obj);
+	})
+});
+
+ul4.ObjectProtocol = ul4._inherit(ul4.Protocol, {
+	name: "dict",
+
+	getattr: function getattr(obj, attrname)
+	{
+		var result;
+		if (obj && typeof(obj.__getattr__) === "function") // test this before the generic object test
+			result = obj.__getattr__(attrname);
+		else
+			result = obj[attrname];
+		if (typeof(result) !== "function")
+			return result;
+		var realresult = function() {
+			// We can use ``apply`` here, as we know that ``obj`` is a real object.
+			return result.apply(obj, arguments);
+		};
+		realresult._ul4_name = result._ul4_name || result.name;
+		realresult._ul4_signature = result._ul4_signature;
+		realresult._ul4_needsobject = result._ul4_needsobject;
+		realresult._ul4_needscontext = result._ul4_needscontext;
+		return realresult;
+	}
+});
 
 ul4.Context = ul4._inherit(
 	ul4.Proto,
@@ -4764,12 +5114,10 @@ ul4.ItemAST = ul4._inherit(
 					return container[key];
 				}
 			}
-			else if (container && typeof(container.__getitem__) === "function") // test this before the generic object test
+			else if (container && typeof(container.__getitem__) === "function") // objects without ``_getitem__`` don't support item access
 				return container.__getitem__(key);
 			else if (ul4._ismap(container))
 				return container.get(key);
-			else if (Object.prototype.toString.call(container) === "[object Object]")
-				return container[key];
 			else
 				throw ul4.TypeError.create("[]", ul4._type(container) + " object is not subscriptable");
 		},
@@ -5379,157 +5727,33 @@ ul4.AttrAST = ul4._inherit(
 		{
 			if (typeof(object) === "string")
 			{
-				switch (attrname)
-				{
-					case "count":
-						return ul4.expose(["sub", "start=", null, "end=", null], function count(sub, start, end){ return ul4._count(object, sub, start, end); });
-					case "find":
-						return ul4.expose(["sub", "start=", null, "end=", null], function find(sub, start, end){ return ul4._find(object, sub, start, end); });
-					case "rfind":
-						return ul4.expose(["sub", "start=", null, "end=", null], function rfind(sub, start, end){ return ul4._rfind(object, sub, start, end); });
-					case "replace":
-						return ul4.expose(["old", "new", "count=", null], function replace(old, new_, count){ return ul4._replace(object, old, new_, count); });
-					case "strip":
-						return ul4.expose(["chars=", null], function strip(chars){ return ul4._strip(object, chars); });
-					case "lstrip":
-						return ul4.expose(["chars=", null], function lstrip(chars){ return ul4._lstrip(object, chars); });
-					case "rstrip":
-						return ul4.expose(["chars=", null], function rstrip(chars){ return ul4._rstrip(object, chars); });
-					case "split":
-						return ul4.expose(["sep=", null, "count=", null], function split(sep, count){ return ul4._split(object, sep, count); });
-					case "rsplit":
-						return ul4.expose(["sep=", null, "count=", null], function rsplit(sep, count){ return ul4._rsplit(object, sep, count); });
-					case "splitlines":
-						return ul4.expose(["keepends=", false], function splitlines(keepends){ return ul4._splitlines(object, keepends); });
-					case "lower":
-						return ul4.expose([], function lower(){ return object.toLowerCase(); });
-					case "upper":
-						return ul4.expose([], function upper(){ return object.toUpperCase(); });
-					case "capitalize":
-						return ul4.expose([], function capitalize(){ return ul4._capitalize(object); });
-					case "join":
-						return ul4.expose(["iterable"], function join(iterable){ return ul4._join(object, iterable); });
-					case "startswith":
-						return ul4.expose(["prefix"], function startswith(prefix){ return ul4._startswith(object, prefix); });
-					case "endswith":
-						return ul4.expose(["suffix"], function endswith(suffix){ return ul4._endswith(object, suffix); });
-					default:
-						return undefined;
-				}
+				var proto = ul4.Protocol.get(object);
+				return proto.getattr(object, attrname);
 			}
 			else if (ul4._islist(object))
 			{
-				switch (attrname)
-				{
-					case "append":
-						return ul4.expose(["*items"], function append(items){ return ul4._append(object, items); });
-					case "insert":
-						return ul4.expose(["pos", "*items"], function insert(pos, items){ return ul4._insert(object, pos, items); });
-					case "pop":
-						return ul4.expose(["pos=", -1], function pop(pos){ return ul4._pop(object, pos); });
-					case "count":
-						return ul4.expose(["sub", "start=", null, "end=", null], function count(sub, start, end){ return ul4._count(object, sub, start, end); });
-					case "find":
-						return ul4.expose(["sub", "start=", null, "end=", null], function find(sub, start, end){ return ul4._find(object, sub, start, end); });
-					case "rfind":
-						return ul4.expose(["sub", "start=", null, "end=", null], function rfind(sub, start, end){ return ul4._rfind(object, sub, start, end); });
-					default:
-						return undefined;
-				}
+				var proto = ul4.Protocol.get(object);
+				return proto.getattr(object, attrname);
 			}
 			else if (ul4._isdate(object))
 			{
-				switch (attrname)
-				{
-					case "weekday":
-						return ul4.expose([], function weekday(){ return ul4._weekday(object); });
-					case "week":
-						return ul4.expose(["firstweekday=", null], function week(firstweekday){ return ul4._week(object, firstweekday); });
-					case "day":
-						return ul4.expose([], function day(){ return object.getDate(); });
-					case "month":
-						return ul4.expose([], function month(){ return object.getMonth()+1; });
-					case "year":
-						return ul4.expose([], function year(){ return object.getFullYear(); });
-					case "hour":
-						return ul4.expose([], function hour(){ return object.getHours(); });
-					case "minute":
-						return ul4.expose([], function minute(){ return object.getMinutes(); });
-					case "second":
-						return ul4.expose([], function second(){ return object.getSeconds(); });
-					case "microsecond":
-						return ul4.expose([], function microsecond(){ return object.getMilliseconds() * 1000; });
-					case "mimeformat":
-						return ul4.expose([], function mimeformat(){ return ul4._mimeformat(object); });
-					case "isoformat":
-						return ul4.expose([], function isoformat(){ return ul4._isoformat(object); });
-					case "yearday":
-						return ul4.expose([], function yearday(){ return ul4._yearday(object); });
-					default:
-						return undefined;
-				}
+				var proto = ul4.Protocol.get(object);
+				return proto.getattr(object, attrname);
 			}
 			else if (ul4._ismap(object))
 			{
-				switch (attrname)
-				{
-					case "get":
-						return ul4.expose(["key", "default=", null], function get(key, default_){ return ul4._get(object, key, default_); });
-					case "items":
-						return ul4.expose([], function items(){ return ul4._items(object); });
-					case "values":
-						return ul4.expose([], function values(){ return ul4._values(object); });
-					case "update":
-						return ul4.expose(["*other", "**kwargs"], function update(other, kwargs){ return ul4._update(object, other, kwargs); });
-					case "clear":
-						return ul4.expose([], function clear(){ return ul4._clear(object); });
-					default:
-						return object.get(attrname);
-				}
+				var proto = ul4.Protocol.get(object);
+				return proto.getattr(object, attrname);
 			}
 			else if (ul4._isset(object))
 			{
-				switch (attrname)
-				{
-					case "add":
-						return ul4.expose(["*items"], function add(items){ for (var i = 0; i < items.length; ++i) { object.add(items[i]); } } );
-					case "clear":
-						return ul4.expose([], function clear(){ return ul4._clear(object); });
-					default:
-						return undefined;
-				}
+				var proto = ul4.Protocol.get(object);
+				return proto.getattr(object, attrname);
 			}
 			else if (Object.prototype.toString.call(object) === "[object Object]")
 			{
-				switch (attrname)
-				{
-					case "get":
-						return ul4.expose(["key", "default=", null], function get(key, default_){ return ul4._get(object, key, default_); });
-					case "items":
-						return ul4.expose([], function items(){ return ul4._items(object); });
-					case "values":
-						return ul4.expose([], function values(){ return ul4._values(object); });
-					case "update":
-						return ul4.expose(["*other", "**kwargs"], function update(other, kwargs){ return ul4._update(object, other, kwargs); });
-					case "clear":
-						return ul4.expose([], function clear(){ return ul4._clear(object); });
-					default:
-						var result;
-						if (object && typeof(object.__getattr__) === "function") // test this before the generic object test
-							result = object.__getattr__(attrname);
-						else
-							result = object[attrname];
-						if (typeof(result) !== "function")
-							return result;
-						var realresult = function() {
-							return result.apply(object, arguments);
-						};
-						realresult._ul4_name = result._ul4_name || result.name;
-						realresult._ul4_signature = result._ul4_signature;
-						realresult._ul4_needsobject = result._ul4_needsobject;
-						realresult._ul4_needscontext = result._ul4_needscontext;
-						return realresult;
-				}
+				var proto = ul4.Protocol.get(object);
+				return proto.getattr(object, attrname);
 			}
 			throw ul4.TypeError.create("get", ul4._type(object) + " object has no readable attributes");
 		},
@@ -5966,15 +6190,6 @@ ul4.WhileBlockAST = ul4._inherit(
 						throw exc;
 				}
 			}
-		},
-		_str: function _str(out)
-		{
-			out.push("while ");
-			ul4.AST._str.call(this, out);
-			out.push(":");
-			out.push(+1);
-			ul4.BlockAST._str.call(this, out);
-			out.push(-1);
 		}
 	}
 );
@@ -6095,13 +6310,6 @@ ul4.ElseBlockAST = ul4._inherit(
 		_execute: function _execute(context)
 		{
 			return true;
-		},
-		_str: function _str(out)
-		{
-			out.push("else:");
-			out.push(+1);
-			ul4.BlockAST._str.call(this, out);
-			out.push(-1);
 		}
 	}
 );
@@ -7788,8 +7996,9 @@ ul4._update = function _update(obj, others, kwargs)
 		else
 			throw ul4.TypeError.create("update()", "update() requires a dict or a list of (key, value) pairs");
 	}
-	for (var key in kwargs)
-		ul4on._setmap(obj, key, kwargs[key]);
+	kwargs.forEach(function(value, key) {
+		ul4on._setmap(obj, key, value);
+	});
 	return null;
 };
 
@@ -8771,5 +8980,4 @@ for (var i = 0; i < classes.length; ++i)
 	object.type = ul4onname;
 	ul4on.register("de.livinglogic.ul4." + ul4onname, object);
 }
-
 })();
