@@ -79,15 +79,12 @@ if (ul4on._haveset)
 // helper functions that work with Maps and objects
 if (ul4on._havemap)
 {
-	ul4on._makemap = function _makemap()
+	ul4on._makemap = function _makemap(...items)
 	{
 		var map = new Map();
 
-		for (var i = 0; i < arguments.length; ++i)
-		{
-			var argument = arguments[i];
-			map.set(argument[0], argument[1]);
-		}
+		for (var i = 0; i < items.length; ++i)
+			map.set(items[i][0], items[i][1]);
 		return map;
 	};
 
@@ -114,15 +111,12 @@ if (ul4on._havemap)
 }
 else
 {
-	ul4on._makemap = function _makemap()
+	ul4on._makemap = function _makemap(...items)
 	{
 		var map = {};
 
-		for (var i = 0; i < arguments.length; ++i)
-		{
-			var argument = arguments[i];
-			map[argument[0]] = argument[1];
-		}
+		for (var i = 0; i < items.length; ++i)
+			map[items[i][0]] = items[i][1];
 		return map;
 	};
 
@@ -158,12 +152,12 @@ else
 	};
 }
 
-ul4on._makeset = function _makeset()
+ul4on._makeset = function _makeset(...items)
 {
 	var set = ul4on._emptyset();
 
-	for (var i = 0; i < arguments.length; ++i)
-		set.add(arguments[i]);
+	for (var i = 0; i < items.length; ++i)
+		set.add(items[i]);
 	return set;
 };
 
@@ -206,7 +200,7 @@ ul4on.Encoder = {
 		return encoder;
 	},
 
-	_line: function _line(line)
+	_line: function _line(line, ...args)
 	{
 		var i, oldindent;
 
@@ -222,12 +216,12 @@ ul4on.Encoder = {
 		}
 		this.data.push(line);
 
-		if (arguments.length > 1)
+		if (args.length)
 		{
 			oldindent = this.indent;
 			this.indent = null;
-			for (i = 1; i < arguments.length; ++i)
-				this.dump(arguments[i]);
+			for (i = 0; i < args.length; ++i)
+				this.dump(args[i]);
 			this.indent = oldindent;
 		}
 
@@ -2536,7 +2530,7 @@ ul4._asjson = function _asjson(obj)
 ul4._fromjson = function _fromjson(string)
 {
 	// The following is from jQuery's parseJSON function
-	string = ul4._strip(string, null);
+	string = ul4._strip(string);
 	if (root.JSON && root.JSON.parse)
 		return root.JSON.parse(string);
 	if (ul4._rvalidchars.test(string.replace(ul4._rvalidescape, "@").replace(ul4._rvalidtokens, "]").replace(ul4._rvalidbraces, "")))
@@ -3093,7 +3087,7 @@ ul4.Proto = {
 ul4.Signature = ul4._inherit(
 	ul4.Proto,
 	{
-		create: function create()
+		create: function create(...args)
 		{
 			var signature = ul4._clone(this);
 			signature.args = [];
@@ -3103,9 +3097,9 @@ ul4.Signature = ul4._inherit(
 
 			var nextDefault = false;
 			var lastArgname = null;
-			for (var i = 0; i < arguments.length; ++i)
+			for (var i = 0; i < args.length; ++i)
 			{
-				var argName = arguments[i];
+				var argName = args[i];
 				if (nextDefault)
 				{
 					signature.args.push({name: lastArgname, defaultValue: argName});
@@ -3308,10 +3302,8 @@ ul4.Protocol = {
 		else if (this.attrs.has(attrname))
 		{
 			var attr = this[attrname];
-			var realattr = function realattr() {
-				var args = [obj];
-				args.push.apply(args, arguments);
-				return attr.apply(this, args);
+			var realattr = function realattr(...args) {
+				return attr.apply(this, [obj, ...args]);
 			};
 			realattr.name = attr.name;
 			realattr._ul4_name = attr._ul4_name || attr.name;
@@ -3418,11 +3410,11 @@ ul4.ListProtocol = ul4._inherit(ul4.Protocol, {
 	attrs: ul4on._makeset("append", "insert", "pop", "count", "find", "rfind"),
 
 	append: ul4.expose(["*items"], function append(obj, items){
-		return ul4._append(obj, items);
+		return ul4._append(obj, ...items);
 	}),
 
 	insert: ul4.expose(["pos", "*items"], function insert(obj, pos, items){
-		return ul4._insert(obj, pos, items);
+		return ul4._insert(obj, pos, ...items);
 	}),
 
 	pop: ul4.expose(["pos=", -1], function pop(obj, pos){
@@ -3453,10 +3445,8 @@ ul4.MapProtocol = ul4._inherit(ul4.Protocol, {
 		if (this.attrs.has(attrname))
 		{
 			var attr = this[attrname];
-			var realattr = function realattr() {
-				var args = [obj];
-				args.push.apply(args, arguments);
-				return attr.apply(this, args);
+			var realattr = function realattr(...args) {
+				return attr.apply(this, [obj, ...args]);
 			};
 			realattr.name = attr.name;
 			realattr._ul4_name = attr._ul4_name || attr.name;
@@ -3571,9 +3561,9 @@ ul4.ObjectProtocol = ul4._inherit(ul4.Protocol, {
 			result = obj[attrname];
 		if (typeof(result) !== "function")
 			return result;
-		var realresult = function() {
+		var realresult = function(...args) {
 			// We can use ``apply`` here, as we know that ``obj`` is a real object.
-			return result.apply(obj, arguments);
+			return result.apply(obj, args);
 		};
 		realresult._ul4_name = result._ul4_name || result.name;
 		realresult._ul4_signature = result._ul4_signature;
@@ -4462,7 +4452,7 @@ ul4.UnpackListArgAST = ul4._inherit(
 		_eval_call: function _eval_call(context, args, kwargs)
 		{
 			var item = this.item._handle_eval(context);
-			args.push.apply(args, item);
+			args.push(...item);
 		}
 	}
 );
@@ -5327,12 +5317,7 @@ ul4.AddAST = ul4._inherit(
 			if (obj1 === null || obj2 === null)
 				throw ul4.TypeError.create("+", ul4._type(this.obj1) + " + " + ul4._type(this.obj2) + " is not supported");
 			if (ul4._islist(obj1) && ul4._islist(obj2))
-			{
-				var result = [];
-				ul4._append(result, obj1);
-				ul4._append(result, obj2);
-				return result;
-			}
+				return [...obj1, ...obj2];
 			else
 				return obj1 + obj2;
 		},
@@ -5340,7 +5325,7 @@ ul4.AddAST = ul4._inherit(
 		{
 			if (ul4._islist(obj1) && ul4._islist(obj2))
 			{
-				ul4._append(obj1, obj2);
+				ul4._append(obj1, ...obj2);
 				return obj1;
 			}
 			else
@@ -6599,7 +6584,7 @@ ul4.SignatureAST = ul4._inherit(
 					args.push(param[1]._handle_eval(context));
 				}
 			}
-			return ul4.Signature.create.apply(ul4.Signature, args);
+			return ul4.Signature.create(...args);
 		},
 		_repr: function _repr(out)
 		{
@@ -6807,11 +6792,8 @@ ul4._max = function _max(obj)
 };
 
 // Return the of the values from the iterable starting with ``start`` (default ``0``)
-ul4._sum = function _sum(iterable, start)
+ul4._sum = function _sum(iterable, start=0)
 {
-	if (typeof(start) === "undefined")
-		start = 0;
-
 	for (var iter = ul4._iter(iterable);;)
 	{
 		var item = iter.next();
@@ -6823,21 +6805,15 @@ ul4._sum = function _sum(iterable, start)
 };
 
 // Return the first value produced by iterating through ``iterable`` (defaulting to ``defaultValue`` if the iterator is empty)
-ul4._first = function _first(iterable, defaultValue)
+ul4._first = function _first(iterable, defaultValue=null)
 {
-	if (typeof(defaultValue) === "undefined")
-		defaultValue = null;
-
 	var item = ul4._iter(iterable).next();
 	return item.done ? defaultValue : item.value;
 };
 
 // Return the last value produced by iterating through ``iterable`` (defaulting to ``defaultValue`` if the iterator is empty)
-ul4._last = function _last(iterable, defaultValue)
+ul4._last = function _last(iterable, defaultValue=null)
 {
-	if (typeof(defaultValue) === "undefined")
-		defaultValue = null;
-
 	var value = defaultValue;
 
 	for (var iter = ul4._iter(iterable);;)
@@ -6851,7 +6827,7 @@ ul4._last = function _last(iterable, defaultValue)
 };
 
 // Return a sorted version of ``iterable``
-ul4._sorted = function _sorted(context, iterable, key, reverse)
+ul4._sorted = function _sorted(context, iterable, key=null, reverse=false)
 {
 	var cmp;
 	if (key === null)
@@ -6900,9 +6876,7 @@ ul4._sorted = function _sorted(context, iterable, key, reverse)
 
 		var result = [];
 		for (var i = 0; i < sort.length; ++i)
-		{
 			result.push(sort[i][2]);
-		}
 		return result;
 	}
 };
@@ -7104,10 +7078,8 @@ ul4._randchoice = function _randchoice(sequence)
 };
 
 // Round a number ``x`` to ``digits`` decimal places (may be negative)
-ul4._round = function _round(x, digits)
+ul4._round = function _round(x, digits=0)
 {
-	if (typeof(digits) === "undefined")
-		digits = 0;
 	if (digits)
 	{
 		var threshhold = Math.pow(10, digits);
@@ -7125,11 +7097,8 @@ ul4._md5 = function _md5(string)
 };
 
 // Return an iterator over ``[index, item]`` lists from the iterable object ``iterable``. ``index`` starts at ``start`` (defaulting to 0)
-ul4._enumerate = function _enumerate(iterable, start)
+ul4._enumerate = function _enumerate(iterable, start=0)
 {
-	if (typeof(start) === "undefined")
-		start = 0;
-
 	return {
 		iter: ul4._iter(iterable),
 		index: start,
@@ -7192,7 +7161,7 @@ ul4._isfirstlast = function _isfirstlast(iterable)
 };
 
 // Return an iterator over ``[index, isfirst, islast, item]`` lists from the iterable object ``iterable`` (``isfirst`` is true for the first item, ``islast`` is true for the last item. Both are false otherwise)
-ul4._enumfl = function _enumfl(iterable, start)
+ul4._enumfl = function _enumfl(iterable, start=0)
 {
 	var iter = ul4._iter(iterable);
 	var i = start;
@@ -7254,31 +7223,19 @@ ul4._abs = function _abs(number)
 };
 
 // Return a ``Date`` object from the arguments passed in
-ul4._date = function _date(year, month, day, hour, minute, second, microsecond)
+ul4._date = function _date(year, month, day, hour=0, minute=0, second=0, microsecond=0)
 {
-	if (typeof(hour) === "undefined")
-		hour = 0;
-
-	if (typeof(minute) === "undefined")
-		minute = 0;
-
-	if (typeof(second) === "undefined")
-		second = 0;
-
-	if (typeof(microsecond) === "undefined")
-		microsecond = 0;
-
 	return new Date(year, month-1, day, hour, minute, second, microsecond/1000);
 };
 
 // Return a ``TimeDelta`` object from the arguments passed in
-ul4._timedelta = function _timedelta(days, seconds, microseconds)
+ul4._timedelta = function _timedelta(days=0, seconds=0, microseconds=0)
 {
 	return this.TimeDelta.create(days, seconds, microseconds);
 };
 
 // Return a ``MonthDelta`` object from the arguments passed in
-ul4._monthdelta = function _monthdelta(months)
+ul4._monthdelta = function _monthdelta(months=0)
 {
 	return this.MonthDelta.create(months);
 };
@@ -7447,7 +7404,7 @@ ul4.functions = {
 };
 
 // Functions implementing UL4 methods
-ul4._replace = function _replace(string, old, new_, count)
+ul4._replace = function _replace(string, old, new_, count=null)
 {
 	if (count === null)
 		count = string.length;
@@ -7468,11 +7425,10 @@ ul4._replace = function _replace(string, old, new_, count)
 	return result.join("");
 };
 
-ul4._strip = function _strip(string, chars)
+ul4._strip = function _strip(string, chars=null)
 {
-	if (chars === null)
-		chars = " \r\n\t";
-	else if (typeof(chars) !== "string")
+	chars = chars || " \r\n\t";
+	if (typeof(chars) !== "string")
 		throw ul4.TypeError.create("strip()", "strip() requires two strings");
 
 	while (string && chars.indexOf(string[0]) >= 0)
@@ -7482,11 +7438,10 @@ ul4._strip = function _strip(string, chars)
 	return string;
 };
 
-ul4._lstrip = function _lstrip(string, chars)
+ul4._lstrip = function _lstrip(string, chars=null)
 {
-	if (chars === null)
-		chars = " \r\n\t";
-	else if (typeof(chars) !== "string")
+	chars = chars || " \r\n\t";
+	if (typeof(chars) !== "string")
 		throw ul4.TypeError.create("lstrip()", "lstrip() requires two strings");
 
 	while (string && chars.indexOf(string[0]) >= 0)
@@ -7494,11 +7449,10 @@ ul4._lstrip = function _lstrip(string, chars)
 	return string;
 };
 
-ul4._rstrip = function _rstrip(string, chars)
+ul4._rstrip = function _rstrip(string, chars=null)
 {
-	if (chars === null)
-		chars = " \r\n\t";
-	else if (typeof(chars) !== "string")
+	chars = chars || " \r\n\t";
+	if (typeof(chars) !== "string")
 		throw ul4.TypeError.create("rstrip()", "rstrip() requires two strings");
 
 	while (string && chars.indexOf(string[string.length-1]) >= 0)
@@ -7506,7 +7460,7 @@ ul4._rstrip = function _rstrip(string, chars)
 	return string;
 };
 
-ul4._split = function _split(string, sep, count)
+ul4._split = function _split(string, sep=null, count=null)
 {
 	if (sep !== null && typeof(sep) !== "string")
 		throw ul4.TypeError.create("split()", "split() requires a string");
@@ -7561,7 +7515,7 @@ ul4._split = function _split(string, sep, count)
 	}
 };
 
-ul4._rsplit = function _rsplit(string, sep, count)
+ul4._rsplit = function _rsplit(string, sep=null, count=null)
 {
 	if (sep !== null && typeof(sep) !== "string")
 		throw ul4.TypeError.create("rsplit()", "rsplit() requires a string as second argument");
@@ -7601,7 +7555,7 @@ ul4._rsplit = function _rsplit(string, sep, count)
 			var result = [];
 			while (string.length)
 			{
-				string = ul4._rstrip(string, null, null);
+				string = ul4._rstrip(string);
 				var part;
 				if (!count--)
 				 	part = string; // Take the rest of the string
@@ -7619,7 +7573,7 @@ ul4._rsplit = function _rsplit(string, sep, count)
 	}
 };
 
-ul4._splitlines = function _splitlines(string, keepends)
+ul4._splitlines = function _splitlines(string, keepends=false)
 {
 	var lookingAtLineEnd = function lookingAtLineEnd()
 	{
@@ -7660,7 +7614,7 @@ ul4._splitlines = function _splitlines(string, keepends)
 	}
 };
 
-ul4._count = function _count(obj, sub, start, end)
+ul4._count = function _count(obj, sub, start=null, end=null)
 {
 	if (start < 0)
 		start += obj.length;
@@ -7715,7 +7669,7 @@ ul4._count = function _count(obj, sub, start, end)
 	}
 };
 
-ul4._find = function _find(obj, sub, start, end)
+ul4._find = function _find(obj, sub, start=null, end=null)
 {
 	if (start < 0)
 		start += obj.length;
@@ -7741,7 +7695,7 @@ ul4._find = function _find(obj, sub, start, end)
 	return result;
 };
 
-ul4._rfind = function _rfind(obj, sub, start, end)
+ul4._rfind = function _rfind(obj, sub, start=null, end=null)
 {
 	if (start < 0)
 		start += obj.length;
@@ -7879,7 +7833,7 @@ ul4._weekday = function _weekday(obj)
 	return d ? d-1 : 6;
 };
 
-ul4._week = function _week(obj, firstweekday)
+ul4._week = function _week(obj, firstweekday=null)
 {
 	if (firstweekday === null)
 		firstweekday = 0;
@@ -7939,14 +7893,14 @@ ul4._yearday = function _yearday(obj)
 	}
 };
 
-ul4._append = function _append(obj, items)
+ul4._append = function _append(obj, ...items)
 {
 	for (var i = 0; i < items.length; ++i)
 		obj.push(items[i]);
 	return null;
 };
 
-ul4._insert = function _insert(obj, pos, items)
+ul4._insert = function _insert(obj, pos, ...items)
 {
 	if (pos < 0)
 		pos += obj.length;
@@ -8023,13 +7977,13 @@ ul4.Color = ul4._inherit(
 	{
 		__type__: "ul4.Color",
 
-		create: function create(r, g, b, a)
+		create: function create(r=0, g=0, b=0, a=255)
 		{
 			var c = ul4._clone(this);
-			c._r = typeof(r) !== "undefined" ? r : 0;
-			c._g = typeof(g) !== "undefined" ? g : 0;
-			c._b = typeof(b) !== "undefined" ? b : 0;
-			c._a = typeof(a) !== "undefined" ? a : 255;
+			c._r = r;
+			c._g = g;
+			c._b = b;
+			c._a = a;
 			return c;
 		},
 
@@ -8280,16 +8234,9 @@ ul4.TimeDelta = ul4._inherit(
 	{
 		__type__: "ul4.TimeDelta",
 
-		create: function create(days, seconds, microseconds)
+		create: function create(days=0, seconds=0, microseconds=0)
 		{
 			var td = ul4._clone(this);
-			if (typeof(days) === "undefined")
-				days = 0;
-			if (typeof(seconds) === "undefined")
-				seconds = 0;
-			if (typeof(microseconds) === "undefined")
-				microseconds = 0;
-
 			var total_microseconds = Math.floor((days * 86400 + seconds)*1000000 + microseconds);
 
 			microseconds = ul4.ModAST._do(total_microseconds, 1000000);
@@ -8551,10 +8498,10 @@ ul4.MonthDelta = ul4._inherit(
 	{
 		__type__: "ul4.MonthDelta",
 
-		create: function create(months)
+		create: function create(months=0)
 		{
 			var md = ul4._clone(this);
-			md._months = typeof(months) !== "undefined" ? months : 0;
+			md._months = months;
 			return md;
 		},
 
@@ -8732,19 +8679,19 @@ ul4._Set = ul4._inherit(
 	{
 		__type__: "ul4._Set",
 
-		create: function create()
+		create: function create(...items)
 		{
 			var set = ul4._clone(this);
 			set.items = {};
-			set.add.apply(set, arguments);
+			set.add(...items);
 			return set;
 		},
 
-		add: function add()
+		add: function add(...items)
 		{
-			for (var i = 0; i < arguments.length; ++i)
+			for (var i = 0; i < items.length; ++i)
 			{
-				this.items[arguments[i]] = true;
+				this.items[items[i]] = true;
 			}
 		},
 
@@ -8754,7 +8701,7 @@ ul4._Set = ul4._inherit(
 			switch (attrname)
 			{
 				case "add":
-					return ul4.expose(["*items"], function add(items){ self.add.apply(self, items); });
+					return ul4.expose(["*items"], function add(items){ self.add(...items); });
 				default:
 					return undefined;
 			}
