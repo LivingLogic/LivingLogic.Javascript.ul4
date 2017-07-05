@@ -152,7 +152,7 @@ if (ul4on._haveset)
 }
 else
 {
-	ul4on._makeset = function _makeset()
+	ul4on._emptyset = function _emptyset()
 	{
 		return ul4._Set.create();
 	};
