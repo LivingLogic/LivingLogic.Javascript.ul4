@@ -1,5 +1,6 @@
 {
 	"compact": true,
+	"comments": false,
 	"plugins": [
 		"transform-async-to-generator",
 		"transform-object-rest-spread",
