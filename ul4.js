@@ -5710,37 +5710,8 @@ ul4.AttrAST = ul4._inherit(
 		},
 		_get: function _get(object, attrname)
 		{
-			if (typeof(object) === "string")
-			{
-				var proto = ul4.Protocol.get(object);
-				return proto.getattr(object, attrname);
-			}
-			else if (ul4._islist(object))
-			{
-				var proto = ul4.Protocol.get(object);
-				return proto.getattr(object, attrname);
-			}
-			else if (ul4._isdate(object))
-			{
-				var proto = ul4.Protocol.get(object);
-				return proto.getattr(object, attrname);
-			}
-			else if (ul4._ismap(object))
-			{
-				var proto = ul4.Protocol.get(object);
-				return proto.getattr(object, attrname);
-			}
-			else if (ul4._isset(object))
-			{
-				var proto = ul4.Protocol.get(object);
-				return proto.getattr(object, attrname);
-			}
-			else if (Object.prototype.toString.call(object) === "[object Object]")
-			{
-				var proto = ul4.Protocol.get(object);
-				return proto.getattr(object, attrname);
-			}
-			throw ul4.TypeError.create("get", ul4._type(object) + " object has no readable attributes");
+			var proto = ul4.Protocol.get(object);
+			return proto.getattr(object, attrname);
 		},
 		_set: function _set(object, attrname, value)
 		{
