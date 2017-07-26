@@ -2198,6 +2198,38 @@ ul4._type = function _type(obj)
 };
 
 
+// Return the attribute with the name ``attrname`` of the object ``obj``
+// If ``obj`` doesn't have such an attribute, return ``default_``
+ul4._getattr = function _getattr(obj, attrname, default_=null)
+{
+	var proto = ul4.Protocol.get(obj);
+	try
+	{
+		return proto.getattr(obj, attrname);
+	}
+	catch (exc)
+	{
+		if (ul4.AttributeError.isprotoof(exc) && exc.obj === obj)
+			return default_;
+		else
+			throw exc;
+	}
+};
+
+// Return wether the object ``obj`` has an attribute with the name ``attrname``
+ul4._hasattr = function _hasattr(obj, attrname)
+{
+	var proto = ul4.Protocol.get(obj);
+	return proto.hasattr(obj, attrname);
+};
+
+// Return the names of the attributes of the object ``obj`` as a set.
+ul4._dir = function _dir(obj)
+{
+	var proto = ul4.Protocol.get(obj);
+	return proto.dir();
+};
+
 // Return whether any of the items in ``iterable`` are true
 ul4._any = function _any(iterable)
 {
@@ -3296,7 +3328,7 @@ ul4.Protocol = {
 	getattr: function getattr(obj, attrname)
 	{
 		if (obj === null || typeof(obj) === "undefined")
-			return undefined;
+			throw ul4.AttributeError.create(obj, attrname);
 		else if (typeof(obj.__getattr__) === "function")
 			return obj.__getattr__(attrname);
 		else if (this.attrs.has(attrname))
@@ -3313,7 +3345,30 @@ ul4.Protocol = {
 			return realattr;
 		}
 		else
-			return undefined;
+			throw ul4.AttributeError.create(obj, attrname);
+	},
+
+	hasattr: function hasattr(obj, attrname)
+	{
+		if (obj === null || typeof(obj) === "undefined")
+			return false;
+		else if (typeof(obj.__getattr__) === "function")
+		{
+			try
+			{
+				obj.__getattr__(attrname);
+				return true;
+			}
+			catch (exc)
+			{
+				if (ul4.AttributeError.isprotoof(exc) && exc.obj === object)
+					return false;
+				else
+					throw exc;
+			}
+		}
+		else
+			return this.attrs.has(attrname);
 	}
 };
 
@@ -3659,7 +3714,7 @@ ul4.Exception = ul4._inherit(
 				case "cause":
 					return this.cause;
 				default:
-					return undefined;
+					throw ul4.AttributeError.create(this, attrname);
 			}
 		}
 	}
@@ -3768,6 +3823,25 @@ ul4.ArgumentError = ul4._inherit(
 		toString: function toString()
 		{
 			return this.message;
+		}
+	}
+);
+
+ul4.AttributeError = ul4._inherit(
+	ul4.Exception,
+	{
+		__type__: "ul4.AttributeError",
+
+		create: function create(obj, attrname)
+		{
+			var exception = ul4._clone(this);
+			exception.obj = obj;
+			exception.attrname = attrname;
+			return exception;
+		},
+		toString: function toString()
+		{
+			return "object of type " + ul4._type(this.obj) + " has no attribute " + ul4._repr(this.attrname);
 		}
 	}
 );
@@ -3882,7 +3956,7 @@ ul4.LocationError = ul4._inherit(
 				case "innerpos":
 					return this._innerpos;
 				default:
-					return undefined;
+					throw ul4.AttributeError.create(this, attrname);
 			}
 		}
 	}
@@ -5711,7 +5785,17 @@ ul4.AttrAST = ul4._inherit(
 		_get: function _get(object, attrname)
 		{
 			var proto = ul4.Protocol.get(object);
-			return proto.getattr(object, attrname);
+			try
+			{
+				return proto.getattr(object, attrname);
+			}
+			catch (exc)
+			{
+				if (ul4.AttributeError.isprotoof(exc) && exc.obj === object)
+					return undefined;
+				else
+					throw exc;
+			}
 		},
 		_set: function _set(object, attrname, value)
 		{
@@ -6466,7 +6550,7 @@ ul4.Template = ul4._inherit(
 				case "renders":
 					return ul4.expose(this.signature, {needscontext: true, needsobject: true}, function renders(context, vars){ return self._rendersbound(context, vars); });
 				default:
-					return undefined;
+					throw ul4.AttributeError.create(this, attrname);
 			}
 		},
 		_callbound: function _callbound(context, vars)
@@ -7314,6 +7398,9 @@ ul4.functions = {
 	any: ul4.expose(["iterable"], {name: "any"}, ul4._any),
 	all: ul4.expose(["iterable"], {name: "all"}, ul4._all),
 	zip: ul4.expose(["*iterables"], {name: "zip"}, ul4._zip),
+	getattr: ul4.expose(["obj", "attrname", "default=", null], {name: "getattr"}, ul4._getattr),
+	hasattr: ul4.expose(["obj", "attrname"], {name: "hasattr"}, ul4._hasattr),
+	dir: ul4.expose(["obj"], {name: "dir"}, ul4._dir),
 	isundefined: ul4.expose(["obj"], {name: "isundefined"}, ul4._isundefined),
 	isdefined: ul4.expose(["obj"], {name: "isdefined"}, ul4._isdefined),
 	isnone: ul4.expose(["obj"], {name: "isnone"}, ul4._isnone),
@@ -8063,7 +8150,7 @@ ul4.Color = ul4._inherit(
 				case "rellum":
 					return ul4.expose(["lum"], function rellum(lum){ return self.rellum(lum); });
 				default:
-					return undefined;
+					throw ul4.AttributeError.create(this, attrname);
 			}
 		},
 
@@ -8443,7 +8530,7 @@ ul4.TimeDelta = ul4._inherit(
 				case "microseconds":
 					return ul4.expose([], function microseconds(){ return self._microseconds; });
 				default:
-					return undefined;
+					throw ul4.AttributeError.create(this, attrname);
 			}
 		},
 
@@ -8633,7 +8720,7 @@ ul4.MonthDelta = ul4._inherit(
 				case "months":
 					return ul4.expose([], function months(){ return self._months; });
 				default:
-					return undefined;
+					throw ul4.AttributeError.create(this, attrname);
 			}
 		},
 
@@ -8674,7 +8761,7 @@ ul4._Set = ul4._inherit(
 				case "add":
 					return ul4.expose(["*items"], function add(items){ self.add(...items); });
 				default:
-					return undefined;
+					throw ul4.AttributeError.create(this, attrname);
 			}
 		},
 
