@@ -3707,6 +3707,12 @@ ul4.Exception = ul4._inherit(
 		__type__: "ul4.Exception",
 		"cause": null,
 
+		create: function create(result)
+		{
+			var exception = ul4._clone(this);
+			return exception;
+		},
+
 		__getattr__: function __getattr__(attrname)
 		{
 			switch (attrname)
@@ -3731,7 +3737,7 @@ ul4.ReturnException = ul4._inherit(
 
 		create: function create(result)
 		{
-			var exception = ul4._clone(this);
+			var exception = ul4.InternalException.create.call(this);
 			exception.result = result;
 			return exception;
 		}
@@ -3823,6 +3829,26 @@ ul4.ArgumentError = ul4._inherit(
 		toString: function toString()
 		{
 			return this.message;
+		}
+	}
+);
+
+ul4.IndexError = ul4._inherit(
+	ul4.Exception,
+	{
+		__type__: "ul4.IndexError",
+
+		create: function create(obj, index)
+		{
+			var exception = ul4._clone(this);
+			exception.obj = obj;
+			exception.index = index;
+			return exception;
+		},
+
+		toString: function toString()
+		{
+			return "index " + this.index + " out of range for " + ul4._type(this.obj);
 		}
 	}
 );
@@ -5161,7 +5187,7 @@ ul4.ItemAST = ul4._inherit(
 		{
 			if (typeof(container) === "string" || ul4._islist(container))
 			{
-				if (typeof(key) === "object" && typeof(key.isa) === "function" && key.isa(ul4.slice))
+				if (ul4.slice.isprotoof(key))
 				{
 					var start = key.start, stop = key.stop;
 					if (typeof(start) === "undefined" || start === null)
@@ -5175,6 +5201,8 @@ ul4.ItemAST = ul4._inherit(
 					var orgkey = key;
 					if (key < 0)
 						key += container.length;
+					if (key < 0 || key >= container.length)
+						throw ul4.IndexError.create(container, orgkey);
 					return container[key];
 				}
 			}
@@ -5189,7 +5217,7 @@ ul4.ItemAST = ul4._inherit(
 		{
 			if (ul4._islist(container))
 			{
-				if (typeof(key) === "object" && typeof(key.isa) === "function" && key.isa(ul4.slice))
+				if (ul4.slice.isprotoof(key))
 				{
 					var start = key.start, stop = key.stop;
 					if (start === null)
@@ -5224,6 +5252,8 @@ ul4.ItemAST = ul4._inherit(
 					var orgkey = key;
 					if (key < 0)
 						key += container.length;
+					if (key < 0 || key >= container.length)
+						throw ul4.IndexError.create(container, orgkey);
 					container[key] = value;
 				}
 			}
