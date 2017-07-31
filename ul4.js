@@ -36,7 +36,7 @@ var root = this, ul4 = {}, ul4on = {};
 root.ul4 = ul4;
 root.ul4on = ul4on;
 
-ul4.version = "41";
+ul4.version = "42";
 
 //
 // UL4ON
