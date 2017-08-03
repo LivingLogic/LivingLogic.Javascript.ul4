@@ -256,7 +256,8 @@ ul4on.Encoder = {
 			else
 			{
 				this._strings2index[obj] = this._backrefs++;
-				this._line("S" + ul4._str_repr(obj));
+				var dump = ul4._str_repr(obj).replace("<", "\\x3c")
+				this._line("S" + dump);
 			}
 		}
 		else if (ul4._iscolor(obj))
@@ -2461,6 +2462,9 @@ ul4._str_json = function _str_json(str)
 				break;
 			case '"':
 				result += '\\"';
+				break;
+			case '<':
+				result += '\\u003c';
 				break;
 			default:
 				var code = str.charCodeAt(i);
