@@ -7177,7 +7177,7 @@ ul4._round = function _round(x, digits=0)
 };
 
 // Return a hex-encode MD5 hash of the argument
-// This uses the m55 function from https://github.com/blueimp/JavaScript-MD5
+// This uses the md5 function from https://github.com/blueimp/JavaScript-MD5
 ul4._md5 = function _md5(string)
 {
 	return md5(string);
