@@ -166,7 +166,7 @@ ul4on.register = function register(name, obj)
 {
 	obj.ul4onname = name;
 	ul4on._registry[name] = function(){return obj.create();};
-},
+};
 
 // Return a string that contains the object ``obj`` in the UL4ON serialization format
 ul4on.dumps = function dumps(obj, indent)
@@ -174,7 +174,7 @@ ul4on.dumps = function dumps(obj, indent)
 	var encoder = ul4on.Encoder.create(indent);
 	encoder.dump(obj);
 	return encoder.finish();
-},
+};
 
 // Load an object from the string ``data``.
 // ``data`` must contain the object in the UL4ON serialization format
@@ -183,7 +183,7 @@ ul4on.loads = function loads(data, registry)
 {
 	var decoder = ul4on.Decoder.create(data, registry);
 	return decoder.load();
-},
+};
 
 // Helper "class" for encoding
 ul4on.Encoder = {
@@ -256,7 +256,7 @@ ul4on.Encoder = {
 			else
 			{
 				this._strings2index[obj] = this._backrefs++;
-				var dump = ul4._str_repr(obj).replace("<", "\\x3c")
+				var dump = ul4._str_repr(obj).replace("<", "\\x3c");
 				this._line("S" + dump);
 			}
 		}
@@ -408,7 +408,7 @@ ul4on.Decoder = {
 			else
 			{
 				var result = parseFloat(value);
-				if (result == NaN)
+				if (isNaN(result))
 					throw "invalid number, got " + ul4._repr("value") + " at position " + this.pos;
 				return result;
 			}
@@ -767,21 +767,21 @@ ul4._callfunction = function _callfunction(context, f, args, kwargs)
 	if (typeof(f._ul4_signature) === "undefined" || typeof(f._ul4_needsobject) === "undefined" || typeof(f._ul4_needscontext) === "undefined")
 		throw ul4.TypeError.create("call", ul4._repr(f) + " is not callable by UL4");
 	return ul4._internal_call(context, f, name, ul4, f._ul4_signature, f._ul4_needscontext, f._ul4_needsobject, args, kwargs);
-}
+};
 
 ul4._callobject = function _callobject(context, obj, args, kwargs)
 {
 	if (typeof(obj._ul4_callsignature) === "undefined" || typeof(obj._ul4_callneedsobject) === "undefined" || typeof(obj._ul4_callneedscontext) === "undefined")
 		throw ul4.TypeError.create("call", ul4._repr(obj) + " is not callable by UL4");
 	return ul4._internal_call(context, obj.__call__, obj.name, obj, obj._ul4_callsignature, obj._ul4_callneedscontext, obj._ul4_callneedsobject, args, kwargs);
-}
+};
 
 ul4._callrender = function _callrender(context, obj, args, kwargs)
 {
 	if (typeof(obj._ul4_rendersignature) === "undefined" || typeof(obj._ul4_renderneedsobject) === "undefined" || typeof(obj._ul4_renderneedscontext) === "undefined")
 		throw ul4.TypeError.create("render", ul4._repr(obj) + " is not renderable by UL4");
 	return ul4._internal_call(context, obj.__render__, obj.name, obj, obj._ul4_rendersignature, obj._ul4_renderneedscontext, obj._ul4_renderneedsobject, args, kwargs);
-}
+};
 
 ul4._call = function _call(context, f, args, kwargs)
 {
@@ -791,7 +791,7 @@ ul4._call = function _call(context, f, args, kwargs)
 		return ul4._callobject(context, f, args, kwargs);
 	else
 		throw ul4.TypeError.create("call", ul4._type(f) + " is not callable");
-}
+};
 
 ul4._unpackvar = function _unpackvar(lvalue, value)
 {
@@ -867,7 +867,7 @@ ul4._eq = function _eq(obj1, obj2)
 	else if (numbertypes.indexOf(typeof(obj1)) != -1)
 	{
 		if (numbertypes.indexOf(typeof(obj2)) != -1)
-			return obj1 == obj2
+			return obj1 == obj2;
 		else
 			return false;
 	}
@@ -1038,7 +1038,7 @@ ul4._ne = function _ne(obj1, obj2)
 		return obj2.__ne__(obj1);
 	else
 		return !ul4._eq(obj1, obj2);
-}
+};
 
 ul4._unorderable = function _unorderable(operator, obj1, obj2)
 {
@@ -1184,7 +1184,7 @@ ul4._cmp = function _cmp(operator, obj1, obj2)
 	}
 	else
 		ul4._unorderable(operator, obj1, obj2);
-}
+};
 
 // Return whether ``obj1 < obj2``
 ul4._lt = function _lt(obj1, obj2)
@@ -1993,12 +1993,12 @@ ul4._repr_internal = function _repr_internal(obj, ascii)
 ul4._repr = function _repr(obj)
 {
 	return ul4._repr_internal(obj, false);
-}
+};
 
 ul4._ascii = function _ascii(obj)
 {
 	return ul4._repr_internal(obj, true);
-}
+};
 
 ul4._date_str = function _date_str(obj)
 {
@@ -4024,7 +4024,7 @@ ul4.AST = ul4._inherit(
 			catch (exc)
 			{
 				if (!ul4.InternalException.isprotoof(exc) && !ul4.LocationError.isprotoof(exc))
-					exc = ul4.LocationError.create(this, exc);
+					throw ul4.LocationError.create(this, exc);
 				throw exc;
 			}
 		},
@@ -4037,7 +4037,7 @@ ul4.AST = ul4._inherit(
 			catch (exc)
 			{
 				if (!ul4.LocationError.isprotoof(exc))
-					exc = ul4.LocationError.create(this, exc);
+					throw ul4.LocationError.create(this, exc);
 				throw exc;
 			}
 		},
@@ -4054,7 +4054,7 @@ ul4.AST = ul4._inherit(
 			catch (exc)
 			{
 				if (!ul4.LocationError.isprotoof(exc))
-					exc = ul4.LocationError.create(this, exc);
+					throw ul4.LocationError.create(this, exc);
 				throw exc;
 			}
 		},
@@ -4295,7 +4295,7 @@ ul4.ItemArgBase = ul4._inherit(
 			catch (exc)
 			{
 				if (!ul4.InternalException.isprotoof(exc) && !ul4.LocationError.isprotoof(exc))
-					exc = ul4.LocationError.create(this, exc);
+					throw ul4.LocationError.create(this, exc);
 				throw exc;
 			}
 		},
@@ -4308,7 +4308,7 @@ ul4.ItemArgBase = ul4._inherit(
 			catch (exc)
 			{
 				if (!ul4.InternalException.isprotoof(exc) && !ul4.LocationError.isprotoof(exc))
-					exc = ul4.LocationError.create(this, exc);
+					throw ul4.LocationError.create(this, exc);
 				throw exc;
 			}
 		},
@@ -4321,7 +4321,7 @@ ul4.ItemArgBase = ul4._inherit(
 			catch (exc)
 			{
 				if (!ul4.InternalException.isprotoof(exc) && !ul4.LocationError.isprotoof(exc))
-					exc = ul4.LocationError.create(this, exc);
+					throw ul4.LocationError.create(this, exc);
 				throw exc;
 			}
 		},
@@ -4334,7 +4334,7 @@ ul4.ItemArgBase = ul4._inherit(
 			catch (exc)
 			{
 				if (!ul4.InternalException.isprotoof(exc) && !ul4.LocationError.isprotoof(exc))
-					exc = ul4.LocationError.create(this, exc);
+					throw ul4.LocationError.create(this, exc);
 				throw exc;
 			}
 		}
@@ -4977,7 +4977,7 @@ ul4.VarAST = ul4._inherit(
 		},
 		_modify: function _modify(context, operator, name, value)
 		{
-			var newvalue = operator._ido(context.get(name), value)
+			var newvalue = operator._ido(context.get(name), value);
 			context.set(name, newvalue);
 		}
 	}
@@ -5563,7 +5563,7 @@ ul4.MulAST = ul4._inherit(
 					var i = 0;
 					var targetsize = obj1.length * obj2;
 					while (obj1.length < targetsize)
-						obj1.push(obj1[i++])
+						obj1.push(obj1[i++]);
 				}
 				else
 					obj1.splice(0, obj1.length);
@@ -5836,7 +5836,7 @@ ul4.AttrAST = ul4._inherit(
 			if (typeof(object) === "object" && typeof(object.__setattr__) === "function")
 				object.__setattr__(attrname, value);
 			else if (ul4._ismap(object))
-				object.set(attrname, value)
+				object.set(attrname, value);
 			else if (ul4._isobject(object))
 				object[attrname] = value;
 			else
@@ -5890,8 +5890,7 @@ ul4.CallAST = ul4._inherit(
 			}
 			catch (exc)
 			{
-				exc = ul4.LocationError.create(this, exc);
-				throw exc;
+				throw ul4.LocationError.create(this, exc);
 			}
 		},
 		_eval: function _eval(context)
@@ -5964,8 +5963,7 @@ ul4.RenderAST = ul4._inherit(
 			}
 			catch (exc)
 			{
-				exc = ul4.LocationError.create(this, exc);
-				throw exc;
+				throw ul4.LocationError.create(this, exc);
 			}
 		}
 	}
@@ -6234,7 +6232,7 @@ ul4.WhileBlockAST = ul4._inherit(
 		},
 		_str: function _str(out)
 		{
-			out.push("while "),
+			out.push("while ");
 			this.container._repr(out);
 			out.push(":");
 			out.push(+1);
@@ -6376,7 +6374,7 @@ ul4.ElseBlockAST = ul4._inherit(
 		},
 		_str: function _str(out)
 		{
-			out.push("else:"),
+			out.push("else:");
 			out.push(+1);
 			ul4.BlockAST._str.call(this, out);
 			out.push(-1);
@@ -6927,14 +6925,14 @@ ul4._sorted = function _sorted(context, iterable, key=null, reverse=false)
 			cmp = function cmp(a, b)
 			{
 				return -ul4._cmp("<=>", a, b);
-			}
+			};
 		}
 		else
 		{
 			cmp = function cmp(a, b)
 			{
 				return ul4._cmp("<=>", a, b);
-			}
+			};
 		}
 		var result = ul4._list(iterable);
 		result.sort(cmp);
@@ -6959,7 +6957,7 @@ ul4._sorted = function _sorted(context, iterable, key=null, reverse=false)
 				return reverse ? -res : res;
 			res = ul4._cmp(s1[1], s2[1]);
 			return reverse ? -res : res;
-		}
+		};
 
 		sort.sort(cmp);
 
