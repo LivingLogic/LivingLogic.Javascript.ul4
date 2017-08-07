@@ -81,9 +81,9 @@ if (ul4on._havemap)
 {
 	ul4on._makemap = function _makemap(...items)
 	{
-		var map = new Map();
+		let map = new Map();
 
-		for (var i = 0; i < items.length; ++i)
+		for (let i = 0; i < items.length; ++i)
 			map.set(items[i][0], items[i][1]);
 		return map;
 	};
@@ -113,9 +113,9 @@ else
 {
 	ul4on._makemap = function _makemap(...items)
 	{
-		var map = {};
+		let map = {};
 
-		for (var i = 0; i < items.length; ++i)
+		for (let i = 0; i < items.length; ++i)
 			map[items[i][0]] = items[i][1];
 		return map;
 	};
@@ -154,9 +154,9 @@ else
 
 ul4on._makeset = function _makeset(...items)
 {
-	var set = ul4on._emptyset();
+	let set = ul4on._emptyset();
 
-	for (var i = 0; i < items.length; ++i)
+	for (let i = 0; i < items.length; ++i)
 		set.add(items[i]);
 	return set;
 };
@@ -171,7 +171,7 @@ ul4on.register = function register(name, obj)
 // Return a string that contains the object ``obj`` in the UL4ON serialization format
 ul4on.dumps = function dumps(obj, indent)
 {
-	var encoder = ul4on.Encoder.create(indent);
+	let encoder = ul4on.Encoder.create(indent);
 	encoder.dump(obj);
 	return encoder.finish();
 };
@@ -181,7 +181,7 @@ ul4on.dumps = function dumps(obj, indent)
 // ``registry`` may be null or a dictionary mapping type names to objects with a create method
 ul4on.loads = function loads(data, registry)
 {
-	var decoder = ul4on.Decoder.create(data, registry);
+	let decoder = ul4on.Decoder.create(data, registry);
 	return decoder.load();
 };
 
@@ -190,7 +190,7 @@ ul4on.Encoder = {
 	// Create a new Encoder object
 	create: function create(indent)
 	{
-		var encoder = ul4._clone(this);
+		let encoder = ul4._clone(this);
 		encoder.indent = indent || null;
 		encoder.data = [];
 		encoder._level = 0;
@@ -202,11 +202,9 @@ ul4on.Encoder = {
 
 	_line: function _line(line, ...args)
 	{
-		var i, oldindent;
-
 		if (this.indent !== null)
 		{
-			for (i = 0; i < this._level; ++i)
+			for (let i = 0; i < this._level; ++i)
 				this.data.push(this.indent);
 		}
 		else
@@ -218,9 +216,9 @@ ul4on.Encoder = {
 
 		if (args.length)
 		{
-			oldindent = this.indent;
+			let oldindent = this.indent;
 			this.indent = null;
-			for (i = 0; i < args.length; ++i)
+			for (let i = 0; i < args.length; ++i)
 				this.dump(args[i]);
 			this.indent = oldindent;
 		}
@@ -243,12 +241,12 @@ ul4on.Encoder = {
 			this._line(obj ? "bT" : "bF");
 		else if (typeof(obj) == "number")
 		{
-			var type = (Math.round(obj) == obj) ? "i" : "f";
+			let type = (Math.round(obj) == obj) ? "i" : "f";
 			this._line(type + obj);
 		}
 		else if (typeof(obj) == "string")
 		{
-			var index = this._strings2index[obj];
+			let index = this._strings2index[obj];
 			if (typeof(index) !== "undefined")
 			{
 				this._line("^" + index);
@@ -256,7 +254,7 @@ ul4on.Encoder = {
 			else
 			{
 				this._strings2index[obj] = this._backrefs++;
-				var dump = ul4._str_repr(obj).replace("<", "\\x3c");
+				let dump = ul4._str_repr(obj).replace("<", "\\x3c");
 				this._line("S" + dump);
 			}
 		}
@@ -274,7 +272,7 @@ ul4on.Encoder = {
 		{
 			if (obj.__id__)
 			{
-				var index = this._ids2index[obj.__id__];
+				let index = this._ids2index[obj.__id__];
 				if (typeof(index) != "undefined")
 				{
 					this._line("^" + index);
@@ -293,7 +291,7 @@ ul4on.Encoder = {
 		{
 			this._line("l");
 			++this._level;
-			for (var i in obj)
+			for (let i = 0; i < obj.length; ++i)
 				this.dump(obj[i]);
 			--this._level;
 			this._line("]");
@@ -313,7 +311,7 @@ ul4on.Encoder = {
 		{
 			this._line("d");
 			++this._level;
-			for (var key in obj)
+			for (let key in obj)
 			{
 				this.dump(key);
 				this.dump(obj[key]);
@@ -341,7 +339,7 @@ ul4on.Decoder = {
 	// Creates a new decoder for reading from the string ``data``
 	create: function create(data, registry)
 	{
-		var decoder = ul4._clone(this);
+		let decoder = ul4._clone(this);
 		decoder.data = data;
 		decoder.pos = 0;
 		decoder.backrefs = [];
@@ -368,13 +366,13 @@ ul4on.Decoder = {
 	// Read next not-whitespace character from the buffer
 	readblackchar: function readblackchar()
 	{
-		var re_white = /\s/;
+		let re_white = /\s/;
 
 		for (;;)
 		{
-		if (this.pos >= this.data.length)
-			throw "UL4 decoder at EOF";
-			var c = this.data.charAt(this.pos++);
+			if (this.pos >= this.data.length)
+				throw "UL4 decoder at EOF";
+			let c = this.data.charAt(this.pos++);
 			if (!c.match(re_white))
 				return c;
 		}
@@ -385,7 +383,7 @@ ul4on.Decoder = {
 	{
 		if (this.pos+size > this.length)
 			size = this.length-this.pos;
-		var result = this.data.substring(this.pos, this.pos+size);
+		let result = this.data.substring(this.pos, this.pos+size);
 		this.pos += size;
 		return result;
 	},
@@ -399,15 +397,15 @@ ul4on.Decoder = {
 	// Read a number from the buffer
 	readnumber: function readnumber()
 	{
-		var re_digits = /[-+0123456789.eE]/, value = "";
+		let re_digits = /[-+0123456789.eE]/, value = "";
 		for (;;)
 		{
-			var c = this.readcharoreof();
+			let c = this.readcharoreof();
 			if (c !== null && c.match(re_digits))
 				value += c;
 			else
 			{
-				var result = parseFloat(value);
+				let result = parseFloat(value);
 				if (isNaN(result))
 					throw "invalid number, got " + ul4._repr("value") + " at position " + this.pos;
 				return result;
@@ -417,7 +415,7 @@ ul4on.Decoder = {
 
 	_beginfakeloading: function _beginfakeloading()
 	{
-		var oldpos = this.backrefs.length;
+		let oldpos = this.backrefs.length;
 		this.backrefs.push(null);
 		return oldpos;
 	},
@@ -429,10 +427,10 @@ ul4on.Decoder = {
 
 	_readescape: function _readescape(escapechar, length)
 	{
-		var chars = this.read(length);
+		let chars = this.read(length);
 		if (chars.length != length)
 			throw "broken escape " + ul4._repr("\\" + escapechar + chars) + " at position " + this.pos;
-		var codepoint = parseInt(chars, 16);
+		let codepoint = parseInt(chars, 16);
 		if (isNaN(codepoint))
 			throw "broken escape " + ul4._repr("\\" + escapechar + chars) + " at position " + this.pos;
 		return String.fromCharCode(codepoint);
@@ -441,8 +439,8 @@ ul4on.Decoder = {
 	// Load the next object from the buffer
 	load: function load()
 	{
-		var typecode = this.readblackchar();
-		var result;
+		let typecode = this.readblackchar();
+		let result;
 		switch (typecode)
 		{
 			case "^":
@@ -475,15 +473,15 @@ ul4on.Decoder = {
 			case "s":
 			case "S":
 				result = [];
-				var delimiter = this.readblackchar();
+				let delimiter = this.readblackchar();
 				for (;;)
 				{
-					var c = this.readchar();
+					let c = this.readchar();
 					if (c == delimiter)
 						break;
 					if (c == "\\")
 					{
-						var c2 = this.readchar();
+						let c2 = this.readchar();
 						if (c2 == "\\")
 							result.push("\\");
 						else if (c2 == "n")
@@ -595,8 +593,8 @@ ul4on.Decoder = {
 					if (typecode === "}")
 						return result;
 					this.backup();
-					var key = this.load();
-					var value = this.load();
+					let key = this.load();
+					let value = this.load();
 					ul4on._setmap(result, key, value);
 				}
 				return result;
@@ -616,11 +614,11 @@ ul4on.Decoder = {
 				return result;
 			case "o":
 			case "O":
-				var oldpos;
+				let oldpos;
 				if (typecode === "O")
 					oldpos = this._beginfakeloading();
-				var name = this.load();
-				var proto;
+				let name = this.load();
+				let proto;
 				if (this.registry !== null)
 				{
 					proto = this.registry[name];
@@ -663,14 +661,14 @@ ul4._simpleclone = function _simpleclone(obj)
 {
 	function F(){};
 	F.prototype = obj;
-	var result = new F();
+	let result = new F();
 	return result;
 };
 
 // Crockford style object creation + prototype chain + object ids
 ul4._clone = function _clone(obj)
 {
-	var result = ul4._simpleclone(obj);
+	let result = ul4._simpleclone(obj);
 	result.__prototype__ = obj;
 	result.__id__ = ul4.Proto._nextid++;
 	return result;
@@ -679,7 +677,7 @@ ul4._clone = function _clone(obj)
 // Adds attributes from on object to another and returns it
 ul4._extend = function _extend(obj, attrs)
 {
-	for (var name in attrs)
+	for (let name in attrs)
 		obj[name] = attrs[name];
 	return obj;
 };
@@ -701,7 +699,7 @@ ul4._map2object = function _map2object(obj)
 {
 	if (ul4._ismap(obj))
 	{
-		var newobj = {};
+		let newobj = {};
 		obj.forEach(function(value, key){
 			if (typeof(key) !== "string")
 				throw ul4.TypeError.create("keys must be strings");
@@ -726,8 +724,8 @@ ul4._bound = function _bound(value, upper)
 // Create a pretty stacktrace from an exception
 ul4._stacktrace = function _stacktrace(exc)
 {
-	var output = ul4._type(exc);
-	var s = exc.toString();
+	let output = ul4._type(exc);
+	let s = exc.toString();
 	if (s)
 		output += ": " + s;
 	if (exc.cause)
@@ -738,7 +736,7 @@ ul4._stacktrace = function _stacktrace(exc)
 // Call a function ``f`` with UL4 argument handling
 ul4._internal_call = function _internal_call(context, f, name, functioncontext, signature, needscontext, needsobject, args, kwargs)
 {
-	var finalargs;
+	let finalargs;
 	if (needsobject)
 	{
 		if (signature === null)
@@ -763,7 +761,7 @@ ul4._internal_call = function _internal_call(context, f, name, functioncontext, 
 
 ul4._callfunction = function _callfunction(context, f, args, kwargs)
 {
-	var name = f._ul4_name || f.name;
+	let name = f._ul4_name || f.name;
 	if (typeof(f._ul4_signature) === "undefined" || typeof(f._ul4_needsobject) === "undefined" || typeof(f._ul4_needscontext) === "undefined")
 		throw ul4.TypeError.create("call", ul4._repr(f) + " is not callable by UL4");
 	return ul4._internal_call(context, f, name, ul4, f._ul4_signature, f._ul4_needscontext, f._ul4_needsobject, args, kwargs);
@@ -799,12 +797,12 @@ ul4._unpackvar = function _unpackvar(lvalue, value)
 		return [[lvalue, value]];
 	else
 	{
-		var newvalue = [];
-		var iter = ul4._iter(value);
+		let newvalue = [];
+		let iter = ul4._iter(value);
 
-		for (var i = 0;;++i)
+		for (let i = 0;;++i)
 		{
-			var item = iter.next();
+			let item = iter.next();
 
 			if (item.done)
 			{
@@ -827,9 +825,9 @@ ul4._unpackvar = function _unpackvar(lvalue, value)
 
 ul4._formatsource = function _formatsource(out)
 {
-	var finalout = [];
-	var level = 0, needlf = false;
-	for (var i = 0; i < out.length; ++i)
+	let finalout = [];
+	let level = 0, needlf = false;
+	for (let i = 0; i < out.length; ++i)
 	{
 		if (typeof(out[i]) === "number")
 		{
@@ -841,7 +839,7 @@ ul4._formatsource = function _formatsource(out)
 			if (needlf)
 			{
 				finalout.push("\n");
-				for (var j = 0; j < level; ++j)
+				for (let j = 0; j < level; ++j)
 					finalout.push("\t");
 				needlf = false;
 			}
@@ -856,7 +854,7 @@ ul4._formatsource = function _formatsource(out)
 // Compare ``obj1`` and ``obj2`` if they have the same value
 ul4._eq = function _eq(obj1, obj2)
 {
-	var numbertypes = ["boolean", "number"];
+	let numbertypes = ["boolean", "number"];
 
 	if (obj1 && typeof(obj1.__eq__) === "function")
 		return obj1.__eq__(obj2);
@@ -894,7 +892,7 @@ ul4._eq = function _eq(obj1, obj2)
 				return true;
 			if (obj1.length != obj2.length)
 				return false;
-			for (var i = 0; i < obj1.length; ++i)
+			for (let i = 0; i < obj1.length; ++i)
 			{
 				if (!ul4._eq(obj1[i], obj2[i])) // This might lead to infinite recursion and a stackoverflow, but it does in all implementations
 					return false;
@@ -912,7 +910,7 @@ ul4._eq = function _eq(obj1, obj2)
 			if (obj1 === obj2)
 				return true;
 			// Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
-			for (var key in obj1)
+			for (let key in obj1)
 			{
 				if (obj2.hasOwnProperty(key))
 				{
@@ -923,7 +921,7 @@ ul4._eq = function _eq(obj1, obj2)
 					return false;
 			}
 			// Test that each attribute of ``obj2`` is alos in ``obj1`` (the value has been tested before)
-			for (var key in obj2)
+			for (let key in obj2)
 			{
 				if (!obj1.hasOwnProperty(key))
 					return false;
@@ -933,7 +931,7 @@ ul4._eq = function _eq(obj1, obj2)
 		else if (ul4._ismap(obj2))
 		{
 			// Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
-			for (var key in obj1)
+			for (let key in obj1)
 			{
 				if (obj2.has(key))
 				{
@@ -944,7 +942,7 @@ ul4._eq = function _eq(obj1, obj2)
 					return false;
 			}
 			// Test that each attribute of ``obj2`` is alos in ``obj1`` (the value has been tested before)
-			var result = true;
+			let result = true;
 			obj2.forEach(function(value, key){
 				if (!obj1.hasOwnProperty(key))
 					result = false;
@@ -959,7 +957,7 @@ ul4._eq = function _eq(obj1, obj2)
 		if (ul4._isobject(obj2))
 		{
 			// Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
-			var result = true;
+			let result = true;
 			obj1.forEach(function(value, key){
 				if (result) // Skip code, if result is already ``false``
 				{
@@ -972,7 +970,7 @@ ul4._eq = function _eq(obj1, obj2)
 			if (!result)
 				return false;
 			// Test that each attribute of ``obj2`` is alos in ``obj1`` (the value has been tested before)
-			for (var key in obj2)
+			for (let key in obj2)
 			{
 				if (!obj1.has(key))
 					return false;
@@ -987,7 +985,7 @@ ul4._eq = function _eq(obj1, obj2)
 			if (obj1.size != obj2.size)
 				return false;
 			// Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
-			var result = true;
+			let result = true;
 			obj1.forEach(function(value, key){
 				if (result) // Skip code, if result is already ``false``
 				{
@@ -1012,7 +1010,7 @@ ul4._eq = function _eq(obj1, obj2)
 				return true;
 			if (obj1.size != obj2.size)
 				return false;
-			var result = true;
+			let result = true;
 			obj1.forEach(function(value){
 				if (result) // Skip code, if result is already ``false``
 				{
@@ -1056,7 +1054,7 @@ ul4._unorderable = function _unorderable(operator, obj1, obj2)
 
 ul4._cmp = function _cmp(operator, obj1, obj2)
 {
-	var numbertypes = ["boolean", "number"];
+	let numbertypes = ["boolean", "number"];
 
 	if (numbertypes.indexOf(typeof(obj1)) != -1)
 	{
@@ -1072,7 +1070,7 @@ ul4._cmp = function _cmp(operator, obj1, obj2)
 	{
 		if (ul4._isdate(obj2))
 		{
-			var v1 = obj1.getTime(), v2 = obj2.getTime();
+			let v1 = obj1.getTime(), v2 = obj2.getTime();
 			return (v1 > v2) - (v1 < v2);
 		}
 	}
@@ -1082,11 +1080,11 @@ ul4._cmp = function _cmp(operator, obj1, obj2)
 		{
 			if (obj1 === obj2)
 				return 0;
-			for (var i = 0; i < obj1.length; ++i)
+			for (let i = 0; i < obj1.length; ++i)
 			{
 				if (i >= obj2.length)
 					return 1;
-				var res = ul4._cmp(operator, obj1[i], obj2[i]);
+				let res = ul4._cmp(operator, obj1[i], obj2[i]);
 				if (res)
 					return res;
 			}
@@ -1095,8 +1093,8 @@ ul4._cmp = function _cmp(operator, obj1, obj2)
 	}
 	else if (ul4._isset(obj1) || ul4._isul4set(obj1))
 	{
-		var in1only = false;
-		var in2only = false;
+		let in1only = false;
+		let in2only = false;
 
 		if (ul4._isset(obj2))
 		{
@@ -1117,7 +1115,7 @@ ul4._cmp = function _cmp(operator, obj1, obj2)
 					if (!obj2.items[value])
 						in1only = true;
 				});
-				for (var value in obj2.items)
+				for (let value in obj2.items)
 				{
 					if (!obj1.has(value))
 					{
@@ -1131,7 +1129,7 @@ ul4._cmp = function _cmp(operator, obj1, obj2)
 		{
 			if (ul4._isset(obj2))
 			{
-				for (var value in obj1.items)
+				for (let value in obj1.items)
 				{
 					if (!obj2.has(value))
 					{
@@ -1146,7 +1144,7 @@ ul4._cmp = function _cmp(operator, obj1, obj2)
 			}
 			else if (ul4._isul4set(obj2))
 			{
-				for (var value in obj1.items)
+				for (let value in obj1.items)
 				{
 					if (!obj2.items[value])
 					{
@@ -1154,7 +1152,7 @@ ul4._cmp = function _cmp(operator, obj1, obj2)
 						break;
 					}
 				}
-				for (var value in obj2.items)
+				for (let value in obj2.items)
 				{
 					if (!obj1.items[value])
 					{
@@ -1214,11 +1212,11 @@ ul4._lt = function _lt(obj1, obj2)
 		{
 			if (obj1 === obj2)
 				return false;
-			for (var i = 0; i < obj1.length; ++i)
+			for (let i = 0; i < obj1.length; ++i)
 			{
 				if (i >= obj2.length)
 					return false;
-				var eq = ul4._eq(obj1[i], obj2[i]);
+				let eq = ul4._eq(obj1[i], obj2[i]);
 				if (!eq)
 					return ul4._lt(obj1[i], obj2[i]);
 			}
@@ -1247,7 +1245,7 @@ ul4._lt = function _lt(obj1, obj2)
 					if (!obj2.items[value])
 						in1only = true;
 				});
-				for (var value in obj2.items)
+				for (let value in obj2.items)
 				{
 					if (!obj1.has(value))
 					{
@@ -1261,7 +1259,7 @@ ul4._lt = function _lt(obj1, obj2)
 		{
 			if (ul4._isset(obj2))
 			{
-				for (var value in obj1.items)
+				for (let value in obj1.items)
 				{
 					if (!obj2.has(value))
 					{
@@ -1276,7 +1274,7 @@ ul4._lt = function _lt(obj1, obj2)
 			}
 			else if (ul4._isul4set(obj2))
 			{
-				for (var value in obj1.items)
+				for (let value in obj1.items)
 				{
 					if (!obj2.items[value])
 					{
@@ -1284,7 +1282,7 @@ ul4._lt = function _lt(obj1, obj2)
 						break;
 					}
 				}
-				for (var value in obj2.items)
+				for (let value in obj2.items)
 				{
 					if (!obj1.items[value])
 					{
@@ -1318,7 +1316,7 @@ ul4._lt = function _lt(obj1, obj2)
 // Return whether ``obj1 <= obj2``
 ul4._le = function _le(obj1, obj2)
 {
-	var numbertypes = ["boolean", "number"];
+	let numbertypes = ["boolean", "number"];
 
 	if (obj1 && typeof(obj1.__le__) === "function")
 		return obj1.__le__(obj2);
@@ -1343,11 +1341,11 @@ ul4._le = function _le(obj1, obj2)
 		{
 			if (obj1 === obj2)
 				return true;
-			for (var i = 0; i < obj1.length; ++i)
+			for (let i = 0; i < obj1.length; ++i)
 			{
 				if (i >= obj2.length)
 					return false;
-				var eq = ul4._eq(obj1[i], obj2[i]);
+				let eq = ul4._eq(obj1[i], obj2[i]);
 				if (!eq)
 					return ul4._lt(obj1[i], obj2[i]);
 			}
@@ -1357,8 +1355,8 @@ ul4._le = function _le(obj1, obj2)
 	// FIXME: Set comparison
 	else if (ul4._isset(obj1) || ul4._isul4set(obj1))
 	{
-		var in1only = false;
-		var in2only = false;
+		let in1only = false;
+		let in2only = false;
 
 		if (ul4._isset(obj2))
 		{
@@ -1379,7 +1377,7 @@ ul4._le = function _le(obj1, obj2)
 					if (!obj2.items[value])
 						in1only = true;
 				});
-				for (var value in obj2.items)
+				for (let value in obj2.items)
 				{
 					if (!obj1.has(value))
 					{
@@ -1393,7 +1391,7 @@ ul4._le = function _le(obj1, obj2)
 		{
 			if (ul4._isset(obj2))
 			{
-				for (var value in obj1.items)
+				for (let value in obj1.items)
 				{
 					if (!obj2.has(value))
 					{
@@ -1408,7 +1406,7 @@ ul4._le = function _le(obj1, obj2)
 			}
 			else if (ul4._isul4set(obj2))
 			{
-				for (var value in obj1.items)
+				for (let value in obj1.items)
 				{
 					if (!obj2.items[value])
 					{
@@ -1416,7 +1414,7 @@ ul4._le = function _le(obj1, obj2)
 						break;
 					}
 				}
-				for (var value in obj2.items)
+				for (let value in obj2.items)
 				{
 					if (!obj1.items[value])
 					{
@@ -1450,7 +1448,7 @@ ul4._le = function _le(obj1, obj2)
 // Return whether ``obj1 > obj2``
 ul4._gt = function _gt(obj1, obj2)
 {
-	var numbertypes = ["boolean", "number"];
+	let numbertypes = ["boolean", "number"];
 
 	if (obj1 && typeof(obj1.__gt__) === "function")
 		return obj1.__gt__(obj2);
@@ -1475,11 +1473,11 @@ ul4._gt = function _gt(obj1, obj2)
 		{
 			if (obj1 === obj2)
 				return false;
-			for (var i = 0; i < obj1.length; ++i)
+			for (let i = 0; i < obj1.length; ++i)
 			{
 				if (i >= obj2.length)
 					return true;
-				var eq = ul4._eq(obj1[i], obj2[i]);
+				let eq = ul4._eq(obj1[i], obj2[i]);
 				if (!eq)
 					return ul4._gt(obj1[i], obj2[i]);
 			}
@@ -1489,8 +1487,8 @@ ul4._gt = function _gt(obj1, obj2)
 	// FIXME: Set comparison
 	else if (ul4._isset(obj1) || ul4._isul4set(obj1))
 	{
-		var in1only = false;
-		var in2only = false;
+		let in1only = false;
+		let in2only = false;
 
 		if (ul4._isset(obj2))
 		{
@@ -1511,7 +1509,7 @@ ul4._gt = function _gt(obj1, obj2)
 					if (!obj2.items[value])
 						in1only = true;
 				});
-				for (var value in obj2.items)
+				for (let value in obj2.items)
 				{
 					if (!obj1.has(value))
 					{
@@ -1525,7 +1523,7 @@ ul4._gt = function _gt(obj1, obj2)
 		{
 			if (ul4._isset(obj2))
 			{
-				for (var value in obj1.items)
+				for (let value in obj1.items)
 				{
 					if (!obj2.has(value))
 					{
@@ -1540,7 +1538,7 @@ ul4._gt = function _gt(obj1, obj2)
 			}
 			else if (ul4._isul4set(obj2))
 			{
-				for (var value in obj1.items)
+				for (let value in obj1.items)
 				{
 					if (!obj2.items[value])
 					{
@@ -1548,7 +1546,7 @@ ul4._gt = function _gt(obj1, obj2)
 						break;
 					}
 				}
-				for (var value in obj2.items)
+				for (let value in obj2.items)
 				{
 					if (!obj1.items[value])
 					{
@@ -1582,7 +1580,7 @@ ul4._gt = function _gt(obj1, obj2)
 // Return whether ``obj1 >= obj2``
 ul4._ge = function _ge(obj1, obj2)
 {
-	var numbertypes = ["boolean", "number"];
+	let numbertypes = ["boolean", "number"];
 
 	if (obj1 && typeof(obj1.__ge__) === "function")
 		return obj1.__ge__(obj2);
@@ -1607,11 +1605,11 @@ ul4._ge = function _ge(obj1, obj2)
 		{
 			if (obj1 === obj2)
 				return true;
-			for (var i = 0; i < obj1.length; ++i)
+			for (let i = 0; i < obj1.length; ++i)
 			{
 				if (i >= obj2.length)
 					return true;
-				var eq = ul4._eq(obj1[i], obj2[i]);
+				let eq = ul4._eq(obj1[i], obj2[i]);
 				if (!eq)
 					return ul4._gt(obj1[i], obj2[i]);
 			}
@@ -1621,8 +1619,8 @@ ul4._ge = function _ge(obj1, obj2)
 	// FIXME: Set comparison
 	else if (ul4._isset(obj1) || ul4._isul4set(obj1))
 	{
-		var in1only = false;
-		var in2only = false;
+		let in1only = false;
+		let in2only = false;
 
 		if (ul4._isset(obj2))
 		{
@@ -1643,7 +1641,7 @@ ul4._ge = function _ge(obj1, obj2)
 					if (!obj2.items[value])
 						in1only = true;
 				});
-				for (var value in obj2.items)
+				for (let value in obj2.items)
 				{
 					if (!obj1.has(value))
 					{
@@ -1657,7 +1655,7 @@ ul4._ge = function _ge(obj1, obj2)
 		{
 			if (ul4._isset(obj2))
 			{
-				for (var value in obj1.items)
+				for (let value in obj1.items)
 				{
 					if (!obj2.has(value))
 					{
@@ -1672,7 +1670,7 @@ ul4._ge = function _ge(obj1, obj2)
 			}
 			else if (ul4._isul4set(obj2))
 			{
-				for (var value in obj1.items)
+				for (let value in obj1.items)
 				{
 					if (!obj2.items[value])
 					{
@@ -1680,7 +1678,7 @@ ul4._ge = function _ge(obj1, obj2)
 						break;
 					}
 				}
-				for (var value in obj2.items)
+				for (let value in obj2.items)
 				{
 					if (!obj1.items[value])
 					{
@@ -1749,7 +1747,7 @@ ul4._iter = function _iter(obj)
 	}
 	else if (ul4._isset(obj))
 	{
-		var values = [];
+		let values = [];
 		obj.forEach(function(value, key){
 			values.push(value);
 		});
@@ -1769,8 +1767,8 @@ ul4._iter = function _iter(obj)
 	}
 	else if (ul4._isobject(obj))
 	{
-		var keys = [];
-		for (var key in obj)
+		let keys = [];
+		for (let key in obj)
 			keys.push(key);
 		return {
 			index: 0,
@@ -1787,12 +1785,12 @@ ul4._iter = function _iter(obj)
 
 ul4._str_repr = function _str_repr(str, ascii)
 {
-	var result = "";
-	var squote = false, dquote = false;
+	let result = "";
+	let squote = false, dquote = false;
 
-	for (var i = 0; i <str.length; ++i)
+	for (let i = 0; i <str.length; ++i)
 	{
-		var c = str[i];
+		let c = str[i];
 		if (c == '"')
 		{
 			dquote = true;
@@ -1808,11 +1806,11 @@ ul4._str_repr = function _str_repr(str, ascii)
 	}
 
 	// Prefer single quotes: Only use double quotes if the string contains single quotes, but no double quotes
-	var quote = (squote && !dquote) ? '"' : "'";
+	let quote = (squote && !dquote) ? '"' : "'";
 
-	for (var i = 0; i <str.length; ++i)
+	for (let i = 0; i <str.length; ++i)
 	{
-		var c = str[i];
+		let c = str[i];
 		switch (c)
 		{
 			case '"':
@@ -1834,8 +1832,8 @@ ul4._str_repr = function _str_repr(str, ascii)
 				result += "\\r";
 				break;
 			default:
-				var code = str.charCodeAt(i);
-				var escape;
+				let code = str.charCodeAt(i);
+				let escape;
 				if (code < 32)
 					escape = 2;
 				else if (code < 0x7f)
@@ -1865,14 +1863,14 @@ ul4._str_repr = function _str_repr(str, ascii)
 
 ul4._date_repr = function _date_repr(obj, ascii)
 {
-	var year = obj.getFullYear();
-	var month = obj.getMonth()+1;
-	var day = obj.getDate();
-	var hour = obj.getHours();
-	var minute = obj.getMinutes();
-	var second = obj.getSeconds();
-	var ms = obj.getMilliseconds();
-	var result = "@(" + year + "-" + ul4._lpad(month.toString(), "0", 2) + "-" + ul4._lpad(day.toString(), "0", 2);
+	let year = obj.getFullYear();
+	let month = obj.getMonth()+1;
+	let day = obj.getDate();
+	let hour = obj.getHours();
+	let minute = obj.getMinutes();
+	let second = obj.getSeconds();
+	let ms = obj.getMilliseconds();
+	let result = "@(" + year + "-" + ul4._lpad(month.toString(), "0", 2) + "-" + ul4._lpad(day.toString(), "0", 2);
 
 	if (hour || minute || second || ms)
 	{
@@ -1887,10 +1885,10 @@ ul4._date_repr = function _date_repr(obj, ascii)
 
 ul4._map_repr = function _map_repr(obj, ascii)
 {
-	var v = [];
+	let v = [];
 	v.push("{");
 
-	var i = 0;
+	let i = 0;
 	obj.forEach(function(value, key){
 		if (i++)
 			v.push(", ");
@@ -1905,9 +1903,9 @@ ul4._map_repr = function _map_repr(obj, ascii)
 
 ul4._list_repr = function _list_repr(obj, ascii)
 {
-	var v = [];
+	let v = [];
 	v.push("[");
-	for (var i = 0; i < obj.length; ++i)
+	for (let i = 0; i < obj.length; ++i)
 	{
 		if (i !== 0)
 			v.push(", ");
@@ -1919,13 +1917,13 @@ ul4._list_repr = function _list_repr(obj, ascii)
 
 ul4._set_repr = function _set_repr(obj, ascii)
 {
-	var v = [];
+	let v = [];
 	v.push("{");
 	if (!obj.size)
 		v.push("/");
 	else
 	{
-		var i = 0;
+		let i = 0;
 		obj.forEach(function(value, key){
 			if (i++)
 				v.push(", ");
@@ -1938,10 +1936,10 @@ ul4._set_repr = function _set_repr(obj, ascii)
 
 ul4._object_repr = function _object_repr(obj, ascii)
 {
-	var v = [];
+	let v = [];
 	v.push("{");
-	var i = 0;
-	for (var key in obj)
+	let i = 0;
+	for (let key in obj)
 	{
 		if (!obj.hasOwnProperty(key))
 			continue;
@@ -2002,15 +2000,15 @@ ul4._ascii = function _ascii(obj)
 
 ul4._date_str = function _date_str(obj)
 {
-	var year = obj.getFullYear();
-	var month = obj.getMonth()+1;
-	var day = obj.getDate();
-	var hour = obj.getHours();
-	var minute = obj.getMinutes();
-	var second = obj.getSeconds();
-	var ms = obj.getMilliseconds();
+	let year = obj.getFullYear();
+	let month = obj.getMonth()+1;
+	let day = obj.getDate();
+	let hour = obj.getHours();
+	let minute = obj.getMinutes();
+	let second = obj.getSeconds();
+	let ms = obj.getMilliseconds();
 
-	var result = year + "-" + ul4._lpad(month.toString(), "0", 2) + "-" + ul4._lpad(day.toString(), "0", 2) + " " + ul4._lpad(hour.toString(), "0", 2) + ":" + ul4._lpad(minute.toString(), "0", 2) + ":" + ul4._lpad(second.toString(), "0", 2);
+	let result = year + "-" + ul4._lpad(month.toString(), "0", 2) + "-" + ul4._lpad(day.toString(), "0", 2) + " " + ul4._lpad(hour.toString(), "0", 2) + ":" + ul4._lpad(minute.toString(), "0", 2) + ":" + ul4._lpad(second.toString(), "0", 2);
 	if (ms)
 		result += "." + ul4._lpad(ms.toString(), "0", 3) + "000";
 	return result;
@@ -2425,7 +2423,7 @@ else
 // Repeat string ``str`` ``rep`` times
 ul4._str_repeat = function _str_repeat(str, rep)
 {
-	var result = "";
+	let result = "";
 	for (; rep>0; --rep)
 		result += str;
 	return result;
@@ -2433,19 +2431,19 @@ ul4._str_repeat = function _str_repeat(str, rep)
 
 ul4._list_repeat = function _list_repeat(list, rep)
 {
-	var result = [];
+	let result = [];
 	for (; rep>0; --rep)
-		for (var i = 0; i < list.length; ++i)
+		for (let i = 0; i < list.length; ++i)
 			result.push(list[i]);
 	return result;
 };
 
 ul4._str_json = function _str_json(str)
 {
-	var result = "";
-	for (var i = 0; i < str.length; ++i)
+	let result = "";
+	for (let i = 0; i < str.length; ++i)
 	{
-		var c = str[i];
+		let c = str[i];
 		switch (c)
 		{
 			case "\r":
@@ -2467,7 +2465,7 @@ ul4._str_json = function _str_json(str)
 				result += '\\u003c';
 				break;
 			default:
-				var code = str.charCodeAt(i);
+				let code = str.charCodeAt(i);
 				if (code >= 32 && code < 128)
 					result += c;
 				else
@@ -2497,9 +2495,9 @@ ul4._asjson = function _asjson(obj)
 	}
 	else if (ul4._islist(obj))
 	{
-		var v = [];
+		let v = [];
 		v.push("[");
-		for (var i = 0; i < obj.length; ++i)
+		for (let i = 0; i < obj.length; ++i)
 		{
 			if (i != 0)
 				v.push(", ");
@@ -2510,9 +2508,9 @@ ul4._asjson = function _asjson(obj)
 	}
 	else if (ul4._ismap(obj))
 	{
-		var v = [];
+		let v = [];
 		v.push("{");
-		var i = 0;
+		let i = 0;
 		obj.forEach(function(value, key){
 			if (i++)
 				v.push(", ");
@@ -2525,10 +2523,10 @@ ul4._asjson = function _asjson(obj)
 	}
 	else if (ul4._isobject(obj))
 	{
-		var v = [];
+		let v = [];
 		v.push("{");
-		var i = 0;
-		for (var key in obj)
+		let i = 0;
+		for (let key in obj)
 		{
 			if (i++)
 				v.push(", ");
@@ -2588,7 +2586,7 @@ ul4._fromul4on = function _fromul4on(string)
 
 ul4._format_date = function _format_date(obj, fmt, lang)
 {
-	var translations = {
+	let translations = {
 		de: {
 			ms: ["Jan", "Feb", "M\u00e4r", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
 			ml: ["Januar", "Februar", "M\u00e4rz", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"],
@@ -2780,15 +2778,15 @@ ul4._format_date = function _format_date(obj, fmt, lang)
 		}
 	};
 
-	var translation = translations[lang];
+	let translation = translations[lang];
 
-	var firstday;
+	let firstday;
 
-	var result = [];
-	var inspec = false;
-	for (var i = 0; i < fmt.length; ++i)
+	let result = [];
+	let inspec = false;
+	for (let i = 0; i < fmt.length; ++i)
 	{
-		var c = fmt[i];
+		let c = fmt[i];
 		if (inspec)
 		{
 			switch (c)
@@ -2881,15 +2879,15 @@ ul4._format_date = function _format_date(obj, fmt, lang)
 
 ul4._format_int = function _format_int(obj, fmt, lang)
 {
-	var work = fmt;
+	let work = fmt;
 
 	// Defaults
-	var fill = ' ';
-	var align = '>'; // '<', '>', '=' or '^'
-	var sign = '-'; // '+', '-' or ' '
-	var alternate = false;
-	var minimumwidth = 0;
-	var type = 'd'; // 'b', 'c', 'd', 'o', 'x', 'X' or 'n'
+	let fill = ' ';
+	let align = '>'; // '<', '>', '=' or '^'
+	let sign = '-'; // '+', '-' or ' '
+	let alternate = false;
+	let minimumwidth = 0;
+	let type = 'd'; // 'b', 'c', 'd', 'o', 'x', 'X' or 'n'
 
 	// Determine output type
 	if (/[bcdoxXn]$/.test(work))
@@ -2901,7 +2899,7 @@ ul4._format_int = function _format_int(obj, fmt, lang)
 	// Extract minimum width
 	if (/\d+$/.test(work))
 	{
-		var minimumwidthStr = /\d+$/.exec(work);
+		let minimumwidthStr = /\d+$/.exec(work);
 		work = work.replace(/\d+$/, "");
 		if (/^0/.test(minimumwidthStr))
 		{
@@ -2949,12 +2947,12 @@ ul4._format_int = function _format_int(obj, fmt, lang)
 	}
 
 	// Basic number formatting
-	var neg = obj < 0;
+	let neg = obj < 0;
 
 	if (neg)
 		obj = -obj;
 
-	var output;
+	let output;
 	switch (type)
 	{
 		case 'b':
@@ -3018,9 +3016,9 @@ ul4._format_int = function _format_int(obj, fmt, lang)
 				output = ul4._str_repeat(fill, minimumwidth-output.length) + output;
 			else // if (align == '^')
 			{
-				var pad = minimumwidth - output.length;
-				var padBefore = Math.floor(pad/2);
-				var padAfter = pad-padBefore;
+				let pad = minimumwidth - output.length;
+				let padBefore = Math.floor(pad/2);
+				let padAfter = pad-padBefore;
 				output = ul4._str_repeat(fill, padBefore) + output + ul4._str_repeat(fill, padAfter);
 			}
 		}
@@ -3035,7 +3033,7 @@ ul4._format = function _format(obj, fmt, lang)
 		lang = "en";
 	else
 	{
-		var translations = {de: null, en: null, fr: null, es: null, it: null, da: null, sv: null, nl: null, pt: null, cs: null, sk: null, pl: null, hr: null, sr: null, ro: null, hu: null, tr: null, ru: null, zh: null, ko: null, ja: null};
+		let translations = {de: null, en: null, fr: null, es: null, it: null, da: null, sv: null, nl: null, pt: null, cs: null, sk: null, pl: null, hr: null, sr: null, ro: null, hu: null, tr: null, ru: null, zh: null, ko: null, ja: null};
 		lang = lang.toLowerCase();
 		if (typeof(translations[lang]) === "undefined")
 		{
@@ -3125,17 +3123,17 @@ ul4.Signature = ul4._inherit(
 	{
 		create: function create(...args)
 		{
-			var signature = ul4._clone(this);
+			let signature = ul4._clone(this);
 			signature.args = [];
 			signature.argNames = {};
 			signature.remargs = null;
 			signature.remkwargs = null;
 
-			var nextDefault = false;
-			var lastArgname = null;
-			for (var i = 0; i < args.length; ++i)
+			let nextDefault = false;
+			let lastArgname = null;
+			for (let i = 0; i < args.length; ++i)
 			{
-				var argName = args[i];
+				let argName = args[i];
 				if (nextDefault)
 				{
 					signature.args.push({name: lastArgname, defaultValue: argName});
@@ -3166,12 +3164,12 @@ ul4.Signature = ul4._inherit(
 		// Create the argument array for calling a function with this signature with the arguments available from ``args``
 		bindArray: function bindArray(name, args, kwargs)
 		{
-			var finalargs = [];
-			var decname = name !== null ? name + "() " : "";
+			let finalargs = [];
+			let decname = name !== null ? name + "() " : "";
 
-			for (var i = 0; i < this.args.length; ++i)
+			for (let i = 0; i < this.args.length; ++i)
 			{
-				var arg = this.args[i];
+				let arg = this.args[i];
 				if (i < args.length)
 				{
 					if (kwargs.hasOwnProperty(arg.name))
@@ -3198,7 +3196,7 @@ ul4.Signature = ul4._inherit(
 				// No, but we have them -> complain
 				if (args.length > this.args.length)
 				{
-					var prefix = name === null ? "expected" : name + "() expects";
+					let prefix = name === null ? "expected" : name + "() expects";
 					throw ul4.ArgumentError.create(prefix + " at most " + this.args.length + " positional argument" + (this.args.length != 1 ? "s" : "") + ", " + args.length + " given");
 				}
 			}
@@ -3212,7 +3210,7 @@ ul4.Signature = ul4._inherit(
 			if (this.remkwargs === null)
 			{
 				// No => complain about unknown ones
-				for (var key in kwargs)
+				for (let key in kwargs)
 				{
 					if (!this.argNames[key])
 					{
@@ -3226,8 +3224,8 @@ ul4.Signature = ul4._inherit(
 			else
 			{
 				// Yes => Put the unknown ones into an object and add that to the arguments array
-				var remkwargs = ul4on._emptymap();
-				for (var key in kwargs)
+				let remkwargs = ul4on._emptymap();
+				for (let key in kwargs)
 				{
 					if (!this.argNames[key])
 						ul4on._setmap(remkwargs, key, kwargs[key]);
@@ -3242,8 +3240,8 @@ ul4.Signature = ul4._inherit(
 		bindObject: function bindObject(name, args, kwargs)
 		{
 			args = this.bindArray(name, args, kwargs);
-			var argObject = {};
-			var i;
+			let argObject = {};
+			let i;
 			for (i = 0; i < this.args.length; ++i)
 				argObject[this.args[i].name] = args[i];
 			if (this.remargs !== null)
@@ -3265,10 +3263,10 @@ ul4.Signature = ul4._inherit(
 
 		toString: function toString()
 		{
-			var v = [];
-			for (var i = 0; i < this.args.length; ++i)
+			let v = [];
+			for (let i = 0; i < this.args.length; ++i)
 			{
-				var arg = this.args[i];
+				let arg = this.args[i];
 
 				if (arg.hasOwnProperty("defaultValue"))
 					v.push(arg.name + "=" + ul4._repr(arg.defaultValue));
@@ -3337,8 +3335,8 @@ ul4.Protocol = {
 			return obj.__getattr__(attrname);
 		else if (this.attrs.has(attrname))
 		{
-			var attr = this[attrname];
-			var realattr = function realattr(...args) {
+			let attr = this[attrname];
+			let realattr = function realattr(...args) {
 				return attr.apply(this, [obj, ...args]);
 			};
 			realattr.name = attr.name;
@@ -3503,8 +3501,8 @@ ul4.MapProtocol = ul4._inherit(ul4.Protocol, {
 	{
 		if (this.attrs.has(attrname))
 		{
-			var attr = this[attrname];
-			var realattr = function realattr(...args) {
+			let attr = this[attrname];
+			let realattr = function realattr(...args) {
 				return attr.apply(this, [obj, ...args]);
 			};
 			realattr.name = attr.name;
@@ -3545,7 +3543,7 @@ ul4.SetProtocol = ul4._inherit(ul4.Protocol, {
 	attrs: ul4on._makeset("add", "clear"),
 
 	add: ul4.expose(["*items"], function add(obj, items){
-		for (var i = 0; i < items.length; ++i)
+		for (let i = 0; i < items.length; ++i)
 			obj.add(items[i]);
 	}),
 
@@ -3613,14 +3611,14 @@ ul4.ObjectProtocol = ul4._inherit(ul4.Protocol, {
 
 	getattr: function getattr(obj, attrname)
 	{
-		var result;
+		let result;
 		if (obj && typeof(obj.__getattr__) === "function") // test this before the generic object test
 			result = obj.__getattr__(attrname);
 		else
 			result = obj[attrname];
 		if (typeof(result) !== "function")
 			return result;
-		var realresult = function(...args) {
+		let realresult = function(...args) {
 			// We can use ``apply`` here, as we know that ``obj`` is a real object.
 			return result.apply(obj, args);
 		};
@@ -3639,7 +3637,7 @@ ul4.Context = ul4._inherit(
 		{
 			if (vars === null || typeof(vars) === "undefined")
 				vars = {};
-			var context = ul4._clone(this);
+			let context = ul4._clone(this);
 			context.vars = vars;
 			context.indents = [];
 			context._output = [];
@@ -3651,7 +3649,7 @@ ul4.Context = ul4._inherit(
 		 */
 		inheritvars: function inheritvars()
 		{
-			var context = ul4._clone(this);
+			let context = ul4._clone(this);
 			context.vars = ul4._simpleclone(this.vars);
 			return context;
 		},
@@ -3659,7 +3657,7 @@ ul4.Context = ul4._inherit(
 		/* Return a clone of the ``Context`` with one additional indentation (this is used by ``RenderAST``) */
 		withindent: function withindent(indent)
 		{
-			var context = ul4._clone(this);
+			let context = ul4._clone(this);
 			if (indent !== null)
 			{
 				context.indents = this.indents.slice();
@@ -3671,7 +3669,7 @@ ul4.Context = ul4._inherit(
 		/* Return a clone of the ``Context`` with the output buffer replaced (this is used by ``renders`` to collect the output in a separate buffer) */
 		replaceoutput: function replaceoutput()
 		{
-			var context = ul4._clone(this);
+			let context = ul4._clone(this);
 			context._output = [];
 			return context;
 		},
@@ -3713,7 +3711,7 @@ ul4.Exception = ul4._inherit(
 
 		create: function create(result)
 		{
-			var exception = ul4._clone(this);
+			let exception = ul4._clone(this);
 			return exception;
 		},
 
@@ -3741,7 +3739,7 @@ ul4.ReturnException = ul4._inherit(
 
 		create: function create(result)
 		{
-			var exception = ul4.InternalException.create.call(this);
+			let exception = ul4.InternalException.create.call(this);
 			exception.result = result;
 			return exception;
 		}
@@ -3789,7 +3787,7 @@ ul4.TypeError = ul4._inherit(
 
 		create: function create(operation, message)
 		{
-			var exception = ul4._clone(this);
+			let exception = ul4._clone(this);
 			exception.operation = operation;
 			exception.message = message;
 			return exception;
@@ -3808,7 +3806,7 @@ ul4.ValueError = ul4._inherit(
 
 		create: function create(message)
 		{
-			var exception = ul4._clone(this);
+			let exception = ul4._clone(this);
 			exception.message = message;
 			return exception;
 		},
@@ -3826,7 +3824,7 @@ ul4.ArgumentError = ul4._inherit(
 
 		create: function create(message)
 		{
-			var exception = ul4._clone(this);
+			let exception = ul4._clone(this);
 			exception.message = message;
 			return exception;
 		},
@@ -3844,7 +3842,7 @@ ul4.IndexError = ul4._inherit(
 
 		create: function create(obj, index)
 		{
-			var exception = ul4._clone(this);
+			let exception = ul4._clone(this);
 			exception.obj = obj;
 			exception.index = index;
 			return exception;
@@ -3864,7 +3862,7 @@ ul4.AttributeError = ul4._inherit(
 
 		create: function create(obj, attrname)
 		{
-			var exception = ul4._clone(this);
+			let exception = ul4._clone(this);
 			exception.obj = obj;
 			exception.attrname = attrname;
 			return exception;
@@ -3884,7 +3882,7 @@ ul4.LocationError = ul4._inherit(
 
 		create: function create(location, cause)
 		{
-			var exception = ul4._clone(this);
+			let exception = ul4._clone(this);
 			exception.location = location;
 			exception.cause = cause;
 			return exception;
@@ -3892,12 +3890,12 @@ ul4.LocationError = ul4._inherit(
 
 		_templateprefix: function(template)
 		{
-			var out = [];
+			let out = [];
 			if (template.parenttemplate !== null)
 				out.push("in local template ");
 			else
 				out.push("in template ");
-			var first = true;
+			let first = true;
 			while (template != null)
 			{
 				if (first)
@@ -3924,7 +3922,7 @@ ul4.LocationError = ul4._inherit(
 				return this.location.pos;
 			else
 			{
-				var tag = this.location.tag;
+				let tag = this.location.tag;
 				if (tag === null) // A top level template as no tag
 					return this.location.pos;
 				else
@@ -3939,23 +3937,23 @@ ul4.LocationError = ul4._inherit(
 
 		toString: function toString()
 		{
-			var template = this._template();
-			var templateprefix = this._templateprefix(template);
-			var outerpos = this._outerpos();
-			var innerpos = this._innerpos();
+			let template = this._template();
+			let templateprefix = this._templateprefix(template);
+			let outerpos = this._outerpos();
+			let innerpos = this._innerpos();
 
-			var prefix = template.source.substring(outerpos.start, innerpos.start);
-			var code = template.source.substring(innerpos.start, innerpos.stop);
-			var suffix = template.source.substring(innerpos.stop, outerpos.stop);
+			let prefix = template.source.substring(outerpos.start, innerpos.start);
+			let code = template.source.substring(innerpos.start, innerpos.stop);
+			let suffix = template.source.substring(innerpos.stop, outerpos.stop);
 			prefix = ul4._repr(prefix).slice(1, -1);
 			code = ul4._repr(code).slice(1, -1);
 			suffix = ul4._repr(suffix).slice(1, -1);
-			var text = prefix + code + suffix;
-			var underline = ul4._str_repeat("\u00a0", prefix.length) + ul4._str_repeat("~", code.length);
+			let text = prefix + code + suffix;
+			let underline = ul4._str_repeat("\u00a0", prefix.length) + ul4._str_repeat("~", code.length);
 
 			// find line numbers
-			var lineno = 1, colno = 1;
-			for (var i = 0; i < innerpos.start; ++i)
+			let lineno = 1, colno = 1;
+			for (let i = 0; i < innerpos.start; ++i)
 			{
 				if (template.source[i] === "\n")
 				{
@@ -3999,19 +3997,19 @@ ul4.AST = ul4._inherit(
 	{
 		create: function create(pos)
 		{
-			var ast = ul4._clone(this);
+			let ast = ul4._clone(this);
 			ast.pos = pos;
 			return ast;
 		},
 		__str__: function __str__()
 		{
-			var out = [];
+			let out = [];
 			this._str(out);
 			return ul4._formatsource(out);
 		},
 		__repr__: function __repr__()
 		{
-			var out = [];
+			let out = [];
 			this._repr(out);
 			return ul4._formatsource(out);
 		},
@@ -4070,12 +4068,12 @@ ul4.AST = ul4._inherit(
 		},
 		ul4ondump: function ul4ondump(encoder)
 		{
-			for (var i = 0; i < this._ul4onattrs.length; ++i)
+			for (let i = 0; i < this._ul4onattrs.length; ++i)
 				encoder.dump(this[this._ul4onattrs[i]]);
 		},
 		ul4onload: function ul4onload(decoder)
 		{
-			for (var i = 0; i < this._ul4onattrs.length; ++i)
+			for (let i = 0; i < this._ul4onattrs.length; ++i)
 				this[this._ul4onattrs[i]] = decoder.load();
 		},
 		__setitem__: function __setitem__(attrname, value)
@@ -4092,7 +4090,7 @@ ul4.TextAST = ul4._inherit(
 	{
 		create: function create(template, pos)
 		{
-			var text = ul4.AST.create.call(this, pos);
+			let text = ul4.AST.create.call(this, pos);
 			text.template = template;
 			return text;
 		},
@@ -4124,7 +4122,7 @@ ul4.IndentAST = ul4._inherit(
 	{
 		create: function create(template, pos, text)
 		{
-			var indent = ul4.TextAST.create.call(this, template, pos);
+			let indent = ul4.TextAST.create.call(this, template, pos);
 			indent._maketext(text);
 			return indent;
 		},
@@ -4149,7 +4147,7 @@ ul4.IndentAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			for (var i = 0; i < context.indents.length; ++i)
+			for (let i = 0; i < context.indents.length; ++i)
 				context.output(context.indents[i]);
 			context.output(this._text());
 		},
@@ -4204,7 +4202,7 @@ ul4.Tag = ul4._inherit(
 	{
 		create: function create(template, tag, tagpos, codepos)
 		{
-			var tago = ul4.AST.create.call(this, tagpos);
+			let tago = ul4.AST.create.call(this, tagpos);
 			tago.template = template;
 			tago.tag = tag;
 			tago.codepos = codepos;
@@ -4248,7 +4246,7 @@ ul4.CodeAST = ul4._inherit(
 	{
 		create: function create(tag, pos)
 		{
-			var code = ul4.AST.create.call(this, pos);
+			let code = ul4.AST.create.call(this, pos);
 			code.tag = tag;
 			return code;
 		},
@@ -4265,7 +4263,7 @@ ul4.ConstAST = ul4._inherit(
 	{
 		create: function create(tag, pos, value)
 		{
-			var constant = ul4.CodeAST.create.call(this, tag, pos);
+			let constant = ul4.CodeAST.create.call(this, tag, pos);
 			constant.value = value;
 			return constant;
 		},
@@ -4346,7 +4344,7 @@ ul4.SeqItemAST = ul4._inherit(
 	{
 		create: function create(tag, pos, value)
 		{
-			var seqitem = ul4.ItemArgBase.create.call(this, tag, pos);
+			let seqitem = ul4.ItemArgBase.create.call(this, tag, pos);
 			seqitem.value = value;
 			return seqitem;
 		},
@@ -4359,12 +4357,12 @@ ul4.SeqItemAST = ul4._inherit(
 		},
 		_eval_list: function _eval_list(context, result)
 		{
-			var value = this.value._handle_eval(context);
+			let value = this.value._handle_eval(context);
 			result.push(value);
 		},
 		_eval_set: function _eval_set(context, result)
 		{
-			var value = this.value._handle_eval(context);
+			let value = this.value._handle_eval(context);
 			result.add(value);
 		}
 	}
@@ -4376,7 +4374,7 @@ ul4.UnpackSeqItemAST = ul4._inherit(
 	{
 		create: function create(tag, pos, value)
 		{
-			var unpackseqitem = ul4.ItemArgBase.create.call(this, tag, pos);
+			let unpackseqitem = ul4.ItemArgBase.create.call(this, tag, pos);
 			unpackseqitem.value = value;
 			return unpackseqitem;
 		},
@@ -4389,10 +4387,10 @@ ul4.UnpackSeqItemAST = ul4._inherit(
 		},
 		_eval_list: function _eval_list(context, result)
 		{
-			var value = this.value._handle_eval(context);
-			for (var iter = ul4._iter(value);;)
+			let value = this.value._handle_eval(context);
+			for (let iter = ul4._iter(value);;)
 			{
-				var item = iter.next();
+				let item = iter.next();
 				if (item.done)
 					break;
 				result.push(item.value);
@@ -4400,10 +4398,10 @@ ul4.UnpackSeqItemAST = ul4._inherit(
 		},
 		_eval_set: function _eval_set(context, result)
 		{
-			var value = this.value._handle_eval(context);
-			for (var iter = ul4._iter(value);;)
+			let value = this.value._handle_eval(context);
+			for (let iter = ul4._iter(value);;)
 			{
-				var item = iter.next();
+				let item = iter.next();
 				if (item.done)
 					break;
 				result.add(item.value);
@@ -4417,7 +4415,7 @@ ul4.DictItemAST = ul4._inherit(
 	{
 		create: function create(tag, pos, key, value)
 		{
-			var dictitem = ul4.ItemArgBase.create.call(this, tag, pos);
+			let dictitem = ul4.ItemArgBase.create.call(this, tag, pos);
 			dictitem.key = key;
 			dictitem.value = value;
 			return dictitem;
@@ -4433,8 +4431,8 @@ ul4.DictItemAST = ul4._inherit(
 		},
 		_eval_dict: function _eval_dict(context, result)
 		{
-			var key = this.key._handle_eval(context);
-			var value = this.value._handle_eval(context);
+			let key = this.key._handle_eval(context);
+			let value = this.value._handle_eval(context);
 			ul4on._setmap(result, key, value);
 		}
 	}
@@ -4445,7 +4443,7 @@ ul4.UnpackDictItemAST = ul4._inherit(
 	{
 		create: function create(tag, pos, item)
 		{
-			var unpackdictitem = ul4.ItemArgBase.create.call(this, tag, pos);
+			let unpackdictitem = ul4.ItemArgBase.create.call(this, tag, pos);
 			unpackdictitem.item = item;
 			return unpackdictitem;
 		},
@@ -4458,14 +4456,14 @@ ul4.UnpackDictItemAST = ul4._inherit(
 		},
 		_eval_dict: function _eval_dict(context, result)
 		{
-			var item = this.item._handle_eval(context);
+			let item = this.item._handle_eval(context);
 			if (ul4._islist(item))
 			{
-				for (var i = 0; i < item.length; ++i)
+				for (let i = 0; i < item.length; ++i)
 				{
 					if (!ul4._islist(item[i]) || item[i].length != 2)
 						throw ul4.ArgumentError.create("** requires a list of (key, value) pairs");
-					var key = item[i][0], value = item[i][1];
+					let key = item[i][0], value = item[i][1];
 					ul4on._setmap(result, key, value);
 				}
 			}
@@ -4477,7 +4475,7 @@ ul4.UnpackDictItemAST = ul4._inherit(
 			}
 			else if (ul4._isobject(item))
 			{
-				for (var key in item)
+				for (let key in item)
 					ul4on._setmap(result, key, item[key]);
 			}
 		}
@@ -4489,7 +4487,7 @@ ul4.PosArgAST = ul4._inherit(
 	{
 		create: function create(tag, pos, value)
 		{
-			var arg = ul4.ItemArgBase.create.call(this, tag, pos);
+			let arg = ul4.ItemArgBase.create.call(this, tag, pos);
 			arg.value = value;
 			return arg;
 		},
@@ -4502,7 +4500,7 @@ ul4.PosArgAST = ul4._inherit(
 		},
 		_eval_call: function _eval_call(context, args, kwargs)
 		{
-			var value = this.value._handle_eval(context);
+			let value = this.value._handle_eval(context);
 			args.push(value);
 		}
 	}
@@ -4513,7 +4511,7 @@ ul4.KeywordArgAST = ul4._inherit(
 	{
 		create: function create(tag, pos, name, value)
 		{
-			var arg = ul4.ItemArgBase.create.call(this, tag, pos);
+			let arg = ul4.ItemArgBase.create.call(this, tag, pos);
 			arg.name = name;
 			arg.value = value;
 			return arg;
@@ -4531,7 +4529,7 @@ ul4.KeywordArgAST = ul4._inherit(
 		{
 			if (kwargs.hasOwnProperty(this.name))
 				throw ul4.ArgumentError.create("duplicate keyword argument " + this.name);
-			var value = this.value._handle_eval(context);
+			let value = this.value._handle_eval(context);
 			kwargs[this.name] = value;
 		}
 	}
@@ -4542,7 +4540,7 @@ ul4.UnpackListArgAST = ul4._inherit(
 	{
 		create: function create(tag, pos, item)
 		{
-			var arg = ul4.ItemArgBase.create.call(this, tag, pos);
+			let arg = ul4.ItemArgBase.create.call(this, tag, pos);
 			arg.item = item;
 			return arg;
 		},
@@ -4555,7 +4553,7 @@ ul4.UnpackListArgAST = ul4._inherit(
 		},
 		_eval_call: function _eval_call(context, args, kwargs)
 		{
-			var item = this.item._handle_eval(context);
+			let item = this.item._handle_eval(context);
 			args.push(...item);
 		}
 	}
@@ -4566,7 +4564,7 @@ ul4.UnpackDictArgAST = ul4._inherit(
 	{
 		create: function create(tag, pos, item)
 		{
-			var arg = ul4.ItemArgBase.create.call(this, tag, pos);
+			let arg = ul4.ItemArgBase.create.call(this, tag, pos);
 			arg.item = item;
 			return arg;
 		},
@@ -4579,14 +4577,14 @@ ul4.UnpackDictArgAST = ul4._inherit(
 		},
 		_eval_call: function _eval_call(context, args, kwargs)
 		{
-			var item = this.item._handle_eval(context);
+			let item = this.item._handle_eval(context);
 			if (ul4._islist(item))
 			{
-				for (var i = 0; i < item.length; ++i)
+				for (let i = 0; i < item.length; ++i)
 				{
 					if (!ul4._islist(item[i]) || item[i].length != 2)
 						throw ul4.ArgumentError.create("** requires a list of (key, value) pairs");
-					var key = item[i][0], value = item[i][1];
+					let key = item[i][0], value = item[i][1];
 					if (kwargs.hasOwnProperty(key))
 						throw ul4.ArgumentError.create("duplicate keyword argument " + key);
 					kwargs[key] = value;
@@ -4602,7 +4600,7 @@ ul4.UnpackDictArgAST = ul4._inherit(
 			}
 			else if (ul4._isobject(item))
 			{
-				for (var key in item)
+				for (let key in item)
 				{
 					if (kwargs.hasOwnProperty(key))
 						throw ul4.ArgumentError.create("duplicate keyword argument " + key);
@@ -4618,7 +4616,7 @@ ul4.ListAST = ul4._inherit(
 	{
 		create: function create(tag, pos)
 		{
-			var list = ul4.CodeAST.create.call(this, tag, pos);
+			let list = ul4.CodeAST.create.call(this, tag, pos);
 			list.items = [];
 			return list;
 		},
@@ -4626,7 +4624,7 @@ ul4.ListAST = ul4._inherit(
 		_repr: function _repr(out)
 		{
 			out.push("<ListAST");
-			for (var i = 0; i < this.items.length; ++i)
+			for (let i = 0; i < this.items.length; ++i)
 			{
 				out.push(" ");
 				this.items[i]._repr(out);
@@ -4635,8 +4633,8 @@ ul4.ListAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var result = [];
-			for (var i = 0; i < this.items.length; ++i)
+			let result = [];
+			for (let i = 0; i < this.items.length; ++i)
 				this.items[i]._handle_eval_list(context, result);
 			return result;
 		}
@@ -4648,7 +4646,7 @@ ul4.ListCompAST = ul4._inherit(
 	{
 		create: function create(tag, pos, item, varname, container, condition)
 		{
-			var listcomp = ul4.CodeAST.create.call(this, tag, pos);
+			let listcomp = ul4.CodeAST.create.call(this, tag, pos);
 			listcomp.item = item;
 			listcomp.varname = varname;
 			listcomp.container = container;
@@ -4674,18 +4672,18 @@ ul4.ListCompAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var container = this.container._handle_eval(context);
+			let container = this.container._handle_eval(context);
 
-			var localcontext = context.inheritvars();
+			let localcontext = context.inheritvars();
 
-			var result = [];
-			for (var iter = ul4._iter(container);;)
+			let result = [];
+			for (let iter = ul4._iter(container);;)
 			{
-				var item = iter.next();
+				let item = iter.next();
 				if (item.done)
 					break;
-				var varitems = ul4._unpackvar(this.varname, item.value);
-				for (var i = 0; i < varitems.length; ++i)
+				let varitems = ul4._unpackvar(this.varname, item.value);
+				for (let i = 0; i < varitems.length; ++i)
 					varitems[i][0]._handle_eval_set(localcontext, varitems[i][1]);
 				if (this.condition === null || ul4._bool(this.condition._handle_eval(localcontext)))
 					result.push(this.item._handle_eval(localcontext));
@@ -4700,7 +4698,7 @@ ul4.DictAST = ul4._inherit(
 	{
 		create: function create(tag, pos)
 		{
-			var dict = ul4.CodeAST.create.call(this, tag, pos);
+			let dict = ul4.CodeAST.create.call(this, tag, pos);
 			dict.items = [];
 			return dict;
 		},
@@ -4708,7 +4706,7 @@ ul4.DictAST = ul4._inherit(
 		_repr: function _repr(out)
 		{
 			out.push("<DictAST");
-			for (var i = 0; i < this.items.length; ++i)
+			for (let i = 0; i < this.items.length; ++i)
 			{
 				out.push(" ");
 				this.items[i][0]._repr(out);
@@ -4719,8 +4717,8 @@ ul4.DictAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var result = ul4on._emptymap();
-			for (var i = 0; i < this.items.length; ++i)
+			let result = ul4on._emptymap();
+			for (let i = 0; i < this.items.length; ++i)
 				this.items[i]._handle_eval_dict(context, result);
 			return result;
 		}
@@ -4732,7 +4730,7 @@ ul4.DictCompAST = ul4._inherit(
 	{
 		create: function create(tag, pos, key, value, varname, container, condition)
 		{
-			var listcomp = ul4.CodeAST.create.call(this, tag, pos);
+			let listcomp = ul4.CodeAST.create.call(this, tag, pos);
 			listcomp.key = key;
 			listcomp.value = value;
 			listcomp.varname = varname;
@@ -4761,24 +4759,24 @@ ul4.DictCompAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var container = this.container._handle_eval(context);
+			let container = this.container._handle_eval(context);
 
-			var localcontext = context.inheritvars();
+			let localcontext = context.inheritvars();
 
-			var result = ul4on._emptymap();
+			let result = ul4on._emptymap();
 
-			for (var iter = ul4._iter(container);;)
+			for (let iter = ul4._iter(container);;)
 			{
-				var item = iter.next();
+				let item = iter.next();
 				if (item.done)
 					break;
-				var varitems = ul4._unpackvar(this.varname, item.value);
-				for (var i = 0; i < varitems.length; ++i)
+				let varitems = ul4._unpackvar(this.varname, item.value);
+				for (let i = 0; i < varitems.length; ++i)
 					varitems[i][0]._handle_eval_set(localcontext, varitems[i][1]);
 				if (this.condition === null || ul4._bool(this.condition._handle_eval(localcontext)))
 				{
-					var key = this.key._handle_eval(localcontext);
-					var value = this.value._handle_eval(localcontext);
+					let key = this.key._handle_eval(localcontext);
+					let value = this.value._handle_eval(localcontext);
 					ul4on._setmap(result, key, value);
 				}
 			}
@@ -4793,7 +4791,7 @@ ul4.SetAST = ul4._inherit(
 	{
 		create: function create(tag, pos)
 		{
-			var set = ul4.CodeAST.create.call(this, tag, pos);
+			let set = ul4.CodeAST.create.call(this, tag, pos);
 			set.items = [];
 			return set;
 		},
@@ -4801,7 +4799,7 @@ ul4.SetAST = ul4._inherit(
 		_repr: function _repr(out)
 		{
 			out.push("<SetAST");
-			for (var i = 0; i < this.items.length; ++i)
+			for (let i = 0; i < this.items.length; ++i)
 			{
 				out.push(" ");
 				this.items[i][0]._repr(out);
@@ -4812,9 +4810,9 @@ ul4.SetAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var result = ul4on._haveset ? new Set() : ul4._Set.create();
+			let result = ul4on._haveset ? new Set() : ul4._Set.create();
 
-			for (var i = 0; i < this.items.length; ++i)
+			for (let i = 0; i < this.items.length; ++i)
 				this.items[i]._handle_eval_set(context, result);
 
 			return result;
@@ -4827,7 +4825,7 @@ ul4.SetCompAST = ul4._inherit(
 	{
 		create: function create(tag, pos, item, varname, container, condition)
 		{
-			var setcomp = ul4.CodeAST.create.call(this, tag, pos);
+			let setcomp = ul4.CodeAST.create.call(this, tag, pos);
 			setcomp.item = item;
 			setcomp.container = container;
 			setcomp.condition = condition;
@@ -4852,18 +4850,18 @@ ul4.SetCompAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var container = this.container._handle_eval(context);
+			let container = this.container._handle_eval(context);
 
-			var localcontext = context.inheritvars();
+			let localcontext = context.inheritvars();
 
-			var result = ul4on._haveset ? new Set() : ul4._Set.create();
-			for (var iter = ul4._iter(container);;)
+			let result = ul4on._haveset ? new Set() : ul4._Set.create();
+			for (let iter = ul4._iter(container);;)
 			{
-				var item = iter.next();
+				let item = iter.next();
 				if (item.done)
 					break;
-				var varitems = ul4._unpackvar(this.varname, item.value);
-				for (var i = 0; i < varitems.length; ++i)
+				let varitems = ul4._unpackvar(this.varname, item.value);
+				for (let i = 0; i < varitems.length; ++i)
 					varitems[i][0]._handle_eval_set(localcontext, varitems[i][1]);
 				if (this.condition === null || ul4._bool(this.condition._handle_eval(localcontext)))
 					result.add(this.item._handle_eval(localcontext));
@@ -4879,7 +4877,7 @@ ul4.GenExprAST = ul4._inherit(
 	{
 		create: function create(tag, pos, item, varname, container, condition)
 		{
-			var genexp = ul4.CodeAST.create.call(this, tag, pos);
+			let genexp = ul4.CodeAST.create.call(this, tag, pos);
 			genexp.item = item;
 			genexp.varname = varname;
 			genexp.container = container;
@@ -4905,26 +4903,26 @@ ul4.GenExprAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var container = this.container._handle_eval(context);
-			var iter = ul4._iter(container);
+			let container = this.container._handle_eval(context);
+			let iter = ul4._iter(container);
 
-			var localcontext = context.inheritvars();
+			let localcontext = context.inheritvars();
 
-			var self = this;
+			let self = this;
 
-			var result = {
+			let result = {
 				next: function(){
 					while (true)
 					{
-						var item = iter.next();
+						let item = iter.next();
 						if (item.done)
 							return item;
-						var varitems = ul4._unpackvar(self.varname, item.value);
-						for (var i = 0; i < varitems.length; ++i)
+						let varitems = ul4._unpackvar(self.varname, item.value);
+						for (let i = 0; i < varitems.length; ++i)
 							varitems[i][0]._handle_eval_set(localcontext, varitems[i][1]);
 						if (self.condition === null || ul4._bool(self.condition._handle_eval(localcontext)))
 						{
-							var value = self.item._handle_eval(localcontext);
+							let value = self.item._handle_eval(localcontext);
 							return {value: value, done: false};
 						}
 					}
@@ -4941,7 +4939,7 @@ ul4.VarAST = ul4._inherit(
 	{
 		create: function create(tag, pos, name)
 		{
-			var variable = ul4.CodeAST.create.call(this, tag, pos);
+			let variable = ul4.CodeAST.create.call(this, tag, pos);
 			variable.name = name;
 			return variable;
 		},
@@ -4966,7 +4964,7 @@ ul4.VarAST = ul4._inherit(
 		},
 		_get: function _get(context, name)
 		{
-			var result = context.get(name);
+			let result = context.get(name);
 			if (typeof(result) === "undefined")
 				result = ul4.functions[name];
 			return result;
@@ -4988,7 +4986,7 @@ ul4.UnaryAST = ul4._inherit(
 	{
 		create: function create(tag, pos, obj)
 		{
-			var unary = ul4.CodeAST.create.call(this, tag, pos);
+			let unary = ul4.CodeAST.create.call(this, tag, pos);
 			unary.obj = obj;
 			return unary;
 		},
@@ -5003,7 +5001,7 @@ ul4.UnaryAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var obj = this.obj._handle_eval(context);
+			let obj = this.obj._handle_eval(context);
 			return this._do(obj);
 		}
 	}
@@ -5050,7 +5048,7 @@ ul4.IfAST = ul4._inherit(
 	{
 		create: function create(tag, pos, objif, objcond, objelse)
 		{
-			var ifexpr = ul4.CodeAST.create.call(this, tag, pos);
+			let ifexpr = ul4.CodeAST.create.call(this, tag, pos);
 			ifexpr.objif = objif;
 			ifexpr.objcond = objcond;
 			ifexpr.objelse = objelse;
@@ -5075,7 +5073,7 @@ ul4.IfAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var result;
+			let result;
 			var condvalue = this.objcond._handle_eval(context);
 			if (ul4._bool(condvalue))
 				result = this.objif._handle_eval(context);
@@ -5091,7 +5089,7 @@ ul4.ReturnAST = ul4._inherit(
 	{
 		_eval: function _eval(context)
 		{
-			var result = this.obj._handle_eval(context);
+			let result = this.obj._handle_eval(context);
 			throw ul4.ReturnException.create(result);
 		},
 		_str: function _str(out)
@@ -5107,8 +5105,8 @@ ul4.PrintAST = ul4._inherit(
 	{
 		_eval: function _eval(context)
 		{
-			var obj = this.obj._handle_eval(context);
-			var output = ul4._str(obj);
+			let obj = this.obj._handle_eval(context);
+			let output = ul4._str(obj);
 			context.output(output);
 		},
 		_str: function _str(out)
@@ -5124,8 +5122,8 @@ ul4.PrintXAST = ul4._inherit(
 	{
 		_eval: function _eval(context)
 		{
-			var obj = this.obj._handle_eval(context);
-			var output = ul4._xmlescape(obj);
+			let obj = this.obj._handle_eval(context);
+			let output = ul4._xmlescape(obj);
 			context.output(output);
 		},
 		_str: function _str(out)
@@ -5141,7 +5139,7 @@ ul4.BinaryAST = ul4._inherit(
 	{
 		create: function create(tag, pos, obj1, obj2)
 		{
-			var binary = ul4.CodeAST.create.call(this, tag, pos);
+			let binary = ul4.CodeAST.create.call(this, tag, pos);
 			binary.obj1 = obj1;
 			binary.obj2 = obj2;
 			return binary;
@@ -5159,8 +5157,8 @@ ul4.BinaryAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var obj1 = this.obj1._handle_eval(context);
-			var obj2 = this.obj2._handle_eval(context);
+			let obj1 = this.obj1._handle_eval(context);
+			let obj2 = this.obj2._handle_eval(context);
 			return this._do(obj1, obj2);
 		}
 	}
@@ -5172,19 +5170,19 @@ ul4.ItemAST = ul4._inherit(
 	{
 		_do: function _do(obj1, obj2)
 		{
-			var result = this._get(obj1, obj2);
+			let result = this._get(obj1, obj2);
 			return result;
 		},
 		_eval_set: function _eval_set(context, value)
 		{
-			var obj1 = this.obj1._handle_eval(context);
-			var obj2 = this.obj2._handle_eval(context);
+			let obj1 = this.obj1._handle_eval(context);
+			let obj2 = this.obj2._handle_eval(context);
 			this._set(obj1, obj2, value);
 		},
 		_eval_modify: function _eval_modify(context, operator, value)
 		{
-			var obj1 = this.obj1._handle_eval(context);
-			var obj2 = this.obj2._handle_eval(context);
+			let obj1 = this.obj1._handle_eval(context);
+			let obj2 = this.obj2._handle_eval(context);
 			this._modify(operator, obj1, obj2, value);
 		},
 		_get: function _get(container, key)
@@ -5193,7 +5191,7 @@ ul4.ItemAST = ul4._inherit(
 			{
 				if (ul4.slice.isprotoof(key))
 				{
-					var start = key.start, stop = key.stop;
+					let start = key.start, stop = key.stop;
 					if (typeof(start) === "undefined" || start === null)
 						start = 0;
 					if (typeof(stop) === "undefined" || stop === null)
@@ -5202,7 +5200,7 @@ ul4.ItemAST = ul4._inherit(
 				}
 				else
 				{
-					var orgkey = key;
+					let orgkey = key;
 					if (key < 0)
 						key += container.length;
 					if (key < 0 || key >= container.length)
@@ -5223,7 +5221,7 @@ ul4.ItemAST = ul4._inherit(
 			{
 				if (ul4.slice.isprotoof(key))
 				{
-					var start = key.start, stop = key.stop;
+					let start = key.start, stop = key.stop;
 					if (start === null)
 						start = 0;
 					else if (start < 0)
@@ -5243,9 +5241,9 @@ ul4.ItemAST = ul4._inherit(
 					if (stop < start)
 						stop = start;
 					container.splice(start, stop-start); // Remove old element
-					for (var iter = ul4._iter(value);;)
+					for (let iter = ul4._iter(value);;)
 					{
-						var item = iter.next();
+						let item = iter.next();
 						if (item.done)
 							break;
 						container.splice(start++, 0, item.value);
@@ -5253,7 +5251,7 @@ ul4.ItemAST = ul4._inherit(
 				}
 				else
 				{
-					var orgkey = key;
+					let orgkey = key;
 					if (key < 0)
 						key += container.length;
 					if (key < 0 || key >= container.length)
@@ -5385,7 +5383,7 @@ ul4.ContainsAST = ul4._inherit(
 				return container.has(obj);
 			else if (ul4._isobject(container))
 			{
-				for (var key in container)
+				for (let key in container)
 				{
 					if (key === obj)
 						return true;
@@ -5460,22 +5458,22 @@ ul4.SubAST = ul4._inherit(
 		},
 		_date_sub: function _date_sub(obj1, obj2)
 		{
-			var swap = (obj2 > obj1);
+			let swap = (obj2 > obj1);
 
 			if (swap)
 			{
-				var t = obj1;
+				let t = obj1;
 				obj1 = obj2;
 				obj2 = t;
 			}
 			// From now on obj1 is > than obj2
 
-			var year1 = obj1.getFullYear();
-			var yearday1 = ul4._yearday(obj1);
-			var year2 = obj2.getFullYear();
-			var yearday2 = ul4._yearday(obj2);
+			let year1 = obj1.getFullYear();
+			let yearday1 = ul4._yearday(obj1);
+			let year2 = obj2.getFullYear();
+			let yearday2 = ul4._yearday(obj2);
 
-			var diffdays = 0;
+			let diffdays = 0;
 
 			while (year1 > year2)
 			{
@@ -5484,16 +5482,16 @@ ul4.SubAST = ul4._inherit(
 			}
 			diffdays += yearday1 - yearday2;
 
-			var hours1 = obj1.getHours();
-			var minutes1 = obj1.getMinutes();
-			var seconds1 = obj1.getSeconds();
-			var hours2 = obj2.getHours();
-			var minutes2 = obj2.getMinutes();
-			var seconds2 = obj2.getSeconds();
+			let hours1 = obj1.getHours();
+			let minutes1 = obj1.getMinutes();
+			let seconds1 = obj1.getSeconds();
+			let hours2 = obj2.getHours();
+			let minutes2 = obj2.getMinutes();
+			let seconds2 = obj2.getSeconds();
 
-			var diffseconds = (seconds1 - seconds2) + 60 * ((minutes1 - minutes2) + 60 * (hours1 - hours2));
+			let diffseconds = (seconds1 - seconds2) + 60 * ((minutes1 - minutes2) + 60 * (hours1 - hours2));
 
-			var diffmilliseconds = obj1.getMilliseconds() - obj2.getMilliseconds();
+			let diffmilliseconds = obj1.getMilliseconds() - obj2.getMilliseconds();
 
 			if (swap)
 			{
@@ -5560,8 +5558,8 @@ ul4.MulAST = ul4._inherit(
 			{
 				if (obj2 > 0)
 				{
-					var i = 0;
-					var targetsize = obj1.length * obj2;
+					let i = 0;
+					let targetsize = obj1.length * obj2;
 					while (obj1.length < targetsize)
 						obj1.push(obj1[i++]);
 				}
@@ -5624,8 +5622,8 @@ ul4.ModAST = ul4._inherit(
 		// (this is non-trivial, because it follows the Python semantic of ``-5 % 2`` being ``1``)
 		_do: function _do(obj1, obj2)
 		{
-			var div = Math.floor(obj1 / obj2);
-			var mod = obj1 - div * obj2;
+			let div = Math.floor(obj1 / obj2);
+			let mod = obj1 - div * obj2;
 
 			if (mod !== 0 && ((obj2 < 0 && mod > 0) || (obj2 > 0 && mod < 0)))
 			{
@@ -5757,10 +5755,10 @@ ul4.AndAST = ul4._inherit(
 	{
 		_eval: function _eval(context)
 		{
-			var obj1 = this.obj1._handle_eval(context);
+			let obj1 = this.obj1._handle_eval(context);
 			if (!ul4._bool(obj1))
 				return obj1;
-			var obj2 = this.obj2._handle_eval(context);
+			let obj2 = this.obj2._handle_eval(context);
 			return obj2;
 		}
 	}
@@ -5771,10 +5769,10 @@ ul4.OrAST = ul4._inherit(
 	{
 		_eval: function _eval(context)
 		{
-			var obj1 = this.obj1._handle_eval(context);
+			let obj1 = this.obj1._handle_eval(context);
 			if (ul4._bool(obj1))
 				return obj1;
-			var obj2 = this.obj2._handle_eval(context);
+			let obj2 = this.obj2._handle_eval(context);
 			return obj2;
 		}
 	}
@@ -5785,7 +5783,7 @@ ul4.AttrAST = ul4._inherit(
 	{
 		create: function create(tag, pos, obj, attrname)
 		{
-			var attr = ul4.CodeAST.create.call(this, tag, pos);
+			let attr = ul4.CodeAST.create.call(this, tag, pos);
 			attr.obj = obj;
 			attr.attrname = attrname;
 			return attr;
@@ -5802,23 +5800,23 @@ ul4.AttrAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var obj = this.obj._handle_eval(context);
-			var result = this._get(obj, this.attrname);
+			let obj = this.obj._handle_eval(context);
+			let result = this._get(obj, this.attrname);
 			return result;
 		},
 		_eval_set: function _eval_set(context, value)
 		{
-			var obj = this.obj._handle_eval(context);
+			let obj = this.obj._handle_eval(context);
 			this._set(obj, this.attrname, value);
 		},
 		_eval_modify: function _eval_modify(context, operator, value)
 		{
-			var obj = this.obj._handle_eval(context);
+			let obj = this.obj._handle_eval(context);
 			this._modify(operator, obj, this.attrname, value);
 		},
 		_get: function _get(object, attrname)
 		{
-			var proto = ul4.Protocol.get(object);
+			let proto = ul4.Protocol.get(object);
 			try
 			{
 				return proto.getattr(object, attrname);
@@ -5844,8 +5842,8 @@ ul4.AttrAST = ul4._inherit(
 		},
 		_modify: function _modify(operator, object, attrname, value)
 		{
-			var oldvalue = this._get(object, attrname);
-			var newvalue = operator._ido(oldvalue, value);
+			let oldvalue = this._get(object, attrname);
+			let newvalue = operator._ido(oldvalue, value);
 			this._set(object, attrname, newvalue);
 		}
 	}
@@ -5856,7 +5854,7 @@ ul4.CallAST = ul4._inherit(
 	{
 		create: function create(tag, pos, obj, args)
 		{
-			var call = ul4.CodeAST.create.call(this, tag, pos);
+			let call = ul4.CodeAST.create.call(this, tag, pos);
 			call.obj = obj;
 			call.args = args;
 			return call;
@@ -5867,9 +5865,9 @@ ul4.CallAST = ul4._inherit(
 			out.push("<CallAST");
 			out.push(" obj=");
 			this.obj._repr(out);
-			for (var i = 0; i < this.args.length; ++i)
+			for (let i = 0; i < this.args.length; ++i)
 			{
-				var arg = this.args[i];
+				let arg = this.args[i];
 				out.push(" ");
 				arg._repr(out);
 			}
@@ -5877,8 +5875,8 @@ ul4.CallAST = ul4._inherit(
 		},
 		_makeargs: function _makeargs(context)
 		{
-			var args = [], kwargs = {};
-			for (var i = 0; i < this.args.length; ++i)
+			let args = [], kwargs = {};
+			for (let i = 0; i < this.args.length; ++i)
 				this.args[i]._handle_eval_call(context, args, kwargs);
 			return {args: args, kwargs: kwargs};
 		},
@@ -5895,9 +5893,9 @@ ul4.CallAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var obj = this.obj._handle_eval(context);
-			var args = this._makeargs(context);
-			var result = ul4._call(context, obj, args.args, args.kwargs);
+			let obj = this.obj._handle_eval(context);
+			let args = this._makeargs(context);
+			let result = ul4._call(context, obj, args.args, args.kwargs);
 			return result;
 		}
 	}
@@ -5908,7 +5906,7 @@ ul4.RenderAST = ul4._inherit(
 	{
 		create: function create(tag, pos, obj, args)
 		{
-			var render = ul4.CallAST.create.call(this, tag, pos, obj, args);
+			let render = ul4.CallAST.create.call(this, tag, pos, obj, args);
 			render.indent = null;
 			return render;
 		},
@@ -5921,10 +5919,10 @@ ul4.RenderAST = ul4._inherit(
 			out.push(" obj=");
 			this.obj._repr(out);
 			out.push(0);
-			for (var i = 0; i < this.args.length; ++i)
+			for (let i = 0; i < this.args.length; ++i)
 			{
-				var name = this.args[i][0];
-				var arg = this.args[i][1];
+				let name = this.args[i][0];
+				let arg = this.args[i][1];
 				out.push(" ");
 				if (name === null)
 					;
@@ -5952,13 +5950,13 @@ ul4.RenderAST = ul4._inherit(
 		},
 		_handle_eval: function _handle_eval(context)
 		{
-			var localcontext = context.withindent(this.indent !== null ? this.indent._text() : null);
-			var obj = this.obj._handle_eval(localcontext);
-			var args = this._makeargs(localcontext);
+			let localcontext = context.withindent(this.indent !== null ? this.indent._text() : null);
+			let obj = this.obj._handle_eval(localcontext);
+			let args = this._makeargs(localcontext);
 
 			try
 			{
-				var result = ul4._callrender(localcontext, obj, args.args, args.kwargs);
+				let result = ul4._callrender(localcontext, obj, args.args, args.kwargs);
 				return result;
 			}
 			catch (exc)
@@ -5975,7 +5973,7 @@ ul4.slice = ul4._inherit(
 	{
 		create: function create(start, stop)
 		{
-			var slice = ul4._clone(this);
+			let slice = ul4._clone(this);
 			slice.start = start;
 			slice.stop = stop;
 			return slice;
@@ -5994,7 +5992,7 @@ ul4.SliceAST = ul4._inherit(
 	{
 		create: function create(tag, pos, index1, index2)
 		{
-			var slice = ul4.CodeAST.create.call(this, tag, pos);
+			let slice = ul4.CodeAST.create.call(this, tag, pos);
 			slice.index1 = index1;
 			slice.index2 = index2;
 			return slice;
@@ -6017,8 +6015,8 @@ ul4.SliceAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var index1 = this.index1 !== null ? this.index1._handle_eval(context) : null;
-			var index2 = this.index2 !== null ? this.index2._handle_eval(context) : null;
+			let index1 = this.index1 !== null ? this.index1._handle_eval(context) : null;
+			let index2 = this.index2 !== null ? this.index2._handle_eval(context) : null;
 			return ul4.slice.create(index1, index2);
 		}
 	}
@@ -6030,7 +6028,7 @@ ul4.SetVarAST = ul4._inherit(
 	{
 		create: function create(tag, pos, lvalue, value)
 		{
-			var changevar = ul4.CodeAST.create.call(this, tag, pos);
+			let changevar = ul4.CodeAST.create.call(this, tag, pos);
 			changevar.lvalue = lvalue;
 			changevar.value = value;
 			return changevar;
@@ -6048,11 +6046,11 @@ ul4.SetVarAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var value = this.value._handle_eval(context);
-			var items = ul4._unpackvar(this.lvalue, value);
-			for (var i = 0; i < items.length; ++i)
+			let value = this.value._handle_eval(context);
+			let items = ul4._unpackvar(this.lvalue, value);
+			for (let i = 0; i < items.length; ++i)
 			{
-				var item = items[i];
+				let item = items[i];
 				item[0]._handle_eval_set(context, item[1]);
 			}
 		}
@@ -6064,11 +6062,11 @@ ul4.ModifyVarAST = ul4._inherit(
 	{
 		_eval: function _eval(context)
 		{
-			var value = this.value._handle_eval(context);
-			var items = ul4._unpackvar(this.lvalue, value);
-			for (var i = 0; i < items.length; ++i)
+			let value = this.value._handle_eval(context);
+			let items = ul4._unpackvar(this.lvalue, value);
+			for (let i = 0; i < items.length; ++i)
 			{
-				var item = items[i];
+				let item = items[i];
 				item[0]._handle_eval_modify(context, this._operator, item[1]);
 			}
 		}
@@ -6102,7 +6100,7 @@ ul4.BlockAST = ul4._inherit(
 	{
 		create: function create(tag, pos)
 		{
-			var block = ul4.CodeAST.create.call(this, tag, pos);
+			let block = ul4.CodeAST.create.call(this, tag, pos);
 			block.endtag = null;
 			block.content = [];
 			return block;
@@ -6110,14 +6108,14 @@ ul4.BlockAST = ul4._inherit(
 		_ul4onattrs: ul4.CodeAST._ul4onattrs.concat(["endtag", "content"]),
 		_eval: function _eval(context)
 		{
-			for (var i = 0; i < this.content.length; ++i)
+			for (let i = 0; i < this.content.length; ++i)
 				this.content[i]._handle_eval(context);
 		},
 		_str: function _str(out)
 		{
 			if (this.content.length)
 			{
-				for (var i = 0; i < this.content.length; ++i)
+				for (let i = 0; i < this.content.length; ++i)
 				{
 					this.content[i]._str(out);
 					out.push(0);
@@ -6137,7 +6135,7 @@ ul4.ForBlockAST = ul4._inherit(
 	{
 		create: function create(tag, pos, varname, container)
 		{
-			var for_ = ul4.BlockAST.create.call(this, tag, pos);
+			let for_ = ul4.BlockAST.create.call(this, tag, pos);
 			for_.varname = varname;
 			for_.container = container;
 			return for_;
@@ -6157,7 +6155,7 @@ ul4.ForBlockAST = ul4._inherit(
 			if (ul4._islist(varname))
 			{
 				out.push("(");
-				for (var i = 0; i < varname.length; ++i)
+				for (let i = 0; i < varname.length; ++i)
 				{
 					if (i)
 						out.push(", ");
@@ -6172,15 +6170,15 @@ ul4.ForBlockAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var container = this.container._handle_eval(context);
+			let container = this.container._handle_eval(context);
 
-			for (var iter = ul4._iter(container);;)
+			for (let iter = ul4._iter(container);;)
 			{
-				var value = iter.next();
+				let value = iter.next();
 				if (value.done)
 					break;
-				var varitems = ul4._unpackvar(this.varname, value.value);
-				for (var i = 0; i < varitems.length; ++i)
+				let varitems = ul4._unpackvar(this.varname, value.value);
+				for (let i = 0; i < varitems.length; ++i)
 					varitems[i][0]._handle_eval_set(context, varitems[i][1]);
 				try
 				{
@@ -6218,7 +6216,7 @@ ul4.WhileBlockAST = ul4._inherit(
 	{
 		create: function create(tag, pos, condition)
 		{
-			var while_ = ul4.BlockAST.create.call(this, tag, pos);
+			let while_ = ul4.BlockAST.create.call(this, tag, pos);
 			while_.condition = condition;
 			return while_;
 		},
@@ -6243,7 +6241,7 @@ ul4.WhileBlockAST = ul4._inherit(
 		{
 			while (true)
 			{
-				var cond = this.condition._handle_eval(context);
+				let cond = this.condition._handle_eval(context);
 				if (!ul4._bool(cond))
 					break;
 				try
@@ -6309,10 +6307,10 @@ ul4.CondBlockAST = ul4._inherit(
 	{
 		_eval: function _eval(context)
 		{
-			for (var i = 0; i < this.content.length; ++i)
+			for (let i = 0; i < this.content.length; ++i)
 			{
-				var block = this.content[i];
-				var execute = block._execute(context);
+				let block = this.content[i];
+				let execute = block._execute(context);
 				if (execute)
 				{
 					block._handle_eval(context);
@@ -6328,7 +6326,7 @@ ul4.ConditionalBlockAST = ul4._inherit(
 	{
 		create: function create(tag, pos, condition)
 		{
-			var block = ul4.BlockAST.create.call(this, tag, pos);
+			let block = ul4.BlockAST.create.call(this, tag, pos);
 			block.condition = condition;
 			return block;
 		},
@@ -6353,8 +6351,8 @@ ul4.ConditionalBlockAST = ul4._inherit(
 		},
 		_execute: function _execute(context)
 		{
-			var cond = this.condition._handle_eval(context);
-			var result = ul4._bool(cond);
+			let cond = this.condition._handle_eval(context);
+			let result = ul4._bool(cond);
 			return result;
 		}
 	}
@@ -6391,7 +6389,7 @@ ul4.Template = ul4._inherit(
 	{
 		create: function create(tag, pos, source, name, whitespace, startdelim, enddelim, signature)
 		{
-			var template = ul4.BlockAST.create.call(this, tag, pos);
+			let template = ul4.BlockAST.create.call(this, tag, pos);
 			template.source = source;
 			template.name = name;
 			template.whitespace = whitespace;
@@ -6408,7 +6406,7 @@ ul4.Template = ul4._inherit(
 		},
 		ul4ondump: function ul4ondump(encoder)
 		{
-			var signature;
+			let signature;
 			encoder.dump(ul4.version);
 			encoder.dump(this.name);
 			encoder.dump(this.source);
@@ -6422,9 +6420,9 @@ ul4.Template = ul4._inherit(
 			else
 			{
 				signature = [];
-				for (var i = 0; i < this.signature.args.length; ++i)
+				for (let i = 0; i < this.signature.args.length; ++i)
 				{
-					var arg = this.signature.args[i];
+					let arg = this.signature.args[i];
 					if (typeof(arg.defaultValue) === "undefined")
 						signature.push(arg.name);
 					else
@@ -6440,8 +6438,8 @@ ul4.Template = ul4._inherit(
 		},
 		ul4onload: function ul4onload(decoder)
 		{
-			var version = decoder.load();
-			var signature;
+			let version = decoder.load();
+			let signature;
 
 			if (version === null)
 				throw ul4.ValueError.create("UL4ON doesn't support templates in 'source' format in Javascript implementation");
@@ -6469,10 +6467,10 @@ ul4.Template = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var signature = null;
+			let signature = null;
 			if (this.signature !== null)
 				signature = this.signature._handle_eval(context);
-			var closure = ul4.TemplateClosure.create(this, signature, context.vars);
+			let closure = ul4.TemplateClosure.create(this, signature, context.vars);
 			context.set(this.name, closure);
 		},
 		_repr: function _repr(out)
@@ -6512,7 +6510,7 @@ ul4.Template = ul4._inherit(
 		_ul4_renderneedscontext: true,
 		_renderbound: function _renderbound(context, vars)
 		{
-			var localcontext = context.clone();
+			let localcontext = context.clone();
 			localcontext.vars = vars;
 			try
 			{
@@ -6534,14 +6532,14 @@ ul4.Template = ul4._inherit(
 		},
 		_rendersbound: function _rendersbound(context, vars)
 		{
-			var localcontext = context.replaceoutput();
+			let localcontext = context.replaceoutput();
 			this._renderbound(localcontext, vars);
 			return localcontext.getoutput();
 		},
 		renders: function renders(vars)
 		{
 			vars = vars || {};
-			var context = ul4.Context.create();
+			let context = ul4.Context.create();
 			if (this.signature !== null)
 				vars = this.signature.bindObject(this.name, [], vars);
 			return this._rendersbound(context, vars);
@@ -6587,7 +6585,7 @@ ul4.Template = ul4._inherit(
 		},
 		_callbound: function _callbound(context, vars)
 		{
-			var localcontext = context.clone();
+			let localcontext = context.clone();
 			localcontext.vars = vars;
 			try
 			{
@@ -6605,7 +6603,7 @@ ul4.Template = ul4._inherit(
 		call: function call(vars)
 		{
 			vars = vars || {};
-			var context = ul4.Context.create();
+			let context = ul4.Context.create();
 			if (this.signature !== null)
 				vars = this.signature.bindObject(this.name, [], vars);
 			return this._callbound(context, vars);
@@ -6623,7 +6621,7 @@ ul4.SignatureAST = ul4._inherit(
 	{
 		create: function create(tag, pos)
 		{
-			var signature = ul4.CodeAST.create.call(this, tag, pos);
+			let signature = ul4.CodeAST.create.call(this, tag, pos);
 			signature.params = [];
 			return signature;
 		},
@@ -6631,11 +6629,11 @@ ul4.SignatureAST = ul4._inherit(
 		{
 			ul4.CodeAST.ul4ondump.call(this, encoder);
 
-			var dump = [];
+			let dump = [];
 
-			for (var i = 0; i < this.params.length; ++i)
+			for (let i = 0; i < this.params.length; ++i)
 			{
-				var param = this.params[i];
+				let param = this.params[i];
 				if (param[1] === null)
 					dump.push(param[0]);
 				else
@@ -6646,11 +6644,11 @@ ul4.SignatureAST = ul4._inherit(
 		ul4onload: function ul4onload(decoder)
 		{
 			ul4.AST.ul4onload.call(this, decoder);
-			var dump = decoder.load();
+			let dump = decoder.load();
 			this.params = [];
-			for (var i = 0; i < dump.length; ++i)
+			for (let i = 0; i < dump.length; ++i)
 			{
-				var param = dump[i];
+				let param = dump[i];
 				if (typeof(param) === "string")
 					this.params.push([param, null]);
 				else
@@ -6659,10 +6657,10 @@ ul4.SignatureAST = ul4._inherit(
 		},
 		_eval: function _eval(context)
 		{
-			var args = [];
-			for (var i = 0; i < this.params.length; ++i)
+			let args = [];
+			for (let i = 0; i < this.params.length; ++i)
 			{
-				var param = this.params[i];
+				let param = this.params[i];
 				if (param[1] === null)
 					args.push(param[0]);
 				else
@@ -6689,7 +6687,7 @@ ul4.TemplateClosure = ul4._inherit(
 	{
 		create: function create(template, signature, vars)
 		{
-			var closure = ul4._clone(this);
+			let closure = ul4._clone(this);
 			closure.template = template;
 			closure.signature = signature;
 			closure.vars = vars;
@@ -6732,7 +6730,7 @@ ul4.TemplateClosure = ul4._inherit(
 		},
 		__getattr__: function __getattr__(attrname)
 		{
-			var self = this;
+			let self = this;
 			switch (attrname)
 			{
 				case "render":
@@ -6835,12 +6833,12 @@ ul4._min = function _min(obj)
 		throw ul4.ArgumentError.create("min() requires at least 1 argument, 0 given");
 	else if (obj.length == 1)
 		obj = obj[0];
-	var iter = ul4._iter(obj);
-	var result;
-	var first = true;
+	let iter = ul4._iter(obj);
+	let result;
+	let first = true;
 	while (true)
 	{
-		var item = iter.next();
+		let item = iter.next();
 		if (item.done)
 		{
 			if (first)
@@ -6860,12 +6858,12 @@ ul4._max = function _max(obj)
 		throw ul4.ArgumentError.create("max() requires at least 1 argument, 0 given");
 	else if (obj.length == 1)
 		obj = obj[0];
-	var iter = ul4._iter(obj);
-	var result;
-	var first = true;
+	let iter = ul4._iter(obj);
+	let result;
+	let first = true;
 	while (true)
 	{
-		var item = iter.next();
+		let item = iter.next();
 		if (item.done)
 		{
 			if (first)
@@ -6881,9 +6879,9 @@ ul4._max = function _max(obj)
 // Return the of the values from the iterable starting with ``start`` (default ``0``)
 ul4._sum = function _sum(iterable, start=0)
 {
-	for (var iter = ul4._iter(iterable);;)
+	for (let iter = ul4._iter(iterable);;)
 	{
-		var item = iter.next();
+		let item = iter.next();
 		if (item.done)
 			break;
 		start += item.value;
@@ -6894,18 +6892,18 @@ ul4._sum = function _sum(iterable, start=0)
 // Return the first value produced by iterating through ``iterable`` (defaulting to ``defaultValue`` if the iterator is empty)
 ul4._first = function _first(iterable, defaultValue=null)
 {
-	var item = ul4._iter(iterable).next();
+	let item = ul4._iter(iterable).next();
 	return item.done ? defaultValue : item.value;
 };
 
 // Return the last value produced by iterating through ``iterable`` (defaulting to ``defaultValue`` if the iterator is empty)
 ul4._last = function _last(iterable, defaultValue=null)
 {
-	var value = defaultValue;
+	let value = defaultValue;
 
-	for (var iter = ul4._iter(iterable);;)
+	for (let iter = ul4._iter(iterable);;)
 	{
-		var item = iter.next();
+		let item = iter.next();
 		if (item.done)
 			break;
 		value = item.value;
@@ -6916,25 +6914,17 @@ ul4._last = function _last(iterable, defaultValue=null)
 // Return a sorted version of ``iterable``
 ul4._sorted = function _sorted(context, iterable, key=null, reverse=false)
 {
-	var cmp;
 	if (key === null)
 	{
 		// FIXME: stability
-		if (reverse)
+		let cmp = reverse ? function cmp(a, b)
 		{
-			cmp = function cmp(a, b)
-			{
-				return -ul4._cmp("<=>", a, b);
-			};
-		}
-		else
+			return -ul4._cmp("<=>", a, b);
+		} : function cmp(a, b)
 		{
-			cmp = function cmp(a, b)
-			{
-				return ul4._cmp("<=>", a, b);
-			};
-		}
-		var result = ul4._list(iterable);
+			return ul4._cmp("<=>", a, b);
+		};
+		let result = ul4._list(iterable);
 		result.sort(cmp);
 		return result;
 	}
@@ -6952,7 +6942,7 @@ ul4._sorted = function _sorted(context, iterable, key=null, reverse=false)
 		}
 		cmp = function cmp(s1, s2)
 		{
-			var res = ul4._cmp("<=>", s1[0], s2[0]);
+			let res = ul4._cmp("<=>", s1[0], s2[0]);
 			if (res)
 				return reverse ? -res : res;
 			res = ul4._cmp(s1[1], s2[1]);
@@ -6961,8 +6951,8 @@ ul4._sorted = function _sorted(context, iterable, key=null, reverse=false)
 
 		sort.sort(cmp);
 
-		var result = [];
-		for (var i = 0; i < sort.length; ++i)
+		let result = [];
+		for (let i = 0; i < sort.length; ++i)
 			result.push(sort[i][2]);
 		return result;
 	}
@@ -6971,7 +6961,7 @@ ul4._sorted = function _sorted(context, iterable, key=null, reverse=false)
 // Return a iterable object iterating from ``start`` upto (but not including) ``stop`` with a step size of ``step``
 ul4._range = function _range(args)
 {
-	var start, stop, step;
+	let start, stop, step;
 	if (args.length < 1)
 		throw ul4.ArgumentError.create("required range() argument missing");
 	else if (args.length > 3)
@@ -6994,7 +6984,7 @@ ul4._range = function _range(args)
 		stop = args[1];
 		step = args[2];
 	}
-	var lower, higher;
+	let lower, higher;
 	if (step === 0)
 		throw ul4.ValueError.create("range() requires a step argument != 0");
 	else if (step > 0)
@@ -7007,7 +6997,7 @@ ul4._range = function _range(args)
 		lower = stop;
 		heigher = start;
 	}
-	var length = (lower < heigher) ? Math.floor((heigher - lower - 1)/Math.abs(step)) + 1 : 0;
+	let length = (lower < heigher) ? Math.floor((heigher - lower - 1)/Math.abs(step)) + 1 : 0;
 
 	return {
 		index: 0,
@@ -7023,7 +7013,7 @@ ul4._range = function _range(args)
 // Return a iterable object returning a slice from the argument
 ul4._slice = function _slice(args)
 {
-	var iterable, start, stop, step;
+	let iterable, start, stop, step;
 	if (args.length < 2)
 		throw ul4.ArgumentError.create("required slice() argument missing");
 	else if (args.length > 4)
@@ -7056,11 +7046,11 @@ ul4._slice = function _slice(args)
 	if (step <= 0)
 		throw ul4.ValueError.create("slice() requires a step argument > 0");
 
-	var next = start, count = 0;
-	var iter = ul4._iter(iterable);
+	let next = start, count = 0;
+	let iter = ul4._iter(iterable);
 	return {
 		next: function() {
-			var result;
+			let result;
 			while (count < next)
 			{
 				result = iter.next();
@@ -7116,7 +7106,7 @@ ul4._random = function _random()
 // Return a randomly select item from ``range(start, stop, step)``
 ul4._randrange = function _randrange(args)
 {
-	var start, stop, step;
+	let start, stop, step;
 	if (args.length < 1)
 		throw ul4.ArgumentError.create("required randrange() argument missing");
 	else if (args.length > 3)
@@ -7139,11 +7129,11 @@ ul4._randrange = function _randrange(args)
 		stop = args[1];
 		step = args[2];
 	}
-	var width = stop-start;
+	let width = stop-start;
 
-	var value = Math.random();
+	let value = Math.random();
 
-	var n;
+	let n;
 	if (step > 0)
 		n = Math.floor((width + step - 1) / step);
 	else if (step < 0)
@@ -7156,7 +7146,7 @@ ul4._randrange = function _randrange(args)
 // Return a random item/char from the list/string ``sequence``
 ul4._randchoice = function _randchoice(sequence)
 {
-	var iscolor = ul4._iscolor(sequence);
+	let iscolor = ul4._iscolor(sequence);
 	if (typeof(sequence) !== "string" && !ul4._islist(sequence) && !iscolor)
 		throw ul4.TypeError.create("randchoice() requires a string or list");
 	if (iscolor)
@@ -7169,7 +7159,7 @@ ul4._round = function _round(x, digits=0)
 {
 	if (digits)
 	{
-		var threshhold = Math.pow(10, digits);
+		let threshhold = Math.pow(10, digits);
 		return Math.round(x*threshhold)/threshhold;
 	}
 	else
@@ -7190,7 +7180,7 @@ ul4._enumerate = function _enumerate(iterable, start=0)
 		iter: ul4._iter(iterable),
 		index: start,
 		next: function() {
-			var item = this.iter.next();
+			let item = this.iter.next();
 			return item.done ? item : {value: [this.index++, item.value], done: false};
 		}
 	};
@@ -7199,12 +7189,12 @@ ul4._enumerate = function _enumerate(iterable, start=0)
 // Return an iterator over ``[isfirst, item]`` lists from the iterable object ``iterable`` (``isfirst`` is true for the first item, false otherwise)
 ul4._isfirst = function _isfirst(iterable)
 {
-	var iter = ul4._iter(iterable);
-	var isfirst = true;
+	let iter = ul4._iter(iterable);
+	let isfirst = true;
 	return {
 		next: function() {
-			var item = iter.next();
-			var result = item.done ? item : {value: [isfirst, item.value], done: false};
+			let item = iter.next();
+			let result = item.done ? item : {value: [isfirst, item.value], done: false};
 			isfirst = false;
 			return result;
 		}
@@ -7214,14 +7204,14 @@ ul4._isfirst = function _isfirst(iterable)
 // Return an iterator over ``[islast, item]`` lists from the iterable object ``iterable`` (``islast`` is true for the last item, false otherwise)
 ul4._islast = function _islast(iterable)
 {
-	var iter = ul4._iter(iterable);
-	var lastitem = iter.next();
+	let iter = ul4._iter(iterable);
+	let lastitem = iter.next();
 	return {
 		next: function() {
 			if (lastitem.done)
 				return lastitem;
-			var item = iter.next();
-			var result = {value: [item.done, lastitem.value], done: false};
+			let item = iter.next();
+			let result = {value: [item.done, lastitem.value], done: false};
 			lastitem = item;
 			return result;
 		}
@@ -7231,15 +7221,15 @@ ul4._islast = function _islast(iterable)
 // Return an iterator over ``[isfirst, islast, item]`` lists from the iterable object ``iterable`` (``isfirst`` is true for the first item, ``islast`` is true for the last item. Both are false otherwise)
 ul4._isfirstlast = function _isfirstlast(iterable)
 {
-	var iter = ul4._iter(iterable);
-	var isfirst = true;
-	var lastitem = iter.next();
+	let iter = ul4._iter(iterable);
+	let isfirst = true;
+	let lastitem = iter.next();
 	return {
 		next: function() {
 			if (lastitem.done)
 				return lastitem;
-			var item = iter.next();
-			var result = {value: [isfirst, item.done, lastitem.value], done: false};
+			let item = iter.next();
+			let result = {value: [isfirst, item.done, lastitem.value], done: false};
 			lastitem = item;
 			isfirst = false;
 			return result;
@@ -7250,16 +7240,16 @@ ul4._isfirstlast = function _isfirstlast(iterable)
 // Return an iterator over ``[index, isfirst, islast, item]`` lists from the iterable object ``iterable`` (``isfirst`` is true for the first item, ``islast`` is true for the last item. Both are false otherwise)
 ul4._enumfl = function _enumfl(iterable, start=0)
 {
-	var iter = ul4._iter(iterable);
-	var i = start;
-	var isfirst = true;
-	var lastitem = iter.next();
+	let iter = ul4._iter(iterable);
+	let i = start;
+	let isfirst = true;
+	let lastitem = iter.next();
 	return {
 		next: function() {
 			if (lastitem.done)
 				return lastitem;
-			var item = iter.next();
-			var result = {value: [i++, isfirst, item.done, lastitem.value], done: false};
+			let item = iter.next();
+			let result = {value: [i++, isfirst, item.done, lastitem.value], done: false};
 			lastitem = item;
 			isfirst = false;
 			return result;
@@ -7270,19 +7260,19 @@ ul4._enumfl = function _enumfl(iterable, start=0)
 // Return an iterator over lists, where the i'th list consists of all i'th items from the arguments (terminating when the shortest argument ends)
 ul4._zip = function _zip(iterables)
 {
-	var result;
+	let result;
 	if (iterables.length)
 	{
-		var iters = [];
-		for (var i = 0; i < iterables.length; ++i)
+		let iters = [];
+		for (let i = 0; i < iterables.length; ++i)
 			iters.push(ul4._iter(iterables[i]));
 
 		return {
 			next: function() {
-				var items = [];
-				for (var i = 0; i < iters.length; ++i)
+				let items = [];
+				for (let i = 0; i < iters.length; ++i)
 				{
-					var item = iters[i].next();
+					let item = iters[i].next();
 					if (item.done)
 						return item;
 					items.push(item.value);
@@ -7330,7 +7320,7 @@ ul4._monthdelta = function _monthdelta(months=0)
 // Return a ``Color`` object from the hue, luminescence, saturation and alpha values ``h``, ``l``, ``s`` and ``a`` (i.e. using the HLS color model)
 ul4._hls = function _hls(h, l, s, a)
 {
-	var _v = function(m1, m2, hue)
+	let _v = function(m1, m2, hue)
 	{
 		hue = hue % 1.0;
 		if (hue < 1/6)
@@ -7342,7 +7332,7 @@ ul4._hls = function _hls(h, l, s, a)
 		return m1;
 	};
 
-	var m1, m2;
+	let m1, m2;
 	if (typeof(a) === "undefined")
 		a = 1;
 	if (s === 0.0)
@@ -7360,11 +7350,11 @@ ul4._hsv = function _hsv(h, s, v, a)
 {
 	if (s === 0.0)
 		return ul4._rgb(v, v, v, a);
-	var i = Math.floor(h*6.0);
-	var f = (h*6.0) - i;
-	var p = v*(1.0 - s);
-	var q = v*(1.0 - s*f);
-	var t = v*(1.0 - s*(1.0-f));
+	let i = Math.floor(h*6.0);
+	let f = (h*6.0) - i;
+	let p = v*(1.0 - s);
+	let q = v*(1.0 - s*f);
+	let t = v*(1.0 - s*(1.0-f));
 	switch (i%6)
 	{
 		case 0:
@@ -7499,10 +7489,10 @@ ul4._replace = function _replace(string, old, new_, count=null)
 	if (count === null)
 		count = string.length;
 
-	var result = [];
+	let result = [];
 	while (string.length)
 	{
-		var pos = string.indexOf(old);
+		let pos = string.indexOf(old);
 		if (pos === -1 || !count--)
 		{
 			result.push(string);
@@ -7557,7 +7547,7 @@ ul4._split = function _split(string, sep=null, count=null)
 
 	if (count === null)
 	{
-		var result = string.split(sep !== null ? sep : /[ \n\r\t]+/);
+		let result = string.split(sep !== null ? sep : /[ \n\r\t]+/);
 		if (sep === null)
 		{
 			if (result.length && !result[0].length)
@@ -7571,10 +7561,10 @@ ul4._split = function _split(string, sep=null, count=null)
 	{
 		if (sep !== null)
 		{
-			var result = [];
+			let result = [];
 			while (string.length)
 			{
-				var pos = string.indexOf(sep);
+				let pos = string.indexOf(sep);
 				if (pos === -1 || !count--)
 				{
 					result.push(string);
@@ -7587,11 +7577,11 @@ ul4._split = function _split(string, sep=null, count=null)
 		}
 		else
 		{
-			var result = [];
+			let result = [];
 			while (string.length)
 			{
 				string = ul4._lstrip(string, null);
-				var part;
+				let part;
 				if (!count--)
 				 	part = string; // Take the rest of the string
 				else
@@ -7612,7 +7602,7 @@ ul4._rsplit = function _rsplit(string, sep=null, count=null)
 
 	if (count === null)
 	{
-		var result = string.split(sep !== null ? sep : /[ \n\r\t]+/);
+		let result = string.split(sep !== null ? sep : /[ \n\r\t]+/);
 		if (sep === null)
 		{
 			if (result.length && !result[0].length)
@@ -7626,10 +7616,10 @@ ul4._rsplit = function _rsplit(string, sep=null, count=null)
 	{
 		if (sep !== null)
 		{
-			var result = [];
+			let result = [];
 			while (string.length)
 			{
-				var pos = string.lastIndexOf(sep);
+				let pos = string.lastIndexOf(sep);
 				if (pos === -1 || !count--)
 				{
 					result.unshift(string);
@@ -7642,11 +7632,11 @@ ul4._rsplit = function _rsplit(string, sep=null, count=null)
 		}
 		else
 		{
-			var result = [];
+			let result = [];
 			while (string.length)
 			{
 				string = ul4._rstrip(string);
-				var part;
+				let part;
 				if (!count--)
 				 	part = string; // Take the rest of the string
 				else
@@ -7665,9 +7655,10 @@ ul4._rsplit = function _rsplit(string, sep=null, count=null)
 
 ul4._splitlines = function _splitlines(string, keepends=false)
 {
-	var lookingAtLineEnd = function lookingAtLineEnd()
+	let pos = 0;
+	let lookingAtLineEnd = function lookingAtLineEnd()
 	{
-		var c = string[pos];
+		let c = string[pos];
 		if (c === '\n' || c == '\u000B' || c == '\u000C' || c == '\u001C' || c == '\u001D' || c == '\u001E' || c == '\u0085' || c == '\u2028' || c == '\u2029')
 			return 1;
 		if (c === '\r')
@@ -7681,9 +7672,9 @@ ul4._splitlines = function _splitlines(string, keepends=false)
 		return 0;
 	};
 
-	var result = [], length = string.length;
+	let result = [], length = string.length;
 
-	for (var pos = 0, startpos = 0;;)
+	for (pos = 0, startpos = 0;;)
 	{
 		if (pos >= length)
 		{
@@ -7691,12 +7682,12 @@ ul4._splitlines = function _splitlines(string, keepends=false)
 				result.push(string.substring(startpos));
 			return result;
 		}
-		var lineendlen = lookingAtLineEnd();
+		let lineendlen = lookingAtLineEnd();
 		if (!lineendlen)
 			++pos;
 		else
 		{
-			var endpos = pos + (keepends ? lineendlen : 0);
+			let endpos = pos + (keepends ? lineendlen : 0);
 			result.push(string.substring(startpos, endpos));
 			pos += lineendlen;
 			startpos = pos;
@@ -7716,13 +7707,13 @@ ul4._count = function _count(obj, sub, start=null, end=null)
 	if (end === null)
 		end = obj.length;
 
-	var isstr = ul4._isstr(obj);
+	let isstr = ul4._isstr(obj);
 
 	if (isstr && !sub.length)
 	{
 		if (end < 0 || start > obj.length || start > end)
 			return 0;
-		var result = end - start + 1;
+		let result = end - start + 1;
 		if (result > obj.length + 1)
 			result = obj.length + 1;
 		return result;
@@ -7731,10 +7722,10 @@ ul4._count = function _count(obj, sub, start=null, end=null)
 	start = ul4._bound(start, obj.length);
 	end = ul4._bound(end, obj.length);
 
-	var count = 0;
+	let count = 0;
 	if (ul4._islist(obj))
 	{
-		for (var i = start; i < end; ++i)
+		for (let i = start; i < end; ++i)
 		{
 			if (ul4._eq(obj[i], sub))
 				++count;
@@ -7743,7 +7734,7 @@ ul4._count = function _count(obj, sub, start=null, end=null)
 	}
 	else // string
 	{
-		var lastIndex = start;
+		let lastIndex = start;
 
 		for (;;)
 		{
@@ -7779,7 +7770,7 @@ ul4._find = function _find(obj, sub, start=null, end=null)
 		else
 			obj = obj.slice(start, end);
 	}
-	var result = obj.indexOf(sub);
+	let result = obj.indexOf(sub);
 	if (result !== -1)
 		result += start;
 	return result;
@@ -7805,7 +7796,7 @@ ul4._rfind = function _rfind(obj, sub, start=null, end=null)
 		else
 			obj = obj.slice(start, end);
 	}
-	var result = obj.lastIndexOf(sub);
+	let result = obj.lastIndexOf(sub);
 	if (result !== -1)
 		result += start;
 	return result;
@@ -7825,7 +7816,7 @@ ul4._items = function _items(obj)
 {
 	if (ul4._ismap(obj))
 	{
-		var result = [];
+		let result = [];
 		obj.forEach(function(value, key){
 			result.push([key, value]);
 		});
@@ -7833,8 +7824,8 @@ ul4._items = function _items(obj)
 	}
 	else if (ul4._isobject(obj))
 	{
-		var result = [];
-		for (var key in obj)
+		let result = [];
+		for (let key in obj)
 			result.push([key, obj[key]]);
 		return result;
 	}
@@ -7845,7 +7836,7 @@ ul4._values = function _values(obj)
 {
 	if (ul4._ismap(obj))
 	{
-		var result = [];
+		let result = [];
 		obj.forEach(function(value, key){
 			result.push(value);
 		});
@@ -7853,8 +7844,8 @@ ul4._values = function _values(obj)
 	}
 	else if (ul4._isobject(obj))
 	{
-		var result = [];
-		for (var key in obj)
+		let result = [];
+		for (let key in obj)
 			result.push(obj[key]);
 		return result;
 	}
@@ -7863,10 +7854,10 @@ ul4._values = function _values(obj)
 
 ul4._join = function _join(sep, iterable)
 {
-	var resultlist = [];
-	for (var iter = ul4._iter(iterable);;)
+	let resultlist = [];
+	for (let iter = ul4._iter(iterable);;)
 	{
-		var item = iter.next();
+		let item = iter.next();
 		if (item.done)
 			break;
 		resultlist.push(item.value);
@@ -7895,11 +7886,11 @@ ul4._isoformat = function _isoformat(obj)
 	if (!ul4._isdate(obj))
 		throw ul4.TypeError.create("isoformat()", "isoformat() requires a date");
 
-	var result = obj.getFullYear() + "-" + ul4._lpad((obj.getMonth()+1).toString(), "0", 2) + "-" + ul4._lpad(obj.getDate().toString(), "0", 2);
-	var hour = obj.getHours();
-	var minute = obj.getMinutes();
-	var second = obj.getSeconds();
-	var ms = obj.getMilliseconds();
+	let result = obj.getFullYear() + "-" + ul4._lpad((obj.getMonth()+1).toString(), "0", 2) + "-" + ul4._lpad(obj.getDate().toString(), "0", 2);
+	let hour = obj.getHours();
+	let minute = obj.getMinutes();
+	let second = obj.getSeconds();
+	let ms = obj.getMilliseconds();
 	if (hour || minute || second || ms)
 	{
 		result += "T" + ul4._lpad(hour.toString(), "0", 2) + ":" + ul4._lpad(minute.toString(), "0", 2) + ":" + ul4._lpad(second.toString(), "0", 2);
@@ -7911,15 +7902,15 @@ ul4._isoformat = function _isoformat(obj)
 
 ul4._mimeformat = function _mimeformat(obj)
 {
-	var weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-	var monthname = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+	let weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+	let monthname = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 	return weekdayname[ul4._weekday(obj)] + ", " + ul4._lpad(obj.getDate(), "0", 2) + " " + monthname[obj.getMonth()] + " " + obj.getFullYear() + " " + ul4._lpad(obj.getHours(), "0", 2) + ":" + ul4._lpad(obj.getMinutes(), "0", 2) + ":" + ul4._lpad(obj.getSeconds(), "0", 2) + " GMT";
 };
 
 ul4._weekday = function _weekday(obj)
 {
-	var d = obj.getDay();
+	let d = obj.getDay();
 	return d ? d-1 : 6;
 };
 
@@ -7930,9 +7921,9 @@ ul4._week = function _week(obj, firstweekday=null)
 	else
 		firstweekday %= 7;
 
-	var yearday = ul4._yearday(obj)+6;
-	var jan1 = new Date(obj.getFullYear(), 0, 1);
-	var jan1weekday = jan1.getDay();
+	let yearday = ul4._yearday(obj)+6;
+	let jan1 = new Date(obj.getFullYear(), 0, 1);
+	let jan1weekday = jan1.getDay();
 	if (--jan1weekday < 0)
 		jan1weekday = 6;
 
@@ -7952,8 +7943,8 @@ ul4._isleap = function _isleap(obj)
 
 ul4._yearday = function _yearday(obj)
 {
-	var leap = ul4._isleap(obj) ? 1 : 0;
-	var day = obj.getDate();
+	let leap = ul4._isleap(obj) ? 1 : 0;
+	let day = obj.getDate();
 	switch (obj.getMonth())
 	{
 		case 0:
@@ -7985,7 +7976,7 @@ ul4._yearday = function _yearday(obj)
 
 ul4._append = function _append(obj, ...items)
 {
-	for (var i = 0; i < items.length; ++i)
+	for (let i = 0; i < items.length; ++i)
 		obj.push(items[i]);
 	return null;
 };
@@ -7995,7 +7986,7 @@ ul4._insert = function _insert(obj, pos, ...items)
 	if (pos < 0)
 		pos += obj.length;
 
-	for (var i = 0; i < items.length; ++i)
+	for (let i = 0; i < items.length; ++i)
 		obj.splice(pos++, 0, items[i]);
 	return null;
 };
@@ -8005,7 +7996,7 @@ ul4._pop = function _pop(obj, pos)
 	if (pos < 0)
 		pos += obj.length;
 
-	var result = obj[pos];
+	let result = obj[pos];
 	obj.splice(pos, 1);
 	return result;
 };
@@ -8014,9 +8005,9 @@ ul4._update = function _update(obj, others, kwargs)
 {
 	if (!ul4._isdict(obj))
 		throw ul4.TypeError.create("update()", "update() requires a dict");
-	for (var i = 0; i < others.length; ++i)
+	for (let i = 0; i < others.length; ++i)
 	{
-		var other = others[i];
+		let other = others[i];
 		if (ul4._ismap(other))
 		{
 			other.forEach(function(value, key){
@@ -8025,12 +8016,12 @@ ul4._update = function _update(obj, others, kwargs)
 		}
 		else if (ul4._isobject(other))
 		{
-			for (var key in other)
+			for (let key in other)
 				ul4on._setmap(obj, key, other[key]);
 		}
 		else if (ul4._islist(other))
 		{
-			for (var j = 0; j < other.length; ++j)
+			for (let j = 0; j < other.length; ++j)
 			{
 				if (!ul4._islist(other[j]) || (other[j].length != 2))
 					throw ul4.TypeError.create("update()", "update() requires a dict or a list of (key, value) pairs");
@@ -8054,7 +8045,7 @@ ul4._clear = function _clear(obj)
 		obj.clear();
 	else if (ul4._isobject(obj))
 	{
-		for (var key in obj)
+		for (let key in obj)
 			delete obj[key];
 	}
 	else
@@ -8069,7 +8060,7 @@ ul4.Color = ul4._inherit(
 
 		create: function create(r=0, g=0, b=0, a=255)
 		{
-			var c = ul4._clone(this);
+			let c = ul4._clone(this);
 			c._r = r;
 			c._g = g;
 			c._b = b;
@@ -8079,10 +8070,10 @@ ul4.Color = ul4._inherit(
 
 		__repr__: function __repr__()
 		{
-			var r = ul4._lpad(this._r.toString(16), "0", 2);
-			var g = ul4._lpad(this._g.toString(16), "0", 2);
-			var b = ul4._lpad(this._b.toString(16), "0", 2);
-			var a = ul4._lpad(this._a.toString(16), "0", 2);
+			let r = ul4._lpad(this._r.toString(16), "0", 2);
+			let g = ul4._lpad(this._g.toString(16), "0", 2);
+			let b = ul4._lpad(this._b.toString(16), "0", 2);
+			let a = ul4._lpad(this._a.toString(16), "0", 2);
 			if (this._a !== 0xff)
 			{
 				if (r[0] === r[1] && g[0] === g[1] && b[0] === b[1] && a[0] === a[1])
@@ -8107,10 +8098,10 @@ ul4.Color = ul4._inherit(
 			}
 			else
 			{
-				var r = ul4._lpad(this._r.toString(16), "0", 2);
-				var g = ul4._lpad(this._g.toString(16), "0", 2);
-				var b = ul4._lpad(this._b.toString(16), "0", 2);
-				var a = ul4._lpad(this._a.toString(16), "0", 2);
+				let r = ul4._lpad(this._r.toString(16), "0", 2);
+				let g = ul4._lpad(this._g.toString(16), "0", 2);
+				let b = ul4._lpad(this._b.toString(16), "0", 2);
+				let a = ul4._lpad(this._a.toString(16), "0", 2);
 				if (r[0] === r[1] && g[0] === g[1] && b[0] === b[1])
 					return "#" + r[0] + g[0] + b[0];
 				else
@@ -8152,7 +8143,7 @@ ul4.Color = ul4._inherit(
 
 		__getattr__: function __getattr__(attrname)
 		{
-			var self = this;
+			let self = this;
 			switch (attrname)
 			{
 				case "r":
@@ -8188,7 +8179,7 @@ ul4.Color = ul4._inherit(
 
 		__getitem__: function __getitem__(key)
 		{
-			var orgkey = key;
+			let orgkey = key;
 			if (key < 0)
 				key += 4;
 			switch (key)
@@ -8226,13 +8217,13 @@ ul4.Color = ul4._inherit(
 		hls: ul4.expose([],
 			function hls()
 			{
-				var r = this._r/255.0;
-				var g = this._g/255.0;
-				var b = this._b/255.0;
-				var maxc = Math.max(r, g, b);
-				var minc = Math.min(r, g, b);
-				var h, l, s;
-				var rc, gc, bc;
+				let r = this._r/255.0;
+				let g = this._g/255.0;
+				let b = this._b/255.0;
+				let maxc = Math.max(r, g, b);
+				let minc = Math.min(r, g, b);
+				let h, l, s;
+				let rc, gc, bc;
 
 				l = (minc+maxc)/2.0;
 				if (minc == maxc)
@@ -8258,7 +8249,7 @@ ul4.Color = ul4._inherit(
 		hlsa: ul4.expose([],
 			function hlsa()
 			{
-				var hls = this.hls();
+				let hls = this.hls();
 				return hls.concat(this._a/255.0);
 			}
 		),
@@ -8266,19 +8257,19 @@ ul4.Color = ul4._inherit(
 		hsv: ul4.expose([],
 			function hsv()
 			{
-				var r = this._r/255.0;
-				var g = this._g/255.0;
-				var b = this._b/255.0;
-				var maxc = Math.max(r, g, b);
-				var minc = Math.min(r, g, b);
-				var v = maxc;
+				let r = this._r/255.0;
+				let g = this._g/255.0;
+				let b = this._b/255.0;
+				let maxc = Math.max(r, g, b);
+				let minc = Math.min(r, g, b);
+				let v = maxc;
 				if (minc == maxc)
 					return [0.0, 0.0, v];
-				var s = (maxc-minc) / maxc;
-				var rc = (maxc-r) / (maxc-minc);
-				var gc = (maxc-g) / (maxc-minc);
-				var bc = (maxc-b) / (maxc-minc);
-				var h;
+				let s = (maxc-minc) / maxc;
+				let rc = (maxc-r) / (maxc-minc);
+				let gc = (maxc-g) / (maxc-minc);
+				let bc = (maxc-b) / (maxc-minc);
+				let h;
 				if (r == maxc)
 					h = bc-gc;
 				else if (g == maxc)
@@ -8312,7 +8303,7 @@ ul4.Color = ul4._inherit(
 			{
 				if (typeof(lum) !== "number")
 					throw ul4.TypeError.create("witha()", "witha() requires a number");
-				var hlsa = this.hlsa();
+				let hlsa = this.hlsa();
 				return ul4._hls(hlsa[0], lum, hlsa[2], hlsa[3]);
 			}
 		)
@@ -8326,11 +8317,11 @@ ul4.TimeDelta = ul4._inherit(
 
 		create: function create(days=0, seconds=0, microseconds=0)
 		{
-			var td = ul4._clone(this);
-			var total_microseconds = Math.floor((days * 86400 + seconds)*1000000 + microseconds);
+			let td = ul4._clone(this);
+			let total_microseconds = Math.floor((days * 86400 + seconds)*1000000 + microseconds);
 
 			microseconds = ul4.ModAST._do(total_microseconds, 1000000);
-			var total_seconds = Math.floor(total_microseconds / 1000000);
+			let total_seconds = Math.floor(total_microseconds / 1000000);
 			seconds = ul4.ModAST._do(total_seconds, 86400);
 			days = Math.floor(total_seconds / 86400);
 			if (seconds < 0)
@@ -8363,7 +8354,7 @@ ul4.TimeDelta = ul4._inherit(
 
 		__str__: function __str__()
 		{
-			var v = [];
+			let v = [];
 			if (this._days)
 			{
 				v.push(this._days + " day");
@@ -8371,9 +8362,9 @@ ul4.TimeDelta = ul4._inherit(
 					v.push("s");
 				v.push(", ");
 			}
-			var seconds = this._seconds % 60;
-			var minutes = Math.floor(this._seconds / 60);
-			var hours = Math.floor(minutes / 60);
+			let seconds = this._seconds % 60;
+			let minutes = Math.floor(this._seconds / 60);
+			let hours = Math.floor(minutes / 60);
 			minutes = minutes % 60;
 
 			v.push("" + hours);
@@ -8465,13 +8456,13 @@ ul4.TimeDelta = ul4._inherit(
 
 		_add: function _add(date, days, seconds, microseconds)
 		{
-			var year = date.getFullYear();
-			var month = date.getMonth();
-			var day = date.getDate() + days;
-			var hour = date.getHours();
-			var minute = date.getMinutes();
-			var second = date.getSeconds() + seconds;
-			var millisecond = date.getMilliseconds() + microseconds/1000;
+			let year = date.getFullYear();
+			let month = date.getMonth();
+			let day = date.getDate() + days;
+			let hour = date.getHours();
+			let minute = date.getMinutes();
+			let second = date.getSeconds() + seconds;
+			let millisecond = date.getMilliseconds() + microseconds/1000;
 			return new Date(year, month, day, hour, minute, second, millisecond);
 		},
 
@@ -8531,10 +8522,10 @@ ul4.TimeDelta = ul4._inherit(
 			}
 			else if (ul4._istimedelta(other))
 			{
-				var myValue = this._days;
-				var otherValue = other._days;
-				var hasSeconds = this._seconds || other._seconds;
-				var hasMicroseconds = this._microseconds || other._microseconds;
+				let myValue = this._days;
+				let otherValue = other._days;
+				let hasSeconds = this._seconds || other._seconds;
+				let hasMicroseconds = this._microseconds || other._microseconds;
 				if (hasSeconds || hasMicroseconds)
 				{
 					myValue = myValue*86400+this._seconds;
@@ -8552,7 +8543,7 @@ ul4.TimeDelta = ul4._inherit(
 
 		__getattr__: function __getattr__(attrname)
 		{
-			var self = this;
+			let self = this;
 			switch (attrname)
 			{
 				case "days":
@@ -8590,7 +8581,7 @@ ul4.MonthDelta = ul4._inherit(
 
 		create: function create(months=0)
 		{
-			var md = ul4._clone(this);
+			let md = ul4._clone(this);
 			md._months = months;
 			return md;
 		},
@@ -8665,19 +8656,19 @@ ul4.MonthDelta = ul4._inherit(
 
 		_add: function _add(date, months)
 		{
-			var year = date.getFullYear();
-			var month = date.getMonth() + months;
-			var day = date.getDate();
-			var hour = date.getHours();
-			var minute = date.getMinutes();
-			var second = date.getSeconds();
-			var millisecond = date.getMilliseconds();
+			let year = date.getFullYear();
+			let month = date.getMonth() + months;
+			let day = date.getDate();
+			let hour = date.getHours();
+			let minute = date.getMinutes();
+			let second = date.getSeconds();
+			let millisecond = date.getMilliseconds();
 
 			while (true)
 			{
 				// As the month might be out of bounds, we have to find out, what the real target month is
-				var targetmonth = new Date(year, month, 1, hour, minute, second, millisecond).getMonth();
-				var result = new Date(year, month, day, hour, minute, second, millisecond);
+				let targetmonth = new Date(year, month, 1, hour, minute, second, millisecond).getMonth();
+				let result = new Date(year, month, day, hour, minute, second, millisecond);
 				if (result.getMonth() === targetmonth)
 					return result;
 				--day;
@@ -8746,7 +8737,7 @@ ul4.MonthDelta = ul4._inherit(
 
 		__getattr__: function __getattr__(attrname)
 		{
-			var self = this;
+			let self = this;
 			switch (attrname)
 			{
 				case "months":
@@ -8771,7 +8762,7 @@ ul4._Set = ul4._inherit(
 
 		create: function create(...items)
 		{
-			var set = ul4._clone(this);
+			let set = ul4._clone(this);
 			set.items = {};
 			set.add(...items);
 			return set;
@@ -8779,7 +8770,7 @@ ul4._Set = ul4._inherit(
 
 		add: function add(...items)
 		{
-			for (var i = 0; i < items.length; ++i)
+			for (let i = 0; i < items.length; ++i)
 			{
 				this.items[items[i]] = true;
 			}
@@ -8787,7 +8778,7 @@ ul4._Set = ul4._inherit(
 
 		__getattr__: function __getattr__(attrname)
 		{
-			var self = this;
+			let self = this;
 			switch (attrname)
 			{
 				case "add":
@@ -8804,7 +8795,7 @@ ul4._Set = ul4._inherit(
 
 		__bool__: function __bool__()
 		{
-			for (var item in this.items)
+			for (let item in this.items)
 			{
 				if (!this.items.hasOwnProperty(item))
 					continue;
@@ -8815,10 +8806,10 @@ ul4._Set = ul4._inherit(
 
 		__repr__: function __repr__()
 		{
-			var v = [];
+			let v = [];
 			v.push("{");
-			var i = 0;
-			for (var item in this.items)
+			let i = 0;
+			for (let item in this.items)
 			{
 				if (!this.items.hasOwnProperty(item))
 					continue;
@@ -8838,8 +8829,8 @@ ul4._Set = ul4._inherit(
 			// and if both have the same number of items they are equal
 			if (ul4._isset(other))
 			{
-				var count = 0;
-				for (var item in this.items)
+				let count = 0;
+				for (let item in this.items)
 				{
 					if (!other.has(item))
 						return false;
@@ -8850,8 +8841,8 @@ ul4._Set = ul4._inherit(
 			}
 			else if (ul4._isul4set(other))
 			{
-				var count = 0;
-				for (var item in this.items)
+				let count = 0;
+				for (let item in this.items)
 				{
 					if (!other[item])
 						return false;
@@ -8859,7 +8850,7 @@ ul4._Set = ul4._inherit(
 					++count;
 				}
 				// Substract the number of items that ``other`` has
-				for (var item in other.items)
+				for (let item in other.items)
 					--count;
 				return count == 0;
 			}
@@ -8873,8 +8864,8 @@ ul4._Set = ul4._inherit(
 			// i.e. everything in ``this`` is also in ``other``
 			if (ul4._isset(other))
 			{
-				var count = 0;
-				for (var item in this.items)
+				let count = 0;
+				for (let item in this.items)
 				{
 					if (!other.has(item))
 						return false;
@@ -8883,8 +8874,8 @@ ul4._Set = ul4._inherit(
 			}
 			else if (ul4._isul4set(other))
 			{
-				var count = 0;
-				for (var item in this.items)
+				let count = 0;
+				for (let item in this.items)
 				{
 					if (!other.items[item])
 						return false;
@@ -8901,7 +8892,7 @@ ul4._Set = ul4._inherit(
 			// i.e. everything in ``other`` is also in ``this``
 			if (ul4._isset(other))
 			{
-				var result = true;
+				let result = true;
 				other.forEach(function(value) {
 					if (!this.items[value])
 						result = false;
@@ -8910,8 +8901,8 @@ ul4._Set = ul4._inherit(
 			}
 			else if (ul4._isul4set(other))
 			{
-				var count = 0;
-				for (var item in other.items)
+				let count = 0;
+				for (let item in other.items)
 				{
 					if (!this.items[item])
 						return false;
@@ -8924,7 +8915,7 @@ ul4._Set = ul4._inherit(
 	}
 );
 
-var classes = [
+const classes = [
 	"TextAST",
 	"IndentAST",
 	"LineEndAST",
@@ -9005,14 +8996,14 @@ var classes = [
 	"Template"
 ];
 
-for (var i = 0; i < classes.length; ++i)
+for (let i = 0; i < classes.length; ++i)
 {
-	var name = classes[i];
-	var ul4onname = name;
+	let name = classes[i];
+	let ul4onname = name;
 	if (ul4onname.substr(ul4onname.length-3) === "AST")
 		ul4onname = ul4onname.substr(0, ul4onname.length-3);
 	ul4onname = ul4onname.toLowerCase();
-	var object = ul4[name];
+	let object = ul4[name];
 	object.typename = name;
 	object.type = ul4onname;
 	ul4on.register("de.livinglogic.ul4." + ul4onname, object);
