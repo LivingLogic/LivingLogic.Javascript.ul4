@@ -29,7 +29,7 @@
 
 /*jslint vars: true */
 
-(function(undefined){
+;(function(undefined){
 
 var root = this, ul4 = {}, ul4on = {};
 
