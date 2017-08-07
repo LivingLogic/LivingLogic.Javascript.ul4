@@ -31,7 +31,20 @@ The Python documentation contains more info on UL4_ and on UL4ON_.
 .. _UL4ON: http://www.livinglogic.de/Python/ul4on/index.html
 
 
+Build instructions
+==================
+
+Install the npm packages::
+
+	npm install
+
+Build ul4.min.js::
+
+	npm run build
+
+
 Authors
 =======
 
 * Walter Dörwald
+* Thoralf Hänsel
