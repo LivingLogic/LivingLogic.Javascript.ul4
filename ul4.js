@@ -29,12 +29,36 @@
 
 /*jslint vars: true */
 
+
 ;(function(undefined){
 
 var root = this, ul4 = {}, ul4on = {};
 
-root.ul4 = ul4;
-root.ul4on = ul4on;
+var isamd = typeof define === 'function' && define.amd;
+var iscommon = typeof module === 'object' && module.exports;
+
+if (isamd)
+{
+	// AMD
+	define(['./node_modules/blueimp-md5/js/md5.min'], function (md5F)
+	{
+		window.md5 = md5F;
+
+		return {ul4: ul4, ul4on: ul4on};
+	});
+}
+else if (iscommon)
+{
+	// COMMONJS
+	exports.ul4 = ul4;
+	exports.ul4on = ul4on;
+}
+else
+{
+	 // DEFAULT
+	root.ul4 = ul4;
+	root.ul4on = ul4on;
+}''
 
 ul4.version = "42";
 
@@ -7168,10 +7192,18 @@ ul4._round = function _round(x, digits=0)
 
 // Return a hex-encode MD5 hash of the argument
 // This uses the md5 function from https://github.com/blueimp/JavaScript-MD5
-ul4._md5 = function _md5(string)
-{
-	return md5(string);
-};
+if (iscommon) {
+	ul4._md5 = function _md5(string)
+	{
+		let md5 = require('blueimp-md5');
+		return md5(string);
+	};
+} else {
+	ul4._md5 = function _md5(string)
+	{
+		return md5(string);
+	};
+}
 
 // Return an iterator over ``[index, item]`` lists from the iterable object ``iterable``. ``index`` starts at ``start`` (defaulting to 0)
 ul4._enumerate = function _enumerate(iterable, start=0)
@@ -9008,4 +9040,5 @@ for (let i = 0; i < classes.length; ++i)
 	object.type = ul4onname;
 	ul4on.register("de.livinglogic.ul4." + ul4onname, object);
 }
+
 })();

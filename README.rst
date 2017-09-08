@@ -38,9 +38,55 @@ Install the npm packages::
 
 	npm install
 
-Build ul4.min.js::
+Build ``ul4.min.js``::
 
 	npm run build
+
+
+Using UL4 in your project
+=========================
+
+
+Clientside
+----------
+
+In your HTML include the following::
+
+	<script src="{pathTo}/node_modules/blueimp-md5/js/md5.min.js"></script>
+	<script src="{pathTo}/ul4.min.js"></script>
+
+now you can use the Javascript variables ``ul4`` and ``ul4on``.
+
+
+AMD
+---
+
+In your HTML include::
+
+	<script data-main="./main" src="./require.js"></script>
+
+In your Javascript file do::
+
+	require(['{pathTo}/ul4.min.js'], function (ll) {
+		window.ll = ll;
+	});
+
+You need your ``node_modules`` folder in the webspace if you want to use the
+``md5`` function. In the callback you can use ``ll.ul4`` and ``ll.ul4on``.
+
+
+NodeJS
+------
+
+Install the ``blueimp-md5`` module (which you need, if you want to use the UL4
+function ``md5``)::
+
+	npm install --save blueimp-md5
+
+Then you can use the following code in your Javascript files::
+
+	const ul4 = require('{pathTo}/ul4.min').ul4;
+	const ul4on = require('{pathTo}/ul4.min').ul4on;
 
 
 Authors
