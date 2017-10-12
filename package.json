@@ -1,6 +1,6 @@
 {
   "name": "LivingLogic.Javascript.ul4",
-  "version": "1.0.0",
+  "version": "42.3",
   "description": "Javascript implementation of UL4",
   "repository": {
     "type": "git",
@@ -20,6 +20,6 @@
     "babel-plugin-transform-object-rest-spread": "^6.23.0"
   },
   "dependencies": {
-    "blueimp-md5": "^2.8.0"
+    "blueimp-md5": "^2.10.0"
   }
 }
