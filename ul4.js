@@ -34,8 +34,8 @@
 
 	var root = this, ul4 = {}, ul4on = {};
 
-	var isamd = typeof define === 'function' && define.amd;
-	var iscommon = typeof module === 'object' && module.exports;
+	var isamd = typeof(define) === "function" && define.amd;
+	var iscommon = typeof(module) === "object" && module.exports;
 
 	if (isamd)
 	{
