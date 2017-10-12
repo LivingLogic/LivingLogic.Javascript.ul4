@@ -3990,7 +3990,10 @@
 
 				pos = "offset " + this.location.pos.start + ":" + this.location.pos.stop + "; line " + lineno + "; col " + colno;
 
-				return templateprefix + ": " + pos + "\n" + text + "\n" + underline;
+				var message = templateprefix + ": " + pos + "\n" + text + "\n" + underline;
+				if (this.cause !== null)
+					message += "\n\n" + this.cause.toString();
+				return message;
 			},
 
 			__getattr__: function __getattr__(attrname)
