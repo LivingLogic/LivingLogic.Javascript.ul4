@@ -9046,5 +9046,5 @@
 		ul4on.register("de.livinglogic.ul4." + ul4onname, object);
 	}
 
-	})();
+})();
 
