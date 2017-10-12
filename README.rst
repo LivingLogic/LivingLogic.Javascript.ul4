@@ -52,8 +52,8 @@ Clientside
 
 In your HTML include the following::
 
-	<script src="{pathTo}/node_modules/blueimp-md5/js/md5.min.js"></script>
-	<script src="{pathTo}/ul4.min.js"></script>
+	<script src="{path}/node_modules/blueimp-md5/js/md5.min.js"></script>
+	<script src="{path}/ul4.min.js"></script>
 
 now you can use the Javascript variables ``ul4`` and ``ul4on``.
 
@@ -67,7 +67,7 @@ In your HTML include::
 
 In your Javascript file do::
 
-	require(['{pathTo}/ul4.min.js'], function (ll) {
+	require(['{path}/ul4.min.js'], function (ll) {
 		window.ll = ll;
 	});
 
