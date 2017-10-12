@@ -31,7 +31,6 @@
 
 
 ;(function(undefined){
-
 	var root = this, ul4 = {}, ul4on = {};
 
 	var isamd = typeof(define) === "function" && define.amd;
