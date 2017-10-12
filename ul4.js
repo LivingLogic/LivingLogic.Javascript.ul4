@@ -5292,7 +5292,7 @@
 					container.__setitem__(key, value);
 				else if (ul4._ismap(container))
 					container.set(key, value);
-				else if (Object.prototype.toString.call(container) === "[object Object]")
+				else if (ul4._isobject(container))
 					container[key] = value;
 				else
 					throw ul4.NotSubscriptableError.create(container);
