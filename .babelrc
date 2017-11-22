@@ -6,6 +6,7 @@
 		"transform-object-rest-spread",
 		"syntax-object-rest-spread",
 		"transform-es2015-classes",
+		"transform-es2015-for-of",
 		"transform-es2015-spread",
 		"transform-es2015-parameters",
 		"transform-es2015-block-scoping"
