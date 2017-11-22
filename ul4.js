@@ -59,7 +59,7 @@
 		root.ul4on = ul4on;
 	}
 
-	ul4.version = "42";
+	ul4.version = "43";
 
 	//
 	// UL4ON
@@ -7903,18 +7903,40 @@
 
 	ul4._startswith = function _startswith(string, prefix)
 	{
-		if (typeof(prefix) !== "string")
+		if (typeof(prefix) === "string")
+			return string.substr(0, prefix.length) === prefix;
+		else if (ul4._islist(prefix))
+		{
+			for (let i = 0; i < prefix.length; ++i)
+			{
+				let singlepre = prefix[i];
+				if (string.substr(0, singlepre.length) === singlepre)
+					return true;
+			}
+			return false;
+		}
+		else
 			throw ul4.TypeError.create("startswith()", "startswith() argument must be string");
 
-		return string.substr(0, prefix.length) === prefix;
 	};
 
 	ul4._endswith = function _endswith(string, suffix)
 	{
-		if (typeof(suffix) !== "string")
-			throw ul4.TypeError.create("endswith()", "endswith() argument must be string");
+		if (typeof(suffix) === "string")
+			return string.substr(string.length-suffix.length) === suffix;
+		else if (ul4._islist(suffix))
+		{
+			for (let i = 0; i < suffix.length; ++i)
+			{
+				let singlesuf = suffix[i];
+				if (string.substr(string.length-singlesuf.length) === singlesuf)
+					return true;
+			}
+			return false;
+		}
+		else
+			throw ul4.TypeError.create("endswith()", "endswith() argument must be string or list of strings");
 
-		return string.substr(string.length-suffix.length) === suffix;
 	};
 
 	ul4._isoformat = function _isoformat(obj)
