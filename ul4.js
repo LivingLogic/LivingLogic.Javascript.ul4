@@ -5238,8 +5238,6 @@
 					return container.__getitem__(key);
 				else if (ul4._ismap(container))
 					return container.get(key);
-				else if (ul4._isobject(container))
-					return container[key];
 				else
 					throw ul4.TypeError.create("[]", ul4._type(container) + " object is not subscriptable");
 			},
