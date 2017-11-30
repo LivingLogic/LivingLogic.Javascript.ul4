@@ -30,7 +30,7 @@
 /*jslint vars: true */
 
 
-;(function(undefined){
+;(function(){
 	var root = this, ul4 = {}, ul4on = {};
 
 	var isamd = typeof(define) === "function" && define.amd;
@@ -2505,7 +2505,7 @@
 		if (obj === null)
 			return "null";
 		else if (typeof(obj) === "undefined")
-			return "{}.undefined";
+			return "undefined";
 		else if (obj === false)
 			return "false";
 		else if (obj === true)
@@ -9066,4 +9066,3 @@
 	}
 
 })();
-
