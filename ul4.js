@@ -3663,6 +3663,7 @@
 				let context = ul4._clone(this);
 				context.vars = vars;
 				context.indents = [];
+				context.escapes = [];
 				context._output = [];
 				return context;
 			},
@@ -3704,6 +3705,8 @@
 
 			output: function output(value)
 			{
+				for (let i = 0; i < this.escapes.length; ++i)
+					value = this.escapes[i](value);
 				this._output.push(value);
 			},
 
@@ -5937,8 +5940,11 @@
 				return render;
 			},
 			_ul4onattrs: ul4.CallAST._ul4onattrs.concat(["indent"]),
+			_reprname: "RenderAST",
 			_repr: function _repr(out)
 			{
+				out.push("<");
+				out.push(this._reprname);
 				out.push("<RenderAST");
 				out.push(" indent=");
 				out.push(ul4._repr(this.indent));
@@ -5989,6 +5995,29 @@
 				{
 					throw ul4.LocationError.create(this, exc);
 				}
+			}
+		}
+	);
+
+	ul4.RenderXAST = ul4._inherit(
+		ul4.RenderAST,
+		{
+			_typename: "RenderXAST",
+
+			_handle_eval: function _handle_eval(context)
+			{
+				context.escapes.push(ul4._xmlescape);
+
+				let result = null;
+				try
+				{
+					 result = ul4.RenderAST._handle_eval.call(this, context);
+				}
+				finally
+				{
+					context.escapes.splice(context.escapes.length-1, 1);
+				}
+				return result;
 			}
 		}
 	);
@@ -9028,6 +9057,7 @@
 		"AttrAST",
 		"CallAST",
 		"RenderAST",
+		"RenderXAST",
 		"SetVarAST",
 		"AddVarAST",
 		"SubVarAST",
