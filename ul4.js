@@ -5967,7 +5967,7 @@
 			_str: function _str(out)
 			{
 				out.push("render ");
-				out.push(this.tag.source.substring(this.pos.start, this.pos.stop).replace(/\r?\n/g, ' '));
+				out.push(this.tag.code.replace(/\r?\n/g, ' '));
 				if (this.indent !== null)
 				{
 					out.push(" with indent ");
