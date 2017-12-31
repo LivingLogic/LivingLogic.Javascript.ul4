@@ -6022,6 +6022,36 @@
 		}
 	);
 
+	ul4.RenderBlockAST = ul4._inherit(
+		ul4.RenderAST,
+		{
+			_typename: "RenderBlockAST",
+			_ul4onattrs: ul4.RenderAST._ul4onattrs.concat(["endtag", "content"]),
+
+			_handle_eval: function _handle_eval(context)
+			{
+				let localcontext = context.withindent(this.indent !== null ? this.indent._text() : null);
+				let obj = this.obj._handle_eval(localcontext);
+				let args = this._makeargs(localcontext);
+
+				try
+				{
+					if (args.kwargs.hasOwnProperty("content"))
+						throw ul4.ArgumentError.create("duplicate keyword argument content");
+					let closure = ul4.TemplateClosure.create(this.content, this.content.signature, localcontext.vars);
+					args.kwargs.content = closure;
+
+					ul4._callrender(localcontext, obj, args.args, args.kwargs);
+					return null;
+				}
+				catch (exc)
+				{
+					throw ul4.LocationError.create(this, exc);
+				}
+			}
+		}
+	);
+
 	// Slice object
 	ul4.slice = ul4._inherit(
 		ul4.Proto,
@@ -9058,6 +9088,7 @@
 		"CallAST",
 		"RenderAST",
 		"RenderXAST",
+		"RenderBlockAST",
 		"SetVarAST",
 		"AddVarAST",
 		"SubVarAST",
