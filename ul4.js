@@ -5985,6 +5985,7 @@
 				let localcontext = context.withindent(this.indent !== null ? this.indent._text() : null);
 				let obj = this.obj._handle_eval(localcontext);
 				let args = this._makeargs(localcontext);
+				this._handle_additional_arguments(localcontext, args);
 
 				try
 				{
@@ -5995,6 +5996,10 @@
 				{
 					throw ul4.LocationError.create(this, exc);
 				}
+			},
+
+			_handle_additional_arguments: function _handle_additional_arguments(context, args)
+			{
 			}
 		}
 	);
@@ -6025,28 +6030,36 @@
 	ul4.RenderBlockAST = ul4._inherit(
 		ul4.RenderAST,
 		{
-			_typename: "RenderBlockAST",
 			_ul4onattrs: ul4.RenderAST._ul4onattrs.concat(["endtag", "content"]),
 
-			_handle_eval: function _handle_eval(context)
+			_handle_additional_arguments: function _handle_additional_arguments(context, args)
 			{
-				let localcontext = context.withindent(this.indent !== null ? this.indent._text() : null);
-				let obj = this.obj._handle_eval(localcontext);
-				let args = this._makeargs(localcontext);
+				if (args.kwargs.hasOwnProperty("content"))
+					throw ul4.ArgumentError.create("duplicate keyword argument content");
+				let closure = ul4.TemplateClosure.create(this.content, this.content.signature, context.vars);
+				args.kwargs.content = closure;
+			}
+		}
+	);
 
-				try
-				{
-					if (args.kwargs.hasOwnProperty("content"))
-						throw ul4.ArgumentError.create("duplicate keyword argument content");
-					let closure = ul4.TemplateClosure.create(this.content, this.content.signature, localcontext.vars);
-					args.kwargs.content = closure;
+	ul4.RenderBlocksAST = ul4._inherit(
+		ul4.RenderAST,
+		{
+			_ul4onattrs: ul4.RenderAST._ul4onattrs.concat(["endtag", "content"]),
 
-					ul4._callrender(localcontext, obj, args.args, args.kwargs);
-					return null;
-				}
-				catch (exc)
+			_handle_additional_arguments: function _handle_additional_arguments(context, args)
+			{
+				let localcontext = context.inheritvars();
+				ul4.BlockAST._eval.call(this, localcontext);
+
+				for (let key in localcontext.vars)
 				{
-					throw ul4.LocationError.create(this, exc);
+					if (localcontext.vars.hasOwnProperty(key))
+					{
+						if (key in args.kwargs)
+							throw ul4.ArgumentError.create("duplicate keyword argument " + key);
+						args.kwargs[key] = localcontext.get(key);
+					}
 				}
 			}
 		}
@@ -9089,6 +9102,7 @@
 		"RenderAST",
 		"RenderXAST",
 		"RenderBlockAST",
+		"RenderBlocksAST",
 		"SetVarAST",
 		"AddVarAST",
 		"SubVarAST",
