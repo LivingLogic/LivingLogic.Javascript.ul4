@@ -663,6 +663,23 @@
 				default:
 					throw "unknown typecode " + ul4._repr(typecode) + " at position " + this.pos;
 			}
+		},
+
+		// Return an iterator for loading the content of a object
+		loadcontent: function load(loadcontent)
+		{
+			let self = this;
+			return {
+				next: function()
+				{
+					let typecode = self.readblackchar();
+					self.backup();
+					if (typecode == ")")
+						return {done: true};
+					else
+						return {done: false, value: self.load()};
+				}
+			};
 		}
 	};
 
