@@ -1,27 +1,27 @@
 {
-  "name": "LivingLogic.Javascript.ul4",
-  "version": "43.0.1",
-  "description": "Javascript implementation of UL4",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/LivingLogic/LivingLogic.Javascript.ul4.git"
-  },
-  "author": "Walter Doerwald",
-  "scripts": {
-    "build": "node_modules/babel-cli/bin/babel.js ul4.js --source-maps=true --out-file ul4.min.js"
-  },
-  "devDependencies": {
-    "babel-cli": "^6.24.1",
-    "babel-plugin-syntax-object-rest-spread": "^6.13.0",
-    "babel-plugin-transform-async-to-generator": "^6.24.1",
-    "babel-plugin-transform-es2015-block-scoping": "^6.24.1",
-    "babel-plugin-transform-es2015-classes": "^6.24.1",
-    "babel-plugin-transform-es2015-parameters": "^6.24.1",
-    "babel-plugin-transform-es2015-spread": "^6.22.0",
-    "babel-plugin-transform-object-rest-spread": "^6.23.0"
-  },
-  "dependencies": {
-    "babel": "^6.23.0",
-    "blueimp-md5": "^2.10.0"
-  }
+	"name": "LivingLogic.Javascript.ul4",
+	"version": "0.44.0",
+	"description": "Javascript implementation of UL4",
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/LivingLogic/LivingLogic.Javascript.ul4.git"
+	},
+	"author": "Walter Doerwald",
+	"scripts": {
+		"build": "node_modules/babel-cli/bin/babel.js ul4.js --source-maps=true --out-file ul4.min.js"
+	},
+	"devDependencies": {
+		"babel-cli": "^6.24.1",
+		"babel-plugin-syntax-object-rest-spread": "^6.13.0",
+		"babel-plugin-transform-async-to-generator": "^6.24.1",
+		"babel-plugin-transform-es2015-block-scoping": "^6.24.1",
+		"babel-plugin-transform-es2015-classes": "^6.24.1",
+		"babel-plugin-transform-es2015-parameters": "^6.24.1",
+		"babel-plugin-transform-es2015-spread": "^6.22.0",
+		"babel-plugin-transform-object-rest-spread": "^6.23.0"
+	},
+	"dependencies": {
+		"babel": "^6.23.0",
+		"blueimp-md5": "^2.10.0"
+	}
 }
