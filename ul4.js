@@ -39,7 +39,7 @@
 	if (isamd)
 	{
 		// AMD
-		define(['../../node_modules/blueimp-md5/js/md5.min'], function (md5F)
+		define(['blueimp-md5'], function (md5F)
 		{
 			window.md5 = md5F;
 
