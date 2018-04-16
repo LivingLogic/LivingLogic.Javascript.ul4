@@ -29,7 +29,6 @@
 
 /*jslint vars: true */
 
-
 ;(function(){
 	var root = this, ul4 = {}, ul4on = {};
 
@@ -7283,13 +7282,16 @@
 
 	// Return a hex-encode MD5 hash of the argument
 	// This uses the md5 function from https://github.com/blueimp/JavaScript-MD5
-	if (iscommon) {
+	if (iscommon)
+	{
 		ul4._md5 = function _md5(string)
 		{
 			let md5 = require('blueimp-md5');
 			return md5(string);
 		};
-	} else {
+	}
+	else
+	{
 		ul4._md5 = function _md5(string)
 		{
 			return md5(string);
