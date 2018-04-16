@@ -2,6 +2,9 @@
 	"name": "ul4",
 	"version": "0.44.1",
 	"description": "Javascript implementation of UL4",
+	"keywords": ["UL4", "UL4ON", "templating", "serialization"],
+	"homepage": "https://python.livinglogic.de/",
+	"license": "MIT",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/LivingLogic/LivingLogic.Javascript.ul4.git"
