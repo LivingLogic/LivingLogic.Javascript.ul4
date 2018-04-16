@@ -7,7 +7,7 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "https://github.com/LivingLogic/LivingLogic.Javascript.ul4.git"
+		"url": "github:LivingLogic/LivingLogic.Javascript.ul4"
 	},
 	"author": "Walter Doerwald",
 	"scripts": {
