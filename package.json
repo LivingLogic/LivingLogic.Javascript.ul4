@@ -19,7 +19,7 @@
 		"build": "node_modules/babel-cli/bin/babel.js ul4.js --source-maps=true --out-file ul4.min.js"
 	},
 	"devDependencies": {
-		"babel-cli": "^6.24.1",
+		"babel-cli": "^6.26.0",
 		"babel-plugin-syntax-object-rest-spread": "^6.13.0",
 		"babel-plugin-transform-async-to-generator": "^6.24.1",
 		"babel-plugin-transform-es2015-block-scoping": "^6.24.1",
