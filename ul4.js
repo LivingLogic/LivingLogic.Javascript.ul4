@@ -3321,6 +3321,167 @@
 		}
 	);
 
+	// When we don't have a real ``Set`` type, emulate one that supports strings
+	ul4._Set = ul4._inherit(
+		ul4.Proto,
+		{
+			__type__: "ul4._Set",
+
+			create: function create(...items)
+			{
+				let set = ul4._clone(this);
+				set.items = {};
+				set.add(...items);
+				return set;
+			},
+
+			add: function add(...items)
+			{
+				for (let i = 0; i < items.length; ++i)
+				{
+					this.items[items[i]] = true;
+				}
+			},
+
+			__getattr__: function __getattr__(attrname)
+			{
+				let self = this;
+				switch (attrname)
+				{
+					case "add":
+						return ul4.expose(["*items"], function add(items){ self.add(...items); });
+					default:
+						throw ul4.AttributeError.create(this, attrname);
+				}
+			},
+
+			__contains__: function __contains__(item)
+			{
+				return this.items[item] || false;
+			},
+
+			__bool__: function __bool__()
+			{
+				for (let item in this.items)
+				{
+					if (!this.items.hasOwnProperty(item))
+						continue;
+					return true;
+				}
+				return false;
+			},
+
+			__repr__: function __repr__()
+			{
+				let v = [];
+				v.push("{");
+				let i = 0;
+				for (let item in this.items)
+				{
+					if (!this.items.hasOwnProperty(item))
+						continue;
+					if (i++)
+						v.push(", ");
+					v.push(ul4._repr(item));
+				}
+				if (!i)
+					v.push("/");
+				v.push("}");
+				return v.join("");
+			},
+
+			__eq__: function(other)
+			{
+				// We'll check that everything in ``this`` is in ``other``
+				// and if both have the same number of items they are equal
+				if (ul4._isset(other))
+				{
+					let count = 0;
+					for (let item in this.items)
+					{
+						if (!other.has(item))
+							return false;
+						// count the number of items we have
+						++count;
+					}
+					return other.size == count;
+				}
+				else if (ul4._isul4set(other))
+				{
+					let count = 0;
+					for (let item in this.items)
+					{
+						if (!other[item])
+							return false;
+						// count the number of items we have
+						++count;
+					}
+					// Substract the number of items that ``other`` has
+					for (let item in other.items)
+						--count;
+					return count == 0;
+				}
+				else
+					return false;
+			},
+
+			__le__: function(other)
+			{
+				// check that ``this`` is a subset of ``other``,
+				// i.e. everything in ``this`` is also in ``other``
+				if (ul4._isset(other))
+				{
+					let count = 0;
+					for (let item in this.items)
+					{
+						if (!other.has(item))
+							return false;
+					}
+					return true;
+				}
+				else if (ul4._isul4set(other))
+				{
+					let count = 0;
+					for (let item in this.items)
+					{
+						if (!other.items[item])
+							return false;
+					}
+					return true;
+				}
+				else
+					ul4._unorderable("<", this, other);
+			},
+
+			__ge__: function(other)
+			{
+				// check that ``this`` is a superset of ``other``,
+				// i.e. everything in ``other`` is also in ``this``
+				if (ul4._isset(other))
+				{
+					let result = true;
+					other.forEach(function(value) {
+						if (!this.items[value])
+							result = false;
+					});
+					return result;
+				}
+				else if (ul4._isul4set(other))
+				{
+					let count = 0;
+					for (let item in other.items)
+					{
+						if (!this.items[item])
+							return false;
+					}
+					return true;
+				}
+				else
+					ul4._unorderable("<=", this, other);
+			}
+		}
+	);
+
 	// Adds name and signature to a function/method and makes the method callable in templates
 	ul4.expose = function expose(signature, options, f)
 	{
@@ -8897,167 +9058,6 @@
 			months: function months()
 			{
 				return this._months;
-			}
-		}
-	);
-
-	// When we don't have a real ``Set`` type, emulate one that supports strings
-	ul4._Set = ul4._inherit(
-		ul4.Proto,
-		{
-			__type__: "ul4._Set",
-
-			create: function create(...items)
-			{
-				let set = ul4._clone(this);
-				set.items = {};
-				set.add(...items);
-				return set;
-			},
-
-			add: function add(...items)
-			{
-				for (let i = 0; i < items.length; ++i)
-				{
-					this.items[items[i]] = true;
-				}
-			},
-
-			__getattr__: function __getattr__(attrname)
-			{
-				let self = this;
-				switch (attrname)
-				{
-					case "add":
-						return ul4.expose(["*items"], function add(items){ self.add(...items); });
-					default:
-						throw ul4.AttributeError.create(this, attrname);
-				}
-			},
-
-			__contains__: function __contains__(item)
-			{
-				return this.items[item] || false;
-			},
-
-			__bool__: function __bool__()
-			{
-				for (let item in this.items)
-				{
-					if (!this.items.hasOwnProperty(item))
-						continue;
-					return true;
-				}
-				return false;
-			},
-
-			__repr__: function __repr__()
-			{
-				let v = [];
-				v.push("{");
-				let i = 0;
-				for (let item in this.items)
-				{
-					if (!this.items.hasOwnProperty(item))
-						continue;
-					if (i++)
-						v.push(", ");
-					v.push(ul4._repr(item));
-				}
-				if (!i)
-					v.push("/");
-				v.push("}");
-				return v.join("");
-			},
-
-			__eq__: function(other)
-			{
-				// We'll check that everything in ``this`` is in ``other``
-				// and if both have the same number of items they are equal
-				if (ul4._isset(other))
-				{
-					let count = 0;
-					for (let item in this.items)
-					{
-						if (!other.has(item))
-							return false;
-						// count the number of items we have
-						++count;
-					}
-					return other.size == count;
-				}
-				else if (ul4._isul4set(other))
-				{
-					let count = 0;
-					for (let item in this.items)
-					{
-						if (!other[item])
-							return false;
-						// count the number of items we have
-						++count;
-					}
-					// Substract the number of items that ``other`` has
-					for (let item in other.items)
-						--count;
-					return count == 0;
-				}
-				else
-					return false;
-			},
-
-			__le__: function(other)
-			{
-				// check that ``this`` is a subset of ``other``,
-				// i.e. everything in ``this`` is also in ``other``
-				if (ul4._isset(other))
-				{
-					let count = 0;
-					for (let item in this.items)
-					{
-						if (!other.has(item))
-							return false;
-					}
-					return true;
-				}
-				else if (ul4._isul4set(other))
-				{
-					let count = 0;
-					for (let item in this.items)
-					{
-						if (!other.items[item])
-							return false;
-					}
-					return true;
-				}
-				else
-					ul4._unorderable("<", this, other);
-			},
-
-			__ge__: function(other)
-			{
-				// check that ``this`` is a superset of ``other``,
-				// i.e. everything in ``other`` is also in ``this``
-				if (ul4._isset(other))
-				{
-					let result = true;
-					other.forEach(function(value) {
-						if (!this.items[value])
-							result = false;
-					});
-					return result;
-				}
-				else if (ul4._isul4set(other))
-				{
-					let count = 0;
-					for (let item in other.items)
-					{
-						if (!this.items[item])
-							return false;
-					}
-					return true;
-				}
-				else
-					ul4._unorderable("<=", this, other);
 			}
 		}
 	);
