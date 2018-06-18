@@ -2235,6 +2235,19 @@
 		return null;
 	};
 
+	// (this is non-trivial, because it follows the Python semantic of ``-5 % 2`` being ``1``)
+	ul4._mod = function _mod(obj1, obj2)
+	{
+		let div = Math.floor(obj1 / obj2);
+		let mod = obj1 - div * obj2;
+
+		if (mod !== 0 && ((obj2 < 0 && mod > 0) || (obj2 > 0 && mod < 0)))
+		{
+			mod += obj2;
+			--div;
+		}
+		return obj1 - div * obj2;
+	},
 
 	// Return the attribute with the name ``attrname`` of the object ``obj``
 	// If ``obj`` doesn't have such an attribute, return ``default_``
@@ -2873,13 +2886,13 @@
 						c = ul4._lpad(obj.getSeconds(), "0", 2);
 						break;
 					case "U":
-						c = ul4._lpad(ul4._week(obj, 6), "0", 2);
+						c = ul4._lpad(ul4._week4format(obj, 6), "0", 2);
 						break;
 					case "w":
 						c = obj.getDay();
 						break;
 					case "W":
-						c = ul4._lpad(ul4._week(obj, 0), "0", 2);
+						c = ul4._lpad(ul4._week4format(obj, 0), "0", 2);
 						break;
 					case "x":
 						c = ul4._format(obj, translation.xf, lang);
@@ -3755,14 +3768,18 @@
 	ul4.DateProtocol = ul4._inherit(ul4.Protocol, {
 		name: "date",
 
-		attrs: ul4on._makeset("weekday", "week", "day", "month", "year", "hour", "minute", "second", "microsecond", "mimeformat", "isoformat", "yearday"),
+		attrs: ul4on._makeset("weekday", "yearweek", "week", "day", "month", "year", "hour", "minute", "second", "microsecond", "mimeformat", "isoformat", "yearday"),
 
 		weekday: ul4.expose([], function weekday(obj){
 			return ul4._weekday(obj);
 		}),
 
-		week: ul4.expose(["firstweekday=", null], function week(obj, firstweekday){
-			return ul4._week(obj, firstweekday);
+		yearweek: ul4.expose(["firstweekday=", 0, "mindaysinfirstweek=", 4], function week(obj, firstweekday, mindaysinfirstweek){
+			return ul4._yearweek(obj, firstweekday, mindaysinfirstweek);
+		}),
+
+		week: ul4.expose(["firstweekday=", 0, "mindaysinfirstweek=", 4], function week(obj, firstweekday, mindaysinfirstweek){
+			return ul4._week(obj, firstweekday, mindaysinfirstweek);
 		}),
 
 		day: ul4.expose([], function day(obj){
@@ -5825,18 +5842,9 @@
 	ul4.ModAST = ul4._inherit(
 		ul4.BinaryAST,
 		{
-			// (this is non-trivial, because it follows the Python semantic of ``-5 % 2`` being ``1``)
 			_do: function _do(obj1, obj2)
 			{
-				let div = Math.floor(obj1 / obj2);
-				let mod = obj1 - div * obj2;
-
-				if (mod !== 0 && ((obj2 < 0 && mod > 0) || (obj2 > 0 && mod < 0)))
-				{
-					mod += obj2;
-					--div;
-				}
-				return obj1 - div * obj2;
+				return ul4._mod(obj1, obj2);
 			},
 			_ido: function _ido(obj1, obj2)
 			{
@@ -8222,7 +8230,51 @@
 		return d ? d-1 : 6;
 	};
 
-	ul4._week = function _week(obj, firstweekday=null)
+	ul4._yearweek = function _yearweek(obj, firstweekday=0, mindaysinfirstweek=4)
+	{
+		// Normalize parameters
+		firstweekday = ul4._mod(firstweekday, 7);
+		if (mindaysinfirstweek < 1)
+			mindaysinfirstweek = 1;
+		else if (mindaysinfirstweek > 7)
+			mindaysinfirstweek = 7;
+
+		// console.log("params", firstweekday, mindaysinfirstweek);
+		// ``obj`` might be in the first week of the next year, or last week of
+		// the previous year, so we might have to try those too.
+		for (let offset = +1; offset >= -1; --offset)
+		{
+			let year = obj.getFullYear() + offset;
+			// console.log("offset", offset, "year", year);
+			// ``refdate`` will always be in week 1
+			let refDate = new Date(year, 0, mindaysinfirstweek);
+			// console.log("refdate", refDate);
+			// Go back to the start of ``refdate``s week (i.e. day 1 of week 1)
+			let weekDayDiff = ul4._mod(ul4._weekday(refDate) - firstweekday, 7);
+			let weekStartYear = refDate.getFullYear();
+			let weekStartMonth = refDate.getMonth();
+			let weekStartDay = refDate.getDate() - weekDayDiff;
+			let weekStart = new Date(weekStartYear, weekStartMonth, weekStartDay);
+			// console.log("weekstart", "diff", weekDayDiff, "year", weekStartYear, "month", weekStartMonth, "day", weekStartDay, "date", weekStart);
+			// Is our date ``obj`` at or after day 1 of week 1?
+			// console.log("gettime", obj.getTime(), weekStart.getTime());
+			if (obj.getTime() >= weekStart.getTime())
+			{
+				let diff = ul4.SubAST._do(obj, weekStart);
+				// Add 1, because the first week is week 1, not week 0
+				let week = Math.floor(diff.days()/7) + 1;
+				// console.log("diff", diff, "diffdays", diff.days(), "week", week);
+				return [year, week];
+			}
+		}
+	};
+
+	ul4._week = function _week(obj, firstweekday=0, mindaysinfirstweek=4)
+	{
+		return ul4._yearweek(obj, firstweekday, mindaysinfirstweek)[1];
+	};
+
+	ul4._week4format = function _week(obj, firstweekday=null)
 	{
 		if (firstweekday === null)
 			firstweekday = 0;
