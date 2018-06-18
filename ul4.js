@@ -8239,31 +8239,25 @@
 		else if (mindaysinfirstweek > 7)
 			mindaysinfirstweek = 7;
 
-		// console.log("params", firstweekday, mindaysinfirstweek);
 		// ``obj`` might be in the first week of the next year, or last week of
 		// the previous year, so we might have to try those too.
 		for (let offset = +1; offset >= -1; --offset)
 		{
 			let year = obj.getFullYear() + offset;
-			// console.log("offset", offset, "year", year);
 			// ``refdate`` will always be in week 1
 			let refDate = new Date(year, 0, mindaysinfirstweek);
-			// console.log("refdate", refDate);
 			// Go back to the start of ``refdate``s week (i.e. day 1 of week 1)
 			let weekDayDiff = ul4._mod(ul4._weekday(refDate) - firstweekday, 7);
 			let weekStartYear = refDate.getFullYear();
 			let weekStartMonth = refDate.getMonth();
 			let weekStartDay = refDate.getDate() - weekDayDiff;
 			let weekStart = new Date(weekStartYear, weekStartMonth, weekStartDay);
-			// console.log("weekstart", "diff", weekDayDiff, "year", weekStartYear, "month", weekStartMonth, "day", weekStartDay, "date", weekStart);
 			// Is our date ``obj`` at or after day 1 of week 1?
-			// console.log("gettime", obj.getTime(), weekStart.getTime());
 			if (obj.getTime() >= weekStart.getTime())
 			{
 				let diff = ul4.SubAST._do(obj, weekStart);
 				// Add 1, because the first week is week 1, not week 0
 				let week = Math.floor(diff.days()/7) + 1;
-				// console.log("diff", diff, "diffdays", diff.days(), "week", week);
 				return [year, week];
 			}
 		}
