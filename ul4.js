@@ -8859,22 +8859,6 @@
 				throw ul4.TypeError.create("-", ul4._type(this) + " - " + ul4._type(other) + " not supported");
 			},
 
-			__getattr__: function __getattr__(attrname)
-			{
-				let self = this;
-				switch (attrname)
-				{
-					case "year":
-						return ul4.expose([], function year(){ return self._date.getFullYear(); });
-					case "month":
-						return ul4.expose([], function month(){ return self._date.getMonth()+1; });
-					case "day":
-						return ul4.expose([], function day(){ return self._date.getDate(); });
-					default:
-						throw ul4.AttributeError.create(this, attrname);
-				}
-			},
-
 			year: function year()
 			{
 				return this._date.getFullYear();
