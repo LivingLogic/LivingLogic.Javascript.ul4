@@ -283,6 +283,8 @@
 			else if (ul4._iscolor(obj))
 				this._line("c", obj.r(), obj.g(), obj.b(), obj.a());
 			else if (ul4._isdate(obj))
+				this._line("x", obj.year(), obj.month(), obj.day());
+			else if (ul4._isdatetime(obj))
 				this._line("z", obj.getFullYear(), obj.getMonth()+1, obj.getDate(), obj.getHours(), obj.getMinutes(), obj.getSeconds(), obj.getMilliseconds() * 1000);
 			else if (ul4._istimedelta(obj))
 				this._line("t", obj.days(), obj.seconds(), obj.microseconds());
@@ -548,6 +550,17 @@
 					result._b = this.load();
 					result._a = this.load();
 					return result;
+				case "x":
+				case "X":
+				{
+					let year = this.load();
+					let month = this.load();
+					let day = this.load();
+					result = ul4.Date.create(year, month, day);
+					if (typecode === "Z")
+						this.backrefs.push(result);
+					return result;
+				}
 				case "z":
 				case "Z":
 					result = new Date();
@@ -636,6 +649,7 @@
 					return result;
 				case "o":
 				case "O":
+				{
 					let oldpos;
 					if (typecode === "O")
 						oldpos = this._beginfakeloading();
@@ -659,6 +673,7 @@
 					if (typecode !== ")")
 						throw "object terminator ')' for object of type '" + name + "' expected, got " + ul4._repr(typecode) + " at position " + this.pos;
 					return result;
+				}
 				default:
 					throw "unknown typecode " + ul4._repr(typecode) + " at position " + this.pos;
 			}
@@ -696,13 +711,18 @@
 	/// Helper functions
 
 	// Crockford style object creation
-	ul4._simpleclone = function _simpleclone(obj)
+	if (typeof(Object.create) === "function")
+		ul4._simpleclone = Object.create;
+	else
 	{
-		function F(){};
-		F.prototype = obj;
-		let result = new F();
-		return result;
-	};
+		ul4._simpleclone = function _simpleclone(obj)
+		{
+			function F(){};
+			F.prototype = obj;
+			let result = new F();
+			return result;
+		};
+	}
 
 	// Crockford style object creation + prototype chain + object ids
 	ul4._clone = function _clone(obj)
@@ -915,9 +935,9 @@
 			else
 				return false;
 		}
-		else if (ul4._isdate(obj1))
+		else if (ul4._isdatetime(obj1))
 		{
-			if (ul4._isdate(obj2))
+			if (ul4._isdatetime(obj2))
 				return obj1.getTime() == obj2.getTime();
 			else
 				return false;
@@ -1105,9 +1125,9 @@
 			if (typeof(obj2) === "string")
 				return (obj1 > obj2) - (obj1 < obj2);
 		}
-		else if (ul4._isdate(obj1))
+		else if (ul4._isdatetime(obj1))
 		{
-			if (ul4._isdate(obj2))
+			if (ul4._isdatetime(obj2))
 			{
 				let v1 = obj1.getTime(), v2 = obj2.getTime();
 				return (v1 > v2) - (v1 < v2);
@@ -1240,9 +1260,9 @@
 			if (typeof(obj2) === "string")
 				return obj1 < obj2;
 		}
-		else if (ul4._isdate(obj1))
+		else if (ul4._isdatetime(obj1))
 		{
-			if (ul4._isdate(obj2))
+			if (ul4._isdatetime(obj2))
 				return obj1.getTime() < obj2.getTime();
 		}
 		else if (ul4._islist(obj1))
@@ -1369,9 +1389,9 @@
 			if (typeof(obj2) === "string")
 				return obj1 <= obj2;
 		}
-		else if (ul4._isdate(obj1))
+		else if (ul4._isdatetime(obj1))
 		{
-			if (ul4._isdate(obj2))
+			if (ul4._isdatetime(obj2))
 				return obj1.getTime() <= obj2.getTime();
 		}
 		else if (ul4._islist(obj1))
@@ -1501,9 +1521,9 @@
 			if (typeof(obj2) === "string")
 				return obj1 > obj2;
 		}
-		else if (ul4._isdate(obj1))
+		else if (ul4._isdatetime(obj1))
 		{
-			if (ul4._isdate(obj2))
+			if (ul4._isdatetime(obj2))
 				return obj1.getTime() > obj2.getTime();
 		}
 		else if (ul4._islist(obj1))
@@ -1633,9 +1653,9 @@
 			if (typeof(obj2) === "string")
 				return obj1 >= obj2;
 		}
-		else if (ul4._isdate(obj1))
+		else if (ul4._isdatetime(obj1))
 		{
-			if (ul4._isdate(obj2))
+			if (ul4._isdatetime(obj2))
 				return obj1.getTime() >= obj2.getTime();
 		}
 		else if (ul4._islist(obj1))
@@ -1902,6 +1922,15 @@
 
 	ul4._date_repr = function _date_repr(obj, ascii)
 	{
+		let year = obj._date.getFullYear();
+		let month = obj._date.getMonth()+1;
+		let day = obj._date.getDate();
+		let result = "@(" + year + "-" + ul4._lpad(month.toString(), "0", 2) + "-" + ul4._lpad(day.toString(), "0", 2) + ")";
+		return result;
+	};
+
+	ul4._datetime_repr = function _datetime_repr(obj, ascii)
+	{
 		let year = obj.getFullYear();
 		let month = obj.getMonth()+1;
 		let day = obj.getDate();
@@ -1909,13 +1938,17 @@
 		let minute = obj.getMinutes();
 		let second = obj.getSeconds();
 		let ms = obj.getMilliseconds();
-		let result = "@(" + year + "-" + ul4._lpad(month.toString(), "0", 2) + "-" + ul4._lpad(day.toString(), "0", 2);
+		let result = "@(" + year + "-" + ul4._lpad(month.toString(), "0", 2) + "-" + ul4._lpad(day.toString(), "0", 2) + "T";
 
 		if (hour || minute || second || ms)
 		{
-			result += "T" + ul4._lpad(hour.toString(), "0", 2) + ":" + ul4._lpad(minute.toString(), "0", 2) + ":" + ul4._lpad(second.toString(), "0", 2);
-			if (ms)
-				result += "." + ul4._lpad(ms.toString(), "0", 3) + "000";
+			result += ul4._lpad(hour.toString(), "0", 2) + ":" + ul4._lpad(minute.toString(), "0", 2);
+			if (second || ms)
+			{
+				result += ":" + ul4._lpad(second.toString(), "0", 2)
+				if (ms)
+					result += "." + ul4._lpad(ms.toString(), "0", 3) + "000";
+			}
 		}
 		result += ")";
 
@@ -2011,6 +2044,8 @@
 				return "<anonymous function>";
 		else if (ul4._isdate(obj))
 			return ul4._date_repr(obj, ascii);
+		else if (ul4._isdatetime(obj))
+			return ul4._datetime_repr(obj, ascii);
 		else if (typeof(obj) === "undefined")
 			return "<undefined>";
 		else if (typeof(obj) === "object" && typeof(obj.__repr__) === "function")
@@ -2039,6 +2074,15 @@
 
 	ul4._date_str = function _date_str(obj)
 	{
+		let year = obj._date.getFullYear();
+		let month = obj._date.getMonth()+1;
+		let day = obj._date.getDate();
+
+		return year + "-" + ul4._lpad(month.toString(), "0", 2) + "-" + ul4._lpad(day.toString(), "0", 2);
+	};
+
+	ul4._datetime_str = function _datetime_str(obj)
+	{
 		let year = obj.getFullYear();
 		let month = obj.getMonth()+1;
 		let day = obj.getDate();
@@ -2047,9 +2091,13 @@
 		let second = obj.getSeconds();
 		let ms = obj.getMilliseconds();
 
-		let result = year + "-" + ul4._lpad(month.toString(), "0", 2) + "-" + ul4._lpad(day.toString(), "0", 2) + " " + ul4._lpad(hour.toString(), "0", 2) + ":" + ul4._lpad(minute.toString(), "0", 2) + ":" + ul4._lpad(second.toString(), "0", 2);
-		if (ms)
-			result += "." + ul4._lpad(ms.toString(), "0", 3) + "000";
+		let result = year + "-" + ul4._lpad(month.toString(), "0", 2) + "-" + ul4._lpad(day.toString(), "0", 2) + " " + ul4._lpad(hour.toString(), "0", 2) + ":" + ul4._lpad(minute.toString(), "0", 2);
+		if (second)
+		{
+			result += ":" + ul4._lpad(second.toString(), "0", 2)
+			if (ms)
+				result += "." + ul4._lpad(ms.toString(), "0", 3) + "000";
+		}
 		return result;
 	};
 
@@ -2069,6 +2117,8 @@
 			return obj.toString();
 		else if (ul4._isdate(obj))
 			return ul4._date_str(obj);
+		else if (ul4._isdatetime(obj))
+			return ul4._datetime_str(obj);
 		else if (ul4._islist(obj))
 			return ul4._list_repr(obj);
 		else if (ul4._isset(obj))
@@ -2222,6 +2272,8 @@
 			return "set";
 		else if (ul4._isdate(obj))
 			return "date";
+		else if (ul4._isdatetime(obj))
+			return "datetime";
 		else if (typeof(obj.__type__) !== "undefined")
 			return obj.__type__;
 		else if (ul4._istimedelta(obj))
@@ -2374,11 +2426,16 @@
 		return typeof(obj) == "string";
 	};
 
-	// Check if ``obj`` is a date
-	ul4._isdate = function _isdate(obj)
+	// Check if ``obj`` is a datetime
+	ul4._isdatetime = function _isdate(obj)
 	{
 		return Object.prototype.toString.call(obj) == "[object Date]";
 	};
+
+	ul4._isdate = function _isdate(obj)
+	{
+		return (obj !== null && typeof(obj) === "object" && typeof(obj.isa) === "function" && obj.isa(ul4.Date))
+	}
 
 	// Check if ``obj`` is a color
 	ul4._iscolor = function _iscolor(obj)
@@ -2401,13 +2458,13 @@
 	// Check if ``obj`` is a template
 	ul4._istemplate = function _istemplate(obj)
 	{
-		return Object.prototype.toString.call(obj) == "[object Object]" && (obj.__type__ === "ul4.Template" || obj.__type__ === "ul4.TemplateClosure");
+		return Object.prototype.toString.call(obj) == "[object Object]" && (obj.__type__ === "template");
 	};
 
 	// Check if ``obj`` is a function
 	ul4._isfunction = function _isfunction(obj)
 	{
-		return typeof(obj) === "function" || (Object.prototype.toString.call(obj) == "[object Object]" && (obj.__type__ === "ul4.Template" || obj.__type__ === "ul4.TemplateClosure"));
+		return typeof(obj) === "function" || (Object.prototype.toString.call(obj) == "[object Object]" && (obj.__type__ === "template"));
 	};
 
 	// Check if ``obj`` is a list
@@ -2591,6 +2648,10 @@
 		}
 		else if (ul4._isdate(obj))
 		{
+			return "ul4.Date.create(" + obj._date.getFullYear() + ", " + (obj._date.getMonth()+1) + ", " + obj._date.getDate() + ")";
+		}
+		else if (ul4._isdatetime(obj))
+		{
 			return "new Date(" + obj.getFullYear() + ", " + obj.getMonth() + ", " + obj.getDate() + ", " + obj.getHours() + ", " + obj.getMinutes() + ", " + obj.getSeconds() + ", " + obj.getMilliseconds() + ")";
 		}
 		else if (ul4._istimedelta(obj))
@@ -2636,7 +2697,7 @@
 		return ul4on.loads(string);
 	};
 
-	ul4._format_date = function _format_date(obj, fmt, lang)
+	ul4._format_datetime = function _format_datetime(obj, fmt, lang)
 	{
 		let translations = {
 			de: {
@@ -2871,7 +2932,7 @@
 						c = ul4._lpad(((obj.getHours()-1) % 12)+1, "0", 2);
 						break;
 					case "j":
-						c = ul4._lpad(ul4._yearday(obj), "0", 3);
+						c = ul4._lpad(ul4.DateTimeProtocol.yearday(obj), "0", 3);
 						break;
 					case "m":
 						c = ul4._lpad(obj.getMonth()+1, "0", 2);
@@ -3094,7 +3155,7 @@
 					lang = "en";
 			}
 		}
-		if (ul4._isdate(obj))
+		if (ul4._isdatetime(obj))
 			return ul4._format_date(obj, fmt, lang);
 		else if (ul4._isint(obj))
 			return ul4._format_int(obj, fmt, lang);
@@ -3338,7 +3399,7 @@
 	ul4._Set = ul4._inherit(
 		ul4.Proto,
 		{
-			__type__: "ul4._Set",
+			__type__: "set",
 
 			create: function create(...items)
 			{
@@ -3536,6 +3597,8 @@
 				return ul4.ObjectProtocol;
 			else if (ul4._isdate(obj))
 				return ul4.DateProtocol;
+			else if (ul4._isdatetime(obj))
+				return ul4.DateTimeProtocol;
 			else
 				return ul4.Protocol;
 		},
@@ -3768,18 +3831,93 @@
 	ul4.DateProtocol = ul4._inherit(ul4.Protocol, {
 		name: "date",
 
-		attrs: ul4on._makeset("weekday", "yearweek", "week", "day", "month", "year", "hour", "minute", "second", "microsecond", "mimeformat", "isoformat", "yearday"),
+		attrs: ul4on._makeset("weekday", "week", "calendar", "day", "month", "year", "mimeformat", "isoformat", "yearday"),
 
 		weekday: ul4.expose([], function weekday(obj){
-			return ul4._weekday(obj);
+			return ul4.DateTimeProtocol.weekday(obj._date);
 		}),
 
-		yearweek: ul4.expose(["firstweekday=", 0, "mindaysinfirstweek=", 4], function week(obj, firstweekday, mindaysinfirstweek){
-			return ul4._yearweek(obj, firstweekday, mindaysinfirstweek);
+		calendar: ul4.expose(["firstweekday=", 0, "mindaysinfirstweek=", 4], function calendar(obj, firstweekday=0, mindaysinfirstweek=4){
+			return ul4.DateTimeProtocol.calendar(obj._date, firstweekday, mindaysinfirstweek);
 		}),
 
-		week: ul4.expose(["firstweekday=", 0, "mindaysinfirstweek=", 4], function week(obj, firstweekday, mindaysinfirstweek){
-			return ul4._week(obj, firstweekday, mindaysinfirstweek);
+		week: ul4.expose(["firstweekday=", 0, "mindaysinfirstweek=", 4], function week(obj, firstweekday=0, mindaysinfirstweek=4){
+			return this.calendar(obj, firstweekday, mindaysinfirstweek)[1];
+		}),
+
+		day: ul4.expose([], function day(obj){
+			return obj._date.getDate();
+		}),
+
+		month: ul4.expose([], function month(obj){
+			return obj._date.getMonth()+1;
+		}),
+
+		year: ul4.expose([], function year(obj){
+			return obj._date.getFullYear();
+		}),
+
+		mimeformat: ul4.expose([], function mimeformat(obj){
+			let weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+			let monthname = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+			return weekdayname[ul4._weekday(obj)] + ", " + ul4._lpad(obj.getDate(), "0", 2) + " " + monthname[obj.getMonth()] + " " + obj.getFullYear() + " GMT";
+		}),
+
+		isoformat: ul4.expose([], function isoformat(obj){
+			let d = obj._date;
+			return d.getFullYear() + "-" + ul4._lpad((d.getMonth()+1).toString(), "0", 2) + "-" + ul4._lpad(d.getDate().toString(), "0", 2);
+		}),
+
+		yearday: ul4.expose([], function yearday(obj){
+			return ul4.DateTimeProtocol.yearday(obj._date);
+		})
+	});
+
+	ul4.DateTimeProtocol = ul4._inherit(ul4.Protocol, {
+		name: "datetime",
+
+		attrs: ul4on._makeset("weekday", "week", "calendar", "day", "month", "year", "hour", "minute", "second", "microsecond", "mimeformat", "isoformat", "yearday"),
+
+		weekday: ul4.expose([], function weekday(obj){
+			let d = obj.getDay();
+			return d ? d-1 : 6;
+		}),
+
+		calendar: ul4.expose(["firstweekday=", 0, "mindaysinfirstweek=", 4], function calendar(obj, firstweekday=0, mindaysinfirstweek=4){
+			// Normalize parameters
+			firstweekday = ul4._mod(firstweekday, 7);
+			if (mindaysinfirstweek < 1)
+				mindaysinfirstweek = 1;
+			else if (mindaysinfirstweek > 7)
+				mindaysinfirstweek = 7;
+
+			// ``obj`` might be in the first week of the next year, or last week of
+			// the previous year, so we might have to try those too.
+			for (let offset = +1; offset >= -1; --offset)
+			{
+				let year = obj.getFullYear() + offset;
+				// ``refdate`` will always be in week 1
+				let refDate = new Date(year, 0, mindaysinfirstweek);
+				// Go back to the start of ``refdate``s week (i.e. day 1 of week 1)
+				let weekDayDiff = ul4._mod(ul4._weekday(refDate) - firstweekday, 7);
+				let weekStartYear = refDate.getFullYear();
+				let weekStartMonth = refDate.getMonth();
+				let weekStartDay = refDate.getDate() - weekDayDiff;
+				let weekStart = new Date(weekStartYear, weekStartMonth, weekStartDay);
+				// Is our date ``obj`` at or after day 1 of week 1?
+				if (obj.getTime() >= weekStart.getTime())
+				{
+					let diff = ul4.SubAST._do(obj, weekStart);
+					// Add 1, because the first week is week 1, not week 0
+					let week = Math.floor(diff.days()/7) + 1;
+					return [year, week, ul4._weekday(obj)];
+				}
+			}
+		}),
+
+		week: ul4.expose(["firstweekday=", 0, "mindaysinfirstweek=", 4], function week(obj, firstweekday=0, mindaysinfirstweek=4){
+			return this.calendar(obj, firstweekday, mindaysinfirstweek)[1];
 		}),
 
 		day: ul4.expose([], function day(obj){
@@ -3811,15 +3949,56 @@
 		}),
 
 		mimeformat: ul4.expose([], function mimeformat(obj){
-			return ul4._mimeformat(obj);
+			let weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+			let monthname = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+			return weekdayname[ul4._weekday(obj)] + ", " + ul4._lpad(obj.getDate(), "0", 2) + " " + monthname[obj.getMonth()] + " " + obj.getFullYear() + " " + ul4._lpad(obj.getHours(), "0", 2) + ":" + ul4._lpad(obj.getMinutes(), "0", 2) + ":" + ul4._lpad(obj.getSeconds(), "0", 2) + " GMT";
 		}),
 
 		isoformat: ul4.expose([], function isoformat(obj){
-			return ul4._isoformat(obj);
+			let year = obj.getFullYear();
+			let month = obj.getMonth()+1;
+			let day = obj.getDate();
+			let hour = obj.getHours();
+			let minute = obj.getMinutes();
+			let second = obj.getSeconds();
+			let ms = obj.getMilliseconds();
+			let result = year + "-" + ul4._lpad(month.toString(), "0", 2) + "-" + ul4._lpad(day.toString(), "0", 2) + "T" + ul4._lpad(hour.toString(), "0", 2) + ":" + ul4._lpad(minute.toString(), "0", 2) + ":" + ul4._lpad(second.toString(), "0", 2);
+			if (ms)
+				result += "." + ul4._lpad(ms.toString(), "0", 3) + "000";
+			return result;
 		}),
 
 		yearday: ul4.expose([], function yearday(obj){
-			return ul4._yearday(obj);
+			let leap = ul4._isleap(obj) ? 1 : 0;
+			let day = obj.getDate();
+			switch (obj.getMonth())
+			{
+				case 0:
+					return day;
+				case 1:
+					return 31 + day;
+				case 2:
+					return 31 + 28 + leap + day;
+				case 3:
+					return 31 + 28 + leap + 31 + day;
+				case 4:
+					return 31 + 28 + leap + 31 + 30 + day;
+				case 5:
+					return 31 + 28 + leap + 31 + 30 + 31 + day;
+				case 6:
+					return 31 + 28 + leap + 31 + 30 + 31 + 30 + day;
+				case 7:
+					return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + day;
+				case 8:
+					return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + day;
+				case 9:
+					return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + day;
+				case 10:
+					return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + day;
+				case 11:
+					return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30 + day;
+			}
 		})
 	});
 
@@ -5675,11 +5854,17 @@
 					return obj2.__rsub__(obj1);
 				else if (ul4._isdate(obj1) && ul4._isdate(obj2))
 					return this._date_sub(obj1, obj2);
+				else if (ul4._isdatetime(obj1) && ul4._isdatetime(obj2))
+					return this._datetime_sub(obj1, obj2);
 				if (obj1 === null || obj2 === null)
 					throw ul4.TypeError.create("-", ul4._type(this.obj1) + " - " + ul4._type(this.obj2) + " is not supported");
 				return obj1 - obj2;
 			},
 			_date_sub: function _date_sub(obj1, obj2)
+			{
+				return this._datetime_sub(obj1._date, obj2._date);
+			},
+			_datetime_sub: function _datetime_sub(obj1, obj2)
 			{
 				let swap = (obj2 > obj1);
 
@@ -5692,15 +5877,15 @@
 				// From now on obj1 is > than obj2
 
 				let year1 = obj1.getFullYear();
-				let yearday1 = ul4._yearday(obj1);
+				let yearday1 = ul4.DateTimeProtocol.yearday(obj1);
 				let year2 = obj2.getFullYear();
-				let yearday2 = ul4._yearday(obj2);
+				let yearday2 = ul4.DateTimeProtocol.yearday(obj2);
 
 				let diffdays = 0;
 
 				while (year1 > year2)
 				{
-					diffdays += ul4._yearday(ul4._date(year2, 12, 31));
+					diffdays += ul4.DateProtocol.yearday(ul4._date(year2, 12, 31));
 					++year2;
 				}
 				diffdays += yearday1 - yearday2;
@@ -6895,7 +7080,7 @@
 			{
 				return this._callbound(context, vars);
 			},
-			__type__: "ul4.Template" // used by ``istemplate()``
+			__type__: "template" // used by ``istemplate()``
 		}
 	);
 
@@ -7026,7 +7211,7 @@
 						return this.template.__getattr__(attrname);
 				}
 			},
-			__type__: "ul4.TemplateClosure" // used by ``istemplate()``
+			__type__: "template" // used by ``istemplate()``
 		}
 	);
 
@@ -7594,7 +7779,12 @@
 	};
 
 	// Return a ``Date`` object from the arguments passed in
-	ul4._date = function _date(year, month, day, hour=0, minute=0, second=0, microsecond=0)
+	ul4._date = function _date(year, month, day)
+	{
+		return ul4.Date.create(year, month, day);
+	};
+
+	ul4._datetime = function _datetime(year, month, day, hour=0, minute=0, second=0, microsecond=0)
 	{
 		return new Date(year, month-1, day, hour, minute, second, microsecond/1000);
 	};
@@ -7699,6 +7889,13 @@
 		return new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds(), now.getUTCMilliseconds());
 	};
 
+	// Return an ``ul4.Date`` object for today
+	ul4.today = function today()
+	{
+		let now = new Date();
+		return ul4.Date.create(now.getFullYear(), now.getMonth()+1, now.getDate());
+	};
+
 	ul4.functions = {
 		repr: ul4.expose(["obj"], {name: "repr"}, ul4._repr),
 		ascii: ul4.expose(["obj"], {name: "ascii"}, ul4._ascii),
@@ -7725,6 +7922,7 @@
 		isfloat: ul4.expose(["obj"], {name: "isfloat"}, ul4._isfloat),
 		isstr: ul4.expose(["obj"], {name: "isstr"}, ul4._isstr),
 		isdate: ul4.expose(["obj"], {name: "isdate"}, ul4._isdate),
+		isdatetime: ul4.expose(["obj"], {name: "isdatetime"}, ul4._isdatetime),
 		iscolor: ul4.expose(["obj"], {name: "iscolor"}, ul4._iscolor),
 		istimedelta: ul4.expose(["obj"], {name: "istimedelta"}, ul4._istimedelta),
 		ismonthdelta: ul4.expose(["obj"], {name: "ismonthdelta"}, ul4._ismonthdelta),
@@ -7740,13 +7938,15 @@
 		fromul4on: ul4.expose(["string"], {name: "fromul4on"}, ul4._fromul4on),
 		now: ul4.expose([], ul4.now),
 		utcnow: ul4.expose([], ul4.utcnow),
+		today: ul4.expose([], ul4.today),
 		enumerate: ul4.expose(["iterable", "start=", 0], {name: "enumerate"}, ul4._enumerate),
 		isfirst: ul4.expose(["iterable"], {name: "isfirst"}, ul4._isfirst),
 		islast: ul4.expose(["iterable"], {name: "islast"}, ul4._islast),
 		isfirstlast: ul4.expose(["iterable"], {name: "isfirstlast"}, ul4._isfirstlast),
 		enumfl: ul4.expose(["iterable", "start=", 0], {name: "enumfl"}, ul4._enumfl),
 		abs: ul4.expose(["number"], {name: "abs"}, ul4._abs),
-		date: ul4.expose(["year", "month", "day", "hour=", 0, "minute=", 0, "second=", 0, "microsecond=", 0], {name: "date"}, ul4._date),
+		date: ul4.expose(["year", "month", "day"], {name: "date"}, ul4._date),
+		datetime: ul4.expose(["year", "month", "day", "hour=", 0, "minute=", 0, "second=", 0, "microsecond=", 0], {name: "datetime"}, ul4._datetime),
 		timedelta: ul4.expose(["days=", 0, "seconds=", 0, "microseconds=", 0], {name: "timedelta"}, ul4._timedelta),
 		monthdelta: ul4.expose(["months=", 0], {name: "monthdelta"}, ul4._monthdelta),
 		rgb: ul4.expose(["r", "g", "b", "a=", 1.0], {name: "rgb"}, ul4._rgb),
@@ -8197,77 +8397,6 @@
 
 	};
 
-	ul4._isoformat = function _isoformat(obj)
-	{
-		if (!ul4._isdate(obj))
-			throw ul4.TypeError.create("isoformat()", "isoformat() requires a date");
-
-		let result = obj.getFullYear() + "-" + ul4._lpad((obj.getMonth()+1).toString(), "0", 2) + "-" + ul4._lpad(obj.getDate().toString(), "0", 2);
-		let hour = obj.getHours();
-		let minute = obj.getMinutes();
-		let second = obj.getSeconds();
-		let ms = obj.getMilliseconds();
-		if (hour || minute || second || ms)
-		{
-			result += "T" + ul4._lpad(hour.toString(), "0", 2) + ":" + ul4._lpad(minute.toString(), "0", 2) + ":" + ul4._lpad(second.toString(), "0", 2);
-			if (ms)
-				result += "." + ul4._lpad(ms.toString(), "0", 3) + "000";
-		}
-		return result;
-	};
-
-	ul4._mimeformat = function _mimeformat(obj)
-	{
-		let weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-		let monthname = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-		return weekdayname[ul4._weekday(obj)] + ", " + ul4._lpad(obj.getDate(), "0", 2) + " " + monthname[obj.getMonth()] + " " + obj.getFullYear() + " " + ul4._lpad(obj.getHours(), "0", 2) + ":" + ul4._lpad(obj.getMinutes(), "0", 2) + ":" + ul4._lpad(obj.getSeconds(), "0", 2) + " GMT";
-	};
-
-	ul4._weekday = function _weekday(obj)
-	{
-		let d = obj.getDay();
-		return d ? d-1 : 6;
-	};
-
-	ul4._yearweek = function _yearweek(obj, firstweekday=0, mindaysinfirstweek=4)
-	{
-		// Normalize parameters
-		firstweekday = ul4._mod(firstweekday, 7);
-		if (mindaysinfirstweek < 1)
-			mindaysinfirstweek = 1;
-		else if (mindaysinfirstweek > 7)
-			mindaysinfirstweek = 7;
-
-		// ``obj`` might be in the first week of the next year, or last week of
-		// the previous year, so we might have to try those too.
-		for (let offset = +1; offset >= -1; --offset)
-		{
-			let year = obj.getFullYear() + offset;
-			// ``refdate`` will always be in week 1
-			let refDate = new Date(year, 0, mindaysinfirstweek);
-			// Go back to the start of ``refdate``s week (i.e. day 1 of week 1)
-			let weekDayDiff = ul4._mod(ul4._weekday(refDate) - firstweekday, 7);
-			let weekStartYear = refDate.getFullYear();
-			let weekStartMonth = refDate.getMonth();
-			let weekStartDay = refDate.getDate() - weekDayDiff;
-			let weekStart = new Date(weekStartYear, weekStartMonth, weekStartDay);
-			// Is our date ``obj`` at or after day 1 of week 1?
-			if (obj.getTime() >= weekStart.getTime())
-			{
-				let diff = ul4.SubAST._do(obj, weekStart);
-				// Add 1, because the first week is week 1, not week 0
-				let week = Math.floor(diff.days()/7) + 1;
-				return [year, week];
-			}
-		}
-	};
-
-	ul4._week = function _week(obj, firstweekday=0, mindaysinfirstweek=4)
-	{
-		return ul4._yearweek(obj, firstweekday, mindaysinfirstweek)[1];
-	};
-
 	ul4._week4format = function _week(obj, firstweekday=null)
 	{
 		if (firstweekday === null)
@@ -8293,39 +8422,6 @@
 	ul4._isleap = function _isleap(obj)
 	{
 		return new Date(obj.getFullYear(), 1, 29).getMonth() === 1;
-	};
-
-	ul4._yearday = function _yearday(obj)
-	{
-		let leap = ul4._isleap(obj) ? 1 : 0;
-		let day = obj.getDate();
-		switch (obj.getMonth())
-		{
-			case 0:
-				return day;
-			case 1:
-				return 31 + day;
-			case 2:
-				return 31 + 28 + leap + day;
-			case 3:
-				return 31 + 28 + leap + 31 + day;
-			case 4:
-				return 31 + 28 + leap + 31 + 30 + day;
-			case 5:
-				return 31 + 28 + leap + 31 + 30 + 31 + day;
-			case 6:
-				return 31 + 28 + leap + 31 + 30 + 31 + 30 + day;
-			case 7:
-				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + day;
-			case 8:
-				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + day;
-			case 9:
-				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + day;
-			case 10:
-				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + day;
-			case 11:
-				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30 + day;
-		}
 	};
 
 	ul4._append = function _append(obj, ...items)
@@ -8410,7 +8506,7 @@
 	ul4.Color = ul4._inherit(
 		ul4.Proto,
 		{
-			__type__: "ul4.Color",
+			__type__: "Color",
 
 			create: function create(r=0, g=0, b=0, a=255)
 			{
@@ -8664,10 +8760,142 @@
 		}
 	);
 
+	ul4.Date = ul4._inherit(
+		ul4.Proto,
+		{
+			__type__: "date",
+
+			create: function create(year, month, day)
+			{
+				let d = ul4._clone(this);
+				d._date = new Date(year, month-1, day);
+				return d;
+			},
+
+			__repr__: function __repr__()
+			{
+				return '@(' + this.__str__() + ")";
+			},
+
+			__str__: function __str__()
+			{
+				return ul4._lpad(this._date.getFullYear(), "0", 4) + "-" + ul4._lpad(this._date.getMonth()+1, "0", 2) + "-" + ul4._lpad(this._date.getDate(), "0", 2);
+			},
+
+			__eq__: function __eq__(other)
+			{
+				if (ul4._isdate(other))
+					return this._date.getTime() === other._date.getTime();
+				return false;
+			},
+
+			__lt__: function __lt__(other)
+			{
+				if (ul4._date(other))
+					return this._date < other._date;
+				ul4._unorderable("<", this, other);
+			},
+
+			__le__: function __le__(other)
+			{
+				if (ul4._date(other))
+					return this._date <= other._date;
+				ul4._unorderable("<=", this, other);
+			},
+
+			__gt__: function __gt__(other)
+			{
+				if (ul4._date(other))
+					return this._date > other._date;
+				ul4._unorderable(">", this, other);
+			},
+
+			__ge__: function __ge__(other)
+			{
+				if (ul4._date(other))
+					return this._date >= other._date;
+				ul4._unorderable(">=", this, other);
+			},
+
+			_add: function _add(date, days, seconds, microseconds)
+			{
+				let year = date.getFullYear();
+				let month = date.getMonth();
+				let day = date.getDate() + days;
+				let hour = date.getHours();
+				let minute = date.getMinutes();
+				let second = date.getSeconds() + seconds;
+				let millisecond = date.getMilliseconds() + microseconds/1000;
+				return new Date(year, month, day, hour, minute, second, millisecond);
+			},
+
+			__add__: function __add__(other)
+			{
+				if (ul4._istimedelta(other))
+					return ul4.TimeDelta.create(this._days + other._days, this._seconds + other._seconds, this._microseconds + other._microseconds);
+				else if (ul4._isdate(other))
+					return this._add(other, this._days, this._seconds, this._microseconds);
+				throw ul4.TypeError.create("+", ul4._type(this) + " + " + ul4._type(other) + " not supported");
+			},
+
+			__radd__: function __radd__(other)
+			{
+				if (ul4._isdate(other))
+					return this._add(other, this._days, this._seconds, this._microseconds);
+				throw ul4.TypeError.create("+", ul4._type(this) + " + " + ul4._type(other) + " not supported");
+			},
+
+			__sub__: function __sub__(other)
+			{
+				if (ul4._istimedelta(other))
+					return ul4.TimeDelta.create(this._days - other._days, this._seconds - other._seconds, this._microseconds - other._microseconds);
+				throw ul4.TypeError.create("-", ul4._type(this) + " - " + ul4._type(other) + " not supported");
+			},
+
+			__rsub__: function __rsub__(other)
+			{
+				if (ul4._isdate(other))
+					return this._add(other, -this._days, -this._seconds, -this._microseconds);
+				throw ul4.TypeError.create("-", ul4._type(this) + " - " + ul4._type(other) + " not supported");
+			},
+
+			__getattr__: function __getattr__(attrname)
+			{
+				let self = this;
+				switch (attrname)
+				{
+					case "year":
+						return ul4.expose([], function year(){ return self._date.getFullYear(); });
+					case "month":
+						return ul4.expose([], function month(){ return self._date.getMonth()+1; });
+					case "day":
+						return ul4.expose([], function day(){ return self._date.getDate(); });
+					default:
+						throw ul4.AttributeError.create(this, attrname);
+				}
+			},
+
+			year: function year()
+			{
+				return this._date.getFullYear();
+			},
+
+			month: function month()
+			{
+				return this._date.getMonth()+1;
+			},
+
+			day: function day()
+			{
+				return this._date.getDate();
+			}
+		}
+	);
+
 	ul4.TimeDelta = ul4._inherit(
 		ul4.Proto,
 		{
-			__type__: "ul4.TimeDelta",
+			__type__: "timedelta",
 
 			create: function create(days=0, seconds=0, microseconds=0)
 			{
@@ -8824,14 +9052,14 @@
 			{
 				if (ul4._istimedelta(other))
 					return ul4.TimeDelta.create(this._days + other._days, this._seconds + other._seconds, this._microseconds + other._microseconds);
-				else if (ul4._isdate(other))
+				else if (ul4._isdatetime(other))
 					return this._add(other, this._days, this._seconds, this._microseconds);
 				throw ul4.TypeError.create("+", ul4._type(this) + " + " + ul4._type(other) + " not supported");
 			},
 
 			__radd__: function __radd__(other)
 			{
-				if (ul4._isdate(other))
+				if (ul4._isdatetime(other))
 					return this._add(other, this._days, this._seconds, this._microseconds);
 				throw ul4.TypeError.create("+", ul4._type(this) + " + " + ul4._type(other) + " not supported");
 			},
@@ -8845,7 +9073,7 @@
 
 			__rsub__: function __rsub__(other)
 			{
-				if (ul4._isdate(other))
+				if (ul4._isdatetime(other))
 					return this._add(other, -this._days, -this._seconds, -this._microseconds);
 				throw ul4.TypeError.create("-", ul4._type(this) + " - " + ul4._type(other) + " not supported");
 			},
@@ -8931,7 +9159,7 @@
 	ul4.MonthDelta = ul4._inherit(
 		ul4.Proto,
 		{
-			__type__: "ul4.MonthDelta",
+			__type__: "monthdelta",
 
 			create: function create(months=0)
 			{
@@ -9033,14 +9261,14 @@
 			{
 				if (ul4._ismonthdelta(other))
 					return ul4.MonthDelta.create(this._months + other._months);
-				else if (ul4._isdate(other))
+				else if (ul4._isdatetime(other))
 					return this._add(other, this._months);
 				throw ul4._type(this) + " + " + ul4._type(other) + " not supported";
 			},
 
 			__radd__: function __radd__(other)
 			{
-				if (ul4._isdate(other))
+				if (ul4._isdatetime(other))
 					return this._add(other, this._months);
 				throw ul4._type(this) + " + " + ul4._type(other) + " not supported";
 			},
@@ -9054,7 +9282,7 @@
 
 			__rsub__: function __rsub__(other)
 			{
-				if (ul4._isdate(other))
+				if (ul4._isdatetime(other))
 					return this._add(other, -this._months);
 				throw ul4._type(this) + " - " + ul4._type(other) + " not supported";
 			},
