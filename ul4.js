@@ -2092,7 +2092,7 @@
 		let ms = obj.getMilliseconds();
 
 		let result = year + "-" + ul4._lpad(month.toString(), "0", 2) + "-" + ul4._lpad(day.toString(), "0", 2) + " " + ul4._lpad(hour.toString(), "0", 2) + ":" + ul4._lpad(minute.toString(), "0", 2);
-		if (second)
+		if (second || ms)
 		{
 			result += ":" + ul4._lpad(second.toString(), "0", 2)
 			if (ms)
