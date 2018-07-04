@@ -3844,7 +3844,7 @@
 		}),
 
 		week: ul4.expose(["firstweekday=", 0, "mindaysinfirstweek=", 4], function week(obj, firstweekday=0, mindaysinfirstweek=4){
-			return this.calendar(obj, firstweekday, mindaysinfirstweek)[1];
+			return ul4.DateProtocol.calendar(obj, firstweekday, mindaysinfirstweek)[1];
 		}),
 
 		day: ul4.expose([], function day(obj){
