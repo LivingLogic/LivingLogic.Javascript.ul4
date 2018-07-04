@@ -9023,7 +9023,15 @@
 				return ul4.TimeDelta.create(-this._days, -this._seconds, -this._microseconds);
 			},
 
-			_add: function _add(date, days, seconds, microseconds)
+			_adddate: function _adddate(date, days)
+			{
+				let year = date._date.getFullYear();
+				let month = date._date.getMonth();
+				let day = date._date.getDate() + days;
+				return ul4.Date.create(year, month, day);
+			},
+
+			_adddatetime: function _adddatetime(date, days, seconds, microseconds)
 			{
 				let year = date.getFullYear();
 				let month = date.getMonth();
@@ -9039,15 +9047,19 @@
 			{
 				if (ul4._istimedelta(other))
 					return ul4.TimeDelta.create(this._days + other._days, this._seconds + other._seconds, this._microseconds + other._microseconds);
+				else if (ul4._isdate(other))
+					return this._adddate(other, this._days);
 				else if (ul4._isdatetime(other))
-					return this._add(other, this._days, this._seconds, this._microseconds);
+					return this._adddatetime(other, this._days, this._seconds, this._microseconds);
 				throw ul4.TypeError.create("+", ul4._type(this) + " + " + ul4._type(other) + " not supported");
 			},
 
 			__radd__: function __radd__(other)
 			{
-				if (ul4._isdatetime(other))
-					return this._add(other, this._days, this._seconds, this._microseconds);
+				if (ul4._isdate(other))
+					return this._adddate(other, this._days);
+				else if (ul4._isdatetime(other))
+					return this._adddatetime(other, this._days, this._seconds, this._microseconds);
 				throw ul4.TypeError.create("+", ul4._type(this) + " + " + ul4._type(other) + " not supported");
 			},
 
@@ -9060,8 +9072,10 @@
 
 			__rsub__: function __rsub__(other)
 			{
-				if (ul4._isdatetime(other))
-					return this._add(other, -this._days, -this._seconds, -this._microseconds);
+				if (ul4._isdate(other))
+					return this._adddate(other, -this._days);
+				else if (ul4._isdatetime(other))
+					return this._adddatetime(other, -this._days, -this._seconds, -this._microseconds);
 				throw ul4.TypeError.create("-", ul4._type(this) + " - " + ul4._type(other) + " not supported");
 			},
 
