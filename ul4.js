@@ -3862,8 +3862,9 @@
 		mimeformat: ul4.expose([], function mimeformat(obj){
 			let weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 			let monthname = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+			let d = obj._date;
 
-			return weekdayname[ul4._weekday(obj)] + ", " + ul4._lpad(obj.getDate(), "0", 2) + " " + monthname[obj.getMonth()] + " " + obj.getFullYear() + " GMT";
+			return weekdayname[ul4.DateTimeProtocol.weekday(d)] + ", " + ul4._lpad(d.getDate(), "0", 2) + " " + monthname[d.getMonth()] + " " + d.getFullYear();
 		}),
 
 		isoformat: ul4.expose([], function isoformat(obj){
@@ -3902,7 +3903,7 @@
 				// ``refdate`` will always be in week 1
 				let refDate = new Date(year, 0, mindaysinfirstweek);
 				// Go back to the start of ``refdate``s week (i.e. day 1 of week 1)
-				let weekDayDiff = ul4._mod(ul4._weekday(refDate) - firstweekday, 7);
+				let weekDayDiff = ul4._mod(ul4.DateProtocol.weekday(refDate) - firstweekday, 7);
 				let weekStartYear = refDate.getFullYear();
 				let weekStartMonth = refDate.getMonth();
 				let weekStartDay = refDate.getDate() - weekDayDiff;
@@ -3913,13 +3914,13 @@
 					let diff = ul4.SubAST._do(obj, weekStart);
 					// Add 1, because the first week is week 1, not week 0
 					let week = Math.floor(diff.days()/7) + 1;
-					return [year, week, ul4._weekday(obj)];
+					return [year, week, ul4.DateTimeProtocol.weekday(obj)];
 				}
 			}
 		}),
 
 		week: ul4.expose(["firstweekday=", 0, "mindaysinfirstweek=", 4], function week(obj, firstweekday=0, mindaysinfirstweek=4){
-			return this.calendar(obj, firstweekday, mindaysinfirstweek)[1];
+			return ul4.DateTimeProtocol.calendar(obj, firstweekday, mindaysinfirstweek)[1];
 		}),
 
 		day: ul4.expose([], function day(obj){
@@ -3954,7 +3955,7 @@
 			let weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 			let monthname = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-			return weekdayname[ul4._weekday(obj)] + ", " + ul4._lpad(obj.getDate(), "0", 2) + " " + monthname[obj.getMonth()] + " " + obj.getFullYear() + " " + ul4._lpad(obj.getHours(), "0", 2) + ":" + ul4._lpad(obj.getMinutes(), "0", 2) + ":" + ul4._lpad(obj.getSeconds(), "0", 2) + " GMT";
+			return weekdayname[ul4.DateTimeProtocol.weekday(obj)] + ", " + ul4._lpad(obj.getDate(), "0", 2) + " " + monthname[obj.getMonth()] + " " + obj.getFullYear() + " " + ul4._lpad(obj.getHours(), "0", 2) + ":" + ul4._lpad(obj.getMinutes(), "0", 2) + ":" + ul4._lpad(obj.getSeconds(), "0", 2) + " GMT";
 		}),
 
 		isoformat: ul4.expose([], function isoformat(obj){
@@ -8406,7 +8407,7 @@
 		else
 			firstweekday %= 7;
 
-		let yearday = ul4._yearday(obj)+6;
+		let yearday = ul4.DateTimeProtocol.yearday(obj)+6;
 		let jan1 = new Date(obj.getFullYear(), 0, 1);
 		let jan1weekday = jan1.getDay();
 		if (--jan1weekday < 0)
