@@ -8828,48 +8828,6 @@
 				ul4._unorderable(">=", this, other);
 			},
 
-			_add: function _add(date, days, seconds, microseconds)
-			{
-				let year = date.getFullYear();
-				let month = date.getMonth();
-				let day = date.getDate() + days;
-				let hour = date.getHours();
-				let minute = date.getMinutes();
-				let second = date.getSeconds() + seconds;
-				let millisecond = date.getMilliseconds() + microseconds/1000;
-				return new Date(year, month, day, hour, minute, second, millisecond);
-			},
-
-			__add__: function __add__(other)
-			{
-				if (ul4._istimedelta(other))
-					return ul4.TimeDelta.create(this._days + other._days, this._seconds + other._seconds, this._microseconds + other._microseconds);
-				else if (ul4._isdate(other))
-					return this._add(other, this._days, this._seconds, this._microseconds);
-				throw ul4.TypeError.create("+", ul4._type(this) + " + " + ul4._type(other) + " not supported");
-			},
-
-			__radd__: function __radd__(other)
-			{
-				if (ul4._isdate(other))
-					return this._add(other, this._days, this._seconds, this._microseconds);
-				throw ul4.TypeError.create("+", ul4._type(this) + " + " + ul4._type(other) + " not supported");
-			},
-
-			__sub__: function __sub__(other)
-			{
-				if (ul4._istimedelta(other))
-					return ul4.TimeDelta.create(this._days - other._days, this._seconds - other._seconds, this._microseconds - other._microseconds);
-				throw ul4.TypeError.create("-", ul4._type(this) + " - " + ul4._type(other) + " not supported");
-			},
-
-			__rsub__: function __rsub__(other)
-			{
-				if (ul4._isdate(other))
-					return this._add(other, -this._days, -this._seconds, -this._microseconds);
-				throw ul4.TypeError.create("-", ul4._type(this) + " - " + ul4._type(other) + " not supported");
-			},
-
 			year: function year()
 			{
 				return this._date.getFullYear();
@@ -9287,7 +9245,7 @@
 			{
 				if (ul4._isdate(other))
 					return this._adddate(other, this._months);
-				if (ul4._isdatetime(other))
+				else if (ul4._isdatetime(other))
 					return this._adddatetime(other, this._months);
 				throw ul4._type(this) + " + " + ul4._type(other) + " not supported";
 			},
