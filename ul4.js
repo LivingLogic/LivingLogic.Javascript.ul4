@@ -8775,6 +8775,14 @@
 				return d;
 			},
 
+			createfromdate: function create(date)
+			{
+				let d = ul4._clone(this);
+				// Note that hours, minutes, seconds and milliseconds must all be 0.
+				d._date = date;
+				return d;
+			},
+
 			__repr__: function __repr__()
 			{
 				return '@(' + this.__str__() + ")";
@@ -9237,7 +9245,13 @@
 				return ul4.MonthDelta.create(-this._months);
 			},
 
-			_add: function _add(date, months)
+			_adddate: function _adddate(date, months)
+			{
+				let result = this._adddatetime(date._date, months);
+				return ul4.Date.createfromdate(result);
+			},
+
+			_adddatetime: function _adddatetime(date, months)
 			{
 				let year = date.getFullYear();
 				let month = date.getMonth() + months;
@@ -9262,15 +9276,19 @@
 			{
 				if (ul4._ismonthdelta(other))
 					return ul4.MonthDelta.create(this._months + other._months);
+				else if (ul4._isdate(other))
+					return this._adddate(other, this._months);
 				else if (ul4._isdatetime(other))
-					return this._add(other, this._months);
+					return this._adddatetime(other, this._months);
 				throw ul4._type(this) + " + " + ul4._type(other) + " not supported";
 			},
 
 			__radd__: function __radd__(other)
 			{
+				if (ul4._isdate(other))
+					return this._adddate(other, this._months);
 				if (ul4._isdatetime(other))
-					return this._add(other, this._months);
+					return this._adddatetime(other, this._months);
 				throw ul4._type(this) + " + " + ul4._type(other) + " not supported";
 			},
 
@@ -9283,8 +9301,10 @@
 
 			__rsub__: function __rsub__(other)
 			{
-				if (ul4._isdatetime(other))
-					return this._add(other, -this._months);
+				if (ul4._isdate(other))
+					return this._adddate(other, -this._months);
+				else if (ul4._isdatetime(other))
+					return this._adddatetime(other, -this._months);
 				throw ul4._type(this) + " - " + ul4._type(other) + " not supported";
 			},
 
