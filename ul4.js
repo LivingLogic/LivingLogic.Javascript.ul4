@@ -3155,8 +3155,10 @@
 					lang = "en";
 			}
 		}
+		if (ul4._isdate(obj))
+			return ul4._format_datetime(obj._date, fmt, lang);
 		if (ul4._isdatetime(obj))
-			return ul4._format_date(obj, fmt, lang);
+			return ul4._format_datetime(obj, fmt, lang);
 		else if (ul4._isint(obj))
 			return ul4._format_int(obj, fmt, lang);
 		else if (obj === true)
