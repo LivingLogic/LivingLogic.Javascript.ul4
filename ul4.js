@@ -368,6 +368,7 @@
 			decoder.pos = 0;
 			decoder.backrefs = [];
 			decoder.registry = typeof(registry) === "undefined" ? null : registry;
+			decoder.stack = []; // Use for informative error messages
 			return decoder;
 		},
 
@@ -395,7 +396,7 @@
 			for (;;)
 			{
 				if (this.pos >= this.data.length)
-					throw "UL4 decoder at EOF";
+					throw "UL4 decoder at EOF at position " + this.pos + " with path " + this.stack.join("/");
 				let c = this.data.charAt(this.pos++);
 				if (!c.match(re_white))
 					return c;
@@ -431,7 +432,7 @@
 				{
 					let result = parseFloat(value);
 					if (isNaN(result))
-						throw "invalid number, got " + ul4._repr("value") + " at position " + this.pos;
+						throw "invalid number, got " + ul4._repr("value") + " at position " + this.pos + " with path " + this.stack.join("/");
 					return result;
 				}
 			}
@@ -453,10 +454,10 @@
 		{
 			let chars = this.read(length);
 			if (chars.length != length)
-				throw "broken escape " + ul4._repr("\\" + escapechar + chars) + " at position " + this.pos;
+				throw "broken escape " + ul4._repr("\\" + escapechar + chars) + " at position " + this.pos + " with path " + this.stack.join("/");
 			let codepoint = parseInt(chars, 16);
 			if (isNaN(codepoint))
-				throw "broken escape " + ul4._repr("\\" + escapechar + chars) + " at position " + this.pos;
+				throw "broken escape " + ul4._repr("\\" + escapechar + chars) + " at position " + this.pos + " with path " + this.stack.join("/");
 			return String.fromCharCode(codepoint);
 		},
 
@@ -482,7 +483,7 @@
 					else if (result === "F")
 						result = false;
 					else
-						throw "wrong value for boolean, expected 'T' or 'F', got " + ul4._repr(result) + " at position " + this.pos;
+						throw "wrong value for boolean, expected 'T' or 'F', got " + ul4._repr(result) + " at position " + this.pos + " with path " + this.stack.join("/");
 					if (typecode === "B")
 						this.backrefs.push(result);
 					return result;
@@ -601,6 +602,7 @@
 					return result;
 				case "l":
 				case "L":
+					this.stack.push("list");
 					result = [];
 					if (typecode === "L")
 						this.backrefs.push(result);
@@ -608,33 +610,37 @@
 					{
 						typecode = this.readblackchar();
 						if (typecode === "]")
-							return result;
+							break;
 						this.backup();
 						result.push(this.load());
 					}
+					this.stack.pop();
 					return result;
 				case "d":
 				case "D":
 				case "e":
 				case "E":
 					if (!ul4on._havemap && (typecode == "e" || typecode == "E"))
-						throw "ordered dictionaries are not supported!";
+						throw "ordered dictionaries are not supported at position " + this.pos + " with path " + this.stack.join("/");
 					result = ul4on._emptymap();
+					this.stack.push(typecode === "d" || typecode === "D" ? "dict" : "odict");
 					if (typecode === "D" || typecode === "E")
 						this.backrefs.push(result);
 					for (;;)
 					{
 						typecode = this.readblackchar();
 						if (typecode === "}")
-							return result;
+							break;
 						this.backup();
 						let key = this.load();
 						let value = this.load();
 						ul4on._setmap(result, key, value);
 					}
+					this.stack.pop();
 					return result;
 				case "y":
 				case "Y":
+					this.stack.push("set");
 					result = ul4on._makeset();
 					if (typecode === "Y")
 						this.backrefs.push(result);
@@ -642,10 +648,11 @@
 					{
 						typecode = this.readblackchar();
 						if (typecode === "}")
-							return result;
+							break;
 						this.backup();
 						result.add(this.load());
 					}
+					this.stack.pop();
 					return result;
 				case "o":
 				case "O":
@@ -654,6 +661,7 @@
 					if (typecode === "O")
 						oldpos = this._beginfakeloading();
 					let name = this.load();
+					this.stack.push(name);
 					let proto;
 					if (this.registry !== null)
 					{
@@ -664,18 +672,19 @@
 					else
 						proto = ul4on._registry[name];
 					if (typeof(proto) === "undefined")
-						throw "can't load object of type " + ul4._repr(name);
+						throw "can't load object of type " + ul4._repr(name) + " at position " + this.pos + " with path " + this.stack.join("/");
 					result = proto();
 					if (typecode === "O")
 						this._endfakeloading(oldpos, result);
 					result.ul4onload(this);
 					typecode = this.readblackchar();
 					if (typecode !== ")")
-						throw "object terminator ')' for object of type '" + name + "' expected, got " + ul4._repr(typecode) + " at position " + this.pos;
+						throw "object terminator ')' for object of type '" + name + "' expected, got " + ul4._repr(typecode) + " at position " + this.pos + " with path " + this.stack.join("/");
+					this.stack.pop();
 					return result;
 				}
 				default:
-					throw "unknown typecode " + ul4._repr(typecode) + " at position " + this.pos;
+					throw "unknown typecode " + ul4._repr(typecode) + " at position " + this.pos + " with path " + this.stack.join("/");
 			}
 		},
 
@@ -8874,17 +8883,28 @@
 
 			__repr__: function __repr__()
 			{
-				if (!this._microseconds)
+				let v = [], first = true;
+				v.push("timedelta(");
+				if (this._days)
 				{
-					if (!this._seconds)
-					{
-						if (!this._days)
-							return "timedelta()";
-						return "timedelta(" + this._days + ")";
-					}
-					return "timedelta(" + this._days + ", " + this._seconds + ")";
+					v.push("days=" + this._days);
+					first = false;
 				}
-				return "timedelta(" + this._days + ", " + this._seconds + ", " + this._microseconds + ")";
+				if (this._seconds)
+				{
+					if (!first)
+						v.push(", ");
+					v.push("seconds=" + this._seconds);
+					first = false;
+				}
+				if (this._microseconds)
+				{
+					if (!first)
+						v.push(", ");
+					v.push("microseconds=" + this._microseconds);
+				}
+				v.push(")");
+				return v.join("");
 			},
 
 			__str__: function __str__()
