@@ -557,7 +557,7 @@
 					let month = this.load();
 					let day = this.load();
 					result = ul4.Date.create(year, month, day);
-					if (typecode === "Z")
+					if (typecode === "X")
 						this.backrefs.push(result);
 					return result;
 				}
