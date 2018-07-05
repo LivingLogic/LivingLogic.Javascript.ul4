@@ -3912,7 +3912,7 @@
 				// ``refdate`` will always be in week 1
 				let refDate = new Date(year, 0, mindaysinfirstweek);
 				// Go back to the start of ``refdate``s week (i.e. day 1 of week 1)
-				let weekDayDiff = ul4._mod(ul4.DateProtocol.weekday(refDate) - firstweekday, 7);
+				let weekDayDiff = ul4._mod(ul4.DateTimeProtocol.weekday(refDate) - firstweekday, 7);
 				let weekStartYear = refDate.getFullYear();
 				let weekStartMonth = refDate.getMonth();
 				let weekStartDay = refDate.getDate() - weekDayDiff;
