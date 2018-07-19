@@ -734,11 +734,13 @@
 	}
 
 	// Crockford style object creation + prototype chain + object ids
+	var _nextid = 1;
+
 	ul4._clone = function _clone(obj)
 	{
 		let result = ul4._simpleclone(obj);
 		result.__prototype__ = obj;
-		result.__id__ = ul4.Proto._nextid++;
+		result.__id__ = _nextid++;
 		return result;
 	};
 
@@ -3197,7 +3199,6 @@
 	ul4.Proto = {
 		__prototype__: null,
 		__id__: 0,
-		_nextid: 1,
 		isa: function isa(type)
 		{
 			if (this === type)
