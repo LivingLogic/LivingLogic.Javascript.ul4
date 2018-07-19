@@ -193,7 +193,7 @@
 	// Return a string that contains the object ``obj`` in the UL4ON serialization format
 	ul4on.dumps = function dumps(obj, indent)
 	{
-		let encoder = ul4on.Encoder.create(indent);
+		let encoder = new ul4on.Encoder(indent);
 		encoder.dump(obj);
 		return encoder.finish();
 	};
@@ -203,26 +203,25 @@
 	// ``registry`` may be null or a dictionary mapping type names to objects with a create method
 	ul4on.loads = function loads(data, registry)
 	{
-		let decoder = ul4on.Decoder.create(data, registry);
+		let decoder = new ul4on.Decoder(data, registry);
 		return decoder.load();
 	};
 
-	// Helper "class" for encoding
-	ul4on.Encoder = {
+	// Helper class for encoding
+	class Encoder
+	{
 		// Create a new Encoder object
-		create: function create(indent)
+		constructor(indent)
 		{
-			let encoder = ul4._clone(this);
-			encoder.indent = indent || null;
-			encoder.data = [];
-			encoder._level = 0;
-			encoder._strings2index = {};
-			encoder._ids2index = {};
-			encoder._backrefs = 0;
-			return encoder;
-		},
+			this.indent = indent || null;
+			this.data = [];
+			this._level = 0;
+			this._strings2index = {};
+			this._ids2index = {};
+			this._backrefs = 0;
+		}
 
-		_line: function _line(line, ...args)
+		_line(line, ...args)
 		{
 			if (this.indent !== null)
 			{
@@ -247,15 +246,15 @@
 
 			if (this.indent !== null)
 				this.data.push("\n");
-		},
+		}
 
 		// Return the complete string written to the buffer
-		finish: function finish()
+		finish()
 		{
 			return this.data.join("");
-		},
+		}
 
-		dump: function dump(obj)
+		dump(obj)
 		{
 			if (obj === null)
 				this._line("n");
@@ -358,38 +357,39 @@
 		}
 	};
 
-	// Helper "class" for decoding
-	ul4on.Decoder = {
+	ul4on.Encoder = Encoder;
+
+	// Helper class for decoding
+	class Decoder
+	{
 		// Creates a new decoder for reading from the string ``data``
-		create: function create(data, registry)
+		constructor(data, registry)
 		{
-			let decoder = ul4._clone(this);
-			decoder.data = data;
-			decoder.pos = 0;
-			decoder.backrefs = [];
-			decoder.registry = typeof(registry) === "undefined" ? null : registry;
-			decoder.stack = []; // Use for informative error messages
-			return decoder;
-		},
+			this.data = data;
+			this.pos = 0;
+			this.backrefs = [];
+			this.registry = typeof(registry) === "undefined" ? null : registry;
+			this.stack = []; // Use for informative error messages
+		}
 
 		// Read a character from the buffer
-		readchar: function readchar()
+		readchar()
 		{
 			if (this.pos >= this.data.length)
 				throw "UL4 decoder at EOF";
 			return this.data.charAt(this.pos++);
-		},
+		}
 
 		// Read a character from the buffer (return null on eof)
-		readcharoreof: function readcharoreof()
+		readcharoreof()
 		{
 			if (this.pos >= this.data.length)
 				return null;
 			return this.data.charAt(this.pos++);
-		},
+		}
 
 		// Read next not-whitespace character from the buffer
-		readblackchar: function readblackchar()
+		readblackchar()
 		{
 			let re_white = /\s/;
 
@@ -401,26 +401,26 @@
 				if (!c.match(re_white))
 					return c;
 			}
-		},
+		}
 
 		// Read ``size`` characters from the buffer
-		read: function read(size)
+		read(size)
 		{
 			if (this.pos+size > this.length)
 				size = this.length-this.pos;
 			let result = this.data.substring(this.pos, this.pos+size);
 			this.pos += size;
 			return result;
-		},
+		}
 
 		// "unread" one character
-		backup: function backup()
+		backup()
 		{
 			--this.pos;
-		},
+		}
 
 		// Read a number from the buffer
-		readnumber: function readnumber()
+		readnumber()
 		{
 			let re_digits = /[-+0123456789.eE]/, value = "";
 			for (;;)
@@ -436,21 +436,21 @@
 					return result;
 				}
 			}
-		},
+		}
 
-		_beginfakeloading: function _beginfakeloading()
+		_beginfakeloading()
 		{
 			let oldpos = this.backrefs.length;
 			this.backrefs.push(null);
 			return oldpos;
-		},
+		}
 
-		_endfakeloading: function _endfakeloading(oldpos, value)
+		_endfakeloading(oldpos, value)
 		{
 			this.backrefs[oldpos] = value;
-		},
+		}
 
-		_readescape: function _readescape(escapechar, length)
+		_readescape(escapechar, length)
 		{
 			let chars = this.read(length);
 			if (chars.length != length)
@@ -459,10 +459,10 @@
 			if (isNaN(codepoint))
 				throw "broken escape " + ul4._repr("\\" + escapechar + chars) + " at position " + this.pos + " with path " + this.stack.join("/");
 			return String.fromCharCode(codepoint);
-		},
+		}
 
 		// Load the next object from the buffer
-		load: function load()
+		load()
 		{
 			let typecode = this.readblackchar();
 			let result;
@@ -686,10 +686,10 @@
 				default:
 					throw "unknown typecode " + ul4._repr(typecode) + " at position " + this.pos + " with path " + this.stack.join("/");
 			}
-		},
+		}
 
 		// Return an iterator for loading the content of a object
-		loadcontent: function load(loadcontent)
+		loadcontent()
 		{
 			let self = this;
 			return {
@@ -706,6 +706,7 @@
 		}
 	};
 
+	ul4on.Decoder = Decoder;
 
 	//
 	// UL4
