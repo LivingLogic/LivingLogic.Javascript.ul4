@@ -23,7 +23,7 @@ def unformat(f, l):
 			x = x.replace(formatted, "%" + c)
 	return x
 
-langs = "de de_AT en fr es it da sv nl pt cs sk pl hr sr ro hu tr ru zh.UTF-8 ko ja".split()
+langs = "de de_AT en fr es it da sv nl pt cs sk pl hr ro hu tr ru zh.UTF-8 ko ja".split()
 
 print("var translations = {")
 for (i, l) in enumerate(langs):
