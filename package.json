@@ -19,6 +19,7 @@
 		"build": "node_modules/babel-cli/bin/babel.js ul4.js --source-maps=true --out-file ul4.min.js"
 	},
 	"devDependencies": {
+		"babel": "^6.23.0",
 		"babel-cli": "^6.26.0",
 		"babel-plugin-syntax-object-rest-spread": "^6.13.0",
 		"babel-plugin-transform-async-to-generator": "^6.24.1",
@@ -31,7 +32,6 @@
 		"babel-plugin-transform-object-rest-spread": "^6.23.0"
 	},
 	"dependencies": {
-		"babel": "^6.23.0",
 		"blueimp-md5": "^2.10.0"
 	}
 }
