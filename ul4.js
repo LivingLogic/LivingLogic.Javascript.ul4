@@ -30,10 +30,10 @@
 /*jslint vars: true */
 
 ;(function(){
-	var root = this, ul4 = {}, ul4on = {};
+	let root = this, ul4 = {}, ul4on = {};
 
-	var isamd = typeof(define) === "function" && define.amd;
-	var iscommon = typeof(module) === "object" && module.exports;
+	let isamd = typeof(define) === "function" && define.amd;
+	let iscommon = typeof(module) === "object" && module.exports;
 
 	if (isamd)
 	{
@@ -105,8 +105,8 @@
 		{
 			let map = new Map();
 
-			for (let i = 0; i < items.length; ++i)
-				map.set(items[i][0], items[i][1]);
+			for (let item of items)
+				map.set(item[0], item[1]);
 			return map;
 		};
 
@@ -137,8 +137,8 @@
 		{
 			let map = {};
 
-			for (let i = 0; i < items.length; ++i)
-				map[items[i][0]] = items[i][1];
+			for (let item of items)
+				map[item[0]] = item[1];
 			return map;
 		};
 
@@ -178,8 +178,8 @@
 	{
 		let set = ul4on._emptyset();
 
-		for (let i = 0; i < items.length; ++i)
-			set.add(items[i]);
+		for (let item of items)
+			set.add(item);
 		return set;
 	};
 
@@ -239,8 +239,8 @@
 			{
 				let oldindent = this.indent;
 				this.indent = null;
-				for (let i = 0; i < args.length; ++i)
-					this.dump(args[i]);
+				for (let arg of args)
+					this.dump(arg);
 				this.indent = oldindent;
 			}
 
@@ -301,9 +301,8 @@
 						this._line("^" + index);
 						return;
 					}
-				}
-				if (obj.__id__)
 					this._ids2index[obj.__id__] = this._backrefs++;
+				}
 				this._line("O", obj.ul4onname);
 				++this._level;
 				obj.ul4ondump(this);
@@ -314,8 +313,8 @@
 			{
 				this._line("l");
 				++this._level;
-				for (let i = 0; i < obj.length; ++i)
-					this.dump(obj[i]);
+				for (let item of obj)
+					this.dump(item);
 				--this._level;
 				this._line("]");
 			}
@@ -855,11 +854,11 @@
 	{
 		let finalout = [];
 		let level = 0, needlf = false;
-		for (let i = 0; i < out.length; ++i)
+		for (let part of out)
 		{
-			if (typeof(out[i]) === "number")
+			if (typeof(part) === "number")
 			{
-				level += out[i];
+				level += part;
 				needlf = true;
 			}
 			else
@@ -871,7 +870,7 @@
 						finalout.push("\t");
 					needlf = false;
 				}
-				finalout.push(out[i]);
+				finalout.push(part);
 			}
 		}
 		if (needlf)
@@ -1215,7 +1214,7 @@
 	// Return whether ``obj1 < obj2``
 	ul4._lt = function _lt(obj1, obj2)
 	{
-		var numbertypes = ["boolean", "number"];
+		let numbertypes = ["boolean", "number"];
 
 		if (obj1 && typeof(obj1.__lt__) === "function")
 			return obj1.__lt__(obj2);
@@ -1759,7 +1758,7 @@
 			return obj.__iter__();
 		else if (ul4._ismap(obj))
 		{
-			var keys = [];
+			let keys = [];
 			obj.forEach(function(value, key){
 				keys.push(key);
 			});
@@ -1816,9 +1815,8 @@
 		let result = "";
 		let squote = false, dquote = false;
 
-		for (let i = 0; i <str.length; ++i)
+		for (let c of str)
 		{
-			let c = str[i];
 			if (c == '"')
 			{
 				dquote = true;
@@ -1836,9 +1834,8 @@
 		// Prefer single quotes: Only use double quotes if the string contains single quotes, but no double quotes
 		let quote = (squote && !dquote) ? '"' : "'";
 
-		for (let i = 0; i <str.length; ++i)
+		for (let c of str)
 		{
-			let c = str[i];
 			switch (c)
 			{
 				case '"':
@@ -1860,7 +1857,7 @@
 					result += "\\r";
 					break;
 				default:
-					let code = str.charCodeAt(i);
+					let code = c.charCodeAt(0);
 					let escape;
 					if (code < 32)
 						escape = 2;
@@ -2118,7 +2115,7 @@
 				return obj.size != 0;
 			else if (ul4._isobject(obj))
 			{
-				for (var key in obj)
+				for (let key in obj)
 				{
 					if (!obj.hasOwnProperty(key))
 						continue;
@@ -2133,7 +2130,7 @@
 	// Convert ``obj`` to an integer (if ``base`` is given ``obj`` must be a string and ``base`` is the base for the conversion (default is 10))
 	ul4._int = function _int(obj, base)
 	{
-		var result;
+		let result;
 		if (base !== null)
 		{
 			if (typeof(obj) !== "string" || !ul4._isint(base))
@@ -2179,12 +2176,12 @@
 	// Convert ``obj`` to a list
 	ul4._list = function _list(obj)
 	{
-		var iter = ul4._iter(obj);
+		let iter = ul4._iter(obj);
 
-		var result = [];
+		let result = [];
 		for (;;)
 		{
-			var value = iter.next();
+			let value = iter.next();
 			if (value.done)
 				return result;
 			result.push(value.value);
@@ -2194,12 +2191,12 @@
 	// Convert ``obj`` to a set
 	ul4._set = function _set(obj)
 	{
-		var iter = ul4._iter(obj);
+		let iter = ul4._iter(obj);
 
-		var result = ul4on._haveset ? new Set() : new ul4._Set();
+		let result = ul4on._haveset ? new Set() : new ul4._Set();
 		for (;;)
 		{
-			var value = iter.next();
+			let value = iter.next();
 			if (value.done)
 				return result;
 			result.add(value.value);
@@ -2215,8 +2212,8 @@
 			return sequence.size;
 		else if (ul4._isobject(sequence))
 		{
-			var i = 0;
-			for (var key in sequence)
+			let i = 0;
+			for (let key in sequence)
 				++i;
 			return i;
 		}
@@ -2262,7 +2259,7 @@
 	// If ``obj`` doesn't have such an attribute, return ``default_``
 	ul4._getattr = function _getattr(obj, attrname, default_=null)
 	{
-		var proto = ul4.Protocol.get(obj);
+		let proto = ul4.Protocol.get(obj);
 		try
 		{
 			return proto.getattr(obj, attrname);
@@ -2279,14 +2276,14 @@
 	// Return wether the object ``obj`` has an attribute with the name ``attrname``
 	ul4._hasattr = function _hasattr(obj, attrname)
 	{
-		var proto = ul4.Protocol.get(obj);
+		let proto = ul4.Protocol.get(obj);
 		return proto.hasattr(obj, attrname);
 	};
 
 	// Return the names of the attributes of the object ``obj`` as a set.
 	ul4._dir = function _dir(obj)
 	{
-		var proto = ul4.Protocol.get(obj);
+		let proto = ul4.Protocol.get(obj);
 		return proto.dir();
 	};
 
@@ -2295,18 +2292,18 @@
 	{
 		if (typeof(iterable) == "string")
 		{
-			for (var i = 0; i < iterable.length; ++i)
+			for (let c of iterable)
 			{
-				if (iterable[i] !== '\x00')
+				if (c !== '\x00')
 					return true;
 			}
 			return false;
 		}
 		else
 		{
-			for (var iter = ul4._iter(iterable);;)
+			for (let iter = ul4._iter(iterable);;)
 			{
-				var item = iter.next();
+				let item = iter.next();
 				if (item.done)
 					return false;
 				if (ul4._bool(item.value))
@@ -2320,18 +2317,18 @@
 	{
 		if (typeof(iterable) == "string")
 		{
-			for (var i = 0; i < iterable.length; ++i)
+			for (let c of iterable)
 			{
-				if (iterable[i] === '\x00')
+				if (c === '\x00')
 					return false;
 			}
 			return true;
 		}
 		else
 		{
-			for (var iter = ul4._iter(iterable);;)
+			for (let iter = ul4._iter(iterable);;)
 			{
-				var item = iter.next();
+				let item = iter.next();
 				if (item.done)
 					return true;
 				if (!ul4._bool(item.value))
@@ -2512,9 +2509,8 @@
 	ul4._str_json = function _str_json(str)
 	{
 		let result = "";
-		for (let i = 0; i < str.length; ++i)
+		for (let c of str)
 		{
-			let c = str[i];
 			switch (c)
 			{
 				case "\r":
@@ -2536,7 +2532,7 @@
 					result += '\\u003c';
 					break;
 				default:
-					let code = str.charCodeAt(i);
+					let code = c.charCodeAt(0);
 					if (code >= 32 && code < 128)
 						result += c;
 					else
@@ -2859,9 +2855,8 @@
 
 		let result = [];
 		let inspec = false;
-		for (let i = 0; i < fmt.length; ++i)
+		for (let c of fmt)
 		{
-			let c = fmt[i];
 			if (inspec)
 			{
 				switch (c)
@@ -3196,9 +3191,8 @@
 
 			let nextDefault = false;
 			let lastArgname = null;
-			for (let i = 0; i < args.length; ++i)
+			for (let argName of args)
 			{
-				let argName = args[i];
 				if (nextDefault)
 				{
 					this.args.push({name: lastArgname, defaultValue: argName});
@@ -3328,10 +3322,8 @@
 		toString()
 		{
 			let v = [];
-			for (let i = 0; i < this.args.length; ++i)
+			for (let arg of this.args)
 			{
-				let arg = this.args[i];
-
 				if (arg.hasOwnProperty("defaultValue"))
 					v.push(arg.name + "=" + ul4._repr(arg.defaultValue));
 				else
@@ -3356,10 +3348,8 @@
 
 		add(...items)
 		{
-			for (let i = 0; i < items.length; ++i)
-			{
-				this.items[items[i]] = true;
-			}
+			for (let item of items)
+				this.items[item] = true;
 		}
 
 		__getattr__(attrname)
@@ -3868,9 +3858,8 @@
 				return obj.substr(0, prefix.length) === prefix;
 			else if (ul4._islist(prefix))
 			{
-				for (let i = 0; i < prefix.length; ++i)
+				for (let singlepre of prefix)
 				{
-					let singlepre = prefix[i];
 					if (obj.substr(0, singlepre.length) === singlepre)
 						return true;
 				}
@@ -3886,9 +3875,8 @@
 				return obj.substr(obj.length-suffix.length) === suffix;
 			else if (ul4._islist(suffix))
 			{
-				for (let i = 0; i < suffix.length; ++i)
+				for (let singlesuf of suffix)
 				{
-					let singlesuf = suffix[i];
 					if (obj.substr(obj.length-singlesuf.length) === singlesuf)
 						return true;
 				}
@@ -3945,8 +3933,8 @@
 
 		append(obj, items)
 		{
-			for (let i = 0; i < items.length; ++i)
-				obj.push(items[i]);
+			for (let item of items)
+				obj.push(item);
 			return null;
 		}
 
@@ -3955,8 +3943,8 @@
 			if (pos < 0)
 				pos += obj.length;
 
-			for (let i = 0; i < items.length; ++i)
-				obj.splice(pos++, 0, items[i]);
+			for (let item of items)
+				obj.splice(pos++, 0, item);
 			return null;
 		}
 
@@ -4084,8 +4072,8 @@
 
 		add(obj, items)
 		{
-			for (let i = 0; i < items.length; ++i)
-				obj.add(items[i]);
+			for (let item of items)
+				obj.add(item);
 		}
 
 		clear(obj)
@@ -4361,7 +4349,7 @@
 
 		get(obj, key, default_=null)
 		{
-			var result = obj[key];
+			let result = obj[key];
 			if (typeof(result) === "undefined")
 				return default_;
 			return result;
@@ -4447,8 +4435,8 @@
 
 		output(value)
 		{
-			for (let i = 0; i < this.escapes.length; ++i)
-				value = this.escapes[i](value);
+			for (let escape of this.escapes)
+				value = escape(value);
 			this._output.push(value);
 		}
 
@@ -4689,7 +4677,7 @@
 
 			pos = "offset " + this.location.pos.start + ":" + this.location.pos.stop + "; line " + lineno + "; col " + colno;
 
-			var message = templateprefix + ": " + pos + "\n" + text + "\n" + underline;
+			let message = templateprefix + ": " + pos + "\n" + text + "\n" + underline;
 			return message;
 		}
 
@@ -4812,14 +4800,14 @@
 
 		ul4ondump(encoder)
 		{
-			for (let i = 0; i < this._ul4onattrs.length; ++i)
-				encoder.dump(this[this._ul4onattrs[i]]);
+			for (let attrname of this._ul4onattrs)
+				encoder.dump(this[attrname]);
 		}
 
 		ul4onload(decoder)
 		{
-			for (let i = 0; i < this._ul4onattrs.length; ++i)
-				this[this._ul4onattrs[i]] = decoder.load();
+			for (let attrname of this._ul4onattrs)
+				this[attrname] = decoder.load();
 		}
 	};
 
@@ -4891,8 +4879,8 @@
 
 		_eval(context)
 		{
-			for (let i = 0; i < context.indents.length; ++i)
-				context.output(context.indents[i]);
+			for (let indent of context.indents)
+				context.output(indent);
 			context.output(this._text());
 		}
 
@@ -5211,12 +5199,11 @@
 			let item = this.item._handle_eval(context);
 			if (ul4._islist(item))
 			{
-				for (let i = 0; i < item.length; ++i)
+				for (let subitem of item)
 				{
-					if (!ul4._islist(item[i]) || item[i].length != 2)
+					if (!ul4._islist(subitem) || subitem.length != 2)
 						throw new ul4.ArgumentError("** requires a list of (key, value) pairs");
-					let key = item[i][0], value = item[i][1];
-					ul4on._setmap(result, key, value);
+					ul4on._setmap(result, subitem[0], subitem[1]);
 				}
 			}
 			else if (ul4._ismap(item))
@@ -5332,11 +5319,11 @@
 			let item = this.item._handle_eval(context);
 			if (ul4._islist(item))
 			{
-				for (let i = 0; i < item.length; ++i)
+				for (let subitem of item)
 				{
-					if (!ul4._islist(item[i]) || item[i].length != 2)
+					if (!ul4._islist(subitem) || subitem != 2)
 						throw new ul4.ArgumentError("** requires a list of (key, value) pairs");
-					let key = item[i][0], value = item[i][1];
+					let key = subitem[0], value = subitem[1];
 					if (kwargs.hasOwnProperty(key))
 						throw new ul4.ArgumentError("duplicate keyword argument " + key);
 					kwargs[key] = value;
@@ -5375,10 +5362,10 @@
 		_repr(out)
 		{
 			out.push("<ListAST");
-			for (let i = 0; i < this.items.length; ++i)
+			for (let item of this.items)
 			{
 				out.push(" ");
-				this.items[i]._repr(out);
+				item._repr(out);
 			}
 			out.push(">");
 		}
@@ -5386,8 +5373,8 @@
 		_eval(context)
 		{
 			let result = [];
-			for (let i = 0; i < this.items.length; ++i)
-				this.items[i]._handle_eval_list(context, result);
+			for (let item of this.items)
+				item._handle_eval_list(context, result);
 			return result;
 		}
 	};
@@ -5435,8 +5422,8 @@
 				if (item.done)
 					break;
 				let varitems = ul4._unpackvar(this.varname, item.value);
-				for (let i = 0; i < varitems.length; ++i)
-					varitems[i][0]._handle_eval_set(localcontext, varitems[i][1]);
+				for (let varitem of varitems)
+					varitem[0]._handle_eval_set(localcontext, varitem[1]);
 				if (this.condition === null || ul4._bool(this.condition._handle_eval(localcontext)))
 					result.push(this.item._handle_eval(localcontext));
 			}
@@ -5457,12 +5444,12 @@
 		_repr(out)
 		{
 			out.push("<SetAST");
-			for (let i = 0; i < this.items.length; ++i)
+			for (let item of this.items)
 			{
 				out.push(" ");
-				this.items[i][0]._repr(out);
+				item[0]._repr(out);
 				out.push("=");
-				this.items[i][1]._repr(out);
+				item[1]._repr(out);
 			}
 			out.push(">");
 		}
@@ -5471,8 +5458,8 @@
 		{
 			let result = ul4on._haveset ? new Set() : new ul4._Set();
 
-			for (let i = 0; i < this.items.length; ++i)
-				this.items[i]._handle_eval_set(context, result);
+			for (let item of this.items)
+				item._handle_eval_set(context, result);
 
 			return result;
 		}
@@ -5537,8 +5524,8 @@
 				if (item.done)
 					break;
 				let varitems = ul4._unpackvar(this.varname, item.value);
-				for (let i = 0; i < varitems.length; ++i)
-					varitems[i][0]._handle_eval_set(localcontext, varitems[i][1]);
+				for (let varitem of varitems)
+					varitem[0]._handle_eval_set(localcontext, varitem[1]);
 				if (this.condition === null || ul4._bool(this.condition._handle_eval(localcontext)))
 					result.add(this.item._handle_eval(localcontext));
 			}
@@ -5571,10 +5558,10 @@
 		_repr(out)
 		{
 			out.push("<DictAST");
-			for (let i = 0; i < this.items.length; ++i)
+			for (let item of this.items)
 			{
 				out.push(" ");
-				this.items[i]._repr(out);
+				item._repr(out);
 			}
 			out.push(">");
 		}
@@ -5582,8 +5569,8 @@
 		_eval(context)
 		{
 			let result = ul4on._emptymap();
-			for (let i = 0; i < this.items.length; ++i)
-				this.items[i]._handle_eval_dict(context, result);
+			for (let item of this.items)
+				item._handle_eval_dict(context, result);
 			return result;
 		}
 	};
@@ -5635,8 +5622,8 @@
 				if (item.done)
 					break;
 				let varitems = ul4._unpackvar(this.varname, item.value);
-				for (let i = 0; i < varitems.length; ++i)
-					varitems[i][0]._handle_eval_set(localcontext, varitems[i][1]);
+				for (let varitem of varitems)
+					varitem[0]._handle_eval_set(localcontext, varitem[1]);
 				if (this.condition === null || ul4._bool(this.condition._handle_eval(localcontext)))
 				{
 					let key = this.key._handle_eval(localcontext);
@@ -5696,8 +5683,8 @@
 						if (item.done)
 							return item;
 						let varitems = ul4._unpackvar(self.varname, item.value);
-						for (let i = 0; i < varitems.length; ++i)
-							varitems[i][0]._handle_eval_set(localcontext, varitems[i][1]);
+						for (let varitem of varitems)
+							varitem[0]._handle_eval_set(localcontext, varitem[1]);
 						if (self.condition === null || ul4._bool(self.condition._handle_eval(localcontext)))
 						{
 							let value = self.item._handle_eval(localcontext);
@@ -5758,7 +5745,7 @@
 
 		_modify(context, operator, name, value)
 		{
-			var newvalue = operator._ido(context.get(name), value);
+			let newvalue = operator._ido(context.get(name), value);
 			context.set(name, newvalue);
 		}
 	};
@@ -5851,7 +5838,7 @@
 		_eval(context)
 		{
 			let result;
-			var condvalue = this.objcond._handle_eval(context);
+			let condvalue = this.objcond._handle_eval(context);
 			if (ul4._bool(condvalue))
 				result = this.objif._handle_eval(context);
 			else
@@ -6611,9 +6598,8 @@
 			out.push("<CallAST");
 			out.push(" obj=");
 			this.obj._repr(out);
-			for (let i = 0; i < this.args.length; ++i)
+			for (let arg of this.args)
 			{
-				let arg = this.args[i];
 				out.push(" ");
 				arg._repr(out);
 			}
@@ -6623,21 +6609,21 @@
 		_makeargs(context)
 		{
 			let args = [], kwargs = {};
-			for (let i = 0; i < this.args.length; ++i)
-				this.args[i]._handle_eval_call(context, args, kwargs);
+			for (let arg of this.args)
+				arg._handle_eval_call(context, args, kwargs);
 			return {args: args, kwargs: kwargs};
 		}
 
 		_handle_eval(context)
 		{
-			// try
-			// {
+			try
+			{
 				return this._eval(context);
-			// }
-			// catch (exc)
-			// {
-			// 	throw new ul4.LocationError(this, exc);
-			// }
+			}
+			catch (exc)
+			{
+				throw new ul4.LocationError(this, exc);
+			}
 		}
 
 		_eval(context)
@@ -6669,9 +6655,8 @@
 			out.push(" obj=");
 			this.obj._repr(out);
 			out.push(0);
-			for (let i = 0; i < this.args.length; ++i)
+			for (let arg of this.args)
 			{
-				let arg = this.args[i];
 				out.push(" ");
 				arg._repr(out);
 				out.push(0);
@@ -6860,11 +6845,8 @@
 		{
 			let value = this.value._handle_eval(context);
 			let items = ul4._unpackvar(this.lvalue, value);
-			for (let i = 0; i < items.length; ++i)
-			{
-				let item = items[i];
+			for (let item of items)
 				item[0]._handle_eval_set(context, item[1]);
-			}
 		}
 	};
 
@@ -6876,11 +6858,8 @@
 		{
 			let value = this.value._handle_eval(context);
 			let items = ul4._unpackvar(this.lvalue, value);
-			for (let i = 0; i < items.length; ++i)
-			{
-				let item = items[i];
+			for (let item of items)
 				item[0]._handle_eval_modify(context, this._operator, item[1]);
-			}
 		}
 	};
 
@@ -6961,17 +6940,17 @@
 
 		_eval(context)
 		{
-			for (let i = 0; i < this.content.length; ++i)
-				this.content[i]._handle_eval(context);
+			for (let item of this.content)
+				item._handle_eval(context);
 		}
 
 		_str(out)
 		{
 			if (this.content.length)
 			{
-				for (let i = 0; i < this.content.length; ++i)
+				for (let item of this.content)
 				{
-					this.content[i]._str(out);
+					item._str(out);
 					out.push(0);
 				}
 			}
@@ -7033,8 +7012,8 @@
 				if (value.done)
 					break;
 				let varitems = ul4._unpackvar(this.varname, value.value);
-				for (let i = 0; i < varitems.length; ++i)
-					varitems[i][0]._handle_eval_set(context, varitems[i][1]);
+				for (let varitem of varitems)
+					varitem[0]._handle_eval_set(context, varitem[1]);
 				try
 				{
 					// We can't call _handle_eval() here, as this would in turn call this function again, leading to infinite recursion
@@ -7104,7 +7083,7 @@
 				try
 				{
 					// We can't call _handle_eval() here, as this would in turn call this function again, leading to infinite recursion
-					// But we don't have to, as wrapping original exception in ``Error`` has already been done by the lower levels
+					// But we don't have to, as wrapping the original exception in ``Error`` has already been done by the lower levels
 					super._eval(context);
 				}
 				catch (exc)
@@ -7164,9 +7143,8 @@
 	{
 		_eval(context)
 		{
-			for (let i = 0; i < this.content.length; ++i)
+			for (let block of this.content)
 			{
-				let block = this.content[i];
 				let execute = block._execute(context);
 				if (execute)
 				{
@@ -7324,9 +7302,8 @@
 			else
 			{
 				signature = [];
-				for (let i = 0; i < this.signature.args.length; ++i)
+				for (let arg of this.signature.args)
 				{
-					let arg = this.signature.args[i];
 					if (typeof(arg.defaultValue) === "undefined")
 						signature.push(arg.name);
 					else
@@ -7518,9 +7495,8 @@
 
 			let dump = [];
 
-			for (let i = 0; i < this.params.length; ++i)
+			for (let param of this.params)
 			{
-				let param = this.params[i];
 				if (param[1] === null)
 					dump.push(param[0]);
 				else
@@ -7534,9 +7510,8 @@
 			super.ul4onload(decoder);
 			let dump = decoder.load();
 			this.params = [];
-			for (let i = 0; i < dump.length; ++i)
+			for (let param of dump)
 			{
-				let param = dump[i];
 				if (typeof(param) === "string")
 					this.params.push([param, null]);
 				else
@@ -7547,9 +7522,8 @@
 		_eval(context)
 		{
 			let args = [];
-			for (let i = 0; i < this.params.length; ++i)
+			for (let param of this.params)
 			{
-				let param = this.params[i];
 				if (param[1] === null)
 					args.push(param[0]);
 				else
@@ -7831,14 +7805,14 @@
 		}
 		else
 		{
-			var sort = [];
+			let sort = [];
 
-			for (var i = 0, iter = ul4._iter(iterable);;++i)
+			for (let i = 0, iter = ul4._iter(iterable);;++i)
 			{
-				var item = iter.next();
+				let item = iter.next();
 				if (item.done)
 					break;
-				var keyvalue = ul4._call(context, key, [item.value], {});
+				let keyvalue = ul4._call(context, key, [item.value], {});
 				sort.push([keyvalue, i, item.value]);
 			}
 			cmp = function cmp(s1, s2)
@@ -7853,8 +7827,8 @@
 			sort.sort(cmp);
 
 			let result = [];
-			for (let i = 0; i < sort.length; ++i)
-				result.push(sort[i][2]);
+			for (let item of sort)
+				result.push(item[2]);
 			return result;
 		}
 	};
@@ -8176,8 +8150,8 @@
 		if (iterables.length)
 		{
 			let iters = [];
-			for (let i = 0; i < iterables.length; ++i)
-				iters.push(ul4._iter(iterables[i]));
+			for (let item of iterables)
+				iters.push(ul4._iter(item));
 
 			return {
 				next: function() {
@@ -8300,7 +8274,7 @@
 		}
 		else if (ul4._isobject(container))
 		{
-			var result = container[key];
+			let result = container[key];
 			if (typeof(result) === "undefined")
 				return defaultvalue;
 			return result;
@@ -8317,7 +8291,7 @@
 	// Return a ``Date`` object for the current time in UTC
 	ul4.utcnow = function utcnow()
 	{
-		var now = new Date();
+		let now = new Date();
 		// FIXME: The timezone is wrong for the new ``Date`` object.
 		return new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds(), now.getUTCMilliseconds());
 	};
@@ -8628,9 +8602,8 @@
 	{
 		if (!ul4._isdict(obj))
 			throw new ul4.TypeError("update() requires a dict");
-		for (let i = 0; i < others.length; ++i)
+		for (let other of others)
 		{
-			let other = others[i];
 			if (ul4._ismap(other))
 			{
 				other.forEach(function(value, key){
@@ -8644,11 +8617,11 @@
 			}
 			else if (ul4._islist(other))
 			{
-				for (let j = 0; j < other.length; ++j)
+				for (let item of other)
 				{
-					if (!ul4._islist(other[j]) || (other[j].length != 2))
+					if (!ul4._islist(item) || (item.length != 2))
 						throw new ul4.TypeError("update() requires a dict or a list of (key, value) pairs");
-					ul4on._setmap(obj, other[j][0], other[j][1]);
+					ul4on._setmap(obj, item[0], item[1]);
 				}
 			}
 			else
@@ -8750,55 +8723,55 @@
 			switch (attrname)
 			{
 				case "r":
-					var r = function r(){ return self._r; };
+					let r = function r(){ return self._r; };
 					ul4.expose(r, []);
 					return r;
 				case "g":
-					var g = function g(){ return self._g; };
+					let g = function g(){ return self._g; };
 					ul4.expose(g, []);
 					return g;
 				case "b":
-					var b = function b(){ return self._b; };
+					let b = function b(){ return self._b; };
 					ul4.expose(b, []);
 					return b;
 				case "a":
-					var a = function a(){ return self._a; };
+					let a = function a(){ return self._a; };
 					ul4.expose(a, []);
 					return a;
 				case "lum":
-					var lum = function lum(){ return self.lum(); };
+					let lum = function lum(){ return self.lum(); };
 					ul4.expose(lum, []);
 					return lum;
 				case "hls":
-					var hls = function hls(){ return self.hls(); };
+					let hls = function hls(){ return self.hls(); };
 					ul4.expose(hls, []);
 					return hls;
 				case "hlsa":
-					var hlsa = function hlsa(){ return self.hlsa(); };
+					let hlsa = function hlsa(){ return self.hlsa(); };
 					ul4.expose(hlsa, []);
 					return hlsa;
 				case "hsv":
-					var hsv = function hsv(){ return self.hsv(); };
+					let hsv = function hsv(){ return self.hsv(); };
 					ul4.expose(hsv, []);
 					return hsv;
 				case "hsva":
-					var hsva = function hsva(){ return self.hsva(); };
+					let hsva = function hsva(){ return self.hsva(); };
 					ul4.expose(hsva, []);
 					return hsva;
 				case "witha":
-					var witha = function witha(a){ return self.witha(a); };
+					let witha = function witha(a){ return self.witha(a); };
 					ul4.expose(witha, ["a"]);
 					return witha;
 				case "withlum":
-					var withlum = function withlum(lum){ return self.withlum(lum); };
+					let withlum = function withlum(lum){ return self.withlum(lum); };
 					ul4.expose(withlum, ["lum"]);
 					return withlum;
 				case "abslum":
-					var abslum = function abslum(lum){ return self.abslum(lum); };
+					let abslum = function abslum(lum){ return self.abslum(lum); };
 					ul4.expose(abslum, ["lum"]);
 					return abslum;
 				case "rellum":
-					var rellum = function rellum(lum){ return self.rellum(lum); };
+					let rellum = function rellum(lum){ return self.rellum(lum); };
 					ul4.expose(rellum, ["lum"]);
 					return rellum;
 				default:
@@ -8921,7 +8894,7 @@
 
 		hsva()
 		{
-			var hsv = this.hsv();
+			let hsv = this.hsv();
 			return hsv.concat(this._a/255.0);
 		}
 
@@ -9288,15 +9261,15 @@
 			switch (attrname)
 			{
 				case "days":
-					var days = function days(){ return self._days; };
+					let days = function days(){ return self._days; };
 					ul4.expose(days, []);
 					return days;
 				case "seconds":
-					var seconds = function seconds(){ return self._seconds; };
+					let seconds = function seconds(){ return self._seconds; };
 					ul4.expose(seconds, []);
 					return seconds;
 				case "microseconds":
-					var microseconds = function microseconds(){ return self._microseconds; };
+					let microseconds = function microseconds(){ return self._microseconds; };
 					ul4.expose(microseconds, []);
 					return microseconds;
 				default:
@@ -9609,9 +9582,8 @@
 		"Template"
 	];
 
-	for (let i = 0; i < classes.length; ++i)
+	for (let name of classes)
 	{
-		let name = classes[i];
 		let ul4onname = name;
 		if (ul4onname.substr(ul4onname.length-3) === "AST")
 			ul4onname = ul4onname.substr(0, ul4onname.length-3);
