@@ -716,25 +716,10 @@
 
 	/// Helper functions
 
-	ul4._clone = function _clone(obj)
+	// Clone an object and extend it
+	ul4._inherit = function _inherit(baseobj, attrs)
 	{
-		let result = Object.create(obj);
-		result.__id__ = _nextid++;
-		return result;
-	};
-
-	// Adds attributes from on object to another and returns it
-	ul4._extend = function _extend(obj, attrs)
-	{
-		for (let name in attrs)
-			obj[name] = attrs[name];
-		return obj;
-	};
-
-	// Clone an object via ``_simpleclone`` and extend it
-	ul4._simpleinherit = function _simpleinherit(baseobj, attrs)
-	{
-		return ul4._extend(Object.create(baseobj), attrs);
+		return Object.assign(Object.create(baseobj), attrs);
 	};
 
 	// Convert a map to an object
@@ -7609,27 +7594,27 @@
 
 		__render__(context, vars)
 		{
-			this.template._renderbound(context, ul4._simpleinherit(this.vars, vars));
+			this.template._renderbound(context, ul4._inherit(this.vars, vars));
 		}
 
 		render(context, vars)
 		{
-			this.template._renderbound(context, ul4._simpleinherit(this.vars, vars));
+			this.template._renderbound(context, ul4._inherit(this.vars, vars));
 		}
 
 		__call__(context, vars)
 		{
-			return this.template._callbound(context, ul4._simpleinherit(this.vars, vars));
+			return this.template._callbound(context, ul4._inherit(this.vars, vars));
 		}
 
 		_renderbound(context, vars)
 		{
-			this.template._renderbound(context, ul4._simpleinherit(this.vars, vars));
+			this.template._renderbound(context, ul4._inherit(this.vars, vars));
 		}
 
 		_rendersbound(context, vars)
 		{
-			return this.template._rendersbound(context, ul4._simpleinherit(this.vars, vars));
+			return this.template._rendersbound(context, ul4._inherit(this.vars, vars));
 		}
 
 		__getattr__(attrname)
