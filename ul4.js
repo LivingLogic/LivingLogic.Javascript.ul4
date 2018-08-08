@@ -4413,11 +4413,10 @@
 	ul4.expose(ul4.ObjectProtocol.values, []);
 	ul4.expose(ul4.ObjectProtocol.clear, []);
 
-	ul4.Context = class Context extends ul4.Proto
+	ul4.Context = class Context
 	{
 		constructor(vars)
 		{
-			super();
 			if (vars === null || typeof(vars) === "undefined")
 				vars = {};
 			this.vars = vars;
@@ -4431,7 +4430,7 @@
 		 */
 		inheritvars()
 		{
-			let context = ul4._clone(this);
+			let context = Object.create(this);
 			context.vars = Object.create(this.vars);
 			return context;
 		}
@@ -4439,7 +4438,7 @@
 		/* Return a clone of the ``Context`` with one additional indentation (this is used by ``RenderAST``) */
 		withindent(indent)
 		{
-			let context = ul4._clone(this);
+			let context = Object.create(this);
 			if (indent !== null)
 			{
 				context.indents = this.indents.slice();
@@ -4451,14 +4450,14 @@
 		/* Return a clone of the ``Context`` with the output buffer replaced (this is used by ``renders`` to collect the output in a separate buffer) */
 		replaceoutput()
 		{
-			let context = ul4._clone(this);
+			let context = Object.create(this);
 			context._output = [];
 			return context;
 		}
 
 		clone(vars)
 		{
-			return ul4._clone(this);
+			return Object.create(this);
 		}
 
 		output(value)
