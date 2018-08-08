@@ -3166,14 +3166,14 @@
 
 	ul4.Proto = class Proto
 	{
-		ul4type()
-		{
-			return this.constructor.name;
-		}
-
 		constructor()
 		{
 			this.__id__ = _nextid++;
+		}
+
+		ul4type()
+		{
+			return this.constructor.name;
 		}
 
 		// equality comparison of objects defaults to identity comparison
