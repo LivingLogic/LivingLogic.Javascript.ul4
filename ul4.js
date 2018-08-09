@@ -200,7 +200,7 @@
 
 	// Load an object from the string ``data``.
 	// ``data`` must contain the object in the UL4ON serialization format
-	// ``registry`` may be null or a dictionary mapping type names to objects with a create method
+	// ``registry`` may be null or a dictionary mapping type names to constructor functions
 	ul4on.loads = function loads(data, registry)
 	{
 		let decoder = new ul4on.Decoder(data, registry);
