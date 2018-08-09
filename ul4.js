@@ -211,9 +211,9 @@
 	ul4on.Encoder = class Encoder
 	{
 		// Create a new Encoder object
-		constructor(indent)
+		constructor(indent=null)
 		{
-			this.indent = indent || null;
+			this.indent = indent;
 			this.data = [];
 			this._level = 0;
 			this._strings2index = {};
