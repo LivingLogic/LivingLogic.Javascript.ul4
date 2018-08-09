@@ -5447,9 +5447,7 @@
 			for (let item of this.items)
 			{
 				out.push(" ");
-				item[0]._repr(out);
-				out.push("=");
-				item[1]._repr(out);
+				item._repr(out);
 			}
 			out.push(">");
 		}
