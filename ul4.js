@@ -105,8 +105,8 @@
 		{
 			let map = new Map();
 
-			for (let item of items)
-				map.set(item[0], item[1]);
+			for (let [key, value] of items)
+				map.set(key, value);
 			return map;
 		};
 
@@ -137,8 +137,8 @@
 		{
 			let map = {};
 
-			for (let item of items)
-				map[item[0]] = item[1];
+			for (let [key, value] of items)
+				map[key] = value;
 			return map;
 		};
 
@@ -322,10 +322,11 @@
 			{
 				this._line("e");
 				++this._level;
-				obj.forEach(function(value, key) {
+				for (let [key, value] of obj.entries())
+				{
 					this.dump(key);
 					this.dump(value);
-				}, this);
+				}
 				--this._level;
 				this._line("}");
 			}
@@ -345,9 +346,8 @@
 			{
 				this._line("y");
 				++this._level;
-				obj.forEach(function(value) {
-					this.dump(value);
-				}, this);
+				for (let item of obj.values())
+					this.dump(item);
 				--this._level;
 				this._line("}");
 			}
@@ -727,11 +727,12 @@
 		if (ul4._ismap(obj))
 		{
 			let newobj = {};
-			obj.forEach(function(value, key){
+			for (let [key, value] of obj.entries())
+			{
 				if (typeof(key) !== "string")
 					throw new ul4.TypeError("keys must be strings");
 				newobj[key] = value;
-			});
+			}
 			return newobj;
 		}
 		return obj;
@@ -5208,9 +5209,8 @@
 			}
 			else if (ul4._ismap(item))
 			{
-				item.forEach(function(value, key){
+				for (let [key, value] of item.entries())
 					ul4on._setmap(result, key, value);
-				});
 			}
 			else if (ul4._isobject(item))
 			{
@@ -5323,7 +5323,7 @@
 				{
 					if (!ul4._islist(subitem) || subitem != 2)
 						throw new ul4.ArgumentError("** requires a list of (key, value) pairs");
-					let key = subitem[0], value = subitem[1];
+					let [key, value] = subitem;
 					if (kwargs.hasOwnProperty(key))
 						throw new ul4.ArgumentError("duplicate keyword argument " + key);
 					kwargs[key] = value;
@@ -5331,11 +5331,12 @@
 			}
 			else if (ul4._ismap(item))
 			{
-				item.forEach(function(value, key){
+				for (let [key, value] of item.entries())
+				{
 					if (kwargs.hasOwnProperty(key))
 						throw new ul4.ArgumentError("duplicate keyword argument " + key);
 					kwargs[key] = value;
-				});
+				};
 			}
 			else if (ul4._isobject(item))
 			{
@@ -5422,8 +5423,8 @@
 				if (item.done)
 					break;
 				let varitems = ul4._unpackvar(this.varname, item.value);
-				for (let varitem of varitems)
-					varitem[0]._handle_eval_set(localcontext, varitem[1]);
+				for (let [lvalue, value] of varitems)
+					lvalue._handle_eval_set(localcontext, value);
 				if (this.condition === null || ul4._bool(this.condition._handle_eval(localcontext)))
 					result.push(this.item._handle_eval(localcontext));
 			}
@@ -5522,8 +5523,8 @@
 				if (item.done)
 					break;
 				let varitems = ul4._unpackvar(this.varname, item.value);
-				for (let varitem of varitems)
-					varitem[0]._handle_eval_set(localcontext, varitem[1]);
+				for (let [lvalue, value] of varitems)
+					lvalue._handle_eval_set(localcontext, value);
 				if (this.condition === null || ul4._bool(this.condition._handle_eval(localcontext)))
 					result.add(this.item._handle_eval(localcontext));
 			}
@@ -5620,8 +5621,8 @@
 				if (item.done)
 					break;
 				let varitems = ul4._unpackvar(this.varname, item.value);
-				for (let varitem of varitems)
-					varitem[0]._handle_eval_set(localcontext, varitem[1]);
+				for (let [lvalue, value] of varitems)
+					lvalue._handle_eval_set(localcontext, value);
 				if (this.condition === null || ul4._bool(this.condition._handle_eval(localcontext)))
 				{
 					let key = this.key._handle_eval(localcontext);
@@ -5681,8 +5682,8 @@
 						if (item.done)
 							return item;
 						let varitems = ul4._unpackvar(self.varname, item.value);
-						for (let varitem of varitems)
-							varitem[0]._handle_eval_set(localcontext, varitem[1]);
+						for (let [lvalue, value] of varitems)
+							lvalue._handle_eval_set(localcontext, value);
 						if (self.condition === null || ul4._bool(self.condition._handle_eval(localcontext)))
 						{
 							let value = self.item._handle_eval(localcontext);
@@ -6843,8 +6844,8 @@
 		{
 			let value = this.value._handle_eval(context);
 			let items = ul4._unpackvar(this.lvalue, value);
-			for (let item of items)
-				item[0]._handle_eval_set(context, item[1]);
+			for (let [lvalue, value] of items)
+				lvalue._handle_eval_set(context, value);
 		}
 	};
 
@@ -6856,8 +6857,8 @@
 		{
 			let value = this.value._handle_eval(context);
 			let items = ul4._unpackvar(this.lvalue, value);
-			for (let item of items)
-				item[0]._handle_eval_modify(context, this._operator, item[1]);
+			for (let [lvalue, value] of items)
+				lvalue._handle_eval_modify(context, this._operator, value);
 		}
 	};
 
@@ -7010,8 +7011,8 @@
 				if (value.done)
 					break;
 				let varitems = ul4._unpackvar(this.varname, value.value);
-				for (let varitem of varitems)
-					varitem[0]._handle_eval_set(context, varitem[1]);
+				for (let [lvalue, value] of varitems)
+					lvalue._handle_eval_set(context, value);
 				try
 				{
 					// We can't call _handle_eval() here, as this would in turn call this function again, leading to infinite recursion
