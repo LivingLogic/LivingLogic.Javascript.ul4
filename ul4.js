@@ -3147,6 +3147,9 @@
 		return string;
 	};
 
+	// This is outside of ``Proto`` on purpose
+	// This way reactive frameworks like ``Vue.js`` don't get to see it
+	// and complain about mutating render functions when those create new objects.
 	let _nextid = 1;
 
 	ul4.Proto = class Proto
