@@ -693,6 +693,10 @@
 				next: function()
 				{
 					let typecode = self.readblackchar();
+					// Always "unread" the typecode even at the end
+					// so that at the end of a call to ul4onload()
+					// the next input is the "end of object" marker
+					// no matter whether ul4onload() uses loadcontent() or not.
 					self.backup();
 					if (typecode == ")")
 						return {done: true};
