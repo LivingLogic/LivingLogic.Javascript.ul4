@@ -34,6 +34,6 @@ for (i, l) in enumerate(langs):
 	print("\t\twl: {},".format(json.dumps([format(datetime.date(2012, 10, w), '%A', l) for w in range(14, 21)])))
 	print("\t\txf: {},".format(json.dumps(unformat("x", l))))
 	print("\t\tXf: {},".format(json.dumps(unformat("X", l))))
-	print("\t\tcf: {},".format(json.dumps(unformat("c", l))))
+	print("\t\tcf: {}".format(json.dumps(unformat("c", l))))
 	print("\t}}{}".format("," if i<len(langs)-1 else ""))
 print("}")
