@@ -25,7 +25,7 @@ def unformat(f, l):
 
 langs = "de de_AT en fr es it da sv nl pt cs sk pl hr ro hu tr ru zh.UTF-8 ko ja".split()
 
-print("var translations = {")
+print("let translations = {")
 for (i, l) in enumerate(langs):
 	print("\t{}: {{".format(l.split(".")[0].lower()))
 	print("\t\tms: {},".format(json.dumps([format(datetime.date(2012, m, 1), '%b', l) for m in range(1, 13)])))
