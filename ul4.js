@@ -58,7 +58,7 @@
 		root.ul4on = ul4on;
 	}
 
-	ul4.version = "44";
+	ul4.version = "45";
 
 	//
 	// UL4ON
