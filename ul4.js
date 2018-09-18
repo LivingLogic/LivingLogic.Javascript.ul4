@@ -3433,7 +3433,7 @@
 					// count the number of items we have
 					++count;
 				}
-				// Substract the number of items that ``other`` has
+				// Subtract the number of items that ``other`` has
 				for (let item in other.items)
 					--count;
 				return count == 0;
@@ -7839,7 +7839,7 @@
 		}
 	};
 
-	// Return a iterable object iterating from ``start`` upto (but not including) ``stop`` with a step size of ``step``
+	// Return a iterable object iterating from ``start`` up to (but not including) ``stop`` with a step size of ``step``
 	ul4._range = function _range(args)
 	{
 		let start, stop, step;
@@ -7871,14 +7871,14 @@
 		else if (step > 0)
 		{
 			lower = start;
-			heigher = stop;
+			higher = stop;
 		}
 		else
 		{
 			lower = stop;
-			heigher = start;
+			higher = start;
 		}
-		let length = (lower < heigher) ? Math.floor((heigher - lower - 1)/Math.abs(step)) + 1 : 0;
+		let length = (lower < higher) ? Math.floor((higher - lower - 1)/Math.abs(step)) + 1 : 0;
 
 		return {
 			index: 0,
@@ -8040,8 +8040,8 @@
 	{
 		if (digits)
 		{
-			let threshhold = Math.pow(10, digits);
-			return Math.round(x*threshhold)/threshhold;
+			let threshold = Math.pow(10, digits);
+			return Math.round(x*threshold)/threshold;
 		}
 		else
 			return Math.round(x);
