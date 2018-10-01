@@ -5607,7 +5607,7 @@
 			this.varname._repr(out);
 			out.push(" container=");
 			this.container._repr(out);
-			if (condition !== null)
+			if (this.condition !== null)
 			{
 				out.push(" condition=");
 				this.condition._repr(out);
