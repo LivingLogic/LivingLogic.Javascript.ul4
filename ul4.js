@@ -5479,6 +5479,7 @@
 		{
 			super(tag, pos);
 			this.item = item;
+			this.varname = varname;
 			this.container = container;
 			this.condition = condition;
 		}
