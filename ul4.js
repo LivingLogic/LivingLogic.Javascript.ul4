@@ -7246,7 +7246,6 @@
 			this.enddelim = enddelim;
 			this.docpos = null;
 			this.signature = signature;
-			this._jsfunction = null;
 			this._asts = null;
 			this._ul4_callsignature = signature;
 			this._ul4_rendersignature = signature;
