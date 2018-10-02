@@ -5331,7 +5331,7 @@
 			{
 				for (let subitem of item)
 				{
-					if (!ul4._islist(subitem) || subitem != 2)
+					if (!ul4._islist(subitem) || subitem.length != 2)
 						throw new ul4.ArgumentError("** requires a list of (key, value) pairs");
 					let [key, value] = subitem;
 					if (kwargs.hasOwnProperty(key))
