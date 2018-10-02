@@ -2856,8 +2856,6 @@
 
 		let translation = translations[lang];
 
-		let firstday;
-
 		let result = [];
 		let inspec = false;
 		for (let c of fmt)
