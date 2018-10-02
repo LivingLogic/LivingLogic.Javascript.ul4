@@ -5409,7 +5409,7 @@
 			out.push(ul4._repr(this.varname));
 			out.push(" container=");
 			this.container._repr(out);
-			if (condition !== null)
+			if (this.condition !== null)
 			{
 				out.push(" condition=");
 				this.condition._repr(out);
@@ -5510,7 +5510,7 @@
 			this.varname._repr(out);
 			out.push(" container=");
 			this.container._repr(out);
-			if (condition !== null)
+			if (this.condition !== null)
 			{
 				out.push(" condition=");
 				this.condition._repr(out);
@@ -7073,7 +7073,7 @@
 		_str(out)
 		{
 			out.push("while ");
-			this.container._repr(out);
+			this.condition._repr(out);
 			out.push(":");
 			out.push(+1);
 			ul4.BlockAST.prototype._str.call(this, out);
