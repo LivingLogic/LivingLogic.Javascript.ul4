@@ -3366,7 +3366,7 @@
 			switch (attrname)
 			{
 				case "add":
-					return ul4.expose(["*items"], function add(items){ self.add(...items); });
+					return ul4.expose(function add(items){ self.add(...items); }, ["*items"]);
 				default:
 					throw new ul4.AttributeError(this, attrname);
 			}
