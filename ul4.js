@@ -3358,6 +3358,11 @@
 				this.items[item] = true;
 		}
 
+		clear()
+		{
+			this._items = {};
+		}
+
 		__getattr__(attrname)
 		{
 			let self = this;
