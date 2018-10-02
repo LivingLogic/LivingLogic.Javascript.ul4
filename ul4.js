@@ -8683,7 +8683,6 @@
 				let r = ul4._lpad(this._r.toString(16), "0", 2);
 				let g = ul4._lpad(this._g.toString(16), "0", 2);
 				let b = ul4._lpad(this._b.toString(16), "0", 2);
-				let a = ul4._lpad(this._a.toString(16), "0", 2);
 				if (r[0] === r[1] && g[0] === g[1] && b[0] === b[1])
 					return "#" + r[0] + g[0] + b[0];
 				else
