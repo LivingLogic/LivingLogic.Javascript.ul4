@@ -8801,7 +8801,7 @@
 				case 3:
 					return this._a;
 				default:
-					throw new ul4.IndexError(this, key);
+					throw new ul4.IndexError(this, orgkey);
 			}
 		}
 
