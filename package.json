@@ -16,7 +16,7 @@
 	},
 	"author": "Walter Doerwald",
 	"scripts": {
-		"build": "node_modules/babel-cli/bin/babel.js ul4.js --source-maps=true --out-file ul4.min.js"
+		"build": "node_modules/babel-cli/bin/babel.js src --source-maps=true --out-dir dist"
 	},
 	"devDependencies": {
 		"babel-cli": "^6.26.0",
