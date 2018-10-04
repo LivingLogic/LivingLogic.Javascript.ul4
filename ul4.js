@@ -30,7 +30,7 @@
 /*jslint vars: true */
 
 ;(function(){
-	let root = this, ul4 = {}, ul4on = {};
+	let root = this, ul4 = {};
 
 	let isamd = typeof(define) === "function" && define.amd;
 	let iscommon = typeof(module) === "object" && module.exports;
