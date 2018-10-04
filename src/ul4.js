@@ -66,35 +66,41 @@
 
 	ul4._havemap = (typeof(Map) === "function" && typeof(Map.prototype.forEach) === "function");
 
-	ul4._havemapconstructor = false;
-
-	if (ul4._havemap)
+	ul4._havemapconstructor = (function ()
 	{
-		try
+		if (ul4._havemap)
 		{
-			if (new Map([[1, 2]]).size == 1)
-				ul4._havemapconstructor = true;
+			try
+			{
+				if (new Map([[1, 2]]).size == 1)
+					return true;
+			}
+			catch (error)
+			{
+			}
 		}
-		catch (error)
-		{
-		}
-	}
+		return false;
+	})();
 
 	ul4._haveset = (typeof(Set) === "function" && typeof(Set.prototype.forEach) === "function");
 
-	ul4._havesetconstructor = false;
-
-	if (ul4._haveset)
+	ul4._havesetconstructor = (function ()
 	{
-		try
+		if (ul4._haveset)
 		{
-			if (new Set([1, 2]).size == 2)
-				ul4._havesetconstructor = true;
+			try
+			{
+				if (new Set([1, 2]).size == 2)
+					return true;
+			}
+			catch (error)
+			{
+			}
+			return false;
 		}
-		catch (error)
-		{
-		}
-	}
+		else
+			return false;
+	})();
 
 	// helper functions that work with Maps and objects
 	if (ul4._havemap)
@@ -1762,9 +1768,8 @@
 		else if (ul4._ismap(obj))
 		{
 			let keys = [];
-			obj.forEach(function(value, key){
+			for (let key of obj.keys())
 				keys.push(key);
-			});
 			return {
 				index: 0,
 				next: function()
@@ -1778,9 +1783,8 @@
 		else if (ul4._isset(obj))
 		{
 			let values = [];
-			obj.forEach(function(value, key){
+			for (let item of obj)
 				values.push(value);
-			});
 			return {
 				index: 0,
 				next: function()
@@ -1930,13 +1934,14 @@
 		v.push("{");
 
 		let i = 0;
-		obj.forEach(function(value, key){
+		for (let [key, value] of obj.entries())
+		{
 			if (i++)
 				v.push(", ");
 			v.push(ul4._repr_internal(key, ascii));
 			v.push(": ");
 			v.push(ul4._repr_internal(value, ascii));
-		});
+		}
 
 		v.push("}");
 		return v.join("");
@@ -1946,11 +1951,12 @@
 	{
 		let v = [];
 		v.push("[");
-		for (let i = 0; i < obj.length; ++i)
+		let i = 0;
+		for (let item of obj)
 		{
-			if (i !== 0)
+			if (i++)
 				v.push(", ");
-			v.push(ul4._repr_internal(obj[i], ascii));
+			v.push(ul4._repr_internal(item, ascii));
 		}
 		v.push("]");
 		return v.join("");
@@ -1965,11 +1971,12 @@
 		else
 		{
 			let i = 0;
-			obj.forEach(function(value, key){
+			for (let value of obj)
+			{
 				if (i++)
 					v.push(", ");
 				v.push(ul4._repr_internal(value, ascii));
-			});
+			}
 		}
 		v.push("}");
 		return v.join("");
@@ -2581,13 +2588,14 @@
 			let v = [];
 			v.push("{");
 			let i = 0;
-			obj.forEach(function(value, key){
+			for (let [key, value] of obj.entries())
+			{
 				if (i++)
 					v.push(", ");
 				v.push(ul4._asjson(key));
 				v.push(": ");
 				v.push(ul4._asjson(value));
-			});
+			}
 			v.push("}");
 			return v.join("");
 		}
@@ -3358,7 +3366,7 @@
 
 		clear()
 		{
-			this._items = {};
+			this.items = {};
 		}
 
 		__getattr__(attrname)
@@ -3477,12 +3485,12 @@
 			// i.e. everything in ``other`` is also in ``this``
 			if (ul4._isset(other))
 			{
-				let result = true;
-				other.forEach(function(value) {
+				for (let value of other)
+				{
 					if (!this.items[value])
-						result = false;
-				});
-				return result;
+						return false;
+				}
+				return true;
 			}
 			else if (ul4._isul4set(other))
 			{
@@ -4036,18 +4044,16 @@
 		items(obj)
 		{
 			let result = [];
-			obj.forEach(function(value, key){
-				result.push([key, value]);
-			});
+			for (let item of obj.entries())
+				result.push(items);
 			return result;
 		}
 
 		values(obj)
 		{
 			let result = [];
-			obj.forEach(function(value, key){
+			for (let value of obj.values())
 				result.push(value);
-			});
 			return result;
 		}
 
@@ -8613,9 +8619,8 @@
 		{
 			if (ul4._ismap(other))
 			{
-				other.forEach(function(value, key){
+				for (let [key, value] of other.entries())
 					ul4._setmap(obj, key, value);
-				});
 			}
 			else if (ul4._isobject(other))
 			{
@@ -8634,9 +8639,8 @@
 			else
 				throw new ul4.TypeError("update() requires a dict or a list of (key, value) pairs");
 		}
-		kwargs.forEach(function(value, key) {
+		for (let [key, value] of kwargs.entries())
 			ul4._setmap(obj, key, value);
-		});
 		return null;
 	};
 
