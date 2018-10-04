@@ -42,20 +42,18 @@
 		{
 			window.md5 = md5F;
 
-			return {ul4: ul4, ul4on: ul4on};
+			return ul4;
 		});
 	}
 	else if (iscommon)
 	{
 		// COMMONJS
 		module.exports.ul4 = ul4;
-		module.exports.ul4on = ul4on;
 	}
 	else
 	{
 		// DEFAULT
 		root.ul4 = ul4;
-		root.ul4on = ul4on;
 	}
 
 	ul4.version = "45";
@@ -64,34 +62,34 @@
 	// UL4ON
 	//
 
-	ul4on._registry = {};
+	ul4._registry = {};
 
-	ul4on._havemap = (typeof(Map) === "function" && typeof(Map.prototype.forEach) === "function");
+	ul4._havemap = (typeof(Map) === "function" && typeof(Map.prototype.forEach) === "function");
 
-	ul4on._havemapconstructor = false;
+	ul4._havemapconstructor = false;
 
-	if (ul4on._havemap)
+	if (ul4._havemap)
 	{
 		try
 		{
 			if (new Map([[1, 2]]).size == 1)
-				ul4on._havemapconstructor = true;
+				ul4._havemapconstructor = true;
 		}
 		catch (error)
 		{
 		}
 	}
 
-	ul4on._haveset = (typeof(Set) === "function" && typeof(Set.prototype.forEach) === "function");
+	ul4._haveset = (typeof(Set) === "function" && typeof(Set.prototype.forEach) === "function");
 
-	ul4on._havesetconstructor = false;
+	ul4._havesetconstructor = false;
 
-	if (ul4on._haveset)
+	if (ul4._haveset)
 	{
 		try
 		{
 			if (new Set([1, 2]).size == 2)
-				ul4on._havesetconstructor = true;
+				ul4._havesetconstructor = true;
 		}
 		catch (error)
 		{
@@ -99,9 +97,9 @@
 	}
 
 	// helper functions that work with Maps and objects
-	if (ul4on._havemap)
+	if (ul4._havemap)
 	{
-		ul4on._makemap = function _makemap(...items)
+		ul4._makemap = function _makemap(...items)
 		{
 			let map = new Map();
 
@@ -110,7 +108,7 @@
 			return map;
 		};
 
-		ul4on._setmap = function _setmap(map, key, value)
+		ul4._setmap = function _setmap(map, key, value)
 		{
 			if (map.__proto__ === Map.prototype)
 				map.set(key, value);
@@ -118,12 +116,12 @@
 				map[key] = value;
 		};
 
-		ul4on._emptymap = function _emptymap()
+		ul4._emptymap = function _emptymap()
 		{
 			return new Map();
 		};
 
-		ul4on._getmap = function _getmap(map, key, value)
+		ul4._getmap = function _getmap(map, key, value)
 		{
 			if (map.__proto__ === Map.prototype)
 				return map.get(key);
@@ -133,7 +131,7 @@
 	}
 	else
 	{
-		ul4on._makemap = function _makemap(...items)
+		ul4._makemap = function _makemap(...items)
 		{
 			let map = {};
 
@@ -142,41 +140,41 @@
 			return map;
 		};
 
-		ul4on._setmap = function _setmap(map, key, value)
+		ul4._setmap = function _setmap(map, key, value)
 		{
 			map[key] = value;
 		};
 
-		ul4on._emptymap = function _emptymap()
+		ul4._emptymap = function _emptymap()
 		{
 			return {};
 		};
 
-		ul4on._getmap = function _getmap(map, key, value)
+		ul4._getmap = function _getmap(map, key, value)
 		{
 			return map[key];
 		};
 	}
 
 	// Function used for making sets, when the Set constructor doesn't work (or we don't have sets)
-	if (ul4on._haveset)
+	if (ul4._haveset)
 	{
-		ul4on._emptyset = function _emptyset()
+		ul4._emptyset = function _emptyset()
 		{
 			return new Set();
 		};
 	}
 	else
 	{
-		ul4on._emptyset = function _emptyset()
+		ul4._emptyset = function _emptyset()
 		{
 			return new ul4._Set();
 		};
 	}
 
-	ul4on._makeset = function _makeset(...items)
+	ul4._makeset = function _makeset(...items)
 	{
-		let set = ul4on._emptyset();
+		let set = ul4._emptyset();
 
 		for (let item of items)
 			set.add(item);
@@ -184,16 +182,16 @@
 	};
 
 	// Register the constructor function ``f`` under the name ``name`` with the UL4ON machinery
-	ul4on.register = function register(name, f)
+	ul4.register = function register(name, f)
 	{
 		f.prototype.ul4onname = name;
-		ul4on._registry[name] = f;
+		ul4._registry[name] = f;
 	};
 
 	// Return a string that contains the object ``obj`` in the UL4ON serialization format
-	ul4on.dumps = function dumps(obj, indent)
+	ul4.dumps = function dumps(obj, indent)
 	{
-		let encoder = new ul4on.Encoder(indent);
+		let encoder = new ul4.Encoder(indent);
 		encoder.dump(obj);
 		return encoder.finish();
 	};
@@ -201,14 +199,14 @@
 	// Load an object from the string ``data``.
 	// ``data`` must contain the object in the UL4ON serialization format
 	// ``registry`` may be null or a dictionary mapping type names to constructor functions
-	ul4on.loads = function loads(data, registry)
+	ul4.loads = function loads(data, registry)
 	{
-		let decoder = new ul4on.Decoder(data, registry);
+		let decoder = new ul4.Decoder(data, registry);
 		return decoder.load();
 	};
 
 	// Helper class for encoding
-	ul4on.Encoder = class Encoder
+	ul4.Encoder = class Encoder
 	{
 		// Create a new Encoder object
 		constructor(indent=null)
@@ -357,7 +355,7 @@
 	};
 
 	// Helper class for decoding
-	ul4on.Decoder = class Decoder
+	ul4.Decoder = class Decoder
 	{
 		// Creates a new decoder for reading from the string ``data``
 		constructor(data, registry)
@@ -617,9 +615,9 @@
 				case "D":
 				case "e":
 				case "E":
-					if (!ul4on._havemap && (typecode == "e" || typecode == "E"))
+					if (!ul4._havemap && (typecode == "e" || typecode == "E"))
 						throw "ordered dictionaries are not supported at position " + this.pos + " with path " + this.stack.join("/");
-					result = ul4on._emptymap();
+					result = ul4._emptymap();
 					this.stack.push(typecode === "d" || typecode === "D" ? "dict" : "odict");
 					if (typecode === "D" || typecode === "E")
 						this.backrefs.push(result);
@@ -631,14 +629,14 @@
 						this.backup();
 						let key = this.load();
 						let value = this.load();
-						ul4on._setmap(result, key, value);
+						ul4._setmap(result, key, value);
 					}
 					this.stack.pop();
 					return result;
 				case "y":
 				case "Y":
 					this.stack.push("set");
-					result = ul4on._makeset();
+					result = ul4._makeset();
 					if (typecode === "Y")
 						this.backrefs.push(result);
 					for (;;)
@@ -664,10 +662,10 @@
 					{
 						constructor = this.registry[name];
 						if (typeof(constructor) === "undefined")
-							constructor = ul4on._registry[name];
+							constructor = ul4._registry[name];
 					}
 					else
-						constructor = ul4on._registry[name];
+						constructor = ul4._registry[name];
 					if (typeof(constructor) === "undefined")
 						throw new ul4.ValueError("can't load object of type " + ul4._repr(name) + " at position " + this.pos + " with path " + this.stack.join("/"));
 					result = new constructor();
@@ -2198,7 +2196,7 @@
 	{
 		let iter = ul4._iter(obj);
 
-		let result = ul4on._haveset ? new Set() : new ul4._Set();
+		let result = ul4._emptyset();
 		for (;;)
 		{
 			let value = iter.next();
@@ -2466,7 +2464,7 @@
 		return Object.prototype.toString.call(obj) == "[object Object]" && typeof(obj.__type__) === "undefined" && !(obj instanceof ul4.Proto);
 	};
 
-	if (ul4on._havemap)
+	if (ul4._havemap)
 	{
 		// Check if ``obj`` is a ``Map``
 		ul4._ismap = function _ismap(obj)
@@ -2651,13 +2649,13 @@
 	// Encodes ``obj`` in the UL4 Object Notation format
 	ul4._asul4on = function _asul4on(obj)
 	{
-		return ul4on.dumps(obj);
+		return ul4.dumps(obj);
 	};
 
 	// Decodes the string ``string`` from the UL4 Object Notation format and returns the resulting decoded object
 	ul4._fromul4on = function _fromul4on(string)
 	{
-		return ul4on.loads(string);
+		return ul4.loads(string);
 	};
 
 	ul4._format_datetime = function _format_datetime(obj, fmt, lang)
@@ -3288,11 +3286,11 @@
 			else
 			{
 				// Yes => Put the unknown ones into an object and add that to the arguments array
-				let remkwargs = ul4on._emptymap();
+				let remkwargs = ul4._emptymap();
 				for (let key in kwargs)
 				{
 					if (!this.argNames[key])
-						ul4on._setmap(remkwargs, key, kwargs[key]);
+						ul4._setmap(remkwargs, key, kwargs[key]);
 				}
 				finalargs.push(remkwargs);
 			}
@@ -3598,7 +3596,7 @@
 	};
 
 	ul4.Protocol = ul4.Protocol.prototype;
-	ul4.Protocol.attrs = ul4on._emptyset();
+	ul4.Protocol.attrs = ul4._emptyset();
 
 	ul4.StrProtocol = class StrProtocol extends ul4.Protocol.constructor
 	{
@@ -3899,7 +3897,7 @@
 	};
 
 	ul4.StrProtocol = ul4.StrProtocol.prototype;
-	ul4.StrProtocol.attrs = ul4on._makeset(
+	ul4.StrProtocol.attrs = ul4._makeset(
 		"split",
 		"rsplit",
 		"splitlines",
@@ -3986,7 +3984,7 @@
 	};
 
 	ul4.ListProtocol = ul4.ListProtocol.prototype;
-	ul4.ListProtocol.attrs = ul4on._makeset(
+	ul4.ListProtocol.attrs = ul4._makeset(
 		"append",
 		"insert",
 		"pop",
@@ -4066,7 +4064,7 @@
 	};
 
 	ul4.MapProtocol = ul4.MapProtocol.prototype;
-	ul4.MapProtocol.attrs = ul4on._makeset("get", "items", "values", "update", "clear");
+	ul4.MapProtocol.attrs = ul4._makeset("get", "items", "values", "update", "clear");
 
 	ul4.expose(ul4.MapProtocol.get, ["key", "default=", null]);
 	ul4.expose(ul4.MapProtocol.items, []);
@@ -4095,7 +4093,7 @@
 	};
 
 	ul4.SetProtocol = ul4.SetProtocol.prototype;
-	ul4.SetProtocol.attrs = ul4on._makeset("add", "clear");
+	ul4.SetProtocol.attrs = ul4._makeset("add", "clear");
 
 	ul4.expose(ul4.SetProtocol.add, ["*items"]);
 	ul4.expose(ul4.SetProtocol.clear, []);
@@ -4159,7 +4157,7 @@
 	};
 
 	ul4.DateProtocol = ul4.DateProtocol.prototype;
-	ul4.DateProtocol.attrs = ul4on._makeset("weekday", "week", "calendar", "day", "month", "year", "mimeformat", "isoformat", "yearday");
+	ul4.DateProtocol.attrs = ul4._makeset("weekday", "week", "calendar", "day", "month", "year", "mimeformat", "isoformat", "yearday");
 
 	ul4.expose(ul4.DateProtocol.weekday, []);
 	ul4.expose(ul4.DateProtocol.calendar, ["firstweekday=", 0, "mindaysinfirstweek=", 4]);
@@ -4315,7 +4313,7 @@
 	};
 
 	ul4.DateTimeProtocol = ul4.DateTimeProtocol.prototype;
-	ul4.DateTimeProtocol.attrs = ul4on._makeset("weekday", "week", "calendar", "day", "month", "year", "hour", "minute", "second", "microsecond", "mimeformat", "isoformat", "yearday");
+	ul4.DateTimeProtocol.attrs = ul4._makeset("weekday", "week", "calendar", "day", "month", "year", "hour", "minute", "second", "microsecond", "mimeformat", "isoformat", "yearday");
 
 	ul4.expose(ul4.DateTimeProtocol.weekday, []);
 	ul4.expose(ul4.DateTimeProtocol.calendar, ["firstweekday=", 0, "mindaysinfirstweek=", 4]);
@@ -4390,7 +4388,7 @@
 	};
 
 	ul4.ObjectProtocol = ul4.ObjectProtocol.prototype;
-	ul4.ObjectProtocol.attrs = ul4on._makeset("get", "items", "values", "update", "clear");
+	ul4.ObjectProtocol.attrs = ul4._makeset("get", "items", "values", "update", "clear");
 
 	ul4.expose(ul4.ObjectProtocol.get, ["key", "default=", null]);
 	ul4.expose(ul4.ObjectProtocol.items, []);
@@ -5184,7 +5182,7 @@
 		{
 			let key = this.key._handle_eval(context);
 			let value = this.value._handle_eval(context);
-			ul4on._setmap(result, key, value);
+			ul4._setmap(result, key, value);
 		}
 	};
 
@@ -5214,18 +5212,18 @@
 				{
 					if (!ul4._islist(subitem) || subitem.length != 2)
 						throw new ul4.ArgumentError("** requires a list of (key, value) pairs");
-					ul4on._setmap(result, subitem[0], subitem[1]);
+					ul4._setmap(result, subitem[0], subitem[1]);
 				}
 			}
 			else if (ul4._ismap(item))
 			{
 				for (let [key, value] of item.entries())
-					ul4on._setmap(result, key, value);
+					ul4._setmap(result, key, value);
 			}
 			else if (ul4._isobject(item))
 			{
 				for (let key in item)
-					ul4on._setmap(result, key, item[key]);
+					ul4._setmap(result, key, item[key]);
 			}
 		}
 	};
@@ -5465,7 +5463,7 @@
 
 		_eval(context)
 		{
-			let result = ul4on._haveset ? new Set() : new ul4._Set();
+			let result = ul4._emptyset();
 
 			for (let item of this.items)
 				item._handle_eval_set(context, result);
@@ -5527,7 +5525,7 @@
 
 			let localcontext = context.inheritvars();
 
-			let result = ul4on._haveset ? new Set() : new ul4._Set();
+			let result = ul4._emptyset();
 			for (let iter = ul4._iter(container);;)
 			{
 				let item = iter.next();
@@ -5578,7 +5576,7 @@
 
 		_eval(context)
 		{
-			let result = ul4on._emptymap();
+			let result = ul4._emptymap();
 			for (let item of this.items)
 				item._handle_eval_dict(context, result);
 			return result;
@@ -5624,7 +5622,7 @@
 
 			let localcontext = context.inheritvars();
 
-			let result = ul4on._emptymap();
+			let result = ul4._emptymap();
 
 			for (let iter = ul4._iter(container);;)
 			{
@@ -5638,7 +5636,7 @@
 				{
 					let key = this.key._handle_eval(localcontext);
 					let value = this.value._handle_eval(localcontext);
-					ul4on._setmap(result, key, value);
+					ul4._setmap(result, key, value);
 				}
 			}
 
@@ -7356,7 +7354,7 @@
 
 		loads(string)
 		{
-			return ul4on.loads(string);
+			return ul4.loads(string);
 		}
 
 		_eval(context)
@@ -8616,13 +8614,13 @@
 			if (ul4._ismap(other))
 			{
 				other.forEach(function(value, key){
-					ul4on._setmap(obj, key, value);
+					ul4._setmap(obj, key, value);
 				});
 			}
 			else if (ul4._isobject(other))
 			{
 				for (let key in other)
-					ul4on._setmap(obj, key, other[key]);
+					ul4._setmap(obj, key, other[key]);
 			}
 			else if (ul4._islist(other))
 			{
@@ -8630,14 +8628,14 @@
 				{
 					if (!ul4._islist(item) || (item.length != 2))
 						throw new ul4.TypeError("update() requires a dict or a list of (key, value) pairs");
-					ul4on._setmap(obj, item[0], item[1]);
+					ul4._setmap(obj, item[0], item[1]);
 				}
 			}
 			else
 				throw new ul4.TypeError("update() requires a dict or a list of (key, value) pairs");
 		}
 		kwargs.forEach(function(value, key) {
-			ul4on._setmap(obj, key, value);
+			ul4._setmap(obj, key, value);
 		});
 		return null;
 	};
@@ -9507,98 +9505,96 @@
 	};
 
 	const classes = [
-		"TextAST",
-		"IndentAST",
-		"LineEndAST",
-		"Tag",
-		"ConstAST",
-		"SeqItemAST",
-		"UnpackSeqItemAST",
-		"DictItemAST",
-		"UnpackDictItemAST",
-		"PosArgAST",
-		"KeywordArgAST",
-		"UnpackListArgAST",
-		"UnpackDictArgAST",
-		"ListAST",
-		"ListCompAST",
-		"DictAST",
-		"DictCompAST",
-		"SetAST",
-		"SetCompAST",
-		"GenExprAST",
-		"VarAST",
-		"NotAST",
-		"NegAST",
-		"BitNotAST",
-		"IfAST",
-		"ReturnAST",
-		"PrintAST",
-		"PrintXAST",
-		"ItemAST",
-		"IsAST",
-		"IsNotAST",
-		"EQAST",
-		"NEAST",
-		"LTAST",
-		"LEAST",
-		"GTAST",
-		"GEAST",
-		"NotContainsAST",
-		"ContainsAST",
-		"AddAST",
-		"SubAST",
-		"MulAST",
-		"FloorDivAST",
-		"TrueDivAST",
-		"ModAST",
-		"ShiftLeftAST",
-		"ShiftRightAST",
-		"BitAndAST",
-		"BitXOrAST",
-		"BitOrAST",
-		"AndAST",
-		"OrAST",
-		"SliceAST",
-		"AttrAST",
-		"CallAST",
-		"RenderAST",
-		"RenderXAST",
-		"RenderBlockAST",
-		"RenderBlocksAST",
-		"SetVarAST",
-		"AddVarAST",
-		"SubVarAST",
-		"MulVarAST",
-		"TrueDivVarAST",
-		"FloorDivVarAST",
-		"ModVarAST",
-		"ShiftLeftVarAST",
-		"ShiftRightVarAST",
-		"BitAndVarAST",
-		"BitXOrVarAST",
-		"BitOrVarAST",
-		"ForBlockAST",
-		"WhileBlockAST",
-		"BreakAST",
-		"ContinueAST",
-		"CondBlockAST",
-		"IfBlockAST",
-		"ElIfBlockAST",
-		"ElseBlockAST",
-		"SignatureAST",
-		"Template"
+		TextAST,
+		IndentAST,
+		LineEndAST,
+		Tag,
+		ConstAST,
+		SeqItemAST,
+		UnpackSeqItemAST,
+		DictItemAST,
+		UnpackDictItemAST,
+		PosArgAST,
+		KeywordArgAST,
+		UnpackListArgAST,
+		UnpackDictArgAST,
+		ListAST,
+		ListCompAST,
+		DictAST,
+		DictCompAST,
+		SetAST,
+		SetCompAST,
+		GenExprAST,
+		VarAST,
+		NotAST,
+		NegAST,
+		BitNotAST,
+		IfAST,
+		ReturnAST,
+		PrintAST,
+		PrintXAST,
+		ItemAST,
+		IsAST,
+		IsNotAST,
+		EQAST,
+		NEAST,
+		LTAST,
+		LEAST,
+		GTAST,
+		GEAST,
+		NotContainsAST,
+		ContainsAST,
+		AddAST,
+		SubAST,
+		MulAST,
+		FloorDivAST,
+		TrueDivAST,
+		ModAST,
+		ShiftLeftAST,
+		ShiftRightAST,
+		BitAndAST,
+		BitXOrAST,
+		BitOrAST,
+		AndAST,
+		OrAST,
+		SliceAST,
+		AttrAST,
+		CallAST,
+		RenderAST,
+		RenderXAST,
+		RenderBlockAST,
+		RenderBlocksAST,
+		SetVarAST,
+		AddVarAST,
+		SubVarAST,
+		MulVarAST,
+		TrueDivVarAST,
+		FloorDivVarAST,
+		ModVarAST,
+		ShiftLeftVarAST,
+		ShiftRightVarAST,
+		BitAndVarAST,
+		BitXOrVarAST,
+		BitOrVarAST,
+		ForBlockAST,
+		WhileBlockAST,
+		BreakAST,
+		ContinueAST,
+		CondBlockAST,
+		IfBlockAST,
+		ElIfBlockAST,
+		ElseBlockAST,
+		SignatureAST,
+		Template
 	];
 
-	for (let name of classes)
+	for (let cls of classes)
 	{
-		let ul4onname = name;
+		let ul4onname = cls.name;
 		if (ul4onname.substr(ul4onname.length-3) === "AST")
 			ul4onname = ul4onname.substr(0, ul4onname.length-3);
 		ul4onname = ul4onname.toLowerCase();
-		let constructor = ul4[name];
-		constructor.prototype.type = ul4onname;
-		ul4on.register("de.livinglogic.ul4." + ul4onname, constructor);
+		cls.type = ul4onname;
+		register("de.livinglogic.ul4." + ul4onname, cls);
 	}
-
 })();
