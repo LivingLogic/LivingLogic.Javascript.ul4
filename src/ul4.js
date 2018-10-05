@@ -397,7 +397,7 @@
 			for (;;)
 			{
 				if (this.pos >= this.data.length)
-					throw "UL4 decoder at EOF at position " + this.pos + " with path " + this.stack.join("/");
+					throw new ul4.ValueError("UL4 decoder at EOF at position " + this.pos + " with path " + this.stack.join("/"));
 				let c = this.data.charAt(this.pos++);
 				if (!c.match(re_white))
 					return c;
