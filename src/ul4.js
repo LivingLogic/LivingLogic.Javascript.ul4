@@ -4470,30 +4470,6 @@
 		}
 	};
 
-	/*
-	ul4.Exception = class Exception extends ul4.Proto
-	{
-		constructor(message)
-		{
-			super();
-			this.message = message;
-			this.__id__ = _nextid++;
-			this.cause = null;
-		}
-
-		__getattr__(attrname)
-		{
-			switch (attrname)
-			{
-				case "cause":
-					return this.cause;
-				default:
-					throw new ul4.AttributeError(this, attrname);
-			}
-		}
-	};
-	*/
-
 	// Exceptions used internally by UL4 for flow control
 	ul4.InternalException = class InternalException extends ul4.Exception
 	{
