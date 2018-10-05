@@ -4436,19 +4436,28 @@
 	/// Exceptions
 
 	// Note that extending ``Error`` doesn't work, so we do it the "classic" way
-	ul4.Exception = function Exception(message)
+	ul4.Exception = function Exception(message, fileName, lineNumber)
 	{
-
-		let tmp = Error.call(this, message); 
-		tmp.name = this.name; 
-		this.stack = tmp.stack;
-		tmp = null;
-		this.message = message;
-		this.__id__ = _nextid++;
-		this.cause = null;
+		let instance = new Error(message, fileName, lineNumber);
+		Object.setPrototypeOf(instance, Object.getPrototypeOf(this));
+		instance.__id__ = _nextid++;
+		instance.context = null;
+		return instance;
 	};
 
-	ul4.Exception.prototype = Object.create(Error.prototype);
+	ul4.Exception.prototype = Object.create(Error.prototype, {
+		constructor: {
+			value: Error,
+			enumerable: false,
+			writable: true,
+			configurable: true
+		}
+	});
+
+	if (Object.setPrototypeOf)
+		Object.setPrototypeOf(ul4.Exception, Error);
+	else
+		ul4.Exception.__proto__ = Error;
 
 	ul4.Exception.prototype.__getattr__ = function __getattr__(attrname)
 	{
