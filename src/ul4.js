@@ -4526,6 +4526,28 @@
 	{
 	};
 
+	ul4.NotSubscriptableError = class NotSubscriptableError extends ul4.Exception
+	{
+		constructor(obj)
+		{
+			super("Object of type " + _type(obj) + " is not subscriptable");
+			this.obj = obj;
+		}
+
+		toString()
+		{
+			return "Object of type " + _type(this.obj) + " is not subscriptable";
+		}
+	};
+
+	ul4.ZeroDivisionError = class ZeroDivisionError extends ul4.Exception
+	{
+		constructor()
+		{
+			super("division by zero");
+		}
+	};
+
 	ul4.IndexError = class IndexError extends ul4.Exception
 	{
 		constructor(obj, index)
