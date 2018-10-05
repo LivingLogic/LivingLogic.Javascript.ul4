@@ -6318,6 +6318,8 @@
 				return obj2.__rfloordiv__(obj1);
 			if (obj1 === null || obj2 === null)
 				throw new ul4.TypeError(ul4._type(obj1) + " // " + ul4._type(obj2) + " not supported");
+			else if (typeof(obj1) === "number" && typeof(obj2) === "number" && obj2 === 0)
+				throw new ul4.ZeroDivisionError();
 			return Math.floor(obj1 / obj2);
 		}
 
@@ -6338,6 +6340,8 @@
 				return obj2.__rtruediv__(obj1);
 			if (obj1 === null || obj2 === null)
 				throw new ul4.TypeError(ul4._type(obj1) + " / " + ul4._type(obj2) + " not supported");
+			else if (typeof(obj1) === "number" && typeof(obj2) === "number" && obj2 === 0)
+				throw new ul4.ZeroDivisionError();
 			return obj1 / obj2;
 		}
 
