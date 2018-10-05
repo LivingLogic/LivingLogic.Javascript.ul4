@@ -979,10 +979,11 @@
 				}
 				// Test that each attribute of ``obj2`` is alos in ``obj1`` (the value has been tested before)
 				let result = true;
-				obj2.forEach(function(value, key){
+				for (let key of obj2.keys())
+				{
 					if (!obj1.hasOwnProperty(key))
 						result = false;
-				});
+				}
 				return result;
 			}
 			else
@@ -993,18 +994,13 @@
 			if (ul4._isobject(obj2))
 			{
 				// Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
-				let result = true;
-				obj1.forEach(function(value, key){
-					if (result) // Skip code, if result is already ``false``
-					{
-						if (!obj2.hasOwnProperty(key))
-							result = false;
-						else if (!ul4._eq(obj1.get(key), obj2[key]))
-							result = false;
-					}
-				});
-				if (!result)
-					return false;
+				for (let key of obj1.keys())
+				{
+					if (!obj2.hasOwnProperty(key))
+						return false;
+					else if (!ul4._eq(obj1.get(key), obj2[key]))
+						return false;
+				}
 				// Test that each attribute of ``obj2`` is alos in ``obj1`` (the value has been tested before)
 				for (let key in obj2)
 				{
@@ -1021,17 +1017,14 @@
 				if (obj1.size != obj2.size)
 					return false;
 				// Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
-				let result = true;
-				obj1.forEach(function(value, key){
-					if (result) // Skip code, if result is already ``false``
-					{
-						if (!obj2.has(key))
-							result = false;
-						else if (!ul4._eq(obj1.get(key), obj2.get(key)))
-							result = false;
-					}
-				});
-				return result;
+				for (let key of obj1.keys())
+				{
+					if (!obj2.has(key))
+						return false;
+					else if (!ul4._eq(obj1.get(key), obj2.get(key)))
+						return false;
+				}
+				return true;
 			}
 			else
 				return false;
@@ -1046,15 +1039,12 @@
 					return true;
 				if (obj1.size != obj2.size)
 					return false;
-				let result = true;
-				obj1.forEach(function(value){
-					if (result) // Skip code, if result is already ``false``
-					{
-						if (!obj2.has(value))
-							result = false;
-					}
-				});
-				return result;
+				for (let value of obj1)
+				{
+					if (!obj2.has(value))
+						return false;
+				}
+				return true;
 			}
 			else
 				return false;
@@ -1129,95 +1119,51 @@
 		}
 		else if (ul4._isset(obj1) || ul4._isul4set(obj1))
 		{
-			let in1only = false;
-			let in2only = false;
+			if (ul4._isset(obj2) || ul4._isul4set(obj2))
+			{
+				let in1only = false;
+				let in2only = false;
 
-			if (ul4._isset(obj2))
-			{
-				if (ul4._isset(obj2))
+				for (let iter = _iter(obj1);;)
 				{
-					obj1.forEach(function(value){
-						if (!obj2.has(value))
-							in1only = true;
-					});
-					obj2.forEach(function(value){
-						if (!obj1.has(value))
-							in2only = true;
-					});
-				}
-				else if (ul4._isul4set(obj2))
-				{
-					obj1.forEach(function(value){
-						if (!obj2.items[value])
-							in1only = true;
-					});
-					for (let value in obj2.items)
+					let item = iter.next();
+					if (item.done)
+						break;
+					if (!obj2.has(item.value))
 					{
-						if (!obj1.has(value))
-						{
-							in2only = true;
-							break;
-						}
+						in1only = true;
+						break;
 					}
 				}
-			}
-			else if (ul4._isul4set(obj2))
-			{
-				if (ul4._isset(obj2))
+				for (let iter = _iter(obj2);;)
 				{
-					for (let value in obj1.items)
+					let item = iter.next();
+					if (item.done)
+						break;
+					if (!obj1.has(item.value))
 					{
-						if (!obj2.has(value))
-						{
-							in1only = true;
-							break;
-						}
-					}
-					obj2.forEach(function(value){
-						if (!obj1.items[value])
-							in2only = true;
-					});
-				}
-				else if (ul4._isul4set(obj2))
-				{
-					for (let value in obj1.items)
-					{
-						if (!obj2.items[value])
-						{
-							in1only = true;
-							break;
-						}
-					}
-					for (let value in obj2.items)
-					{
-						if (!obj1.items[value])
-						{
-							in2only = true;
-							break;
-						}
+						in2only = true;
+						break;
 					}
 				}
-			}
-			else
-				ul4._unorderable(operator, obj1, obj2);
 
-			if (in1only)
-			{
-				if (in2only)
-					return null;
+				if (in1only)
+				{
+					if (in2only)
+						return null;
+					else
+						return 1;
+				}
 				else
-					return 1;
-			}
-			else
-			{
-				if (in2only)
-					return -1;
-				else
-					return 0;
+				{
+					if (in2only)
+						return -1;
+					else
+						return 0;
+				}
 			}
 		}
-		else
-			ul4._unorderable(operator, obj1, obj2);
+		return ul4._unorderable(operator, obj1, obj2);
 	};
 
 	// Return whether ``obj1 < obj2``
@@ -1266,21 +1212,24 @@
 			{
 				if (ul4._isset(obj2))
 				{
-					obj1.forEach(function(value){
+					for (let value of obj1)
+					{
 						if (!obj2.has(value))
 							in1only = true;
-					});
-					obj2.forEach(function(value){
+					}
+					for (let value of obj2)
+					{
 						if (!obj1.has(value))
 							in2only = true;
-					});
+					}
 				}
 				else if (ul4._isul4set(obj2))
 				{
-					obj1.forEach(function(value){
+					for (let value of obj1)
+					{
 						if (!obj2.items[value])
 							in1only = true;
-					});
+					}
 					for (let value in obj2.items)
 					{
 						if (!obj1.has(value))
@@ -1303,10 +1252,11 @@
 							break;
 						}
 					}
-					obj2.forEach(function(value){
+					for (let value of obj2)
+					{
 						if (!obj1.items[value])
 							in2only = true;
-					});
+					}
 				}
 				else if (ul4._isul4set(obj2))
 				{
@@ -1398,21 +1348,24 @@
 			{
 				if (ul4._isset(obj2))
 				{
-					obj1.forEach(function(value){
+					for (let value of obj1)
+					{
 						if (!obj2.has(value))
 							in1only = true;
-					});
-					obj2.forEach(function(value){
+					}
+					for (let value of obj2)
+					{
 						if (!obj1.has(value))
 							in2only = true;
-					});
+					}
 				}
 				else if (ul4._isul4set(obj2))
 				{
-					obj1.forEach(function(value){
+					for (let value of obj1)
+					{
 						if (!obj2.items[value])
 							in1only = true;
-					});
+					}
 					for (let value in obj2.items)
 					{
 						if (!obj1.has(value))
@@ -1435,10 +1388,11 @@
 							break;
 						}
 					}
-					obj2.forEach(function(value){
+					for (let value of obj2)
+					{
 						if (!obj1.items[value])
 							in2only = true;
-					});
+					}
 				}
 				else if (ul4._isul4set(obj2))
 				{
@@ -1530,21 +1484,24 @@
 			{
 				if (ul4._isset(obj2))
 				{
-					obj1.forEach(function(value){
+					for (let value of obj1)
+					{
 						if (!obj2.has(value))
 							in1only = true;
-					});
-					obj2.forEach(function(value){
+					}
+					for (let value of obj2)
+					{
 						if (!obj1.has(value))
 							in2only = true;
-					});
+					}
 				}
 				else if (ul4._isul4set(obj2))
 				{
-					obj1.forEach(function(value){
+					for (let value of obj1)
+					{
 						if (!obj2.items[value])
 							in1only = true;
-					});
+					}
 					for (let value in obj2.items)
 					{
 						if (!obj1.has(value))
@@ -1567,10 +1524,11 @@
 							break;
 						}
 					}
-					obj2.forEach(function(value){
+					for (let value of obj2)
+					{
 						if (!obj1.items[value])
 							in2only = true;
-					});
+					}
 				}
 				else if (ul4._isul4set(obj2))
 				{
@@ -1662,21 +1620,24 @@
 			{
 				if (ul4._isset(obj2))
 				{
-					obj1.forEach(function(value){
+					for (let value of obj1)
+					{
 						if (!obj2.has(value))
 							in1only = true;
-					});
-					obj2.forEach(function(value){
+					}
+					for (let value of obj2)
+					{
 						if (!obj1.has(value))
 							in2only = true;
-					});
+					}
 				}
 				else if (ul4._isul4set(obj2))
 				{
-					obj1.forEach(function(value){
+					for (let value of obj1)
+					{
 						if (!obj2.items[value])
 							in1only = true;
-					});
+					}
 					for (let value in obj2.items)
 					{
 						if (!obj1.has(value))
@@ -1699,10 +1660,11 @@
 							break;
 						}
 					}
-					obj2.forEach(function(value){
+					for (let value of obj2)
+					{
 						if (!obj1.items[value])
 							in2only = true;
-					});
+					}
 				}
 				else if (ul4._isul4set(obj2))
 				{
