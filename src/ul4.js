@@ -377,7 +377,7 @@
 		readchar()
 		{
 			if (this.pos >= this.data.length)
-				throw "UL4 decoder at EOF";
+				throw new ul4.ValueError("UL4 decoder at EOF");
 			return this.data.charAt(this.pos++);
 		}
 
@@ -433,7 +433,7 @@
 				{
 					let result = parseFloat(value);
 					if (isNaN(result))
-						throw "invalid number, got " + ul4._repr("value") + " at position " + this.pos + " with path " + this.stack.join("/");
+						throw new ul4.ValueError("invalid number, got " + ul4._repr("value") + " at position " + this.pos + " with path " + this.stack.join("/"));
 					return result;
 				}
 			}
@@ -455,10 +455,10 @@
 		{
 			let chars = this.read(length);
 			if (chars.length != length)
-				throw "broken escape " + ul4._repr("\\" + escapechar + chars) + " at position " + this.pos + " with path " + this.stack.join("/");
+				throw new ul4.ValueError("broken escape " + ul4._repr("\\" + escapechar + chars) + " at position " + this.pos + " with path " + this.stack.join("/"));
 			let codepoint = parseInt(chars, 16);
 			if (isNaN(codepoint))
-				throw "broken escape " + ul4._repr("\\" + escapechar + chars) + " at position " + this.pos + " with path " + this.stack.join("/");
+				throw new ul4.ValueError("broken escape " + ul4._repr("\\" + escapechar + chars) + " at position " + this.pos + " with path " + this.stack.join("/"));
 			return String.fromCharCode(codepoint);
 		}
 
@@ -484,7 +484,7 @@
 					else if (result === "F")
 						result = false;
 					else
-						throw "wrong value for boolean, expected 'T' or 'F', got " + ul4._repr(result) + " at position " + this.pos + " with path " + this.stack.join("/");
+						throw new ul4.ValueError("wrong value for boolean, expected 'T' or 'F', got " + ul4._repr(result) + " at position " + this.pos + " with path " + this.stack.join("/"));
 					if (typecode === "B")
 						this.backrefs.push(result);
 					return result;
@@ -622,7 +622,7 @@
 				case "e":
 				case "E":
 					if (!ul4._havemap && (typecode == "e" || typecode == "E"))
-						throw "ordered dictionaries are not supported at position " + this.pos + " with path " + this.stack.join("/");
+						throw new ul4.ValueError("ordered dictionaries are not supported at position " + this.pos + " with path " + this.stack.join("/"));
 					result = ul4._emptymap();
 					this.stack.push(typecode === "d" || typecode === "D" ? "dict" : "odict");
 					if (typecode === "D" || typecode === "E")
