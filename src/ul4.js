@@ -1746,7 +1746,7 @@
 		{
 			let values = [];
 			for (let item of obj)
-				values.push(value);
+				values.push(item);
 			return {
 				index: 0,
 				next: function()
