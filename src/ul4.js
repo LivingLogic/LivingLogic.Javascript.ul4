@@ -7725,7 +7725,9 @@
 				if (item.done)
 					break;
 				let keyvalue = ul4._call(context, key, [item.value], {});
-				sort.push([keyvalue, i, item.value]);
+				// For a stable sorting we have to use the nagative index if
+				// reverse sorting is specified
+				sort.push([keyvalue, reverse ? -i : i, item.value]);
 			}
 			cmp = function cmp(s1, s2)
 			{
