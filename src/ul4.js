@@ -3348,6 +3348,11 @@
 			return this.items[item] || false;
 		}
 
+		has(item)
+		{
+			return this.items[item] || false;
+		}
+
 		__bool__()
 		{
 			for (let item in this.items)
