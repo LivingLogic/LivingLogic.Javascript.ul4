@@ -4012,7 +4012,7 @@
 		{
 			let result = [];
 			for (let item of obj.entries())
-				result.push(items);
+				result.push(item);
 			return result;
 		}
 
