@@ -760,12 +760,9 @@
 	// Create a pretty stacktrace from an exception
 	ul4._stacktrace = function _stacktrace(exc)
 	{
-		let output = ul4._type(exc);
-		let s = exc.toString();
-		if (s)
-			output += ": " + s;
-		if (exc.cause)
-			output += "\n\n" + ul4._stacktrace(exc.cause);
+		let output = (exc instanceof ul4.Exception ? exc.constructor.name + ": " : "") + exc.toString();
+		if (exc.context)
+			output = ul4._stacktrace(exc.context) + "\n\n" + output;
 		return output;
 	};
 
@@ -4468,8 +4465,8 @@
 	{
 		switch (attrname)
 		{
-			case "cause":
-				return this.cause;
+			case "context":
+				return this.context;
 			default:
 				throw new ul4.AttributeError(this, attrname);
 		}
@@ -4581,15 +4578,15 @@
 	/// Exception that wraps other exceptions while they bubble up the stack
 	ul4.LocationError = class LocationError extends ul4.Exception
 	{
-		constructor(location, cause)
+		constructor(location)
 		{
 			super("nested exception in " + ul4._repr(location));
 			this.location = location;
-			this.cause = cause;
 		}
 
-		_templateprefix(template)
+		_templateprefix()
 		{
+			let template = this.location.template;
 			let out = [];
 			if (template.parenttemplate !== null)
 				out.push("in local template ");
@@ -4602,49 +4599,38 @@
 					first = false;
 				else
 					out.push(" in ");
-				out.push(template.name !== null ? ul4._repr(template.name) : "(unnamed)");
+				out.push(template.name ? ul4._repr(template.name) : "(unnamed)");
 				template = template.parenttemplate;
 			}
 			return out.join("");
 		}
 
-		_template()
-		{
-			if (this.location instanceof ul4.Tag)
-				return this.location.template;
-			else
-				return this.location.tag.template;
-		}
-
-		_outerpos()
-		{
-			if (this.location instanceof ul4.Tag)
-				return this.location.pos;
-			else
-			{
-				let tag = this.location.tag;
-				if (tag === null) // A top level template as no tag
-					return this.location.pos;
-				else
-					return tag.pos;
-			}
-		}
-
-		_innerpos()
-		{
-			return this.location.pos;
-		}
-
 		toString()
 		{
-			let template = this._template();
-			let templateprefix = this._templateprefix(template);
-			let outerpos = this._outerpos();
-			let innerpos = this._innerpos();
+			let template = this.location.template;
+			let templateprefix = this._templateprefix();
+			let outerstartpos = this.location.pos.start;
+			let innerstartpos = outerstartpos;
+			let outerstoppos = this.location.pos.stop;
+			let innerstoppos = outerstoppos;
 
-			let prefix = template.source.substring(outerpos.start, innerpos.start);
-			let code = template.source.substring(innerpos.start, innerpos.stop);
-			let suffix = template.source.substring(innerpos.stop, outerpos.stop);
+			let maxprefix = 40;
+			while (maxprefix > 0 && outerstartpos > 0 && template.source.charAt(outerstartpos-1) != "\n")
+			{
+				maxprefix--;
+				outerstartpos--;
+			}
+
+			let maxsuffix = 40;
+			while (maxsuffix > 0 && outerstartpos < template.source.length-1 && template.source.charAt(outerstoppos) != "\n")
+			{
+				maxsuffix--;
+				outerstoppos++;
+			}
+
+			let prefix = template.source.substring(outerstartpos, innerstartpos);
+			let code = template.source.substring(innerstartpos, innerstoppos);
+			let suffix = template.source.substring(innerstoppos, outerstoppos);
 			prefix = ul4._repr(prefix).slice(1, -1);
 			code = ul4._repr(code).slice(1, -1);
 			suffix = ul4._repr(suffix).slice(1, -1);
@@ -4653,7 +4639,7 @@
 
 			// find line numbers
 			let lineno = 1, colno = 1;
-			for (let i = 0; i < innerpos.start; ++i)
+			for (let i = 0; i < innerstartpos; ++i)
 			{
 				if (template.source[i] === "\n")
 				{
@@ -4674,16 +4660,10 @@
 		{
 			switch (attrname)
 			{
-				case "cause":
-					return this.cause;
+				case "context":
+					return this.context;
 				case "location":
 					return this.location;
-				case "template":
-					return this._template;
-				case "outerpos":
-					return this._outerpos;
-				case "innerpos":
-					return this._innerpos;
 				default:
 					throw new ul4.AttributeError(this, attrname);
 			}
@@ -4693,16 +4673,24 @@
 	/// Classes for the syntax tree
 	ul4.AST = class AST extends ul4.Proto
 	{
-		constructor(pos)
+		constructor(template, pos)
 		{
 			super();
+			this.template = template;
 			this.pos = pos;
+		}
+
+		get source()
+		{
+			return this.pos.of(this.template._source);
 		}
 
 		__getattr__(attrname)
 		{
 			if (attrname === "type")
 				return this.type;
+			else if (attrname === "source")
+				return this.source;
 			else if (this._ul4onattrs.indexOf(attrname) >= 0)
 				return this[attrname];
 			throw new ul4.AttributeError(this, attrname);
@@ -4727,6 +4715,13 @@
 			return ul4._formatsource(out);
 		}
 
+		_decorate_exception(exc)
+		{
+			while (exc.context !== undefined && exc.context !== null)
+				exc = exc.context;
+			exc.context = new ul4.LocationError(this);
+		}
+
 		_handle_eval(context)
 		{
 			try
@@ -4736,7 +4731,7 @@
 			catch (exc)
 			{
 				if (!(exc instanceof ul4.InternalException) && !(exc instanceof ul4.LocationError))
-					throw new ul4.LocationError(this, exc);
+					this._decorate_exception(exc);
 				throw exc;
 			}
 		}
@@ -4750,7 +4745,7 @@
 			catch (exc)
 			{
 				if (!(exc instanceof ul4.LocationError))
-					throw new ul4.LocationError(this, exc);
+					this._decorate_exception(exc);
 				throw exc;
 			}
 		}
@@ -4769,7 +4764,7 @@
 			catch (exc)
 			{
 				if (!(exc instanceof ul4.LocationError))
-					throw new ul4.LocationError(this, exc);
+					this._decorate_exception(exc);
 				throw exc;
 			}
 		}
@@ -4785,6 +4780,7 @@
 
 		_str(out)
 		{
+			out.push(this.source.replace(/\r?\n/g, ' '));
 		}
 
 		ul4ondump(encoder)
@@ -4801,105 +4797,88 @@
 	};
 
 	// used in ul4ondump/ul4ondump to automatically dump these attributes
-	ul4.AST.prototype._ul4onattrs = ["pos"];
+	ul4.AST.prototype._ul4onattrs = ["template", "pos"];
 
 	ul4.TextAST = class TextAST extends ul4.AST
 	{
 		constructor(template, pos)
 		{
-			super(pos);
-			this.template = template;
+			super(template, pos);
 		}
 
-		_text()
+		get text()
 		{
-			return this.template.source.substring(this.pos.start, this.pos.stop);
+			return this.source;
 		}
 
 		_eval(context)
 		{
-			context.output(this._text());
+			context.output(this.text);
 		}
 
 		_str(out)
 		{
 			out.push("text ");
-			out.push(ul4._repr(this._text()));
+			out.push(ul4._repr(this.text));
 		}
 
 		_repr(out)
 		{
 			out.push("<TextAST ");
-			out.push(ul4._repr(this._text()));
+			out.push(ul4._repr(this.text));
 			out.push(">");
 		}
 	};
-
-	ul4.TextAST.prototype._ul4onattrs = ul4.AST.prototype._ul4onattrs.concat(["template"]);
 
 	ul4.IndentAST = class IndentAST extends ul4.TextAST
 	{
 		constructor(template, pos, text)
 		{
 			super(template, pos);
-			this._maketext(text);
+			this._text = text;
 		}
 
-		_maketext(text)
+		get text()
 		{
 			if (typeof(this.template) !== "undefined")
-			{
-				if (text === null)
-					this.text = this.template.source.substring(this.pos.start, this.pos.stop);
-				else
-					this.text = text;
-			}
+				return this._text === null ? this.source : this._text;
 			else
-				this.text = null;
-		}
-
-		_text()
-		{
-			if (this.text === null)
-				return this.template.source.substring(this.pos.start, this.pos.stop);
-			else
-				return this.text;
+				return null;
 		}
 
 		_eval(context)
 		{
 			for (let indent of context.indents)
 				context.output(indent);
-			context.output(this._text());
+			context.output(this.text);
 		}
 
 		ul4ondump(encoder)
 		{
 			super.ul4ondump(encoder);
 
-			if (this.text === this.template.source.substring(this.pos.start, this.pos.stop))
+			if (this._text === this.source)
 				encoder.dump(null);
 			else
-				encoder.dump(this.text);
+				encoder.dump(this._text);
 		}
 
 		ul4onload(decoder)
 		{
 			super.ul4onload(decoder);
-			// Recreate ``text`` attribute
-			this._maketext(decoder.load());
+			this._text = decoder.load();
 		}
 
 		_str(out)
 		{
 			out.push("indent ");
-			out.push(ul4._repr(this._text()));
+			out.push(ul4._repr(this.text));
 		}
 
 		_repr(out)
 		{
 			out.push("<IndentAST ");
-			out.push(ul4._repr(this._text()));
+			out.push(ul4._repr(this.text));
 			out.push(">");
 		}
 	};
@@ -4909,88 +4888,26 @@
 		_str(out)
 		{
 			out.push("lineend ");
-			out.push(ul4._repr(this._text()));
+			out.push(ul4._repr(this.text));
 		}
 
 		_repr(out)
 		{
 			out.push("<LineEndAST ");
-			out.push(ul4._repr(this._text()));
+			out.push(ul4._repr(this.text));
 			out.push(">");
 		}
 	};
 
-	ul4.Tag = class Tag extends ul4.AST
-	{
-		constructor(template, tag, tagpos, codepos)
-		{
-			super(tagpos);
-			this.template = template;
-			this.tag = tag;
-			this.codepos = codepos;
-		}
-
-		__getattr__(attrname)
-		{
-			switch (attrname)
-			{
-				case "template":
-					return this.template;
-				case "tag":
-					return this.tag;
-				case "text":
-					return this.text;
-				case "code":
-					return this.code;
-				default:
-					return super.__getattr__(attrname);
-			}
-		}
-	};
-
-	ul4.Tag.prototype._ul4onattrs = ul4.AST.prototype._ul4onattrs.concat(["template", "tag", "codepos"]);
-
-	Object.defineProperty(ul4.Tag.prototype, "text", {
-		get: function()
-		{
-			if (typeof(this.template) !== "undefined")
-				return this.template.source.substring(this.pos.start, this.pos.stop);
-			else
-				return null;
-		}
-	});
-
-	Object.defineProperty(ul4.Tag.prototype, "code", {
-		get: function()
-		{
-			if (typeof(this.template) !== "undefined")
-				return this.template.source.substring(this.codepos.start, this.codepos.stop);
-			else
-				return null;
-		}
-	});
-
 	ul4.CodeAST = class CodeAST extends ul4.AST
 	{
-		constructor(tag, pos)
-		{
-			super(pos);
-			this.tag = tag;
-		}
-
-		_str(out)
-		{
-			out.push(this.tag.source.substring(this.pos.start, this.pos.stop).replace(/\r?\n/g, ' '));
-		}
 	};
-
-	ul4.CodeAST.prototype._ul4onattrs = ul4.AST.prototype._ul4onattrs.concat(["tag"]);
 
 	ul4.ConstAST = class ConstAST extends ul4.CodeAST
 	{
-		constructor(tag, pos, value)
+		constructor(template, pos, value)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.value = value;
 		}
 
@@ -5020,7 +4937,7 @@
 			catch (exc)
 			{
 				if (!(exc instanceof ul4.InternalException) && !(exc instanceof ul4.LocationError))
-					throw new ul4.LocationError(this, exc);
+					this._decorate_exception(exc);
 				throw exc;
 			}
 		}
@@ -5034,7 +4951,7 @@
 			catch (exc)
 			{
 				if (!(exc instanceof ul4.InternalException) && !(exc instanceof ul4.LocationError))
-					throw new ul4.LocationError(this, exc);
+					this._decorate_exception(exc);
 				throw exc;
 			}
 		}
@@ -5048,7 +4965,7 @@
 			catch (exc)
 			{
 				if (!(exc instanceof ul4.InternalException) && !(exc instanceof ul4.LocationError))
-					throw new ul4.LocationError(this, exc);
+					this._decorate_exception(exc);
 				throw exc;
 			}
 		}
@@ -5062,7 +4979,7 @@
 			catch (exc)
 			{
 				if (!(exc instanceof ul4.InternalException) && !(exc instanceof ul4.LocationError))
-					throw new ul4.LocationError(this, exc);
+					this._decorate_exception(exc);
 				throw exc;
 			}
 		}
@@ -5070,9 +4987,9 @@
 
 	ul4.SeqItemAST = class SeqItemAST extends ul4.ItemArgBase
 	{
-		constructor(tag, pos, value)
+		constructor(template, pos, value)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.value = value;
 		}
 
@@ -5100,9 +5017,9 @@
 
 	ul4.UnpackSeqItemAST = class UnpackSeqItemAST extends ul4.ItemArgBase
 	{
-		constructor(tag, pos, value)
+		constructor(template, pos, value)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.value = value;
 		}
 
@@ -5142,9 +5059,9 @@
 
 	ul4.DictItemAST = class DictItemAST extends ul4.ItemArgBase
 	{
-		constructor(tag, pos, key, value)
+		constructor(template, pos, key, value)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.key = key;
 			this.value = value;
 		}
@@ -5170,9 +5087,9 @@
 
 	ul4.UnpackDictItemAST = class UnpackDictItemAST extends ul4.ItemArgBase
 	{
-		constructor(tag, pos, item)
+		constructor(template, pos, item)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.item = item;
 		}
 
@@ -5212,9 +5129,9 @@
 
 	ul4.PosArgAST = class PosArgAST extends ul4.ItemArgBase
 	{
-		constructor(tag, pos, value)
+		constructor(template, pos, value)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.value = value;
 		}
 
@@ -5236,9 +5153,9 @@
 
 	ul4.KeywordArgAST = class KeywordArgAST extends ul4.ItemArgBase
 	{
-		constructor(tag, pos, name, value)
+		constructor(template, pos, name, value)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.name = name;
 			this.value = value;
 		}
@@ -5265,9 +5182,9 @@
 
 	ul4.UnpackListArgAST = class UnpackListArgAST extends ul4.ItemArgBase
 	{
-		constructor(tag, pos, item)
+		constructor(template, pos, item)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.item = item;
 		}
 
@@ -5289,9 +5206,9 @@
 
 	ul4.UnpackDictArgAST = class UnpackDictArgAST extends ul4.ItemArgBase
 	{
-		constructor(tag, pos, item)
+		constructor(template, pos, item)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.item = item;
 		}
 
@@ -5342,9 +5259,9 @@
 
 	ul4.ListAST = class ListAST extends ul4.CodeAST
 	{
-		constructor(tag, pos)
+		constructor(template, pos)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.items = [];
 		}
 
@@ -5372,9 +5289,9 @@
 
 	ul4.ListCompAST = class ListCompAST extends ul4.CodeAST
 	{
-		constructor(tag, pos, item, varname, container, condition)
+		constructor(template, pos, item, varname, container, condition)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.item = item;
 			this.varname = varname;
 			this.container = container;
@@ -5424,9 +5341,9 @@
 
 	ul4.SetAST = class SetAST extends ul4.CodeAST
 	{
-		constructor(tag, pos)
+		constructor(template, pos)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.items = [];
 		}
 
@@ -5456,9 +5373,9 @@
 
 	ul4.SetCompAST = class SetCompAST extends ul4.CodeAST
 	{
-		constructor(tag, pos, item, varname, container, condition)
+		constructor(template, pos, item, varname, container, condition)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.item = item;
 			this.varname = varname;
 			this.container = container;
@@ -5526,9 +5443,9 @@
 
 	ul4.DictAST = class DictAST extends ul4.CodeAST
 	{
-		constructor(tag, pos)
+		constructor(template, pos)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.items = [];
 		}
 
@@ -5567,9 +5484,9 @@
 
 	ul4.DictCompAST = class DictCompAST extends ul4.CodeAST
 	{
-		constructor(tag, pos, key, value, varname, container, condition)
+		constructor(template, pos, key, value, varname, container, condition)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.key = key;
 			this.value = value;
 			this.varname = varname;
@@ -5628,9 +5545,9 @@
 
 	ul4.GenExprAST = class GenExprAST extends ul4.CodeAST
 	{
-		constructor(tag, pos, item, varname, container, condition)
+		constructor(template, pos, item, varname, container, condition)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.item = item;
 			this.varname = varname;
 			this.container = container;
@@ -5690,9 +5607,9 @@
 
 	ul4.VarAST = class VarAST extends ul4.CodeAST
 	{
-		constructor(tag, pos, name)
+		constructor(template, pos, name)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.name = name;
 		}
 
@@ -5742,9 +5659,9 @@
 
 	ul4.UnaryAST = class UnaryAST extends ul4.CodeAST
 	{
-		constructor(tag, pos, obj)
+		constructor(template, pos, obj)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.obj = obj;
 		}
 
@@ -5798,9 +5715,9 @@
 	// If expression
 	ul4.IfAST = class IfAST extends ul4.CodeAST
 	{
-		constructor(tag, pos, objif, objcond, objelse)
+		constructor(template, pos, objif, objcond, objelse)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.objif = objif;
 			this.objcond = objcond;
 			this.objelse = objelse;
@@ -5886,9 +5803,9 @@
 
 	ul4.BinaryAST = class BinaryAST extends ul4.CodeAST
 	{
-		constructor(tag, pos, obj1, obj2)
+		constructor(template, pos, obj1, obj2)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.obj1 = obj1;
 			this.obj2 = obj2;
 		}
@@ -6502,9 +6419,9 @@
 
 	ul4.AttrAST = class AttrAST extends ul4.CodeAST
 	{
-		constructor(tag, pos, obj, attrname)
+		constructor(template, pos, obj, attrname)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.obj = obj;
 			this.attrname = attrname;
 		}
@@ -6578,9 +6495,9 @@
 
 	ul4.CallAST = class CallAST extends ul4.CodeAST
 	{
-		constructor(tag, pos, obj, args)
+		constructor(template, pos, obj, args)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.obj = obj;
 			this.args = args;
 		}
@@ -6614,7 +6531,8 @@
 			}
 			catch (exc)
 			{
-				throw new ul4.LocationError(this, exc);
+				this._decorate_exception(exc);
+				throw exc;
 			}
 		}
 
@@ -6631,9 +6549,9 @@
 
 	ul4.RenderAST = class RenderAST extends ul4.CallAST
 	{
-		constructor(tag, pos, obj, args)
+		constructor(template, pos, obj, args)
 		{
-			super(tag, pos, obj, args);
+			super(template, pos, obj, args);
 			this.indent = null;
 		}
 
@@ -6664,13 +6582,13 @@
 			if (this.indent !== null)
 			{
 				out.push(" with indent ");
-				out.push(ul4._repr(this.indent._text()));
+				out.push(ul4._repr(this.indent.text));
 			}
 		}
 
 		_handle_eval(context)
 		{
-			let localcontext = context.withindent(this.indent !== null ? this.indent._text() : null);
+			let localcontext = context.withindent(this.indent !== null ? this.indent.text : null);
 			let obj = this.obj._handle_eval(localcontext);
 			let args = this._makeargs(localcontext);
 			this._handle_additional_arguments(localcontext, args);
@@ -6682,7 +6600,8 @@
 			}
 			catch (exc)
 			{
-				throw new ul4.LocationError(this, exc);
+				this._decorate_exception(exc);
+				throw exc;
 			}
 		}
 
@@ -6724,7 +6643,7 @@
 		}
 	};
 
-	ul4.RenderBlockAST.prototype._ul4onattrs = ul4.RenderAST.prototype._ul4onattrs.concat(["endtag", "content"]);
+	ul4.RenderBlockAST.prototype._ul4onattrs = ul4.RenderAST.prototype._ul4onattrs.concat(["content"]);
 
 	ul4.RenderBlocksAST = class RenderBlocksAST extends ul4.RenderAST
 	{
@@ -6745,7 +6664,7 @@
 		}
 	};
 
-	ul4.RenderBlocksAST.prototype._ul4onattrs = ul4.RenderAST.prototype._ul4onattrs.concat(["endtag", "content"]);
+	ul4.RenderBlocksAST.prototype._ul4onattrs = ul4.RenderAST.prototype._ul4onattrs.concat(["content"]);
 
 	// Slice object
 	ul4.slice = class slice extends ul4.Proto
@@ -6755,6 +6674,13 @@
 			super();
 			this.start = start;
 			this.stop = stop;
+		}
+
+		of(string)
+		{
+			let start = this.start || 0;
+			let stop = this.stop === null ? string.length : this.stop;
+			return string.slice(start, stop);
 		}
 
 		__repr__()
@@ -6780,9 +6706,9 @@
 	// List/String slice
 	ul4.SliceAST = class SliceAST extends ul4.CodeAST
 	{
-		constructor(tag, pos, index1, index2)
+		constructor(template, pos, index1, index2)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.index1 = index1;
 			this.index2 = index2;
 		}
@@ -6815,9 +6741,9 @@
 
 	ul4.SetVarAST = class SetVarAST extends ul4.CodeAST
 	{
-		constructor(tag, pos, lvalue, value)
+		constructor(template, pos, lvalue, value)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.lvalue = lvalue;
 			this.value = value;
 		}
@@ -6923,10 +6849,9 @@
 
 	ul4.BlockAST = class BlockAST extends ul4.CodeAST
 	{
-		constructor(tag, pos)
+		constructor(template, pos)
 		{
-			super(tag, pos);
-			this.endtag = null;
+			super(template, pos);
 			this.content = [];
 		}
 
@@ -6954,13 +6879,13 @@
 		}
 	};
 
-	ul4.BlockAST.prototype._ul4onattrs = ul4.CodeAST.prototype._ul4onattrs.concat(["endtag", "content"]);
+	ul4.BlockAST.prototype._ul4onattrs = ul4.CodeAST.prototype._ul4onattrs.concat(["content"]);
 
 	ul4.ForBlockAST = class ForBlockAST extends ul4.BlockAST
 	{
-		constructor(tag, pos, varname, container)
+		constructor(template, pos, varname, container)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.varname = varname;
 			this.container = container;
 		}
@@ -7041,9 +6966,9 @@
 
 	ul4.WhileBlockAST = class WhileBlockAST extends ul4.BlockAST
 	{
-		constructor(tag, pos, condition)
+		constructor(template, pos, condition)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.condition = condition;
 		}
 
@@ -7149,9 +7074,9 @@
 
 	ul4.ConditionalBlockAST = class ConditionalBlockAST extends  ul4.BlockAST
 	{
-		constructor(tag, pos, condition)
+		constructor(template, pos, condition)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.condition = condition;
 		}
 
@@ -7221,10 +7146,10 @@
 
 	ul4.Template = class Template extends ul4.BlockAST
 	{
-		constructor(tag, pos, source, name, whitespace, startdelim, enddelim, signature)
+		constructor(template, pos, source, name, whitespace, startdelim, enddelim, signature)
 		{
-			super(tag, pos);
-			this.source = source;
+			super(template, pos);
+			this._source = source;
 			this.name = name;
 			this.whitespace = whitespace;
 			this.startdelim = startdelim;
@@ -7242,10 +7167,6 @@
 			let self = this;
 			switch (attrname)
 			{
-				case "tag":
-					return this.tag;
-				case "endtag":
-					return this.endtag;
 				case "content":
 					return this.content;
 				case "source":
@@ -7273,7 +7194,7 @@
 					ul4.expose(renders, this.signature, {needscontext: true, needsobject: true});
 					return renders;
 				default:
-					throw new ul4.AttributeError(this, attrname);
+					return super.__getattr__(attrname);
 			}
 		}
 
@@ -7282,7 +7203,7 @@
 			let signature;
 			encoder.dump(ul4.version);
 			encoder.dump(this.name);
-			encoder.dump(this.source);
+			encoder.dump(this._source);
 			encoder.dump(this.whitespace);
 			encoder.dump(this.startdelim);
 			encoder.dump(this.enddelim);
@@ -7321,7 +7242,7 @@
 				throw new ul4.ValueError("invalid version, expected " + ul4.version + ", got " + version);
 
 			this.name = decoder.load();
-			this.source = decoder.load();
+			this._source = decoder.load();
 			this.whitespace = decoder.load();
 			this.startdelim = decoder.load();
 			this.enddelim = decoder.load();
@@ -7426,7 +7347,7 @@
 
 		doc()
 		{
-			return this.docpos != null ? this.source.substring(this.docpos.start, this.docpos.stop) : null;
+			return this.docpos != null ? this.docpos.of(this._source) : null;
 		}
 
 		_callbound(context, vars)
@@ -7474,9 +7395,9 @@
 
 	ul4.SignatureAST = class SignatureAST extends ul4.CodeAST
 	{
-		constructor(tag, pos)
+		constructor(template, pos)
 		{
-			super(tag, pos);
+			super(template, pos);
 			this.params = [];
 		}
 
@@ -7550,7 +7471,7 @@
 			this.name = template.name;
 			this.tag = template.tag;
 			this.endtag = template.endtag;
-			this.source = template.source;
+			this._source = template._source;
 			this.startdelim = template.startdelim;
 			this.enddelim = template.enddelim;
 			this.docpos = template.docpos;
@@ -7811,7 +7732,7 @@
 				let res = ul4._cmp("<=>", s1[0], s2[0]);
 				if (res)
 					return reverse ? -res : res;
-				res = ul4._cmp(s1[1], s2[1]);
+				res = ul4._cmp("<=>", s1[1], s2[1]);
 				return reverse ? -res : res;
 			};
 
@@ -9490,7 +9411,6 @@
 		ul4.TextAST,
 		ul4.IndentAST,
 		ul4.LineEndAST,
-		ul4.Tag,
 		ul4.ConstAST,
 		ul4.SeqItemAST,
 		ul4.UnpackSeqItemAST,
