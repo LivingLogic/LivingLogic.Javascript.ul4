@@ -1877,7 +1877,7 @@
 			result += ul4._lpad(hour.toString(), "0", 2) + ":" + ul4._lpad(minute.toString(), "0", 2);
 			if (second || ms)
 			{
-				result += ":" + ul4._lpad(second.toString(), "0", 2)
+				result += ":" + ul4._lpad(second.toString(), "0", 2);
 				if (ms)
 					result += "." + ul4._lpad(ms.toString(), "0", 3) + "000";
 			}
@@ -2029,7 +2029,7 @@
 		let result = year + "-" + ul4._lpad(month.toString(), "0", 2) + "-" + ul4._lpad(day.toString(), "0", 2) + " " + ul4._lpad(hour.toString(), "0", 2) + ":" + ul4._lpad(minute.toString(), "0", 2);
 		if (second || ms)
 		{
-			result += ":" + ul4._lpad(second.toString(), "0", 2)
+			result += ":" + ul4._lpad(second.toString(), "0", 2);
 			if (ms)
 				result += "." + ul4._lpad(ms.toString(), "0", 3) + "000";
 		}
@@ -2358,7 +2358,7 @@
 	ul4._isdate = function _isdate(obj)
 	{
 		return (obj instanceof ul4.Date);
-	}
+	};
 
 	// Check if ``obj`` is a color
 	ul4._iscolor = function _iscolor(obj)
@@ -6169,7 +6169,7 @@
 		{
 			return this._do(obj1, obj2);
 		}
-	}
+	};
 
 
 	// Multiplication: num * num, int * str, str * int, int * list, list * int
