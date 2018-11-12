@@ -4685,12 +4685,19 @@
 			return this.pos.of(this.template._source);
 		}
 
+		get fullsource()
+		{
+			return this.template._source;
+		}
+
 		__getattr__(attrname)
 		{
 			if (attrname === "type")
 				return this.type;
 			else if (attrname === "source")
 				return this.source;
+			else if (attrname === "fullsource")
+				return this.fullsource;
 			else if (this._ul4onattrs.indexOf(attrname) >= 0)
 				return this[attrname];
 			throw new ul4.AttributeError(this, attrname);
