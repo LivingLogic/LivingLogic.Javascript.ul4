@@ -4609,48 +4609,18 @@
 		{
 			let template = this.location.template;
 			let templateprefix = this._templateprefix();
-			let outerstartpos = this.location.pos.start;
-			let innerstartpos = outerstartpos;
-			let outerstoppos = this.location.pos.stop;
-			let innerstoppos = outerstoppos;
 
-			let maxprefix = 40;
-			while (maxprefix > 0 && outerstartpos > 0 && template.source.charAt(outerstartpos-1) != "\n")
-			{
-				maxprefix--;
-				outerstartpos--;
-			}
-
-			let maxsuffix = 40;
-			while (maxsuffix > 0 && outerstartpos < template.source.length-1 && template.source.charAt(outerstoppos) != "\n")
-			{
-				maxsuffix--;
-				outerstoppos++;
-			}
-
-			let prefix = template.source.substring(outerstartpos, innerstartpos);
-			let code = template.source.substring(innerstartpos, innerstoppos);
-			let suffix = template.source.substring(innerstoppos, outerstoppos);
+			let prefix = this.location.sourceprefix;
+			let code = this.location.source;
+			let suffix = this.location.sourcesuffix;
 			prefix = ul4._repr(prefix).slice(1, -1);
 			code = ul4._repr(code).slice(1, -1);
 			suffix = ul4._repr(suffix).slice(1, -1);
+
 			let text = prefix + code + suffix;
 			let underline = ul4._str_repeat("\u00a0", prefix.length) + ul4._str_repeat("~", code.length);
 
-			// find line numbers
-			let lineno = 1, colno = 1;
-			for (let i = 0; i < innerstartpos; ++i)
-			{
-				if (template.source[i] === "\n")
-				{
-					++lineno;
-					colno = 1;
-				}
-				else
-					++colno;
-			}
-
-			pos = "offset " + this.location.pos.start + ":" + this.location.pos.stop + "; line " + lineno + "; col " + colno;
+			let pos = "offset " + this.location.pos.start + ":" + this.location.pos.stop + "; line " + this.location.line + "; col " + this.location.col;
 
 			let message = templateprefix + ": " + pos + "\n" + text + "\n" + underline;
 			return message;
@@ -4678,11 +4648,8 @@
 			super();
 			this.template = template;
 			this.pos = pos;
-		}
-
-		get source()
-		{
-			return this.pos.of(this.template._source);
+			this._line = null;
+			this._col = null;
 		}
 
 		get fullsource()
@@ -4690,14 +4657,102 @@
 			return this.template._source;
 		}
 
+		get source()
+		{
+			return this.pos.of(this.template._source);
+		}
+
+		get sourceprefix()
+		{
+			let outerstartpos = this.pos.start;
+			let innerstartpos = outerstartpos;
+			let source = this.fullsource;
+
+			let maxprefix = 40;
+			let preprefix = "\u2026";
+			while (maxprefix > 0)
+			{
+				// We arrived at the start of the source code
+				if (outerstartpos === 0)
+				{
+					preprefix = "";
+					break;
+				}
+				// We arrived at the start of the line
+				if (source.charAt(outerstartpos-1) === "\n")
+				{
+					preprefix = "";
+					break;
+				}
+				--maxprefix;
+				--outerstartpos;
+			}
+			return preprefix + source.substring(outerstartpos, innerstartpos);
+		}
+
+		get sourcesuffix()
+		{
+			let outerstoppos = this.pos.stop;
+			let innerstoppos = outerstoppos;
+			let source = this.fullsource;
+
+			let maxsuffix = 40;
+			let postsuffix = "\u2026";
+			while (maxsuffix > 0)
+			{
+				// We arrived at the ed of the source code
+				if (outerstoppos >= source.length)
+				{
+					postsuffix = "";
+					break;
+				}
+				// We arrived at the end of the line
+				if (source.charAt(outerstoppos) === "\n")
+				{
+					postsuffix = "";
+					break;
+				}
+				--maxsuffix;
+				++outerstoppos;
+			}
+			return source.substring(innerstoppos, outerstoppos) + postsuffix;
+		}
+
+		get line()
+		{
+			if (this._line === null)
+				this._calculateLineCol();
+			return this._line;
+		}
+
+		get col()
+		{
+			if (this._col === null)
+				this._calculateLineCol();
+			return this._col;
+		}
+
+		_calculateLineCol()
+		{
+			this._line = 1
+			this._col = 1;
+			let stop = this.pos.start;
+			for (let i = 0; i < stop; ++i)
+			{
+				if (this.template.source[i] === "\n")
+				{
+					++this._line;
+					this._col = 1;
+				}
+				else
+					++this._col;
+			}
+		}
+
 		__getattr__(attrname)
 		{
-			if (attrname === "type")
-				return this.type;
-			else if (attrname === "source")
-				return this.source;
-			else if (attrname === "fullsource")
-				return this.fullsource;
+			if (attrname === "type" || attrname === "fullsource" || attrname === "source" || attrname === "sourceprefix" || attrname === "sourcesuffix" || attrname === "line" || attrname === "col")
+				return this[attrname];
 			else if (this._ul4onattrs.indexOf(attrname) >= 0)
 				return this[attrname];
 			throw new ul4.AttributeError(this, attrname);
@@ -6692,7 +6747,7 @@
 
 		__repr__()
 		{
-			return "slice(" + ul4._repr(this.start) + ", " + ul4._repr(this.stop) + ")";
+			return "slice(" + ul4._repr(this.start) + ", " + ul4._repr(this.stop) + ", None)";
 		}
 
 		__getattr__(attrname)
