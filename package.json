@@ -1,7 +1,7 @@
 {
 	"name": "ul4",
 	"version": "0.46.4",
-	"description": "Javascript implementation of UL4",
+	"description": "Cross-platform templating library and object serialisation",
 	"keywords": [
 		"UL4",
 		"UL4ON",
