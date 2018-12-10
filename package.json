@@ -8,7 +8,7 @@
 		"templating",
 		"serialization"
 	],
-	"homepage": "https://python.livinglogic.de/",
+	"homepage": "http://python.livinglogic.de/",
 	"license": "MIT",
 	"repository": {
 		"type": "git",
