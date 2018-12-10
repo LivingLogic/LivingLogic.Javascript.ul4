@@ -1,6 +1,6 @@
 {
 	"name": "ul4",
-	"version": "0.46.7",
+	"version": "0.46.8",
 	"description": "Cross-platform templating library and object serialisation",
 	"keywords": [
 		"UL4",
@@ -34,7 +34,6 @@
 		"babel-plugin-transform-object-rest-spread": "^6.26.0"
 	},
 	"dependencies": {
-		"blueimp-md5": "^2.10.0",
-		"babel-polyfill": "^6.26.0"
+		"blueimp-md5": "^2.10.0"
 	}
 }
