@@ -953,7 +953,7 @@
 					else
 						return false;
 				}
-				// Test that each attribute of ``obj2`` is alos in ``obj1`` (the value has been tested before)
+				// Test that each attribute of ``obj2`` is also in ``obj1`` (the value has been tested before)
 				for (let key in obj2)
 				{
 					if (!obj1.hasOwnProperty(key))
@@ -974,7 +974,7 @@
 					else
 						return false;
 				}
-				// Test that each attribute of ``obj2`` is alos in ``obj1`` (the value has been tested before)
+				// Test that each attribute of ``obj2`` is also in ``obj1`` (the value has been tested before)
 				let result = true;
 				for (let key of obj2.keys())
 				{
@@ -997,8 +997,8 @@
 						return false;
 					else if (!ul4._eq(obj1.get(key), obj2[key]))
 						return false;
-				}
-				// Test that each attribute of ``obj2`` is alos in ``obj1`` (the value has been tested before)
+				}, this);
+				// Test that each attribute of ``obj2`` is also in ``obj1`` (the value has been tested before)
 				for (let key in obj2)
 				{
 					if (!obj1.has(key))
