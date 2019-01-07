@@ -22,6 +22,7 @@
 		"@babel/plugin-transform-spread",
 		"@babel/plugin-transform-literals",
 		"@babel/plugin-transform-for-of",
-		"@babel/plugin-transform-destructuring"
+		"@babel/plugin-transform-destructuring",
+		"@babel/plugin-transform-object-assign"
 	]
 }
