@@ -8972,7 +8972,7 @@
 	ul4.expose(ul4.Color.prototype.witha, ["a"]);
 	ul4.expose(ul4.Color.prototype.withlum, ["lum"]);
 
-	_js_Date = Date;
+	const _js_Date = Date;
 
 	ul4.Date = class Date extends ul4.Proto
 	{
