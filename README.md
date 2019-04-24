@@ -53,7 +53,7 @@ now you can use the Javascript variable `ul4`.
 
 # Changes
 
-## Changes 0.46.12
+## Changes in 0.46.12
 
 Fixed the variable `_js_Date` (which should be a local variable).
 
