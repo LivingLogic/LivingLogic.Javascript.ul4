@@ -1,5 +1,5 @@
 {
-	"name": "ul4",
+	"name": "@livinglogic/ul4",
 	"version": "0.46.12",
 	"description": "Cross-platform templating library and object serialisation",
 	"keywords": [
@@ -12,7 +12,7 @@
 	"license": "MIT",
 	"repository": {
 		"type": "git",
-		"url": "github:LivingLogic/LivingLogic.Javascript.ul4"
+		"url": "git+https://github.com/LivingLogic/LivingLogic.Javascript.ul4.git"
 	},
 	"author": "Walter Doerwald",
 	"scripts": {
@@ -32,5 +32,8 @@
 	},
 	"dependencies": {
 		"blueimp-md5": "^2.10.0"
+	},
+	"bugs": {
+		"url": "https://github.com/LivingLogic/LivingLogic.Javascript.ul4/issues"
 	}
 }
