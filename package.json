@@ -18,6 +18,8 @@
 	"scripts": {
 		"build": "npx babel src --source-maps=true --out-dir dist/es2015/ && rollup -c"
 	},
+	"main": "dist/ul4.js",
+	"module": "dist/es2015/ul4.js",
 	"devDependencies": {
 		"@babel/cli": "^7.2.0",
 		"@babel/core": "^7.2.0",
