@@ -50,13 +50,15 @@ In your HTML include the following:
 
 now you can use the Javascript variable `ul4`.
 
+Or if you want to use UL4 as a module do
 
-# Changes
+```html
+<script type="module">
+	import * as ul4 from './{path}/dist/ul4.js';
 
-## Changes in 0.46.12 (2019-04-24)
-
-Fixed the variable `_js_Date` (which should be a local variable).
-
+	...
+</script>
+```
 
 # Authors
 

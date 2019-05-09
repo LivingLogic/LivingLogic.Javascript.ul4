@@ -1,5 +1,5 @@
 {
-	"compact": true,
+	"compact": false,
 	"comments": false,
 	"presets": [
 		[
@@ -24,5 +24,6 @@
 		"@babel/plugin-transform-for-of",
 		"@babel/plugin-transform-destructuring",
 		"@babel/plugin-transform-object-assign"
-	]
+	],
+	"moduleId": "ul4"
 }
