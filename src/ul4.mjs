@@ -88,11 +88,8 @@ if (_havemap)
 	{
 		let map = new Map();
 
-		for (let i = 0; i < items.length; ++i)
-		{
-			let [key, value] = items[i];
+		for (let [key, value] of items)
 			map.set(key, value);
-		}
 		return map;
 	};
 
@@ -123,11 +120,8 @@ else
 	{
 		let map = {};
 
-		for (let i = 0; i < items.length; ++i)
-		{
-			let [key, value] = items[i];
+		for (let [key, value] of items)
 			map[key] = value;
-		}
 		return map;
 	};
 
@@ -169,8 +163,8 @@ export let _makeset = function _makeset(...items)
 {
 	let set = _emptyset();
 
-	for (let i = 0; i < items.length; ++i)
-		set.add(items[i]);
+	for (let item of items)
+		set.add(item);
 	return set;
 };
 
@@ -230,8 +224,8 @@ export class Encoder
 		{
 			let oldindent = this.indent;
 			this.indent = null;
-			for (let i = 0; i < args.length; ++i)
-				this.dump(args[i]);
+			for (let arg of args)
+				this.dump(arg);
 			this.indent = oldindent;
 		}
 
@@ -304,8 +298,8 @@ export class Encoder
 		{
 			this._line("l");
 			++this._level;
-			for (let i = 0; i < obj.length; ++i)
-				this.dump(obj[i]);
+			for (let item of obj)
+				this.dump(item);
 			--this._level;
 			this._line("]");
 		}
@@ -840,9 +834,8 @@ export function _formatsource(out)
 {
 	let finalout = [];
 	let level = 0, needlf = false;
-	for (let i = 0; i < out.length; ++i)
+	for (let part of out)
 	{
-		let part = out[i];
 		if (typeof(part) === "number")
 		{
 			level += part;
@@ -1748,9 +1741,8 @@ function _str_repr(str, ascii)
 	let result = "";
 	let squote = false, dquote = false;
 
-	for (let i = 0; i < str.length; ++i)
+	for (let c of str)
 	{
-		let c = str[i];
 		if (c == '"')
 		{
 			dquote = true;
@@ -1768,9 +1760,8 @@ function _str_repr(str, ascii)
 	// Prefer single quotes: Only use double quotes if the string contains single quotes, but no double quotes
 	let quote = (squote && !dquote) ? '"' : "'";
 
-	for (let i = 0; i < str.length; ++i)
+	for (let c of str)
 	{
-		let c = str[i];
 		switch (c)
 		{
 			case '"':
@@ -1878,10 +1869,12 @@ function _list_repr(obj, ascii)
 {
 	let v = [];
 	v.push("[");
-	for (let i = 0; i < obj.length; ++i)
+	let first = true;
+	for (let item of obj)
 	{
-		let item = obj[i];
-		if (i)
+		if (first)
+			first = false;
+		else
 			v.push(", ");
 		v.push(_repr_internal(item, ascii));
 	}
@@ -2228,9 +2221,9 @@ export function _any(iterable)
 {
 	if (typeof(iterable) == "string")
 	{
-		for (let i = 0; i < iterable.length; ++i)
+		for (let c of iterable)
 		{
-			if (iterable[i] !== '\x00')
+			if (c !== '\x00')
 				return true;
 		}
 		return false;
@@ -2253,9 +2246,9 @@ export function _all(iterable)
 {
 	if (typeof(iterable) == "string")
 	{
-		for (let i = 0; i < iterable.length; ++i)
+		for (let c of iterable)
 		{
-			if (iterable[i] === '\x00')
+			if (c === '\x00')
 				return false;
 		}
 		return true;
@@ -2434,17 +2427,16 @@ export function _list_repeat(list, rep)
 {
 	let result = [];
 	for (; rep>0; --rep)
-		for (let i = 0; i < list.length; ++i)
-			result.push(list[i]);
+		for (let item of list)
+			result.push(item);
 	return result;
 };
 
 function _str_json(str)
 {
 	let result = "";
-	for (let i = 0; i < str.length; ++i)
+	for (let c of str)
 	{
-		let c = str[i];
 		switch (c)
 		{
 			case "\r":
@@ -2498,11 +2490,14 @@ export function _asjson(obj)
 	{
 		let v = [];
 		v.push("[");
-		for (let i = 0; i < obj.length; ++i)
+		let first = true;
+		for (let item of obj)
 		{
-			if (i != 0)
+			if (first)
+				first = false;
+			else
 				v.push(", ");
-			v.push(_asjson(obj[i]));
+			v.push(_asjson(item));
 		}
 		v.push("]");
 		return v.join("");
@@ -2511,9 +2506,11 @@ export function _asjson(obj)
 	{
 		let v = [];
 		v.push("{");
-		let i = 0;
+		let first = true;
 		obj.forEach(function(value, key) {
-			if (i++)
+			if (first)
+				first = false;
+			else
 				v.push(", ");
 			v.push(_asjson(key));
 			v.push(": ");
@@ -2526,10 +2523,12 @@ export function _asjson(obj)
 	{
 		let v = [];
 		v.push("{");
-		let i = 0;
+		let first = true;
 		for (let key in obj)
 		{
-			if (i++)
+			if (first)
+				first = false;
+			else
 				v.push(", ");
 			v.push(_asjson(key));
 			v.push(": ");
@@ -2787,9 +2786,8 @@ function _format_datetime(obj, fmt, lang)
 
 	let result = [];
 	let inspec = false;
-	for (let i = 0; i < fmt.length; ++i)
+	for (let c of fmt)
 	{
-		let c = fmt[i];
 		if (inspec)
 		{
 			switch (c)
@@ -3127,9 +3125,8 @@ export class Signature extends Proto
 
 		let nextDefault = false;
 		let lastArgname = null;
-		for (let i = 0; i < args.length; ++i)
+		for (let argName of args)
 		{
-			let argName = args[i];
 			if (nextDefault)
 			{
 				this.args.push({name: lastArgname, defaultValue: argName});
@@ -3162,9 +3159,9 @@ export class Signature extends Proto
 		let finalargs = [];
 		let decname = name !== null ? name + "() " : "";
 
-		for (let i = 0; i < this.args.length; ++i)
+		let i = 0;
+		for (let arg of this.args)
 		{
-			let arg = this.args[i];
 			if (i < args.length)
 			{
 				if (kwargs.hasOwnProperty(arg.name))
@@ -3183,6 +3180,7 @@ export class Signature extends Proto
 						throw new ArgumentError("required " + decname + "argument " + _repr(arg.name) + " (position " + i + ") missing");
 				}
 			}
+			++i;
 		}
 
 		// Do we accept additional positional arguments?
@@ -3259,9 +3257,8 @@ export class Signature extends Proto
 	toString()
 	{
 		let v = [];
-		for (let i = 0; i < this.args.length; ++i)
+		for (let arg of this.args)
 		{
-			let arg = this.args[i];
 			if (arg.hasOwnProperty("defaultValue"))
 				v.push(arg.name + "=" + _repr(arg.defaultValue));
 			else
@@ -3286,8 +3283,8 @@ export class _Set
 
 	add(...items)
 	{
-		for (let i = 0; i < items.length; ++i)
-			this.items[items[i]] = true;
+		for (let item of items)
+			this.items[item] = true;
 	}
 
 	clear()
@@ -3829,9 +3826,8 @@ export let StrProtocol = _extend(Protocol,
 			return obj.substr(0, prefix.length) === prefix;
 		else if (_islist(prefix))
 		{
-			for (let i = 0; i < prefix.length; ++i)
+			for (let singlepre of prefix)
 			{
-				let singlepre = prefix[i];
 				if (obj.substr(0, singlepre.length) === singlepre)
 					return true;
 			}
@@ -3847,9 +3843,8 @@ export let StrProtocol = _extend(Protocol,
 			return obj.substr(obj.length-suffix.length) === suffix;
 		else if (_islist(suffix))
 		{
-			for (let i = 0; i < suffix.length; ++i)
+			for (let singlesuf of suffix)
 			{
-				let singlesuf = suffix[i];
 				if (obj.substr(obj.length-singlesuf.length) === singlesuf)
 					return true;
 			}
@@ -3896,8 +3891,8 @@ export let ListProtocol = _extend(Protocol,
 
 	append: function append(obj, items)
 	{
-		for (let i = 0; i < items.length; ++i)
-			obj.push(items[i]);
+		for (let item of items)
+			obj.push(item);
 		return null;
 	},
 
@@ -3906,8 +3901,8 @@ export let ListProtocol = _extend(Protocol,
 		if (pos < 0)
 			pos += obj.length;
 
-		for (let i = 0; i < items.length; ++i)
-			obj.splice(pos++, 0, items[i]);
+		for (let item of items)
+			obj.splice(pos++, 0, item);
 		return null;
 	},
 
@@ -4027,10 +4022,8 @@ export let SetProtocol = _extend(Protocol,
 
 	add: function add(obj, items)
 	{
-		for (let i = 0; i < items.length; ++i)
-		{
-			obj.add(items[i]);
-		}
+		for (let item of items)
+			obj.add(item);
 	},
 
 	clear: function clear(obj)
@@ -4413,11 +4406,8 @@ export class Context
 
 	output(value)
 	{
-		for (let i = 0; i < this.escapes.length; ++i)
-		{
-			let escape = this.escapes[i];
+		for (let escape of this.escapes)
 			value = escape(value);
-		}
 		this._output.push(value);
 	}
 
@@ -4443,7 +4433,10 @@ export class Context
 export function Exception(message, fileName, lineNumber)
 {
 	let instance = new Error(message, fileName, lineNumber);
-	Object.setPrototypeOf(instance, Object.getPrototypeOf(this));
+	if (Object.setPrototypeOf)
+		Object.setPrototypeOf(instance, Object.getPrototypeOf(this));
+	else
+		instance.__proto = this;
 	instance.__id__ = _nextid++;
 	instance.context = null;
 	return instance;
@@ -4849,20 +4842,14 @@ export class AST extends Proto
 
 	ul4ondump(encoder)
 	{
-		for (let i = 0; i < this._ul4onattrs.length; ++i)
-		{
-			let attrname = this._ul4onattrs[i];
+		for (let attrname of this._ul4onattrs)
 			encoder.dump(this[attrname]);
-		}
 	}
 
 	ul4onload(decoder)
 	{
-		for (let i = 0; i < this._ul4onattrs.length; ++i)
-		{
-			let attrname = this._ul4onattrs[i];
+		for (let attrname of this._ul4onattrs)
 			this[attrname] = decoder.load();
-		}
 	}
 };
 
@@ -4918,11 +4905,8 @@ export class IndentAST extends TextAST
 
 	_eval(context)
 	{
-		for (let i = 0; i < context.indents.length; ++i)
-		{
-			let indent = context.indents[i];
+		for (let indent of context.indents)
 			context.output(indent);
-		}
 		context.output(this.text);
 	}
 
@@ -5178,9 +5162,8 @@ export class UnpackDictItemAST extends ItemArgBase
 		let item = this.item._handle_eval(context);
 		if (_islist(item))
 		{
-			for (let i = 0; i < item.length; ++i)
+			for (let subitem of item)
 			{
-				let subitem = item[i];
 				if (!_islist(subitem) || subitem.length != 2)
 					throw new ArgumentError("** requires a list of (key, value) pairs");
 				_setmap(result, subitem[0], subitem[1]);
@@ -5299,9 +5282,8 @@ export class UnpackDictArgAST extends ItemArgBase
 		let item = this.item._handle_eval(context);
 		if (_islist(item))
 		{
-			for (let i = 0; i < item.length; ++i)
+			for (let subitem of item)
 			{
-				let subitem = item[i];
 				if (!_islist(subitem) || subitem.length != 2)
 					throw new ArgumentError("** requires a list of (key, value) pairs");
 				let [key, value] = subitem;
@@ -5343,9 +5325,8 @@ export class ListAST extends CodeAST
 	_repr(out)
 	{
 		out.push("<ListAST");
-		for (let i = 0; i < this.items.length; ++i)
+		for (let item of this.items)
 		{
-			let item = this.items[i];
 			out.push(" ");
 			item._repr(out);
 		}
@@ -5355,11 +5336,8 @@ export class ListAST extends CodeAST
 	_eval(context)
 	{
 		let result = [];
-		for (let i = 0; i < this.items.length; ++i)
-		{
-			let item = this.items[i];
+		for (let item of this.items)
 			item._handle_eval_list(context, result);
-		}
 		return result;
 	}
 };
@@ -5407,11 +5385,8 @@ export class ListCompAST extends CodeAST
 			if (item.done)
 				break;
 			let varitems = _unpackvar(this.varname, item.value);
-			for (let i = 0; i < varitems.length; ++i)
-			{
-				let [lvalue, value] = varitems[i];
+			for (let [lvalue, value] of varitems)
 				lvalue._handle_eval_set(localcontext, value);
-			}
 			if (this.condition === null || _bool(this.condition._handle_eval(localcontext)))
 				result.push(this.item._handle_eval(localcontext));
 		}
@@ -5432,9 +5407,8 @@ export class SetAST extends CodeAST
 	_repr(out)
 	{
 		out.push("<SetAST");
-		for (let i = 0; i < this.items.length; ++i)
+		for (let item of this.items)
 		{
-			let item = this.items[i];
 			out.push(" ");
 			item._repr(out);
 		}
@@ -5445,11 +5419,8 @@ export class SetAST extends CodeAST
 	{
 		let result = _emptyset();
 
-		for (let i = 0; i < this.items.length; ++i)
-		{
-			let item = this.items[i];
+		for (let item of this.items)
 			item._handle_eval_set(context, result);
-		}
 
 		return result;
 	}
@@ -5515,11 +5486,8 @@ export class SetCompAST extends CodeAST
 			if (item.done)
 				break;
 			let varitems = _unpackvar(this.varname, item.value);
-			for (let i = 0; i < varitems.length; ++i)
-			{
-				let [lvalue, value] = varitems[i];
+			for (let [lvalue, value] of varitems)
 				lvalue._handle_eval_set(localcontext, value);
-			}
 			if (this.condition === null || _bool(this.condition._handle_eval(localcontext)))
 				result.add(this.item._handle_eval(localcontext));
 		}
@@ -5552,9 +5520,8 @@ export class DictAST extends CodeAST
 	_repr(out)
 	{
 		out.push("<DictAST");
-		for (let i = 0; i < this.items.length; ++i)
+		for (let item of this.items)
 		{
-			let item = this.items[i];
 			out.push(" ");
 			item._repr(out);
 		}
@@ -5564,11 +5531,8 @@ export class DictAST extends CodeAST
 	_eval(context)
 	{
 		let result = _emptymap();
-		for (let i = 0; i < this.items.length; ++i)
-		{
-			let item = this.items[i];
+		for (let item of this.items)
 			item._handle_eval_dict(context, result);
-		}
 		return result;
 	}
 };
@@ -5620,11 +5584,8 @@ export class DictCompAST extends CodeAST
 			if (item.done)
 				break;
 			let varitems = _unpackvar(this.varname, item.value);
-			for (let i = 0; i < varitems.length; ++i)
-			{
-				let [lvalue, value] = varitems[i];
+			for (let [lvalue, value] of varitems)
 				lvalue._handle_eval_set(localcontext, value);
-			}
 			if (this.condition === null || _bool(this.condition._handle_eval(localcontext)))
 			{
 				let key = this.key._handle_eval(localcontext);
@@ -5684,11 +5645,8 @@ export class GenExprAST extends CodeAST
 					if (item.done)
 						return item;
 					let varitems = _unpackvar(self.varname, item.value);
-					for (let i = 0; i < varitems.length; ++i)
-					{
-						let [lvalue, value] = varitems[i];
+					for (let [lvalue, value] of varitems)
 						lvalue._handle_eval_set(localcontext, value);
-					}
 					if (self.condition === null || _bool(self.condition._handle_eval(localcontext)))
 					{
 						let value = self.item._handle_eval(localcontext);
@@ -6606,9 +6564,8 @@ export class CallAST extends CodeAST
 		out.push("<CallAST");
 		out.push(" obj=");
 		this.obj._repr(out);
-		for (let i = 0; i < this.args.length; ++i)
+		for (let arg of this.args)
 		{
-			let arg = this.args[i];
 			out.push(" ");
 			arg._repr(out);
 		}
@@ -6618,11 +6575,8 @@ export class CallAST extends CodeAST
 	_makeargs(context)
 	{
 		let args = [], kwargs = {};
-		for (let i = 0; i < this.args.length; ++i)
-		{
-			let arg = this.args[i];
+		for (let arg of this.args)
 			arg._handle_eval_call(context, args, kwargs);
-		}
 		return {args: args, kwargs: kwargs};
 	}
 
@@ -6668,9 +6622,8 @@ export class RenderAST extends CallAST
 		out.push(" obj=");
 		this.obj._repr(out);
 		out.push(0);
-		for (let i = 0; i < this.args.length; ++i)
+		for (let arg of this.args)
 		{
-			let arg = this.args[i];
 			out.push(" ");
 			arg._repr(out);
 			out.push(0);
@@ -6867,11 +6820,8 @@ export class SetVarAST extends CodeAST
 	{
 		let value = this.value._handle_eval(context);
 		let items = _unpackvar(this.lvalue, value);
-		for (let i = 0; i < items.length; ++i)
-		{
-			let [lvalue, value] = items[i];
+		for (let [lvalue, value] of items)
 			lvalue._handle_eval_set(context, value);
-		}
 	}
 };
 
@@ -6883,11 +6833,8 @@ export class ModifyVarAST extends SetVarAST
 	{
 		let value = this.value._handle_eval(context);
 		let items = _unpackvar(this.lvalue, value);
-		for (let i = 0; i < items.length; ++i)
-		{
-			let [lvalue, value] = items[i];
+		for (let [lvalue, value] of items)
 			lvalue._handle_eval_modify(context, this._operator, value);
-		}
 	}
 };
 
@@ -6967,20 +6914,16 @@ export class BlockAST extends CodeAST
 
 	_eval(context)
 	{
-		for (let i = 0; i < this.content.length; ++i)
-		{
-			let item = this.content[i];
+		for (let item of this.content)
 			item._handle_eval(context);
-		}
 	}
 
 	_str(out)
 	{
 		if (this.content.length)
 		{
-			for (let i = 0; i < this.content.length; ++i)
+			for (let item of this.content)
 			{
-				let item = this.content[i];
 				item._str(out);
 				out.push(0);
 			}
@@ -7019,11 +6962,14 @@ export class ForBlockAST extends BlockAST
 		if (_islist(varname))
 		{
 			out.push("(");
-			for (let i = 0; i < varname.length; ++i)
+			let first = truel
+			for (let subname of varname)
 			{
-				if (i)
+				if (first)
+					first = false;
+				else
 					out.push(", ");
-				this._str_varname(out, varname[i]);
+				this._str_varname(out, subname);
 			}
 			if (varname.length == 1)
 				out.push(",");
@@ -7043,11 +6989,8 @@ export class ForBlockAST extends BlockAST
 			if (value.done)
 				break;
 			let varitems = _unpackvar(this.varname, value.value);
-			for (let i = 0; i < varitems.length; ++i)
-			{
-				let [lvalue, value] = varitems[i];
+			for (let [lvalue, value] of varitems)
 				lvalue._handle_eval_set(context, value);
-			}
 			try
 			{
 				// We can't call _handle_eval() here, as this would in turn call this function again, leading to infinite recursion
@@ -7177,9 +7120,8 @@ export class CondBlockAST extends BlockAST
 {
 	_eval(context)
 	{
-		for (let i = 0; i < this.content.length; ++i)
+		for (let block of this.content)
 		{
-			let block = this.content[i];
 			let execute = block._execute(context);
 			if (execute)
 			{
@@ -7332,9 +7274,8 @@ export class Template extends BlockAST
 		else
 		{
 			signature = [];
-			for (let i = 0; i < this.signature.args.length; ++i)
+			for (let arg of this.signature.args)
 			{
-				let arg = this.signature.args[i];
 				if (typeof(arg.defaultValue) === "undefined")
 					signature.push(arg.name);
 				else
@@ -7526,9 +7467,8 @@ export class SignatureAST extends CodeAST
 
 		let dump = [];
 
-		for (let i = 0; i < this.params.length; ++i)
+		for (let param of this.params)
 		{
-			let param = this.params[i];
 			if (param[1] === null)
 				dump.push(param[0]);
 			else
@@ -7542,9 +7482,8 @@ export class SignatureAST extends CodeAST
 		super.ul4onload(decoder);
 		let dump = decoder.load();
 		this.params = [];
-		for (let i = 0; i < dump.length; ++i)
+		for (let param of dump)
 		{
-			let param = dump[i];
 			if (typeof(param) === "string")
 				this.params.push([param, null]);
 			else
@@ -7555,9 +7494,8 @@ export class SignatureAST extends CodeAST
 	_eval(context)
 	{
 		let args = [];
-		for (let i = 0; i < this.params.length; ++i)
+		for (let param of this.params)
 		{
-			let param = this.params[i];
 			if (param[1] === null)
 				args.push(param[0]);
 			else
@@ -7847,7 +7785,7 @@ export function _sorted(context, iterable, key=null, reverse=false)
 			if (item.done)
 				break;
 			let keyvalue = _call(context, key, [item.value], {});
-			// For a stable sorting we have to use the nagative index if
+			// For a stable sorting we have to use the negative index if
 			// reverse sorting is specified
 			sort.push([keyvalue, reverse ? -i : i, item.value]);
 		}
@@ -7863,11 +7801,8 @@ export function _sorted(context, iterable, key=null, reverse=false)
 		sort.sort(cmp);
 
 		let result = [];
-		for (let i = 0; i < sort.length; ++i)
-		{
-			let item = sort[i];
+		for (let item of sort)
 			result.push(item[2]);
-		}
 		return result;
 	}
 };
@@ -8190,15 +8125,15 @@ export function _zip(iterables)
 	if (iterables.length)
 	{
 		let iters = [];
-		for (let i = 0; i < iterables.length; ++i)
-			iters.push(_iter(iterables[i]));
+		for (let iterable of iterables)
+			iters.push(_iter(iterable));
 
 		return {
 			next: function() {
 				let items = [];
-				for (let i = 0; i < iters.length; ++i)
+				for (let iter of iters)
 				{
-					let item = iters[i].next();
+					let item = iter.next();
 					if (item.done)
 						return item;
 					items.push(item.value);
@@ -8642,9 +8577,8 @@ export function _update(obj, others, kwargs)
 {
 	if (!_isdict(obj))
 		throw new TypeError("update() requires a dict");
-	for (let i = 0; i < others.length; ++i)
+	for (let other of others)
 	{
-		let other = others[i];
 		if (_ismap(other))
 		{
 			other.forEach(function(value, key) {
@@ -8658,9 +8592,8 @@ export function _update(obj, others, kwargs)
 		}
 		else if (_islist(other))
 		{
-			for (let i = 0; i < other.length; ++i)
+			for (let item of other)
 			{
-				let item = other[i];
 				if (!_islist(item) || (item.length != 2))
 					throw new TypeError("update() requires a dict or a list of (key, value) pairs");
 				_setmap(obj, item[0], item[1]);
