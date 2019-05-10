@@ -18,7 +18,7 @@ const plugins = [
 	}),
 	terser({
 		keep_fnames: true
-	}),
+	})
 ];
 
 export default [
@@ -36,7 +36,7 @@ export default [
 				format: 'esm',
 				name: 'ul4',
 				sourcemap: true
-			},
+			}
 		],
 		plugins: plugins
 	}
