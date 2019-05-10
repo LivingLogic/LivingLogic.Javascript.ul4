@@ -1,183 +1,74 @@
 (function (global, factory) {
-  if (typeof define === "function" && define.amd) {
-    define("ul4", ["exports", 'blueimp-md5'], factory);
-  } else if (typeof exports !== "undefined") {
-    factory(exports, require('blueimp-md5'));
-  } else {
-    var mod = {
-      exports: {}
-    };
-    factory(mod.exports, global.blueimpMd5);
-    global.ul4 = mod.exports;
-  }
-})(this, function (exports, md5) {
-  "use strict";
+  typeof exports === 'object' && typeof module !== 'undefined' ? factory(exports) :
+  typeof define === 'function' && define.amd ? define(['exports'], factory) :
+  (global = global || self, factory(global.ul4 = {}));
+}(this, function (exports) { 'use strict';
 
-  Object.defineProperty(exports, "__esModule", {
-    value: true
-  });
-  exports.register = register;
-  exports.dumps = dumps;
-  exports._map2object = _map2object;
-  exports._bound = _bound;
-  exports._stacktrace = _stacktrace;
-  exports._internal_call = _internal_call;
-  exports._callfunction = _callfunction;
-  exports._callobject = _callobject;
-  exports._callrender = _callrender;
-  exports._call = _call;
-  exports._unpackvar = _unpackvar;
-  exports._formatsource = _formatsource;
-  exports._eq = _eq;
-  exports._ne = _ne;
-  exports._unorderable = _unorderable;
-  exports._cmp = _cmp;
-  exports._lt = _lt;
-  exports._le = _le;
-  exports._gt = _gt;
-  exports._ge = _ge;
-  exports._iter = _iter;
-  exports._ascii = _ascii;
-  exports._str = _str;
-  exports._bool = _bool;
-  exports._int = _int;
-  exports._float = _float;
-  exports._list = _list;
-  exports._set = _set;
-  exports._len = _len;
-  exports._type = _type;
-  exports._mod = _mod;
-  exports._getattr = _getattr;
-  exports._hasattr = _hasattr;
-  exports._dir = _dir;
-  exports._any = _any;
-  exports._all = _all;
-  exports._isundefined = _isundefined;
-  exports._isdefined = _isdefined;
-  exports._isnone = _isnone;
-  exports._isbool = _isbool;
-  exports._isint = _isint;
-  exports._isfloat = _isfloat;
-  exports._isstr = _isstr;
-  exports._isdatetime = _isdatetime;
-  exports._isdate = _isdate;
-  exports._iscolor = _iscolor;
-  exports._istimedelta = _istimedelta;
-  exports._ismonthdelta = _ismonthdelta;
-  exports._istemplate = _istemplate;
-  exports._isfunction = _isfunction;
-  exports._islist = _islist;
-  exports._isset = _isset;
-  exports._isexception = _isexception;
-  exports._isul4set = _isul4set;
-  exports._isanyset = _isanyset;
-  exports._isiter = _isiter;
-  exports._isobject = _isobject;
-  exports._str_repeat = _str_repeat;
-  exports._list_repeat = _list_repeat;
-  exports._asjson = _asjson;
-  exports._fromjson = _fromjson;
-  exports._asul4on = _asul4on;
-  exports._fromul4on = _fromul4on;
-  exports._format = _format;
-  exports._lpad = _lpad;
-  exports._rpad = _rpad;
-  exports.expose = expose;
-  exports._extend = _extend;
-  exports.Exception = Exception;
-  exports._rgb = _rgb;
-  exports._xmlescape = _xmlescape;
-  exports._csv = _csv;
-  exports._chr = _chr;
-  exports._ord = _ord;
-  exports._hex = _hex;
-  exports._oct = _oct;
-  exports._bin = _bin;
-  exports._min = _min;
-  exports._max = _max;
-  exports._sum = _sum;
-  exports._first = _first;
-  exports._last = _last;
-  exports._sorted = _sorted;
-  exports._range = _range;
-  exports._slice = _slice;
-  exports._urlquote = _urlquote;
-  exports._urlunquote = _urlunquote;
-  exports._reversed = _reversed;
-  exports._random = _random;
-  exports._randrange = _randrange;
-  exports._randchoice = _randchoice;
-  exports._round = _round;
-  exports._enumerate = _enumerate;
-  exports._isfirst = _isfirst;
-  exports._islast = _islast;
-  exports._isfirstlast = _isfirstlast;
-  exports._enumfl = _enumfl;
-  exports._zip = _zip;
-  exports._abs = _abs;
-  exports._date = _date;
-  exports._datetime = _datetime;
-  exports._timedelta = _timedelta;
-  exports._monthdelta = _monthdelta;
-  exports._hls = _hls;
-  exports._hsv = _hsv;
-  exports._get = _get;
-  exports.now = now;
-  exports.utcnow = utcnow;
-  exports.today = today;
-  exports._count = _count;
-  exports._find = _find;
-  exports._rfind = _rfind;
-  exports._week4format = _week4format;
-  exports._isleap = _isleap;
-  exports._update = _update;
-
-  function _get2(target, property, receiver) {
-    if (typeof Reflect !== "undefined" && Reflect.get) {
-      _get2 = Reflect.get;
+  function _typeof(obj) {
+    if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
+      _typeof = function (obj) {
+        return typeof obj;
+      };
     } else {
-      _get2 = function _get(target, property, receiver) {
-        var base = _superPropBase(target, property);
-
-        if (!base) return;
-        var desc = Object.getOwnPropertyDescriptor(base, property);
-
-        if (desc.get) {
-          return desc.get.call(receiver);
-        }
-
-        return desc.value;
+      _typeof = function (obj) {
+        return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
       };
     }
 
-    return _get2(target, property, receiver || target);
+    return _typeof(obj);
   }
 
-  function _superPropBase(object, property) {
-    while (!Object.prototype.hasOwnProperty.call(object, property)) {
-      object = _getPrototypeOf(object);
-      if (object === null) break;
+  function _classCallCheck(instance, Constructor) {
+    if (!(instance instanceof Constructor)) {
+      throw new TypeError("Cannot call a class as a function");
+    }
+  }
+
+  function _defineProperties(target, props) {
+    for (var i = 0; i < props.length; i++) {
+      var descriptor = props[i];
+      descriptor.enumerable = descriptor.enumerable || false;
+      descriptor.configurable = true;
+      if ("value" in descriptor) descriptor.writable = true;
+      Object.defineProperty(target, descriptor.key, descriptor);
+    }
+  }
+
+  function _createClass(Constructor, protoProps, staticProps) {
+    if (protoProps) _defineProperties(Constructor.prototype, protoProps);
+    if (staticProps) _defineProperties(Constructor, staticProps);
+    return Constructor;
+  }
+
+  function _inherits(subClass, superClass) {
+    if (typeof superClass !== "function" && superClass !== null) {
+      throw new TypeError("Super expression must either be null or a function");
     }
 
-    return object;
+    subClass.prototype = Object.create(superClass && superClass.prototype, {
+      constructor: {
+        value: subClass,
+        writable: true,
+        configurable: true
+      }
+    });
+    if (superClass) _setPrototypeOf(subClass, superClass);
   }
 
-  function _extends() {
-    _extends = Object.assign || function (target) {
-      for (var i = 1; i < arguments.length; i++) {
-        var source = arguments[i];
+  function _getPrototypeOf(o) {
+    _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
+      return o.__proto__ || Object.getPrototypeOf(o);
+    };
+    return _getPrototypeOf(o);
+  }
 
-        for (var key in source) {
-          if (Object.prototype.hasOwnProperty.call(source, key)) {
-            target[key] = source[key];
-          }
-        }
-      }
-
-      return target;
+  function _setPrototypeOf(o, p) {
+    _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
+      o.__proto__ = p;
+      return o;
     };
 
-    return _extends.apply(this, arguments);
+    return _setPrototypeOf(o, p);
   }
 
   function isNativeReflectConstruct() {
@@ -210,36 +101,6 @@
     return _construct.apply(null, arguments);
   }
 
-  function _toConsumableArray(arr) {
-    return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread();
-  }
-
-  function _nonIterableSpread() {
-    throw new TypeError("Invalid attempt to spread non-iterable instance");
-  }
-
-  function _iterableToArray(iter) {
-    if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
-  }
-
-  function _arrayWithoutHoles(arr) {
-    if (Array.isArray(arr)) {
-      for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) {
-        arr2[i] = arr[i];
-      }
-
-      return arr2;
-    }
-  }
-
-  function _possibleConstructorReturn(self, call) {
-    if (call && (_typeof(call) === "object" || typeof call === "function")) {
-      return call;
-    }
-
-    return _assertThisInitialized(self);
-  }
-
   function _assertThisInitialized(self) {
     if (self === void 0) {
       throw new ReferenceError("this hasn't been initialised - super() hasn't been called");
@@ -248,79 +109,66 @@
     return self;
   }
 
-  function _getPrototypeOf(o) {
-    _getPrototypeOf = Object.setPrototypeOf ? Object.getPrototypeOf : function _getPrototypeOf(o) {
-      return o.__proto__ || Object.getPrototypeOf(o);
-    };
-    return _getPrototypeOf(o);
-  }
-
-  function _inherits(subClass, superClass) {
-    if (typeof superClass !== "function" && superClass !== null) {
-      throw new TypeError("Super expression must either be null or a function");
+  function _possibleConstructorReturn(self, call) {
+    if (call && (typeof call === "object" || typeof call === "function")) {
+      return call;
     }
 
-    subClass.prototype = Object.create(superClass && superClass.prototype, {
-      constructor: {
-        value: subClass,
-        writable: true,
-        configurable: true
-      }
-    });
-    if (superClass) _setPrototypeOf(subClass, superClass);
+    return _assertThisInitialized(self);
   }
 
-  function _setPrototypeOf(o, p) {
-    _setPrototypeOf = Object.setPrototypeOf || function _setPrototypeOf(o, p) {
-      o.__proto__ = p;
-      return o;
-    };
+  function _superPropBase(object, property) {
+    while (!Object.prototype.hasOwnProperty.call(object, property)) {
+      object = _getPrototypeOf(object);
+      if (object === null) break;
+    }
 
-    return _setPrototypeOf(o, p);
+    return object;
   }
 
-  function _typeof(obj) {
-    if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
-      _typeof = function _typeof(obj) {
-        return typeof obj;
-      };
+  function _get(target, property, receiver) {
+    if (typeof Reflect !== "undefined" && Reflect.get) {
+      _get = Reflect.get;
     } else {
-      _typeof = function _typeof(obj) {
-        return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+      _get = function _get(target, property, receiver) {
+        var base = _superPropBase(target, property);
+
+        if (!base) return;
+        var desc = Object.getOwnPropertyDescriptor(base, property);
+
+        if (desc.get) {
+          return desc.get.call(receiver);
+        }
+
+        return desc.value;
       };
     }
 
-    return _typeof(obj);
-  }
-
-  function _classCallCheck(instance, Constructor) {
-    if (!(instance instanceof Constructor)) {
-      throw new TypeError("Cannot call a class as a function");
-    }
-  }
-
-  function _defineProperties(target, props) {
-    for (var i = 0; i < props.length; i++) {
-      var descriptor = props[i];
-      descriptor.enumerable = descriptor.enumerable || false;
-      descriptor.configurable = true;
-      if ("value" in descriptor) descriptor.writable = true;
-      Object.defineProperty(target, descriptor.key, descriptor);
-    }
-  }
-
-  function _createClass(Constructor, protoProps, staticProps) {
-    if (protoProps) _defineProperties(Constructor.prototype, protoProps);
-    if (staticProps) _defineProperties(Constructor, staticProps);
-    return Constructor;
+    return _get(target, property, receiver || target);
   }
 
   function _slicedToArray(arr, i) {
     return _arrayWithHoles(arr) || _iterableToArrayLimit(arr, i) || _nonIterableRest();
   }
 
-  function _nonIterableRest() {
-    throw new TypeError("Invalid attempt to destructure non-iterable instance");
+  function _toConsumableArray(arr) {
+    return _arrayWithoutHoles(arr) || _iterableToArray(arr) || _nonIterableSpread();
+  }
+
+  function _arrayWithoutHoles(arr) {
+    if (Array.isArray(arr)) {
+      for (var i = 0, arr2 = new Array(arr.length); i < arr.length; i++) arr2[i] = arr[i];
+
+      return arr2;
+    }
+  }
+
+  function _arrayWithHoles(arr) {
+    if (Array.isArray(arr)) return arr;
+  }
+
+  function _iterableToArray(iter) {
+    if (Symbol.iterator in Object(iter) || Object.prototype.toString.call(iter) === "[object Arguments]") return Array.from(iter);
   }
 
   function _iterableToArrayLimit(arr, i) {
@@ -349,47 +197,319 @@
     return _arr;
   }
 
-  function _arrayWithHoles(arr) {
-    if (Array.isArray(arr)) return arr;
+  function _nonIterableSpread() {
+    throw new TypeError("Invalid attempt to spread non-iterable instance");
   }
 
-  var version = exports.version = "46";
+  function _nonIterableRest() {
+    throw new TypeError("Invalid attempt to destructure non-iterable instance");
+  }
+
+  var commonjsGlobal = typeof globalThis !== 'undefined' ? globalThis : typeof window !== 'undefined' ? window : typeof global !== 'undefined' ? global : typeof self !== 'undefined' ? self : {};
+
+  function createCommonjsModule(fn, module) {
+  	return module = { exports: {} }, fn(module, module.exports), module.exports;
+  }
+
+  var md5 = createCommonjsModule(function (module) {
+  (function ($) {
+
+    /*
+    * Add integers, wrapping at 2^32. This uses 16-bit operations internally
+    * to work around bugs in some JS interpreters.
+    */
+    function safeAdd (x, y) {
+      var lsw = (x & 0xffff) + (y & 0xffff);
+      var msw = (x >> 16) + (y >> 16) + (lsw >> 16);
+      return (msw << 16) | (lsw & 0xffff)
+    }
+
+    /*
+    * Bitwise rotate a 32-bit number to the left.
+    */
+    function bitRotateLeft (num, cnt) {
+      return (num << cnt) | (num >>> (32 - cnt))
+    }
+
+    /*
+    * These functions implement the four basic operations the algorithm uses.
+    */
+    function md5cmn (q, a, b, x, s, t) {
+      return safeAdd(bitRotateLeft(safeAdd(safeAdd(a, q), safeAdd(x, t)), s), b)
+    }
+    function md5ff (a, b, c, d, x, s, t) {
+      return md5cmn((b & c) | (~b & d), a, b, x, s, t)
+    }
+    function md5gg (a, b, c, d, x, s, t) {
+      return md5cmn((b & d) | (c & ~d), a, b, x, s, t)
+    }
+    function md5hh (a, b, c, d, x, s, t) {
+      return md5cmn(b ^ c ^ d, a, b, x, s, t)
+    }
+    function md5ii (a, b, c, d, x, s, t) {
+      return md5cmn(c ^ (b | ~d), a, b, x, s, t)
+    }
+
+    /*
+    * Calculate the MD5 of an array of little-endian words, and a bit length.
+    */
+    function binlMD5 (x, len) {
+      /* append padding */
+      x[len >> 5] |= 0x80 << (len % 32);
+      x[((len + 64) >>> 9 << 4) + 14] = len;
+
+      var i;
+      var olda;
+      var oldb;
+      var oldc;
+      var oldd;
+      var a = 1732584193;
+      var b = -271733879;
+      var c = -1732584194;
+      var d = 271733878;
+
+      for (i = 0; i < x.length; i += 16) {
+        olda = a;
+        oldb = b;
+        oldc = c;
+        oldd = d;
+
+        a = md5ff(a, b, c, d, x[i], 7, -680876936);
+        d = md5ff(d, a, b, c, x[i + 1], 12, -389564586);
+        c = md5ff(c, d, a, b, x[i + 2], 17, 606105819);
+        b = md5ff(b, c, d, a, x[i + 3], 22, -1044525330);
+        a = md5ff(a, b, c, d, x[i + 4], 7, -176418897);
+        d = md5ff(d, a, b, c, x[i + 5], 12, 1200080426);
+        c = md5ff(c, d, a, b, x[i + 6], 17, -1473231341);
+        b = md5ff(b, c, d, a, x[i + 7], 22, -45705983);
+        a = md5ff(a, b, c, d, x[i + 8], 7, 1770035416);
+        d = md5ff(d, a, b, c, x[i + 9], 12, -1958414417);
+        c = md5ff(c, d, a, b, x[i + 10], 17, -42063);
+        b = md5ff(b, c, d, a, x[i + 11], 22, -1990404162);
+        a = md5ff(a, b, c, d, x[i + 12], 7, 1804603682);
+        d = md5ff(d, a, b, c, x[i + 13], 12, -40341101);
+        c = md5ff(c, d, a, b, x[i + 14], 17, -1502002290);
+        b = md5ff(b, c, d, a, x[i + 15], 22, 1236535329);
+
+        a = md5gg(a, b, c, d, x[i + 1], 5, -165796510);
+        d = md5gg(d, a, b, c, x[i + 6], 9, -1069501632);
+        c = md5gg(c, d, a, b, x[i + 11], 14, 643717713);
+        b = md5gg(b, c, d, a, x[i], 20, -373897302);
+        a = md5gg(a, b, c, d, x[i + 5], 5, -701558691);
+        d = md5gg(d, a, b, c, x[i + 10], 9, 38016083);
+        c = md5gg(c, d, a, b, x[i + 15], 14, -660478335);
+        b = md5gg(b, c, d, a, x[i + 4], 20, -405537848);
+        a = md5gg(a, b, c, d, x[i + 9], 5, 568446438);
+        d = md5gg(d, a, b, c, x[i + 14], 9, -1019803690);
+        c = md5gg(c, d, a, b, x[i + 3], 14, -187363961);
+        b = md5gg(b, c, d, a, x[i + 8], 20, 1163531501);
+        a = md5gg(a, b, c, d, x[i + 13], 5, -1444681467);
+        d = md5gg(d, a, b, c, x[i + 2], 9, -51403784);
+        c = md5gg(c, d, a, b, x[i + 7], 14, 1735328473);
+        b = md5gg(b, c, d, a, x[i + 12], 20, -1926607734);
+
+        a = md5hh(a, b, c, d, x[i + 5], 4, -378558);
+        d = md5hh(d, a, b, c, x[i + 8], 11, -2022574463);
+        c = md5hh(c, d, a, b, x[i + 11], 16, 1839030562);
+        b = md5hh(b, c, d, a, x[i + 14], 23, -35309556);
+        a = md5hh(a, b, c, d, x[i + 1], 4, -1530992060);
+        d = md5hh(d, a, b, c, x[i + 4], 11, 1272893353);
+        c = md5hh(c, d, a, b, x[i + 7], 16, -155497632);
+        b = md5hh(b, c, d, a, x[i + 10], 23, -1094730640);
+        a = md5hh(a, b, c, d, x[i + 13], 4, 681279174);
+        d = md5hh(d, a, b, c, x[i], 11, -358537222);
+        c = md5hh(c, d, a, b, x[i + 3], 16, -722521979);
+        b = md5hh(b, c, d, a, x[i + 6], 23, 76029189);
+        a = md5hh(a, b, c, d, x[i + 9], 4, -640364487);
+        d = md5hh(d, a, b, c, x[i + 12], 11, -421815835);
+        c = md5hh(c, d, a, b, x[i + 15], 16, 530742520);
+        b = md5hh(b, c, d, a, x[i + 2], 23, -995338651);
+
+        a = md5ii(a, b, c, d, x[i], 6, -198630844);
+        d = md5ii(d, a, b, c, x[i + 7], 10, 1126891415);
+        c = md5ii(c, d, a, b, x[i + 14], 15, -1416354905);
+        b = md5ii(b, c, d, a, x[i + 5], 21, -57434055);
+        a = md5ii(a, b, c, d, x[i + 12], 6, 1700485571);
+        d = md5ii(d, a, b, c, x[i + 3], 10, -1894986606);
+        c = md5ii(c, d, a, b, x[i + 10], 15, -1051523);
+        b = md5ii(b, c, d, a, x[i + 1], 21, -2054922799);
+        a = md5ii(a, b, c, d, x[i + 8], 6, 1873313359);
+        d = md5ii(d, a, b, c, x[i + 15], 10, -30611744);
+        c = md5ii(c, d, a, b, x[i + 6], 15, -1560198380);
+        b = md5ii(b, c, d, a, x[i + 13], 21, 1309151649);
+        a = md5ii(a, b, c, d, x[i + 4], 6, -145523070);
+        d = md5ii(d, a, b, c, x[i + 11], 10, -1120210379);
+        c = md5ii(c, d, a, b, x[i + 2], 15, 718787259);
+        b = md5ii(b, c, d, a, x[i + 9], 21, -343485551);
+
+        a = safeAdd(a, olda);
+        b = safeAdd(b, oldb);
+        c = safeAdd(c, oldc);
+        d = safeAdd(d, oldd);
+      }
+      return [a, b, c, d]
+    }
+
+    /*
+    * Convert an array of little-endian words to a string
+    */
+    function binl2rstr (input) {
+      var i;
+      var output = '';
+      var length32 = input.length * 32;
+      for (i = 0; i < length32; i += 8) {
+        output += String.fromCharCode((input[i >> 5] >>> (i % 32)) & 0xff);
+      }
+      return output
+    }
+
+    /*
+    * Convert a raw string to an array of little-endian words
+    * Characters >255 have their high-byte silently ignored.
+    */
+    function rstr2binl (input) {
+      var i;
+      var output = [];
+      output[(input.length >> 2) - 1] = undefined;
+      for (i = 0; i < output.length; i += 1) {
+        output[i] = 0;
+      }
+      var length8 = input.length * 8;
+      for (i = 0; i < length8; i += 8) {
+        output[i >> 5] |= (input.charCodeAt(i / 8) & 0xff) << (i % 32);
+      }
+      return output
+    }
+
+    /*
+    * Calculate the MD5 of a raw string
+    */
+    function rstrMD5 (s) {
+      return binl2rstr(binlMD5(rstr2binl(s), s.length * 8))
+    }
+
+    /*
+    * Calculate the HMAC-MD5, of a key and some data (raw strings)
+    */
+    function rstrHMACMD5 (key, data) {
+      var i;
+      var bkey = rstr2binl(key);
+      var ipad = [];
+      var opad = [];
+      var hash;
+      ipad[15] = opad[15] = undefined;
+      if (bkey.length > 16) {
+        bkey = binlMD5(bkey, key.length * 8);
+      }
+      for (i = 0; i < 16; i += 1) {
+        ipad[i] = bkey[i] ^ 0x36363636;
+        opad[i] = bkey[i] ^ 0x5c5c5c5c;
+      }
+      hash = binlMD5(ipad.concat(rstr2binl(data)), 512 + data.length * 8);
+      return binl2rstr(binlMD5(opad.concat(hash), 512 + 128))
+    }
+
+    /*
+    * Convert a raw string to a hex string
+    */
+    function rstr2hex (input) {
+      var hexTab = '0123456789abcdef';
+      var output = '';
+      var x;
+      var i;
+      for (i = 0; i < input.length; i += 1) {
+        x = input.charCodeAt(i);
+        output += hexTab.charAt((x >>> 4) & 0x0f) + hexTab.charAt(x & 0x0f);
+      }
+      return output
+    }
+
+    /*
+    * Encode a string as utf-8
+    */
+    function str2rstrUTF8 (input) {
+      return unescape(encodeURIComponent(input))
+    }
+
+    /*
+    * Take string arguments and return either raw or hex encoded strings
+    */
+    function rawMD5 (s) {
+      return rstrMD5(str2rstrUTF8(s))
+    }
+    function hexMD5 (s) {
+      return rstr2hex(rawMD5(s))
+    }
+    function rawHMACMD5 (k, d) {
+      return rstrHMACMD5(str2rstrUTF8(k), str2rstrUTF8(d))
+    }
+    function hexHMACMD5 (k, d) {
+      return rstr2hex(rawHMACMD5(k, d))
+    }
+
+    function md5 (string, key, raw) {
+      if (!key) {
+        if (!raw) {
+          return hexMD5(string)
+        }
+        return rawMD5(string)
+      }
+      if (!raw) {
+        return hexHMACMD5(key, string)
+      }
+      return rawHMACMD5(key, string)
+    }
+
+    if (module.exports) {
+      module.exports = md5;
+    } else {
+      $.md5 = md5;
+    }
+  })(commonjsGlobal);
+  });
+
+  /*!
+   * UL4/UL4ON JavaScript Library
+   * http://www.livinglogic.de/Python/ul4c/
+   * http://www.livinglogic.de/Python/ul4on/
+   *
+   * Copyright 2011-2019 by LivingLogic AG, Bayreuth/Germany
+   * Copyright 2011-2019 by Walter Dörwald
+   *
+   * All Rights Reserved
+   *
+   * Permission is hereby granted, free of charge, to any person obtaining a copy
+   * of this software and associated documentation files (the "Software"), to deal
+   * in the Software without restriction, including without limitation the rights
+   * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+   * copies of the Software, and to permit persons to whom the Software is
+   * furnished to do so, subject to the following conditions:
+   *
+   * The above copyright notice and this permission notice shall be included in
+   * all copies or substantial portions of the Software.
+   *
+   * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+   * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+   * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+   * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+   * THE SOFTWARE.
+   */
+
+  /*jslint vars: true */
+  var version = "46"; //
+  // UL4ON
+  //
+
   var _registry = {};
 
   var _havemap = typeof Map === "function" && typeof Map.prototype.forEach === "function";
 
-  var _havemapconstructor = function () {
-    if (_havemap) {
-      try {
-        if (new Map([[1, 2]]).size == 1) return true;
-      } catch (error) {}
-    }
-
-    return false;
-  }();
-
   var _haveset = typeof Set === "function" && typeof Set.prototype.forEach === "function";
 
-  var _havesetconstructor = function () {
-    if (_haveset) {
-      try {
-        if (new Set([1, 2]).size == 2) return true;
-      } catch (error) {}
-
-      return false;
-    } else return false;
-  }();
-
-  var _makemap = exports._makemap = undefined;
-
-  var _setmap = exports._setmap = undefined;
-
-  var _emptymap = exports._emptymap = undefined;
-
-  var _getmap = exports._getmap = undefined;
-
   if (_havemap) {
-    exports._makemap = _makemap = function _makemap() {
+    exports._makemap = function _makemap() {
       var map = new Map();
 
       for (var _len2 = arguments.length, items = new Array(_len2), _key = 0; _key < _len2; _key++) {
@@ -407,19 +527,19 @@
       return map;
     };
 
-    exports._setmap = _setmap = function _setmap(map, key, value) {
+    exports._setmap = function _setmap(map, key, value) {
       if (map.__proto__ === Map.prototype) map.set(key, value);else map[key] = value;
     };
 
-    exports._emptymap = _emptymap = function _emptymap() {
+    exports._emptymap = function _emptymap() {
       return new Map();
     };
 
-    exports._getmap = _getmap = function _getmap(map, key, value) {
+    exports._getmap = function _getmap(map, key, value) {
       if (map.__proto__ === Map.prototype) return map.get(key);else return map[key];
     };
   } else {
-    exports._makemap = _makemap = function _makemap() {
+    exports._makemap = function _makemap() {
       var map = {};
 
       for (var _len3 = arguments.length, items = new Array(_len3), _key2 = 0; _key2 < _len3; _key2++) {
@@ -437,33 +557,31 @@
       return map;
     };
 
-    exports._setmap = _setmap = function _setmap(map, key, value) {
+    exports._setmap = function _setmap(map, key, value) {
       map[key] = value;
     };
 
-    exports._emptymap = _emptymap = function _emptymap() {
+    exports._emptymap = function _emptymap() {
       return {};
     };
 
-    exports._getmap = _getmap = function _getmap(map, key, value) {
+    exports._getmap = function _getmap(map, key, value) {
       return map[key];
     };
   }
 
-  var _emptyset = exports._emptyset = undefined;
-
   if (_haveset) {
-    exports._emptyset = _emptyset = function _emptyset() {
+    exports._emptyset = function _emptyset() {
       return new Set();
     };
   } else {
-    exports._emptyset = _emptyset = function _emptyset() {
+    exports._emptyset = function _emptyset() {
       return new _Set();
     };
   }
 
-  var _makeset = exports._makeset = function _makeset() {
-    var set = _emptyset();
+  var _makeset = function _makeset() {
+    var set = exports._emptyset();
 
     for (var _len4 = arguments.length, items = new Array(_len4), _key3 = 0; _key3 < _len4; _key3++) {
       items[_key3] = arguments[_key3];
@@ -475,32 +593,30 @@
     }
 
     return set;
-  };
+  }; // Register the constructor function ``f`` under the name ``name`` with the UL4ON machinery
 
   function register(name, f) {
     f.prototype.ul4onname = name;
     _registry[name] = f;
   }
 
-  ;
-
   function dumps(obj, indent) {
     var encoder = new Encoder(indent);
     encoder.dump(obj);
     return encoder.finish();
   }
-
-  ;
+  // ``data`` must contain the object in the UL4ON serialization format
+  // ``registry`` may be null or a dictionary mapping type names to constructor functions
 
   function _loads(data, registry) {
     var decoder = new Decoder(data, registry);
     return decoder.load();
   }
 
-  exports.loads = _loads;
-  ;
-
-  var Encoder = exports.Encoder = function () {
+  var Encoder =
+  /*#__PURE__*/
+  function () {
+    // Create a new Encoder object
     function Encoder() {
       var indent = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
@@ -544,7 +660,8 @@
         }
 
         if (this.indent !== null) this.data.push("\n");
-      }
+      } // Return the complete string written to the buffer
+
     }, {
       key: "finish",
       value: function finish() {
@@ -607,8 +724,8 @@
             _iteratorError = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion && _iterator.return != null) {
-                _iterator.return();
+              if (!_iteratorNormalCompletion && _iterator["return"] != null) {
+                _iterator["return"]();
               }
             } finally {
               if (_didIteratorError) {
@@ -661,9 +778,10 @@
     return Encoder;
   }();
 
-  ;
-
-  var Decoder = exports.Decoder = function () {
+  var Decoder =
+  /*#__PURE__*/
+  function () {
+    // Creates a new decoder for reading from the string ``data``
     function Decoder(data, registry) {
       _classCallCheck(this, Decoder);
 
@@ -671,21 +789,24 @@
       this.pos = 0;
       this.backrefs = [];
       this.registry = typeof registry === "undefined" ? null : registry;
-      this.stack = [];
-    }
+      this.stack = []; // Use for informative error messages
+    } // Read a character from the buffer
+
 
     _createClass(Decoder, [{
       key: "readchar",
       value: function readchar() {
         if (this.pos >= this.data.length) throw new ValueError("UL4 decoder at EOF");
         return this.data.charAt(this.pos++);
-      }
+      } // Read a character from the buffer (return null on eof)
+
     }, {
       key: "readcharoreof",
       value: function readcharoreof() {
         if (this.pos >= this.data.length) return null;
         return this.data.charAt(this.pos++);
-      }
+      } // Read next not-whitespace character from the buffer
+
     }, {
       key: "readblackchar",
       value: function readblackchar() {
@@ -696,7 +817,8 @@
           var c = this.data.charAt(this.pos++);
           if (!c.match(re_white)) return c;
         }
-      }
+      } // Read ``size`` characters from the buffer
+
     }, {
       key: "read",
       value: function read(size) {
@@ -704,12 +826,14 @@
         var result = this.data.substring(this.pos, this.pos + size);
         this.pos += size;
         return result;
-      }
+      } // "unread" one character
+
     }, {
       key: "backup",
       value: function backup() {
         --this.pos;
-      }
+      } // Read a number from the buffer
+
     }, {
       key: "readnumber",
       value: function readnumber() {
@@ -745,7 +869,8 @@
         var codepoint = parseInt(chars, 16);
         if (isNaN(codepoint)) throw new ValueError("broken escape " + _repr2("\\" + escapechar + chars) + " at position " + this.pos + " with path " + this.stack.join("/"));
         return String.fromCharCode(codepoint);
-      }
+      } // Load the next object from the buffer
+
     }, {
       key: "load",
       value: function load() {
@@ -875,7 +1000,7 @@
           case "e":
           case "E":
             if (!_havemap && (typecode == "e" || typecode == "E")) throw new ValueError("ordered dictionaries are not supported at position " + this.pos + " with path " + this.stack.join("/"));
-            result = _emptymap();
+            result = exports._emptymap();
             this.stack.push(typecode === "d" || typecode === "D" ? "dict" : "odict");
             if (typecode === "D" || typecode === "E") this.backrefs.push(result);
 
@@ -886,7 +1011,7 @@
               var key = this.load();
               var value = this.load();
 
-              _setmap(result, key, value);
+              exports._setmap(result, key, value);
             }
 
             this.stack.pop();
@@ -936,14 +1061,19 @@
           default:
             throw new ValueError("unknown typecode " + _repr2(typecode) + " at position " + this.pos + " with path " + this.stack.join("/"));
         }
-      }
+      } // Return an iterator for loading the content of a object
+
     }, {
       key: "loadcontent",
       value: function loadcontent() {
         var self = this;
         return {
           next: function next() {
-            var typecode = self.readblackchar();
+            var typecode = self.readblackchar(); // Always "unread" the typecode even at the end
+            // so that at the end of a call to ul4onload()
+            // the next input is the "end of object" marker
+            // no matter whether ul4onload() uses loadcontent() or not.
+
             self.backup();
             if (typecode == ")") return {
               done: true
@@ -958,18 +1088,21 @@
 
     return Decoder;
   }();
+  // UL4
+  //
+  // REs for parsing JSON
 
-  ;
   var _rvalidchars = /^[\],:{}\s]*$/;
   var _rvalidescape = /\\(?:["\\\/bfnrt]|u[0-9a-fA-F]{4})/g;
   var _rvalidtokens = /"[^"\\\n\r]*"|true|false|null|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?/g;
-  var _rvalidbraces = /(?:^|:|,)(?:\s*\[)+/g;
+  var _rvalidbraces = /(?:^|:|,)(?:\s*\[)+/g; /// Helper functions
+  // Convert a map to an object
 
   function _map2object(obj) {
     if (_ismap(obj)) {
       var newobj = {};
       obj.forEach(function (value, key) {
-        if (typeof key !== "string") throw new _TypeError("keys must be strings");
+        if (typeof key !== "string") throw new TypeError$1("keys must be strings");
         newobj[key] = value;
       });
       return newobj;
@@ -978,21 +1111,15 @@
     return obj;
   }
 
-  ;
-
   function _bound(value, upper) {
     if (value < 0) return 0;else if (value > upper) return upper;else return value;
   }
-
-  ;
 
   function _stacktrace(exc) {
     var output = (exc instanceof Exception ? exc.constructor.name + ": " : "") + exc.toString();
     if (exc.context) output = _stacktrace(exc.context) + "\n\n" + output;
     return output;
   }
-
-  ;
 
   function _internal_call(context, f, name, functioncontext, signature, needscontext, needsobject, args, kwargs) {
     var finalargs;
@@ -1010,37 +1137,22 @@
     if (needscontext) finalargs.unshift(context);
     return f.apply(functioncontext, finalargs);
   }
-
-  ;
-
   function _callfunction(context, f, args, kwargs) {
     var name = f._ul4_name || f.name;
-    if (typeof f._ul4_signature === "undefined" || typeof f._ul4_needsobject === "undefined" || typeof f._ul4_needscontext === "undefined") throw new _TypeError(_repr2(f) + " is not callable by UL4");
+    if (typeof f._ul4_signature === "undefined" || typeof f._ul4_needsobject === "undefined" || typeof f._ul4_needscontext === "undefined") throw new TypeError$1(_repr2(f) + " is not callable by UL4");
     return _internal_call(context, f, name, null, f._ul4_signature, f._ul4_needscontext, f._ul4_needsobject, args, kwargs);
   }
-
-  ;
-
   function _callobject(context, obj, args, kwargs) {
-    if (typeof obj._ul4_callsignature === "undefined" || typeof obj._ul4_callneedsobject === "undefined" || typeof obj._ul4_callneedscontext === "undefined") throw new _TypeError(_repr2(obj) + " is not callable by UL4");
+    if (typeof obj._ul4_callsignature === "undefined" || typeof obj._ul4_callneedsobject === "undefined" || typeof obj._ul4_callneedscontext === "undefined") throw new TypeError$1(_repr2(obj) + " is not callable by UL4");
     return _internal_call(context, obj.__call__, obj.name, obj, obj._ul4_callsignature, obj._ul4_callneedscontext, obj._ul4_callneedsobject, args, kwargs);
   }
-
-  ;
-
   function _callrender(context, obj, args, kwargs) {
-    if (typeof obj._ul4_rendersignature === "undefined" || typeof obj._ul4_renderneedsobject === "undefined" || typeof obj._ul4_renderneedscontext === "undefined") throw new _TypeError(_repr2(obj) + " is not renderable by UL4");
+    if (typeof obj._ul4_rendersignature === "undefined" || typeof obj._ul4_renderneedsobject === "undefined" || typeof obj._ul4_renderneedscontext === "undefined") throw new TypeError$1(_repr2(obj) + " is not renderable by UL4");
     return _internal_call(context, obj.__render__, obj.name, obj, obj._ul4_rendersignature, obj._ul4_renderneedscontext, obj._ul4_renderneedsobject, args, kwargs);
   }
-
-  ;
-
   function _call(context, f, args, kwargs) {
-    if (typeof f === "function") return _callfunction(context, f, args, kwargs);else if (f && typeof f.__call__ === "function") return _callobject(context, f, args, kwargs);else throw new _TypeError(_type(f) + " is not callable");
+    if (typeof f === "function") return _callfunction(context, f, args, kwargs);else if (f && typeof f.__call__ === "function") return _callobject(context, f, args, kwargs);else throw new TypeError$1(_type(f) + " is not callable");
   }
-
-  ;
-
   function _unpackvar(lvalue, value) {
     if (!_islist(lvalue)) return [[lvalue, value]];else {
       var newvalue = [];
@@ -1060,9 +1172,6 @@
       return newvalue;
     }
   }
-
-  ;
-
   function _formatsource(out) {
     var finalout = [];
     var level = 0,
@@ -1097,8 +1206,8 @@
       _iteratorError2 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion2 && _iterator2.return != null) {
-          _iterator2.return();
+        if (!_iteratorNormalCompletion2 && _iterator2["return"] != null) {
+          _iterator2["return"]();
         }
       } finally {
         if (_didIteratorError2) {
@@ -1111,8 +1220,6 @@
     return finalout.join("");
   }
 
-  ;
-
   function _eq(obj1, obj2) {
     var numbertypes = ["boolean", "number"];
     if (obj1 && typeof obj1.__eq__ === "function") return obj1.__eq__(obj2);else if (obj2 && typeof obj2.__eq__ === "function") return obj2.__eq__(obj1);else if (obj1 === null) return obj2 === null;else if (numbertypes.indexOf(_typeof(obj1)) != -1) {
@@ -1123,24 +1230,28 @@
       if (_isdatetime(obj2)) return obj1.getTime() == obj2.getTime();else return false;
     } else if (_islist(obj1)) {
       if (_islist(obj2)) {
+        // Shortcut, if it's the same object
         if (obj1 === obj2) return true;
         if (obj1.length != obj2.length) return false;
 
         for (var i = 0; i < obj1.length; ++i) {
-          if (!_eq(obj1[i], obj2[i])) return false;
+          if (!_eq(obj1[i], obj2[i])) // This might lead to infinite recursion and a stackoverflow, but it does in all implementations
+            return false;
         }
 
         return true;
       } else return false;
     } else if (_isobject(obj1)) {
       if (_isobject(obj2)) {
-        if (obj1 === obj2) return true;
+        // Shortcut, if it's the same object
+        if (obj1 === obj2) return true; // Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
 
         for (var key in obj1) {
           if (obj2.hasOwnProperty(key)) {
             if (!_eq(obj1[key], obj2[key])) return false;
           } else return false;
-        }
+        } // Test that each attribute of ``obj2`` is also in ``obj1`` (the value has been tested before)
+
 
         for (var _key5 in obj2) {
           if (!obj1.hasOwnProperty(_key5)) return false;
@@ -1148,11 +1259,13 @@
 
         return true;
       } else if (_ismap(obj2)) {
+        // Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
         for (var _key6 in obj1) {
           if (obj2.has(_key6)) {
             if (!_eq(obj1[_key6], obj2.get(_key6))) return false;
           } else return false;
-        }
+        } // Test that each attribute of ``obj2`` is also in ``obj1`` (the value has been tested before)
+
 
         var result = true;
         obj2.forEach(function (value, key) {
@@ -1162,9 +1275,10 @@
       } else return false;
     } else if (_ismap(obj1)) {
       if (_isobject(obj2)) {
+        // Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
         obj1.forEach(function (value, key) {
           if (!obj2.hasOwnProperty(key)) return false;else if (!_eq(obj1.get(key), obj2[key])) return false;
-        }, this);
+        }, this); // Test that each attribute of ``obj2`` is also in ``obj1`` (the value has been tested before)
 
         for (var _key7 in obj2) {
           if (!obj1.has(_key7)) return false;
@@ -1172,16 +1286,20 @@
 
         return true;
       } else if (_ismap(obj2)) {
+        // Shortcut, if it's the same object
         if (obj1 === obj2) return true;
         if (obj1.size != obj2.size) return false;
-        var _result = true;
+        var _result = true; // Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
+
         obj1.forEach(function (value, key) {
           if (!obj2.has(key)) _result = false;else if (!_eq(obj1.get(key), obj2.get(key))) _result = false;
         });
         return _result;
       } else return false;
     } else if (_isset(obj1)) {
+      // We don't have to test for ``_Set`` as ``_Set`` implements ``__eq__``
       if (_isset(obj2)) {
+        // Shortcut, if it's the same object
         if (obj1 === obj2) return true;
         if (obj1.size != obj2.size) return false;
         var _result2 = true;
@@ -1193,19 +1311,19 @@
     } else return obj1 === obj2;
   }
 
-  ;
-
   function _ne(obj1, obj2) {
     if (obj1 && typeof obj1.__ne__ === "function") return obj1.__ne__(obj2);else if (obj2 && typeof obj2.__ne__ === "function") return obj2.__ne__(obj1);else return !_eq(obj1, obj2);
   }
-
-  ;
-
   function _unorderable(operator, obj1, obj2) {
-    throw new _TypeError("unorderable types: " + _type(obj1) + " " + operator + " " + _type(obj2));
+    throw new TypeError$1("unorderable types: " + _type(obj1) + " " + operator + " " + _type(obj2));
   }
-
-  ;
+  // -1 when ``obj1 < obj2``,
+  //  0 when ``obj1 == obj2``,
+  //  1 when ``obj1 > obj2``,
+  //  null when ``obj1`` and ``obj2`` are comparable, but neither of the previous cases holds (only for sets)
+  // raise TypeError if objects are uncomparable
+  // This the purpose of ``_cmp`` is to support implementation of <, <=, > and >=
+  // and dicts/maps are not comparable with the operator ``_cmp`` does not support dicts/maps
 
   function _cmp(operator, obj1, obj2) {
     var numbertypes = ["boolean", "number"];
@@ -1271,8 +1389,6 @@
     return _unorderable(operator, obj1, obj2);
   }
 
-  ;
-
   function _lt(obj1, obj2) {
     var numbertypes = ["boolean", "number"];
     if (obj1 && typeof obj1.__lt__ === "function") return obj1.__lt__(obj2);else if (numbertypes.indexOf(_typeof(obj1)) != -1) {
@@ -1295,7 +1411,8 @@
 
         return obj1.length < obj2.length;
       }
-    } else if (_isset(obj1)) {
+    } // FIXME: Set comparison
+    else if (_isset(obj1)) {
         if (_isset(obj2)) {
           if (_isset(obj2)) {
             for (var key in obj1) {
@@ -1356,8 +1473,6 @@
     _unorderable("<", obj1, obj2);
   }
 
-  ;
-
   function _le(obj1, obj2) {
     var numbertypes = ["boolean", "number"];
     if (obj1 && typeof obj1.__le__ === "function") return obj1.__le__(obj2);
@@ -1382,7 +1497,8 @@
 
         return obj1.length <= obj2.length;
       }
-    } else if (_isset(obj1) || _isul4set(obj1)) {
+    } // FIXME: Set comparison
+    else if (_isset(obj1) || _isul4set(obj1)) {
         var _in1only2 = false;
         var _in2only2 = false;
 
@@ -1445,8 +1561,6 @@
     _unorderable("<=", obj1, obj2);
   }
 
-  ;
-
   function _gt(obj1, obj2) {
     var numbertypes = ["boolean", "number"];
     if (obj1 && typeof obj1.__gt__ === "function") return obj1.__gt__(obj2);
@@ -1471,7 +1585,8 @@
 
         return obj1.length > obj2.length;
       }
-    } else if (_isset(obj1) || _isul4set(obj1)) {
+    } // FIXME: Set comparison
+    else if (_isset(obj1) || _isul4set(obj1)) {
         var _in1only3 = false;
         var _in2only3 = false;
 
@@ -1532,8 +1647,6 @@
     _unorderable(">", obj1, obj2);
   }
 
-  ;
-
   function _ge(obj1, obj2) {
     var numbertypes = ["boolean", "number"];
     if (obj1 && typeof obj1.__ge__ === "function") return obj1.__ge__(obj2);else if (numbertypes.indexOf(_typeof(obj1)) != -1) {
@@ -1556,7 +1669,8 @@
 
         return obj1.length >= obj2.length;
       }
-    } else if (_isset(obj1) || _isul4set(obj1)) {
+    } // FIXME: Set comparison
+    else if (_isset(obj1) || _isul4set(obj1)) {
         var _in1only4 = false;
         var _in2only4 = false;
 
@@ -1618,8 +1732,6 @@
 
     _unorderable(">=", obj1, obj2);
   }
-
-  ;
 
   function _iter(obj) {
     if (typeof obj === "string" || _islist(obj)) {
@@ -1691,10 +1803,8 @@
       };
     }
 
-    throw new _TypeError(_type(obj) + " object is not iterable");
+    throw new TypeError$1(_type(obj) + " object is not iterable");
   }
-
-  ;
 
   function _str_repr(str, ascii) {
     var result = "";
@@ -1715,14 +1825,15 @@
           squote = true;
           if (dquote) break;
         }
-      }
+      } // Prefer single quotes: Only use double quotes if the string contains single quotes, but no double quotes
+
     } catch (err) {
       _didIteratorError3 = true;
       _iteratorError3 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion3 && _iterator3.return != null) {
-          _iterator3.return();
+        if (!_iteratorNormalCompletion3 && _iterator3["return"] != null) {
+          _iterator3["return"]();
         }
       } finally {
         if (_didIteratorError3) {
@@ -1780,8 +1891,8 @@
       _iteratorError4 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion4 && _iterator4.return != null) {
-          _iterator4.return();
+        if (!_iteratorNormalCompletion4 && _iterator4["return"] != null) {
+          _iterator4["return"]();
         }
       } finally {
         if (_didIteratorError4) {
@@ -1793,8 +1904,6 @@
     return quote + result + quote;
   }
 
-  ;
-
   function _date_repr(obj, ascii) {
     var year = obj._date.getFullYear();
 
@@ -1805,8 +1914,6 @@
     var result = "@(" + year + "-" + _lpad(month.toString(), "0", 2) + "-" + _lpad(day.toString(), "0", 2) + ")";
     return result;
   }
-
-  ;
 
   function _datetime_repr(obj, ascii) {
     var year = obj.getFullYear();
@@ -1831,8 +1938,6 @@
     return result;
   }
 
-  ;
-
   function _map_repr(obj, ascii) {
     var v = [];
     v.push("{");
@@ -1846,8 +1951,6 @@
     v.push("}");
     return v.join("");
   }
-
-  ;
 
   function _list_repr(obj, ascii) {
     var v = [];
@@ -1868,8 +1971,8 @@
       _iteratorError5 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion5 && _iterator5.return != null) {
-          _iterator5.return();
+        if (!_iteratorNormalCompletion5 && _iterator5["return"] != null) {
+          _iterator5["return"]();
         }
       } finally {
         if (_didIteratorError5) {
@@ -1881,8 +1984,6 @@
     v.push("]");
     return v.join("");
   }
-
-  ;
 
   function _set_repr(obj, ascii) {
     var v = [];
@@ -1897,8 +1998,6 @@
     v.push("}");
     return v.join("");
   }
-
-  ;
 
   function _object_repr(obj, ascii) {
     var v = [];
@@ -1917,8 +2016,6 @@
     return v.join("");
   }
 
-  ;
-
   function _repr_internal(obj, ascii) {
     if (obj === null) return "None";else if (obj === false) return "False";else if (obj === true) return "True";else if (typeof obj === "string") return _str_repr(obj, ascii);else if (typeof obj === "number") return "" + obj;else if (typeof obj === "function") {
       if (obj._ul4_name || obj.name) return "<function " + (obj._ul4_name || obj.name) + ">";else return "<anonymous function>";
@@ -1926,20 +2023,12 @@
     return "?";
   }
 
-  ;
-
   function _repr2(obj) {
     return _repr_internal(obj, false);
   }
-
-  exports._repr = _repr2;
-  ;
-
   function _ascii(obj) {
     return _repr_internal(obj, true);
   }
-
-  ;
 
   function _date_str(obj) {
     var year = obj._date.getFullYear();
@@ -1950,8 +2039,6 @@
 
     return year + "-" + _lpad(month.toString(), "0", 2) + "-" + _lpad(day.toString(), "0", 2);
   }
-
-  ;
 
   function _datetime_str(obj) {
     var year = obj.getFullYear();
@@ -1971,15 +2058,10 @@
 
     return result;
   }
-
-  ;
-
   function _str(obj) {
     if (typeof obj === "undefined") return "";else if (obj === null) return "";else if (obj === false) return "False";else if (obj === true) return "True";else if (typeof obj === "string") return obj;else if (typeof obj === "number") return obj.toString();else if (_isdate(obj)) return _date_str(obj);else if (_isdatetime(obj)) return _datetime_str(obj);else if (_islist(obj)) return _list_repr(obj);else if (_isset(obj)) return _set_repr(obj);else if (_ismap(obj)) return _map_repr(obj);else if (_typeof(obj) === "object" && typeof obj.__str__ === "function") return obj.__str__();else if (_typeof(obj) === "object" && typeof obj.__repr__ === "function") return obj.__repr__();else if (_isobject(obj)) return _object_repr(obj);
     return "?";
   }
-
-  ;
 
   function _bool(obj) {
     if (typeof obj === "undefined" || obj === null || obj === false || obj === 0 || obj === "") return false;else {
@@ -1996,35 +2078,29 @@
     }
   }
 
-  ;
-
   function _int(obj, base) {
     var result;
 
     if (base !== null) {
-      if (typeof obj !== "string" || !_isint(base)) throw new _TypeError("int() requires a string and an integer");
+      if (typeof obj !== "string" || !_isint(base)) throw new TypeError$1("int() requires a string and an integer");
       result = parseInt(obj, base);
-      if (result.toString() == "NaN") throw new _TypeError("invalid literal for int()");
+      if (result.toString() == "NaN") throw new TypeError$1("invalid literal for int()");
       return result;
     } else {
       if (typeof obj == "string") {
         result = parseInt(obj);
-        if (result.toString() == "NaN") throw new _TypeError("invalid literal for int()");
+        if (result.toString() == "NaN") throw new TypeError$1("invalid literal for int()");
         return result;
       } else if (typeof obj == "number") return Math.floor(obj);else if (obj === true) return 1;else if (obj === false) return 0;
 
-      throw new _TypeError("int() argument must be a string or a number");
+      throw new TypeError$1("int() argument must be a string or a number");
     }
   }
 
-  ;
-
   function _float(obj) {
     if (typeof obj === "string") return parseFloat(obj);else if (typeof obj === "number") return obj;else if (obj === true) return 1.0;else if (obj === false) return 0.0;
-    throw new _TypeError("float() argument must be a string or a number");
+    throw new TypeError$1("float() argument must be a string or a number");
   }
-
-  ;
 
   function _list(obj) {
     var iter = _iter(obj);
@@ -2038,12 +2114,10 @@
     }
   }
 
-  ;
-
   function _set(obj) {
     var iter = _iter(obj);
 
-    var result = _emptyset();
+    var result = exports._emptyset();
 
     for (;;) {
       var value = iter.next();
@@ -2051,8 +2125,6 @@
       result.add(value.value);
     }
   }
-
-  ;
 
   function _len(sequence) {
     if (typeof sequence == "string" || _islist(sequence)) return sequence.length;else if (_ismap(sequence) || _isset(sequence)) return sequence.size;else if (_isobject(sequence)) {
@@ -2064,18 +2136,13 @@
 
       return i;
     }
-    throw new _TypeError("object of type '" + _type(sequence) + "' has no len()");
+    throw new TypeError$1("object of type '" + _type(sequence) + "' has no len()");
   }
-
-  ;
-
   function _type(obj) {
     if (obj === null) return "none";else if (obj === false || obj === true) return "bool";else if (typeof obj === "undefined") return "undefined";else if (typeof obj === "number") return Math.round(obj) == obj ? "int" : "float";else if (typeof obj === "function") return "function";else {
       if (typeof obj.ul4type === "function") return obj.ul4type();else return Protocol.get(obj).ul4type(obj);
     }
   }
-
-  ;
 
   function _mod(obj1, obj2) {
     var div = Math.floor(obj1 / obj2);
@@ -2088,8 +2155,7 @@
 
     return obj1 - div * obj2;
   }
-
-  ;
+  // If ``obj`` doesn't have such an attribute, return ``default_``
 
   function _getattr(obj, attrname) {
     var default_ = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
@@ -2102,21 +2168,15 @@
     }
   }
 
-  ;
-
   function _hasattr(obj, attrname) {
     var proto = Protocol.get(obj);
     return proto.hasattr(obj, attrname);
   }
 
-  ;
-
   function _dir(obj) {
     var proto = Protocol.get(obj);
     return proto.dir();
   }
-
-  ;
 
   function _any(iterable) {
     if (typeof iterable == "string") {
@@ -2134,8 +2194,8 @@
         _iteratorError6 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion6 && _iterator6.return != null) {
-            _iterator6.return();
+          if (!_iteratorNormalCompletion6 && _iterator6["return"] != null) {
+            _iterator6["return"]();
           }
         } finally {
           if (_didIteratorError6) {
@@ -2154,8 +2214,6 @@
     }
   }
 
-  ;
-
   function _all(iterable) {
     if (typeof iterable == "string") {
       var _iteratorNormalCompletion7 = true;
@@ -2172,8 +2230,8 @@
         _iteratorError7 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion7 && _iterator7.return != null) {
-            _iterator7.return();
+          if (!_iteratorNormalCompletion7 && _iterator7["return"] != null) {
+            _iterator7["return"]();
           }
         } finally {
           if (_didIteratorError7) {
@@ -2192,145 +2250,98 @@
     }
   }
 
-  ;
-
   function _isundefined(obj) {
     return typeof obj === "undefined";
   }
-
-  ;
 
   function _isdefined(obj) {
     return typeof obj !== "undefined";
   }
 
-  ;
-
   function _isnone(obj) {
     return obj === null;
   }
-
-  ;
 
   function _isbool(obj) {
     return typeof obj == "boolean";
   }
 
-  ;
-
   function _isint(obj) {
     return typeof obj == "number" && Math.round(obj) == obj;
   }
-
-  ;
 
   function _isfloat(obj) {
     return typeof obj == "number" && Math.round(obj) != obj;
   }
 
-  ;
-
   function _isstr(obj) {
     return typeof obj == "string";
   }
 
-  ;
-
   function _isdatetime(obj) {
     return Object.prototype.toString.call(obj) == "[object Date]";
   }
-
-  ;
-
   function _isdate(obj) {
     return obj instanceof Date_;
   }
-
-  ;
 
   function _iscolor(obj) {
     return obj instanceof Color;
   }
 
-  ;
-
   function _istimedelta(obj) {
     return obj instanceof TimeDelta;
   }
-
-  ;
 
   function _ismonthdelta(obj) {
     return obj instanceof MonthDelta;
   }
 
-  ;
-
   function _istemplate(obj) {
     return obj instanceof Template || obj instanceof TemplateClosure;
   }
-
-  ;
 
   function _isfunction(obj) {
     return typeof obj === "function" || Object.prototype.toString.call(obj) == "[object Object]" && (obj instanceof Template || obj instanceof TemplateClosure);
   }
 
-  ;
-
   function _islist(obj) {
     return Object.prototype.toString.call(obj) == "[object Array]";
   }
-
-  ;
 
   function _isset(obj) {
     return Object.prototype.toString.call(obj) == "[object Set]";
   }
 
-  ;
-
   function _isexception(obj) {
     return obj instanceof Exception;
   }
-
-  ;
-
   function _isul4set(obj) {
     return obj instanceof _Set;
   }
-
-  ;
-
   function _isanyset(obj) {
     return _isset(obj) || _isul4set(obj);
   }
-
-  ;
 
   function _isiter(obj) {
     return obj !== null && _typeof(obj) === "object" && typeof obj.next === "function";
   }
 
-  ;
-
   function _isobject(obj) {
     return Object.prototype.toString.call(obj) == "[object Object]" && typeof obj.__type__ === "undefined" && !(obj instanceof Proto);
   }
 
-  ;
-
-  var _ismap = exports._ismap = _havemap ? function _ismap(obj) {
+  var _ismap = _havemap ? function _ismap(obj) {
     return obj !== null && _typeof(obj) === "object" && _typeof(obj.__proto__) === "object" && obj.__proto__ === Map.prototype;
   } : function _ismap(obj) {
     return false;
-  };
+  }; // Check if ``obj`` is a dict (i.e. a normal Javascript object or a ``Map``)
 
-  var _isdict = exports._isdict = _havemap ? function _isdict(obj) {
+  var _isdict = _havemap ? function _isdict(obj) {
     return _isobject(obj) || _ismap(obj);
   } : function _isdict(obj) {
     return _isobject(obj);
-  };
+  }; // Repeat string ``str`` ``rep`` times
 
   function _str_repeat(str, rep) {
     var result = "";
@@ -2341,9 +2352,6 @@
 
     return result;
   }
-
-  ;
-
   function _list_repeat(list, rep) {
     var result = [];
 
@@ -2362,8 +2370,8 @@
         _iteratorError8 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion8 && _iterator8.return != null) {
-            _iterator8.return();
+          if (!_iteratorNormalCompletion8 && _iterator8["return"] != null) {
+            _iterator8["return"]();
           }
         } finally {
           if (_didIteratorError8) {
@@ -2375,8 +2383,6 @@
 
     return result;
   }
-
-  ;
 
   function _str_json(str) {
     var result = "";
@@ -2424,8 +2430,8 @@
       _iteratorError9 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion9 && _iterator9.return != null) {
-          _iterator9.return();
+        if (!_iteratorNormalCompletion9 && _iterator9["return"] != null) {
+          _iterator9["return"]();
         }
       } finally {
         if (_didIteratorError9) {
@@ -2436,8 +2442,6 @@
 
     return '"' + result + '"';
   }
-
-  ;
 
   function _asjson(obj) {
     if (obj === null) return "null";else if (typeof obj === "undefined") return "undefined";else if (obj === false) return "false";else if (obj === true) return "true";else if (typeof obj === "string") return _str_json(obj);else if (typeof obj === "number") {
@@ -2461,8 +2465,8 @@
         _iteratorError10 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion10 && _iterator10.return != null) {
-            _iterator10.return();
+          if (!_iteratorNormalCompletion10 && _iterator10["return"] != null) {
+            _iterator10["return"]();
           }
         } finally {
           if (_didIteratorError10) {
@@ -2525,31 +2529,24 @@
     } else if (_istemplate(obj)) {
       return "ul4.Template.loads(" + _repr2(obj.dumps()) + ")";
     }
-    throw new _TypeError("asjson() requires a serializable object");
+    throw new TypeError$1("asjson() requires a serializable object");
   }
 
-  ;
-
   function _fromjson(string) {
+    // The following is from jQuery's parseJSON function
     string = StrProtocol.strip(string);
     if (JSON && JSON.parse) return JSON.parse(string);
     if (_rvalidchars.test(string.replace(_rvalidescape, "@").replace(_rvalidtokens, "]").replace(_rvalidbraces, ""))) return new Function("return " + string)();
-    throw new _TypeError("invalid JSON");
+    throw new TypeError$1("invalid JSON");
   }
-
-  ;
 
   function _asul4on(obj) {
     return dumps(obj);
   }
 
-  ;
-
   function _fromul4on(string) {
     return _loads(string);
   }
-
-  ;
 
   function _format_datetime(obj, fmt, lang) {
     var translations = {
@@ -2841,10 +2838,12 @@
               break;
 
             case "z":
+              // UTC offset in the form +HHMM or -HHMM
               c = "";
               break;
 
             case "Z":
+              // Time zone name
               c = "";
               break;
           }
@@ -2860,8 +2859,8 @@
       _iteratorError11 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion11 && _iterator11.return != null) {
-          _iterator11.return();
+        if (!_iteratorNormalCompletion11 && _iterator11["return"] != null) {
+          _iterator11["return"]();
         }
       } finally {
         if (_didIteratorError11) {
@@ -2873,21 +2872,24 @@
     return result.join("");
   }
 
-  ;
-
   function _format_int(obj, fmt, lang) {
-    var work = fmt;
+    var work = fmt; // Defaults
+
     var fill = ' ';
-    var align = '>';
-    var sign = '-';
+    var align = '>'; // '<', '>', '=' or '^'
+
+    var sign = '-'; // '+', '-' or ' '
+
     var alternate = false;
     var minimumwidth = 0;
-    var type = 'd';
+    var type = 'd'; // 'b', 'c', 'd', 'o', 'x', 'X' or 'n'
+    // Determine output type
 
     if (/[bcdoxXn]$/.test(work)) {
       type = work.substring(work.length - 1);
       work = work.substring(0, work.length - 1);
-    }
+    } // Extract minimum width
+
 
     if (/\d+$/.test(work)) {
       var minimumwidthStr = /\d+$/.exec(work);
@@ -2899,18 +2901,21 @@
       }
 
       minimumwidth = parseInt(minimumwidthStr);
-    }
+    } // Alternate form?
+
 
     if (/#$/.test(work)) {
       alternate = true;
       work = work.substring(0, work.length - 1);
-    }
+    } // Determine sign
+
 
     if (/[+ -]$/.test(work)) {
       if (type == 'c') throw new ValueError("sign not allowed for integer format type 'c'");
       sign = work.substring(work.length - 1);
       work = work.substring(0, work.length - 1);
-    }
+    } // Extract fill and align char
+
 
     if (work.length >= 3) throw new ValueError("illegal integer format string " + _repr2(fmt));else if (work.length == 2) {
       if (/[<>=^]$/.test(work)) {
@@ -2919,7 +2924,8 @@
       } else throw new ValueError("illegal integer format string " + _repr2(fmt));
     } else if (work.length == 1) {
       if (/^[<>=^]$/.test(work)) align = work;else throw new ValueError("illegal integer format string " + _repr2(fmt));
-    }
+    } // Basic number formatting
+
     var neg = obj < 0;
     if (neg) obj = -obj;
     var output;
@@ -2951,9 +2957,11 @@
         break;
 
       case 'n':
+        // FIXME: locale formatting
         output = obj.toString();
         break;
-    }
+    } // The rest of the formatting
+
 
     if (align === '=') {
       if (neg || sign !== '-') --minimumwidth;
@@ -2966,7 +2974,8 @@
       if (neg) output = "-" + output;else if (sign != '-') output = sign + output;
 
       if (output.length < minimumwidth) {
-        if (align == '<') output = output + _str_repeat(fill, minimumwidth - output.length);else if (align == '>') output = _str_repeat(fill, minimumwidth - output.length) + output;else {
+        if (align == '<') output = output + _str_repeat(fill, minimumwidth - output.length);else if (align == '>') output = _str_repeat(fill, minimumwidth - output.length) + output;else // if (align == '^')
+          {
             var pad = minimumwidth - output.length;
             var padBefore = Math.floor(pad / 2);
             var padAfter = pad - padBefore;
@@ -2977,8 +2986,6 @@
 
     return output;
   }
-
-  ;
 
   function _format(obj, fmt, lang) {
     if (typeof lang === "undefined" || lang === null) lang = "en";else {
@@ -3015,9 +3022,6 @@
     if (_isdate(obj)) return _format_datetime(obj._date, fmt, lang);
     if (_isdatetime(obj)) return _format_datetime(obj, fmt, lang);else if (_isint(obj)) return _format_int(obj, fmt, lang);else if (obj === true) return _format_int(1, fmt, lang);else if (obj === false) return _format_int(0, fmt, lang);
   }
-
-  ;
-
   function _lpad(string, pad, len) {
     if (typeof string === "number") string = string.toString();
 
@@ -3027,9 +3031,6 @@
 
     return string;
   }
-
-  ;
-
   function _rpad(string, pad, len) {
     if (typeof string === "number") string = string.toString();
 
@@ -3039,11 +3040,13 @@
 
     return string;
   }
+  // This way reactive frameworks like ``Vue.js`` don't get to see it
+  // and complain about mutating render functions when those create new objects.
 
-  ;
   var _nextid = 1;
-
-  var Proto = exports.Proto = function () {
+  var Proto =
+  /*#__PURE__*/
+  function () {
     function Proto() {
       _classCallCheck(this, Proto);
 
@@ -3054,17 +3057,23 @@
       key: "ul4type",
       value: function ul4type() {
         return this.constructor.name;
-      }
+      } // equality comparison of objects defaults to identity comparison
+
     }, {
       key: "__eq__",
       value: function __eq__(other) {
         return this === other;
-      }
+      } // To overwrite equality comparison, you only have to overwrite ``__eq__``,
+      // ``__ne__`` will be synthesized from that
+
     }, {
       key: "__ne__",
       value: function __ne__(other) {
         return !this.__eq__(other);
-      }
+      } // For other comparison operators, each method has to be implemented:
+      // ``<`` calls ``__lt__``, ``<=`` calls ``__le__``, ``>`` calls ``__gt__`` and
+      // ``>=`` calls ``__ge__``
+
     }, {
       key: "__bool__",
       value: function __bool__() {
@@ -3074,10 +3083,9 @@
 
     return Proto;
   }();
-
-  ;
-
-  var Signature = exports.Signature = function (_Proto) {
+  var Signature =
+  /*#__PURE__*/
+  function (_Proto) {
     _inherits(Signature, _Proto);
 
     function Signature() {
@@ -3123,7 +3131,8 @@
       }
 
       return _this;
-    }
+    } // Create the argument array for calling a function with this signature with the arguments available from ``args``
+
 
     _createClass(Signature, [{
       key: "bindArray",
@@ -3149,14 +3158,15 @@
             }
 
             ++i;
-          }
+          } // Do we accept additional positional arguments?
+
         } catch (err) {
           _didIteratorError12 = true;
           _iteratorError12 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion12 && _iterator12.return != null) {
-              _iterator12.return();
+            if (!_iteratorNormalCompletion12 && _iterator12["return"] != null) {
+              _iterator12["return"]();
             }
           } finally {
             if (_didIteratorError12) {
@@ -3166,32 +3176,38 @@
         }
 
         if (this.remargs === null) {
+          // No, but we have them -> complain
           if (args.length > this.args.length) {
             var prefix = name === null ? "expected" : name + "() expects";
             throw new ArgumentError(prefix + " at most " + this.args.length + " positional argument" + (this.args.length != 1 ? "s" : "") + ", " + args.length + " given");
           }
         } else {
+          // Put additional positional arguments in the call into the ``*`` argument (if there are none, this pushes an empty list)
           finalargs.push(args.slice(this.args.length));
-        }
+        } // Do we accept arbitrary keyword arguments?
+
 
         if (this.remkwargs === null) {
+          // No => complain about unknown ones
           for (var key in kwargs) {
             if (!this.argNames[key]) {
               if (name === null) throw new ArgumentError("an argument named " + _repr2(key) + " isn't supported");else throw new ArgumentError(name + "() doesn't support an argument named " + _repr2(key));
             }
           }
         } else {
-          var remkwargs = _emptymap();
+          // Yes => Put the unknown ones into an object and add that to the arguments array
+          var remkwargs = exports._emptymap();
 
           for (var _key12 in kwargs) {
-            if (!this.argNames[_key12]) _setmap(remkwargs, _key12, kwargs[_key12]);
+            if (!this.argNames[_key12]) exports._setmap(remkwargs, _key12, kwargs[_key12]);
           }
 
           finalargs.push(remkwargs);
         }
 
         return finalargs;
-      }
+      } // Create the argument object for calling a function with this signature with the arguments available from ``args``
+
     }, {
       key: "bindObject",
       value: function bindObject(name, args, kwargs) {
@@ -3235,8 +3251,8 @@
           _iteratorError13 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion13 && _iterator13.return != null) {
-              _iterator13.return();
+            if (!_iteratorNormalCompletion13 && _iterator13["return"] != null) {
+              _iterator13["return"]();
             }
           } finally {
             if (_didIteratorError13) {
@@ -3254,9 +3270,9 @@
     return Signature;
   }(Proto);
 
-  ;
-
-  var _Set = exports._Set = function () {
+  var _Set =
+  /*#__PURE__*/
+  function () {
     function _Set() {
       _classCallCheck(this, _Set);
 
@@ -3336,11 +3352,14 @@
     }, {
       key: "__eq__",
       value: function __eq__(other) {
+        // We'll check that everything in ``this`` is in ``other``
+        // and if both have the same number of items they are equal
         if (_isset(other)) {
           var count = 0;
 
           for (var item in this.items) {
-            if (!other.has(item)) return false;
+            if (!other.has(item)) return false; // count the number of items we have
+
             ++count;
           }
 
@@ -3349,9 +3368,11 @@
           var _count2 = 0;
 
           for (var _item2 in this.items) {
-            if (!other[_item2]) return false;
+            if (!other[_item2]) return false; // count the number of items we have
+
             ++_count2;
-          }
+          } // Subtract the number of items that ``other`` has
+
 
           for (var _item3 in other.items) {
             --_count2;
@@ -3363,8 +3384,9 @@
     }, {
       key: "__le__",
       value: function __le__(other) {
+        // check that ``this`` is a subset of ``other``,
+        // i.e. everything in ``this`` is also in ``other``
         if (_isset(other)) {
-          var count = 0;
 
           for (var item in this.items) {
             if (!other.has(item)) return false;
@@ -3372,7 +3394,6 @@
 
           return true;
         } else if (_isul4set(other)) {
-          var _count3 = 0;
 
           for (var _item4 in this.items) {
             if (!other.items[_item4]) return false;
@@ -3384,13 +3405,14 @@
     }, {
       key: "__ge__",
       value: function __ge__(other) {
+        // check that ``this`` is a superset of ``other``,
+        // i.e. everything in ``other`` is also in ``this``
         if (_isset(other)) {
           other.forEach(function (value) {
             if (!this.items[value]) return false;
           }, this);
           return true;
         } else if (_isul4set(other)) {
-          var count = 0;
 
           for (var key in other.items) {
             if (!this.items[key]) return false;
@@ -3403,9 +3425,7 @@
 
     return _Set;
   }();
-
-  ;
-  _Set.prototype.__type__ = "set";
+  _Set.prototype.__type__ = "set"; // Adds name and signature to a function/method and makes the method callable in templates
 
   function expose(f, signature, options) {
     options = options || {};
@@ -3416,15 +3436,12 @@
     f._ul4_needscontext = options.needscontext || false;
   }
 
-  ;
-
   function _extend(baseobj, attrs) {
-    return _extends(Object.create(baseobj), attrs);
+    return Object.assign(Object.create(baseobj), attrs);
   }
 
-  ;
-  var Protocol = exports.Protocol = {
-    attrs: _emptyset(),
+  var Protocol = {
+    attrs: exports._emptyset(),
     ul4type: function ul4type() {
       return "Protocol";
     },
@@ -3444,7 +3461,8 @@
           }
 
           return attr.apply(this, [obj].concat(args));
-        };
+        }; // Unfortunately we can't set ``realattr.name``;
+
 
         realattr._ul4_name = attr._ul4_name || attr.name;
         realattr._ul4_signature = attr._ul4_signature;
@@ -3465,8 +3483,7 @@
       } else return this.attrs.has(attrname);
     }
   };
-
-  var StrProtocol = exports.StrProtocol = _extend(Protocol, {
+  var StrProtocol = _extend(Protocol, {
     attrs: _makeset("split", "rsplit", "splitlines", "strip", "lstrip", "rstrip", "upper", "lower", "capitalize", "startswith", "endswith", "replace", "count", "find", "rfind", "join"),
     ul4type: function ul4type(obj) {
       return "str";
@@ -3509,7 +3526,7 @@
     strip: function strip(obj) {
       var chars = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
       chars = chars || " \r\n\t";
-      if (typeof chars !== "string") throw new _TypeError("strip() requires a string argument");
+      if (typeof chars !== "string") throw new TypeError$1("strip() requires a string argument");
 
       while (obj && chars.indexOf(obj[0]) >= 0) {
         obj = obj.substr(1);
@@ -3524,7 +3541,7 @@
     lstrip: function lstrip(obj) {
       var chars = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
       chars = chars || " \r\n\t";
-      if (typeof chars !== "string") throw new _TypeError("lstrip() requires a string argument");
+      if (typeof chars !== "string") throw new TypeError$1("lstrip() requires a string argument");
 
       while (obj && chars.indexOf(obj[0]) >= 0) {
         obj = obj.substr(1);
@@ -3535,7 +3552,7 @@
     rstrip: function rstrip(obj) {
       var chars = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
       chars = chars || " \r\n\t";
-      if (typeof chars !== "string") throw new _TypeError("rstrip() requires a string argument");
+      if (typeof chars !== "string") throw new TypeError$1("rstrip() requires a string argument");
 
       while (obj && chars.indexOf(obj[obj.length - 1]) >= 0) {
         obj = obj.substr(0, obj.length - 1);
@@ -3546,7 +3563,7 @@
     split: function split(obj) {
       var sep = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
       var count = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-      if (sep !== null && typeof sep !== "string") throw new _TypeError("split() requires a string");
+      if (sep !== null && typeof sep !== "string") throw new TypeError$1("split() requires a string");
 
       if (count === null) {
         var result = obj.split(sep !== null ? sep : /[ \n\r\t]+/);
@@ -3582,7 +3599,8 @@
           while (obj.length) {
             obj = StrProtocol.lstrip(obj, null);
             var part = void 0;
-            if (!count--) part = obj;else part = obj.split(/[ \n\r\t]+/, 1)[0];
+            if (!count--) part = obj; // Take the rest of the string
+            else part = obj.split(/[ \n\r\t]+/, 1)[0];
             if (part.length) _result4.push(part);
             obj = obj.substr(part.length);
           }
@@ -3594,7 +3612,7 @@
     rsplit: function rsplit(obj) {
       var sep = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
       var count = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
-      if (sep !== null && typeof sep !== "string") throw new _TypeError("rsplit() requires a string as second argument");
+      if (sep !== null && typeof sep !== "string") throw new TypeError$1("rsplit() requires a string as second argument");
 
       if (count === null) {
         var result = obj.split(sep !== null ? sep : /[ \n\r\t]+/);
@@ -3630,7 +3648,8 @@
           while (obj.length) {
             obj = StrProtocol.rstrip(obj);
             var part = void 0;
-            if (!count--) part = obj;else {
+            if (!count--) part = obj; // Take the rest of the string
+            else {
                 part = obj.split(/[ \n\r\t]+/);
                 part = part[part.length - 1];
               }
@@ -3715,8 +3734,8 @@
           _iteratorError14 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion14 && _iterator14.return != null) {
-              _iterator14.return();
+            if (!_iteratorNormalCompletion14 && _iterator14["return"] != null) {
+              _iterator14["return"]();
             }
           } finally {
             if (_didIteratorError14) {
@@ -3726,7 +3745,7 @@
         }
 
         return false;
-      } else throw new _TypeError("startswith() argument must be string");
+      } else throw new TypeError$1("startswith() argument must be string");
     },
     endswith: function endswith(obj, suffix) {
       if (typeof suffix === "string") return obj.substr(obj.length - suffix.length) === suffix;else if (_islist(suffix)) {
@@ -3744,8 +3763,8 @@
           _iteratorError15 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion15 && _iterator15.return != null) {
-              _iterator15.return();
+            if (!_iteratorNormalCompletion15 && _iterator15["return"] != null) {
+              _iterator15["return"]();
             }
           } finally {
             if (_didIteratorError15) {
@@ -3755,10 +3774,9 @@
         }
 
         return false;
-      } else throw new _TypeError("endswith() argument must be string or list of strings");
+      } else throw new TypeError$1("endswith() argument must be string or list of strings");
     }
   });
-
   expose(StrProtocol.count, ["sub", "start=", null, "end=", null]);
   expose(StrProtocol.find, ["sub", "start=", null, "end=", null]);
   expose(StrProtocol.rfind, ["sub", "start=", null, "end=", null]);
@@ -3775,8 +3793,7 @@
   expose(StrProtocol.join, ["iterable"]);
   expose(StrProtocol.startswith, ["prefix"]);
   expose(StrProtocol.endswith, ["suffix"]);
-
-  var ListProtocol = exports.ListProtocol = _extend(Protocol, {
+  var ListProtocol = _extend(Protocol, {
     attrs: _makeset("append", "insert", "pop", "count", "find", "rfind"),
     ul4type: function ul4type(obj) {
       return "list";
@@ -3796,8 +3813,8 @@
         _iteratorError16 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion16 && _iterator16.return != null) {
-            _iterator16.return();
+          if (!_iteratorNormalCompletion16 && _iterator16["return"] != null) {
+            _iterator16["return"]();
           }
         } finally {
           if (_didIteratorError16) {
@@ -3824,8 +3841,8 @@
         _iteratorError17 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion17 && _iterator17.return != null) {
-            _iterator17.return();
+          if (!_iteratorNormalCompletion17 && _iterator17["return"] != null) {
+            _iterator17["return"]();
           }
         } finally {
           if (_didIteratorError17) {
@@ -3858,15 +3875,13 @@
       return _rfind(obj, sub, start, end);
     }
   });
-
   expose(ListProtocol.append, ["*items"]);
   expose(ListProtocol.insert, ["pos", "*items"]);
   expose(ListProtocol.pop, ["pos=", -1]);
   expose(ListProtocol.count, ["sub", "start=", null, "end=", null]);
   expose(ListProtocol.find, ["sub", "start=", null, "end=", null]);
   expose(ListProtocol.rfind, ["sub", "start=", null, "end=", null]);
-
-  var MapProtocol = exports.MapProtocol = _extend(Protocol, {
+  var MapProtocol = _extend(Protocol, {
     attrs: _makeset("get", "items", "values", "update", "clear"),
     ul4type: function ul4type(obj) {
       return "dict";
@@ -3881,7 +3896,8 @@
           }
 
           return attr.apply(this, [obj].concat(args));
-        };
+        }; // Unfortunately we can't set ``realattr.name``;
+
 
         realattr._ul4_name = attr._ul4_name || attr.name;
         realattr._ul4_signature = attr._ul4_signature;
@@ -3917,14 +3933,12 @@
       return null;
     }
   });
-
   expose(MapProtocol.get, ["key", "default=", null]);
   expose(MapProtocol.items, []);
   expose(MapProtocol.values, []);
   expose(MapProtocol.update, ["*other", "**kwargs"]);
   expose(MapProtocol.clear, []);
-
-  var SetProtocol = exports.SetProtocol = _extend(Protocol, {
+  var SetProtocol = _extend(Protocol, {
     attrs: _makeset("add", "clear"),
     ul4type: function ul4type(obj) {
       return "set";
@@ -3944,8 +3958,8 @@
         _iteratorError18 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion18 && _iterator18.return != null) {
-            _iterator18.return();
+          if (!_iteratorNormalCompletion18 && _iterator18["return"] != null) {
+            _iterator18["return"]();
           }
         } finally {
           if (_didIteratorError18) {
@@ -3959,11 +3973,9 @@
       return null;
     }
   });
-
   expose(SetProtocol.add, ["*items"]);
   expose(SetProtocol.clear, []);
-
-  var DateProtocol = exports.DateProtocol = _extend(Protocol, {
+  var DateProtocol = _extend(Protocol, {
     attrs: _makeset("weekday", "week", "calendar", "day", "month", "year", "mimeformat", "isoformat", "yearday"),
     ul4type: function ul4type(obj) {
       return "date";
@@ -4004,7 +4016,6 @@
       return DateTimeProtocol.yearday(obj._date);
     }
   });
-
   expose(DateProtocol.weekday, []);
   expose(DateProtocol.calendar, ["firstweekday=", 0, "mindaysinfirstweek=", 4]);
   expose(DateProtocol.week, ["firstweekday=", 0, "mindaysinfirstweek=", 4]);
@@ -4014,8 +4025,7 @@
   expose(DateProtocol.mimeformat, []);
   expose(DateProtocol.isoformat, []);
   expose(DateProtocol.yearday, []);
-
-  var DateTimeProtocol = exports.DateTimeProtocol = _extend(Protocol, {
+  var DateTimeProtocol = _extend(Protocol, {
     attrs: _makeset("weekday", "week", "calendar", "day", "month", "year", "hour", "minute", "second", "microsecond", "mimeformat", "isoformat", "yearday"),
     ul4type: function ul4type(obj) {
       return "datetime";
@@ -4027,22 +4037,26 @@
     calendar: function calendar(obj) {
       var firstweekday = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
       var mindaysinfirstweek = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : 4;
+      // Normalize parameters
       firstweekday = _mod(firstweekday, 7);
-      if (mindaysinfirstweek < 1) mindaysinfirstweek = 1;else if (mindaysinfirstweek > 7) mindaysinfirstweek = 7;
+      if (mindaysinfirstweek < 1) mindaysinfirstweek = 1;else if (mindaysinfirstweek > 7) mindaysinfirstweek = 7; // ``obj`` might be in the first week of the next year, or last week of
+      // the previous year, so we might have to try those too.
 
       for (var offset = +1; offset >= -1; --offset) {
-        var year = obj.getFullYear() + offset;
-        var refDate = new Date(year, 0, mindaysinfirstweek);
+        var year = obj.getFullYear() + offset; // ``refdate`` will always be in week 1
+
+        var refDate = new Date(year, 0, mindaysinfirstweek); // Go back to the start of ``refdate``s week (i.e. day 1 of week 1)
 
         var weekDayDiff = _mod(DateTimeProtocol.weekday(refDate) - firstweekday, 7);
 
         var weekStartYear = refDate.getFullYear();
         var weekStartMonth = refDate.getMonth();
         var weekStartDay = refDate.getDate() - weekDayDiff;
-        var weekStart = new Date(weekStartYear, weekStartMonth, weekStartDay);
+        var weekStart = new Date(weekStartYear, weekStartMonth, weekStartDay); // Is our date ``obj`` at or after day 1 of week 1?
 
         if (obj.getTime() >= weekStart.getTime()) {
-          var diff = SubAST.prototype._do(obj, weekStart);
+          var diff = SubAST.prototype._do(obj, weekStart); // Add 1, because the first week is week 1, not week 0
+
 
           var week = Math.floor(diff.days() / 7) + 1;
           return [year, week, DateTimeProtocol.weekday(obj)];
@@ -4137,7 +4151,6 @@
       }
     }
   });
-
   expose(DateTimeProtocol.weekday, []);
   expose(DateTimeProtocol.calendar, ["firstweekday=", 0, "mindaysinfirstweek=", 4]);
   expose(DateTimeProtocol.week, ["firstweekday=", 0, "mindaysinfirstweek=", 4]);
@@ -4151,15 +4164,15 @@
   expose(DateTimeProtocol.mimeformat, []);
   expose(DateTimeProtocol.isoformat, []);
   expose(DateTimeProtocol.yearday, []);
-
-  var ObjectProtocol = exports.ObjectProtocol = _extend(Protocol, {
+  var ObjectProtocol = _extend(Protocol, {
     attrs: _makeset("get", "items", "values", "update", "clear"),
     ul4type: function ul4type(obj) {
       return "dict";
     },
     getattr: function getattr(obj, attrname) {
       var result;
-      if (obj && typeof obj.__getattr__ === "function") result = obj.__getattr__(attrname);else result = obj[attrname];
+      if (obj && typeof obj.__getattr__ === "function") // test this before the generic object test
+        result = obj.__getattr__(attrname);else result = obj[attrname];
       if (typeof result !== "function") return result;
 
       var realresult = function realresult() {
@@ -4167,6 +4180,7 @@
           args[_key16] = arguments[_key16];
         }
 
+        // We can use ``apply`` here, as we know that ``obj`` is a real object.
         return result.apply(obj, args);
       };
 
@@ -4206,13 +4220,13 @@
       }
     }
   });
-
   expose(ObjectProtocol.get, ["key", "default=", null]);
   expose(ObjectProtocol.items, []);
   expose(ObjectProtocol.values, []);
   expose(ObjectProtocol.clear, []);
-
-  var Context = exports.Context = function () {
+  var Context =
+  /*#__PURE__*/
+  function () {
     function Context(vars) {
       _classCallCheck(this, Context);
 
@@ -4222,6 +4236,10 @@
       this.escapes = [];
       this._output = [];
     }
+    /* Return a clone of the ``Context``, but with a fresh empty ``vars`` objects that inherits from the previous one.
+     * This is used by the various comprehensions to avoid leaking loop variables.
+     */
+
 
     _createClass(Context, [{
       key: "inheritvars",
@@ -4230,6 +4248,8 @@
         context.vars = Object.create(this.vars);
         return context;
       }
+      /* Return a clone of the ``Context`` with one additional indentation (this is used by ``RenderAST``) */
+
     }, {
       key: "withindent",
       value: function withindent(indent) {
@@ -4242,6 +4262,8 @@
 
         return context;
       }
+      /* Return a clone of the ``Context`` with the output buffer replaced (this is used by ``renders`` to collect the output in a separate buffer) */
+
     }, {
       key: "replaceoutput",
       value: function replaceoutput() {
@@ -4271,8 +4293,8 @@
           _iteratorError19 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion19 && _iterator19.return != null) {
-              _iterator19.return();
+            if (!_iteratorNormalCompletion19 && _iterator19["return"] != null) {
+              _iterator19["return"]();
             }
           } finally {
             if (_didIteratorError19) {
@@ -4302,8 +4324,7 @@
 
     return Context;
   }();
-
-  ;
+  // Note that extending ``Error`` doesn't work, so we do it the "classic" way
 
   function Exception(message, fileName, lineNumber) {
     var instance = new Error(message, fileName, lineNumber);
@@ -4312,8 +4333,6 @@
     instance.context = null;
     return instance;
   }
-
-  ;
   Exception.prototype = Object.create(Error.prototype, {
     constructor: {
       value: Error,
@@ -4332,9 +4351,12 @@
       default:
         throw new AttributeError(this, attrname);
     }
-  };
+  }; // Exceptions used internally by UL4 for flow control
 
-  var InternalException = exports.InternalException = function (_Exception) {
+
+  var InternalException =
+  /*#__PURE__*/
+  function (_Exception) {
     _inherits(InternalException, _Exception);
 
     function InternalException() {
@@ -4346,9 +4368,9 @@
     return InternalException;
   }(Exception);
 
-  ;
-
-  var ReturnException = exports.ReturnException = function (_InternalException) {
+  var ReturnException =
+  /*#__PURE__*/
+  function (_InternalException) {
     _inherits(ReturnException, _InternalException);
 
     function ReturnException(result) {
@@ -4363,10 +4385,9 @@
 
     return ReturnException;
   }(InternalException);
-
-  ;
-
-  var BreakException = exports.BreakException = function (_InternalException2) {
+  var BreakException =
+  /*#__PURE__*/
+  function (_InternalException2) {
     _inherits(BreakException, _InternalException2);
 
     function BreakException() {
@@ -4377,10 +4398,9 @@
 
     return BreakException;
   }(InternalException);
-
-  ;
-
-  var ContinueException = exports.ContinueException = function (_InternalException3) {
+  var ContinueException =
+  /*#__PURE__*/
+  function (_InternalException3) {
     _inherits(ContinueException, _InternalException3);
 
     function ContinueException() {
@@ -4392,9 +4412,9 @@
     return ContinueException;
   }(InternalException);
 
-  ;
-
-  var SyntaxError = exports.SyntaxError = function (_Exception2) {
+  var SyntaxError =
+  /*#__PURE__*/
+  function (_Exception2) {
     _inherits(SyntaxError, _Exception2);
 
     function SyntaxError() {
@@ -4405,10 +4425,9 @@
 
     return SyntaxError;
   }(Exception);
-
-  ;
-
-  var LValueRequiredError = exports.LValueRequiredError = function (_SyntaxError) {
+  var LValueRequiredError =
+  /*#__PURE__*/
+  function (_SyntaxError) {
     _inherits(LValueRequiredError, _SyntaxError);
 
     function LValueRequiredError() {
@@ -4419,25 +4438,22 @@
 
     return LValueRequiredError;
   }(SyntaxError);
+  var TypeError$1 =
+  /*#__PURE__*/
+  function (_Exception3) {
+    _inherits(TypeError, _Exception3);
 
-  ;
+    function TypeError() {
+      _classCallCheck(this, TypeError);
 
-  var _TypeError = function (_Exception3) {
-    _inherits(_TypeError, _Exception3);
-
-    function _TypeError() {
-      _classCallCheck(this, _TypeError);
-
-      return _possibleConstructorReturn(this, _getPrototypeOf(_TypeError).apply(this, arguments));
+      return _possibleConstructorReturn(this, _getPrototypeOf(TypeError).apply(this, arguments));
     }
 
-    return _TypeError;
+    return TypeError;
   }(Exception);
-
-  exports.TypeError = _TypeError;
-  ;
-
-  var ValueError = exports.ValueError = function (_Exception4) {
+  var ValueError =
+  /*#__PURE__*/
+  function (_Exception4) {
     _inherits(ValueError, _Exception4);
 
     function ValueError() {
@@ -4448,10 +4464,9 @@
 
     return ValueError;
   }(Exception);
-
-  ;
-
-  var ArgumentError = exports.ArgumentError = function (_Exception5) {
+  var ArgumentError =
+  /*#__PURE__*/
+  function (_Exception5) {
     _inherits(ArgumentError, _Exception5);
 
     function ArgumentError() {
@@ -4462,10 +4477,9 @@
 
     return ArgumentError;
   }(Exception);
-
-  ;
-
-  var NotSubscriptableError = exports.NotSubscriptableError = function (_Exception6) {
+  var NotSubscriptableError =
+  /*#__PURE__*/
+  function (_Exception6) {
     _inherits(NotSubscriptableError, _Exception6);
 
     function NotSubscriptableError(obj) {
@@ -4487,10 +4501,9 @@
 
     return NotSubscriptableError;
   }(Exception);
-
-  ;
-
-  var ZeroDivisionError = exports.ZeroDivisionError = function (_Exception7) {
+  var ZeroDivisionError =
+  /*#__PURE__*/
+  function (_Exception7) {
     _inherits(ZeroDivisionError, _Exception7);
 
     function ZeroDivisionError() {
@@ -4501,10 +4514,9 @@
 
     return ZeroDivisionError;
   }(Exception);
-
-  ;
-
-  var IndexError = exports.IndexError = function (_Exception8) {
+  var IndexError =
+  /*#__PURE__*/
+  function (_Exception8) {
     _inherits(IndexError, _Exception8);
 
     function IndexError(obj, index) {
@@ -4527,10 +4539,9 @@
 
     return IndexError;
   }(Exception);
-
-  ;
-
-  var AttributeError = exports.AttributeError = function (_Exception9) {
+  var AttributeError =
+  /*#__PURE__*/
+  function (_Exception9) {
     _inherits(AttributeError, _Exception9);
 
     function AttributeError(obj, attrname) {
@@ -4547,9 +4558,9 @@
     return AttributeError;
   }(Exception);
 
-  ;
-
-  var LocationError = exports.LocationError = function (_Exception10) {
+  var LocationError =
+  /*#__PURE__*/
+  function (_Exception10) {
     _inherits(LocationError, _Exception10);
 
     function LocationError(location) {
@@ -4618,9 +4629,9 @@
     return LocationError;
   }(Exception);
 
-  ;
-
-  var AST = exports.AST = function (_Proto2) {
+  var AST =
+  /*#__PURE__*/
+  function (_Proto2) {
     _inherits(AST, _Proto2);
 
     function AST(template, pos) {
@@ -4659,7 +4670,7 @@
     }, {
       key: "__setitem__",
       value: function __setitem__(attrname, value) {
-        throw new _TypeError("object is immutable");
+        throw new TypeError$1("object is immutable");
       }
     }, {
       key: "__str__",
@@ -4753,8 +4764,8 @@
           _iteratorError20 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion20 && _iterator20.return != null) {
-              _iterator20.return();
+            if (!_iteratorNormalCompletion20 && _iterator20["return"] != null) {
+              _iterator20["return"]();
             }
           } finally {
             if (_didIteratorError20) {
@@ -4780,8 +4791,8 @@
           _iteratorError21 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion21 && _iterator21.return != null) {
-              _iterator21.return();
+            if (!_iteratorNormalCompletion21 && _iterator21["return"] != null) {
+              _iterator21["return"]();
             }
           } finally {
             if (_didIteratorError21) {
@@ -4810,10 +4821,12 @@
         var preprefix = "\u2026";
 
         while (maxprefix > 0) {
+          // We arrived at the start of the source code
           if (outerstartpos === 0) {
             preprefix = "";
             break;
-          }
+          } // We arrived at the start of the line
+
 
           if (source.charAt(outerstartpos - 1) === "\n") {
             preprefix = "";
@@ -4836,10 +4849,12 @@
         var postsuffix = "\u2026";
 
         while (maxsuffix > 0) {
+          // We arrived at the ed of the source code
           if (outerstoppos >= source.length) {
             postsuffix = "";
             break;
-          }
+          } // We arrived at the end of the line
+
 
           if (source.charAt(outerstoppos) === "\n") {
             postsuffix = "";
@@ -4869,10 +4884,10 @@
     return AST;
   }(Proto);
 
-  ;
   AST.prototype._ul4onattrs = ["template", "pos"];
-
-  var TextAST = exports.TextAST = function (_AST) {
+  var TextAST =
+  /*#__PURE__*/
+  function (_AST) {
     _inherits(TextAST, _AST);
 
     function TextAST(template, pos) {
@@ -4908,10 +4923,9 @@
 
     return TextAST;
   }(AST);
-
-  ;
-
-  var IndentAST = exports.IndentAST = function (_TextAST) {
+  var IndentAST =
+  /*#__PURE__*/
+  function (_TextAST) {
     _inherits(IndentAST, _TextAST);
 
     function IndentAST(template, pos, text) {
@@ -4941,8 +4955,8 @@
           _iteratorError22 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion22 && _iterator22.return != null) {
-              _iterator22.return();
+            if (!_iteratorNormalCompletion22 && _iterator22["return"] != null) {
+              _iterator22["return"]();
             }
           } finally {
             if (_didIteratorError22) {
@@ -4956,14 +4970,14 @@
     }, {
       key: "ul4ondump",
       value: function ul4ondump(encoder) {
-        _get2(_getPrototypeOf(IndentAST.prototype), "ul4ondump", this).call(this, encoder);
+        _get(_getPrototypeOf(IndentAST.prototype), "ul4ondump", this).call(this, encoder);
 
         if (this._text === this.source) encoder.dump(null);else encoder.dump(this._text);
       }
     }, {
       key: "ul4onload",
       value: function ul4onload(decoder) {
-        _get2(_getPrototypeOf(IndentAST.prototype), "ul4onload", this).call(this, decoder);
+        _get(_getPrototypeOf(IndentAST.prototype), "ul4onload", this).call(this, decoder);
 
         this._text = decoder.load();
       }
@@ -4989,10 +5003,9 @@
 
     return IndentAST;
   }(TextAST);
-
-  ;
-
-  var LineEndAST = exports.LineEndAST = function (_TextAST2) {
+  var LineEndAST =
+  /*#__PURE__*/
+  function (_TextAST2) {
     _inherits(LineEndAST, _TextAST2);
 
     function LineEndAST() {
@@ -5018,10 +5031,9 @@
 
     return LineEndAST;
   }(TextAST);
-
-  ;
-
-  var CodeAST = exports.CodeAST = function (_AST2) {
+  var CodeAST =
+  /*#__PURE__*/
+  function (_AST2) {
     _inherits(CodeAST, _AST2);
 
     function CodeAST() {
@@ -5032,10 +5044,9 @@
 
     return CodeAST;
   }(AST);
-
-  ;
-
-  var ConstAST = exports.ConstAST = function (_CodeAST) {
+  var ConstAST =
+  /*#__PURE__*/
+  function (_CodeAST) {
     _inherits(ConstAST, _CodeAST);
 
     function ConstAST(template, pos, value) {
@@ -5064,11 +5075,10 @@
 
     return ConstAST;
   }(CodeAST);
-
-  ;
   ConstAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["value"]);
-
-  var ItemArgBase = exports.ItemArgBase = function (_CodeAST2) {
+  var ItemArgBase =
+  /*#__PURE__*/
+  function (_CodeAST2) {
     _inherits(ItemArgBase, _CodeAST2);
 
     function ItemArgBase() {
@@ -5121,10 +5131,9 @@
 
     return ItemArgBase;
   }(CodeAST);
-
-  ;
-
-  var SeqItemAST = exports.SeqItemAST = function (_ItemArgBase) {
+  var SeqItemAST =
+  /*#__PURE__*/
+  function (_ItemArgBase) {
     _inherits(SeqItemAST, _ItemArgBase);
 
     function SeqItemAST(template, pos, value) {
@@ -5162,11 +5171,10 @@
 
     return SeqItemAST;
   }(ItemArgBase);
-
-  ;
   SeqItemAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["value"]);
-
-  var UnpackSeqItemAST = exports.UnpackSeqItemAST = function (_ItemArgBase2) {
+  var UnpackSeqItemAST =
+  /*#__PURE__*/
+  function (_ItemArgBase2) {
     _inherits(UnpackSeqItemAST, _ItemArgBase2);
 
     function UnpackSeqItemAST(template, pos, value) {
@@ -5212,11 +5220,10 @@
 
     return UnpackSeqItemAST;
   }(ItemArgBase);
-
-  ;
   UnpackSeqItemAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["value"]);
-
-  var DictItemAST = exports.DictItemAST = function (_ItemArgBase3) {
+  var DictItemAST =
+  /*#__PURE__*/
+  function (_ItemArgBase3) {
     _inherits(DictItemAST, _ItemArgBase3);
 
     function DictItemAST(template, pos, key, value) {
@@ -5246,17 +5253,16 @@
 
         var value = this.value._handle_eval(context);
 
-        _setmap(result, key, value);
+        exports._setmap(result, key, value);
       }
     }]);
 
     return DictItemAST;
   }(ItemArgBase);
-
-  ;
   DictItemAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["key", "value"]);
-
-  var UnpackDictItemAST = exports.UnpackDictItemAST = function (_ItemArgBase4) {
+  var UnpackDictItemAST =
+  /*#__PURE__*/
+  function (_ItemArgBase4) {
     _inherits(UnpackDictItemAST, _ItemArgBase4);
 
     function UnpackDictItemAST(template, pos, item) {
@@ -5291,15 +5297,15 @@
               var subitem = _step23.value;
               if (!_islist(subitem) || subitem.length != 2) throw new ArgumentError("** requires a list of (key, value) pairs");
 
-              _setmap(result, subitem[0], subitem[1]);
+              exports._setmap(result, subitem[0], subitem[1]);
             }
           } catch (err) {
             _didIteratorError23 = true;
             _iteratorError23 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion23 && _iterator23.return != null) {
-                _iterator23.return();
+              if (!_iteratorNormalCompletion23 && _iterator23["return"] != null) {
+                _iterator23["return"]();
               }
             } finally {
               if (_didIteratorError23) {
@@ -5309,11 +5315,11 @@
           }
         } else if (_ismap(item)) {
           item.forEach(function (value, key) {
-            _setmap(result, key, value);
+            exports._setmap(result, key, value);
           });
         } else if (_isobject(item)) {
           for (var key in item) {
-            _setmap(result, key, item[key]);
+            exports._setmap(result, key, item[key]);
           }
         }
       }
@@ -5321,11 +5327,10 @@
 
     return UnpackDictItemAST;
   }(ItemArgBase);
-
-  ;
   UnpackDictItemAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["item"]);
-
-  var PosArgAST = exports.PosArgAST = function (_ItemArgBase5) {
+  var PosArgAST =
+  /*#__PURE__*/
+  function (_ItemArgBase5) {
     _inherits(PosArgAST, _ItemArgBase5);
 
     function PosArgAST(template, pos, value) {
@@ -5358,11 +5363,10 @@
 
     return PosArgAST;
   }(ItemArgBase);
-
-  ;
   PosArgAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["value"]);
-
-  var KeywordArgAST = exports.KeywordArgAST = function (_ItemArgBase6) {
+  var KeywordArgAST =
+  /*#__PURE__*/
+  function (_ItemArgBase6) {
     _inherits(KeywordArgAST, _ItemArgBase6);
 
     function KeywordArgAST(template, pos, name, value) {
@@ -5400,11 +5404,10 @@
 
     return KeywordArgAST;
   }(ItemArgBase);
-
-  ;
   KeywordArgAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["name", "value"]);
-
-  var UnpackListArgAST = exports.UnpackListArgAST = function (_ItemArgBase7) {
+  var UnpackListArgAST =
+  /*#__PURE__*/
+  function (_ItemArgBase7) {
     _inherits(UnpackListArgAST, _ItemArgBase7);
 
     function UnpackListArgAST(template, pos, item) {
@@ -5437,11 +5440,10 @@
 
     return UnpackListArgAST;
   }(ItemArgBase);
-
-  ;
   UnpackListArgAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["item"]);
-
-  var UnpackDictArgAST = exports.UnpackDictArgAST = function (_ItemArgBase8) {
+  var UnpackDictArgAST =
+  /*#__PURE__*/
+  function (_ItemArgBase8) {
     _inherits(UnpackDictArgAST, _ItemArgBase8);
 
     function UnpackDictArgAST(template, pos, item) {
@@ -5490,8 +5492,8 @@
             _iteratorError24 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion24 && _iterator24.return != null) {
-                _iterator24.return();
+              if (!_iteratorNormalCompletion24 && _iterator24["return"] != null) {
+                _iterator24["return"]();
               }
             } finally {
               if (_didIteratorError24) {
@@ -5515,11 +5517,10 @@
 
     return UnpackDictArgAST;
   }(ItemArgBase);
-
-  ;
   UnpackDictArgAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["item"]);
-
-  var ListAST = exports.ListAST = function (_CodeAST3) {
+  var ListAST =
+  /*#__PURE__*/
+  function (_CodeAST3) {
     _inherits(ListAST, _CodeAST3);
 
     function ListAST(template, pos) {
@@ -5552,8 +5553,8 @@
           _iteratorError25 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion25 && _iterator25.return != null) {
-              _iterator25.return();
+            if (!_iteratorNormalCompletion25 && _iterator25["return"] != null) {
+              _iterator25["return"]();
             }
           } finally {
             if (_didIteratorError25) {
@@ -5583,8 +5584,8 @@
           _iteratorError26 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion26 && _iterator26.return != null) {
-              _iterator26.return();
+            if (!_iteratorNormalCompletion26 && _iterator26["return"] != null) {
+              _iterator26["return"]();
             }
           } finally {
             if (_didIteratorError26) {
@@ -5599,11 +5600,10 @@
 
     return ListAST;
   }(CodeAST);
-
-  ;
   ListAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["items"]);
-
-  var ListCompAST = exports.ListCompAST = function (_CodeAST4) {
+  var ListCompAST =
+  /*#__PURE__*/
+  function (_CodeAST4) {
     _inherits(ListCompAST, _CodeAST4);
 
     function ListCompAST(template, pos, item, varname, container, condition) {
@@ -5672,8 +5672,8 @@
             _iteratorError27 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion27 && _iterator27.return != null) {
-                _iterator27.return();
+              if (!_iteratorNormalCompletion27 && _iterator27["return"] != null) {
+                _iterator27["return"]();
               }
             } finally {
               if (_didIteratorError27) {
@@ -5691,11 +5691,10 @@
 
     return ListCompAST;
   }(CodeAST);
-
-  ;
   ListCompAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["item", "varname", "container", "condition"]);
-
-  var SetAST = exports.SetAST = function (_CodeAST5) {
+  var SetAST =
+  /*#__PURE__*/
+  function (_CodeAST5) {
     _inherits(SetAST, _CodeAST5);
 
     function SetAST(template, pos) {
@@ -5728,8 +5727,8 @@
           _iteratorError28 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion28 && _iterator28.return != null) {
-              _iterator28.return();
+            if (!_iteratorNormalCompletion28 && _iterator28["return"] != null) {
+              _iterator28["return"]();
             }
           } finally {
             if (_didIteratorError28) {
@@ -5743,7 +5742,7 @@
     }, {
       key: "_eval",
       value: function _eval(context) {
-        var result = _emptyset();
+        var result = exports._emptyset();
 
         var _iteratorNormalCompletion29 = true;
         var _didIteratorError29 = false;
@@ -5760,8 +5759,8 @@
           _iteratorError29 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion29 && _iterator29.return != null) {
-              _iterator29.return();
+            if (!_iteratorNormalCompletion29 && _iterator29["return"] != null) {
+              _iterator29["return"]();
             }
           } finally {
             if (_didIteratorError29) {
@@ -5776,11 +5775,10 @@
 
     return SetAST;
   }(CodeAST);
-
-  ;
   SetAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["items"]);
-
-  var SetCompAST = exports.SetCompAST = function (_CodeAST6) {
+  var SetCompAST =
+  /*#__PURE__*/
+  function (_CodeAST6) {
     _inherits(SetCompAST, _CodeAST6);
 
     function SetCompAST(template, pos, item, varname, container, condition) {
@@ -5813,7 +5811,7 @@
             return this.condition;
 
           default:
-            return _get2(_getPrototypeOf(SetCompAST.prototype), "__getattr__", this).call(this, attrname);
+            return _get(_getPrototypeOf(SetCompAST.prototype), "__getattr__", this).call(this, attrname);
         }
       }
     }, {
@@ -5847,7 +5845,7 @@
 
         var localcontext = context.inheritvars();
 
-        var result = _emptyset();
+        var result = exports._emptyset();
 
         for (var iter = _iter(container);;) {
           var item = iter.next();
@@ -5872,8 +5870,8 @@
             _iteratorError30 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion30 && _iterator30.return != null) {
-                _iterator30.return();
+              if (!_iteratorNormalCompletion30 && _iterator30["return"] != null) {
+                _iterator30["return"]();
               }
             } finally {
               if (_didIteratorError30) {
@@ -5891,11 +5889,10 @@
 
     return SetCompAST;
   }(CodeAST);
-
-  ;
   SetCompAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["item", "varname", "container", "condition"]);
-
-  var DictAST = exports.DictAST = function (_CodeAST7) {
+  var DictAST =
+  /*#__PURE__*/
+  function (_CodeAST7) {
     _inherits(DictAST, _CodeAST7);
 
     function DictAST(template, pos) {
@@ -5916,7 +5913,7 @@
             return this.items;
 
           default:
-            return _get2(_getPrototypeOf(DictAST.prototype), "__getattr__", this).call(this, attrname);
+            return _get(_getPrototypeOf(DictAST.prototype), "__getattr__", this).call(this, attrname);
         }
       }
     }, {
@@ -5939,8 +5936,8 @@
           _iteratorError31 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion31 && _iterator31.return != null) {
-              _iterator31.return();
+            if (!_iteratorNormalCompletion31 && _iterator31["return"] != null) {
+              _iterator31["return"]();
             }
           } finally {
             if (_didIteratorError31) {
@@ -5954,7 +5951,7 @@
     }, {
       key: "_eval",
       value: function _eval(context) {
-        var result = _emptymap();
+        var result = exports._emptymap();
 
         var _iteratorNormalCompletion32 = true;
         var _didIteratorError32 = false;
@@ -5971,8 +5968,8 @@
           _iteratorError32 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion32 && _iterator32.return != null) {
-              _iterator32.return();
+            if (!_iteratorNormalCompletion32 && _iterator32["return"] != null) {
+              _iterator32["return"]();
             }
           } finally {
             if (_didIteratorError32) {
@@ -5987,11 +5984,10 @@
 
     return DictAST;
   }(CodeAST);
-
-  ;
   DictAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["items"]);
-
-  var DictCompAST = exports.DictCompAST = function (_CodeAST8) {
+  var DictCompAST =
+  /*#__PURE__*/
+  function (_CodeAST8) {
     _inherits(DictCompAST, _CodeAST8);
 
     function DictCompAST(template, pos, key, value, varname, container, condition) {
@@ -6043,7 +6039,7 @@
 
         var localcontext = context.inheritvars();
 
-        var result = _emptymap();
+        var result = exports._emptymap();
 
         for (var iter = _iter(container);;) {
           var item = iter.next();
@@ -6068,8 +6064,8 @@
             _iteratorError33 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion33 && _iterator33.return != null) {
-                _iterator33.return();
+              if (!_iteratorNormalCompletion33 && _iterator33["return"] != null) {
+                _iterator33["return"]();
               }
             } finally {
               if (_didIteratorError33) {
@@ -6083,7 +6079,7 @@
 
             var value = this.value._handle_eval(localcontext);
 
-            _setmap(result, key, value);
+            exports._setmap(result, key, value);
           }
         }
 
@@ -6093,11 +6089,10 @@
 
     return DictCompAST;
   }(CodeAST);
-
-  ;
   DictCompAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["key", "value", "varname", "container", "condition"]);
-
-  var GenExprAST = exports.GenExprAST = function (_CodeAST9) {
+  var GenExprAST =
+  /*#__PURE__*/
+  function (_CodeAST9) {
     _inherits(GenExprAST, _CodeAST9);
 
     function GenExprAST(template, pos, item, varname, container, condition) {
@@ -6171,8 +6166,8 @@
                 _iteratorError34 = err;
               } finally {
                 try {
-                  if (!_iteratorNormalCompletion34 && _iterator34.return != null) {
-                    _iterator34.return();
+                  if (!_iteratorNormalCompletion34 && _iterator34["return"] != null) {
+                    _iterator34["return"]();
                   }
                 } finally {
                   if (_didIteratorError34) {
@@ -6198,11 +6193,10 @@
 
     return GenExprAST;
   }(CodeAST);
-
-  ;
   GenExprAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["item", "varname", "container", "condition"]);
-
-  var VarAST = exports.VarAST = function (_CodeAST10) {
+  var VarAST =
+  /*#__PURE__*/
+  function (_CodeAST10) {
     _inherits(VarAST, _CodeAST10);
 
     function VarAST(template, pos, name) {
@@ -6260,11 +6254,10 @@
 
     return VarAST;
   }(CodeAST);
-
-  ;
   VarAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["name"]);
-
-  var UnaryAST = exports.UnaryAST = function (_CodeAST11) {
+  var UnaryAST =
+  /*#__PURE__*/
+  function (_CodeAST11) {
     _inherits(UnaryAST, _CodeAST11);
 
     function UnaryAST(template, pos, obj) {
@@ -6299,11 +6292,11 @@
 
     return UnaryAST;
   }(CodeAST);
+  UnaryAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["obj"]); // Negation
 
-  ;
-  UnaryAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["obj"]);
-
-  var NegAST = exports.NegAST = function (_UnaryAST) {
+  var NegAST =
+  /*#__PURE__*/
+  function (_UnaryAST) {
     _inherits(NegAST, _UnaryAST);
 
     function NegAST() {
@@ -6323,9 +6316,9 @@
     return NegAST;
   }(UnaryAST);
 
-  ;
-
-  var BitNotAST = exports.BitNotAST = function (_UnaryAST2) {
+  var BitNotAST =
+  /*#__PURE__*/
+  function (_UnaryAST2) {
     _inherits(BitNotAST, _UnaryAST2);
 
     function BitNotAST() {
@@ -6344,9 +6337,9 @@
     return BitNotAST;
   }(UnaryAST);
 
-  ;
-
-  var NotAST = exports.NotAST = function (_UnaryAST3) {
+  var NotAST =
+  /*#__PURE__*/
+  function (_UnaryAST3) {
     _inherits(NotAST, _UnaryAST3);
 
     function NotAST() {
@@ -6365,9 +6358,9 @@
     return NotAST;
   }(UnaryAST);
 
-  ;
-
-  var IfAST = exports.IfAST = function (_CodeAST12) {
+  var IfAST =
+  /*#__PURE__*/
+  function (_CodeAST12) {
     _inherits(IfAST, _CodeAST12);
 
     function IfAST(template, pos, objif, objcond, objelse) {
@@ -6419,11 +6412,10 @@
 
     return IfAST;
   }(CodeAST);
-
-  ;
   IfAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["objif", "objcond", "objelse"]);
-
-  var ReturnAST = exports.ReturnAST = function (_UnaryAST4) {
+  var ReturnAST =
+  /*#__PURE__*/
+  function (_UnaryAST4) {
     _inherits(ReturnAST, _UnaryAST4);
 
     function ReturnAST() {
@@ -6450,10 +6442,9 @@
 
     return ReturnAST;
   }(UnaryAST);
-
-  ;
-
-  var PrintAST = exports.PrintAST = function (_UnaryAST5) {
+  var PrintAST =
+  /*#__PURE__*/
+  function (_UnaryAST5) {
     _inherits(PrintAST, _UnaryAST5);
 
     function PrintAST() {
@@ -6482,10 +6473,9 @@
 
     return PrintAST;
   }(UnaryAST);
-
-  ;
-
-  var PrintXAST = exports.PrintXAST = function (_UnaryAST6) {
+  var PrintXAST =
+  /*#__PURE__*/
+  function (_UnaryAST6) {
     _inherits(PrintXAST, _UnaryAST6);
 
     function PrintXAST() {
@@ -6514,10 +6504,9 @@
 
     return PrintXAST;
   }(UnaryAST);
-
-  ;
-
-  var BinaryAST = exports.BinaryAST = function (_CodeAST13) {
+  var BinaryAST =
+  /*#__PURE__*/
+  function (_CodeAST13) {
     _inherits(BinaryAST, _CodeAST13);
 
     function BinaryAST(template, pos, obj1, obj2) {
@@ -6559,11 +6548,11 @@
 
     return BinaryAST;
   }(CodeAST);
+  BinaryAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["obj1", "obj2"]); // Item access and assignment: dict[key], list[index], string[index], color[index]
 
-  ;
-  BinaryAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["obj1", "obj2"]);
-
-  var ItemAST = exports.ItemAST = function (_BinaryAST) {
+  var ItemAST =
+  /*#__PURE__*/
+  function (_BinaryAST) {
     _inherits(ItemAST, _BinaryAST);
 
     function ItemAST() {
@@ -6613,7 +6602,8 @@
             if (key < 0 || key >= container.length) throw new IndexError(container, orgkey);
             return container[key];
           }
-        } else if (container && typeof container.__getitem__ === "function") return container.__getitem__(key);else if (_ismap(container)) return container.get(key);else throw new _TypeError(_type(container) + " object is not subscriptable");
+        } else if (container && typeof container.__getitem__ === "function") // objects without ``_getitem__`` don't support item access
+          return container.__getitem__(key);else if (_ismap(container)) return container.get(key);else throw new TypeError$1(_type(container) + " object is not subscriptable");
       }
     }, {
       key: "_set",
@@ -6627,7 +6617,7 @@
             if (stop === null) stop = container.length;else if (stop < 0) stop += container.length;
             if (stop < 0) stop = 0;else if (stop > container.length) stop = container.length;
             if (stop < start) stop = start;
-            container.splice(start, stop - start);
+            container.splice(start, stop - start); // Remove old element
 
             for (var iter = _iter(value);;) {
               var item = iter.next();
@@ -6640,7 +6630,8 @@
             if (key < 0 || key >= container.length) throw new IndexError(container, orgkey);
             container[key] = value;
           }
-        } else if (container && typeof container.__setitem__ === "function") container.__setitem__(key, value);else if (_ismap(container)) container.set(key, value);else if (_isobject(container)) container[key] = value;else throw new NotSubscriptableError(container);
+        } else if (container && typeof container.__setitem__ === "function") // test this before the generic object test
+          container.__setitem__(key, value);else if (_ismap(container)) container.set(key, value);else if (_isobject(container)) container[key] = value;else throw new NotSubscriptableError(container);
       }
     }, {
       key: "_modify",
@@ -6652,9 +6643,9 @@
     return ItemAST;
   }(BinaryAST);
 
-  ;
-
-  var IsAST = exports.IsAST = function (_BinaryAST2) {
+  var IsAST =
+  /*#__PURE__*/
+  function (_BinaryAST2) {
     _inherits(IsAST, _BinaryAST2);
 
     function IsAST() {
@@ -6673,9 +6664,9 @@
     return IsAST;
   }(BinaryAST);
 
-  ;
-
-  var IsNotAST = exports.IsNotAST = function (_BinaryAST3) {
+  var IsNotAST =
+  /*#__PURE__*/
+  function (_BinaryAST3) {
     _inherits(IsNotAST, _BinaryAST3);
 
     function IsNotAST() {
@@ -6694,9 +6685,9 @@
     return IsNotAST;
   }(BinaryAST);
 
-  ;
-
-  var EQAST = exports.EQAST = function (_BinaryAST4) {
+  var EQAST =
+  /*#__PURE__*/
+  function (_BinaryAST4) {
     _inherits(EQAST, _BinaryAST4);
 
     function EQAST() {
@@ -6715,9 +6706,9 @@
     return EQAST;
   }(BinaryAST);
 
-  ;
-
-  var NEAST = exports.NEAST = function (_BinaryAST5) {
+  var NEAST =
+  /*#__PURE__*/
+  function (_BinaryAST5) {
     _inherits(NEAST, _BinaryAST5);
 
     function NEAST() {
@@ -6736,9 +6727,9 @@
     return NEAST;
   }(BinaryAST);
 
-  ;
-
-  var LTAST = exports.LTAST = function (_BinaryAST6) {
+  var LTAST =
+  /*#__PURE__*/
+  function (_BinaryAST6) {
     _inherits(LTAST, _BinaryAST6);
 
     function LTAST() {
@@ -6757,9 +6748,9 @@
     return LTAST;
   }(BinaryAST);
 
-  ;
-
-  var LEAST = exports.LEAST = function (_BinaryAST7) {
+  var LEAST =
+  /*#__PURE__*/
+  function (_BinaryAST7) {
     _inherits(LEAST, _BinaryAST7);
 
     function LEAST() {
@@ -6778,9 +6769,9 @@
     return LEAST;
   }(BinaryAST);
 
-  ;
-
-  var GTAST = exports.GTAST = function (_BinaryAST8) {
+  var GTAST =
+  /*#__PURE__*/
+  function (_BinaryAST8) {
     _inherits(GTAST, _BinaryAST8);
 
     function GTAST() {
@@ -6799,9 +6790,9 @@
     return GTAST;
   }(BinaryAST);
 
-  ;
-
-  var GEAST = exports.GEAST = function (_BinaryAST9) {
+  var GEAST =
+  /*#__PURE__*/
+  function (_BinaryAST9) {
     _inherits(GEAST, _BinaryAST9);
 
     function GEAST() {
@@ -6820,9 +6811,9 @@
     return GEAST;
   }(BinaryAST);
 
-  ;
-
-  var ContainsAST = exports.ContainsAST = function (_BinaryAST10) {
+  var ContainsAST =
+  /*#__PURE__*/
+  function (_BinaryAST10) {
     _inherits(ContainsAST, _BinaryAST10);
 
     function ContainsAST() {
@@ -6838,7 +6829,8 @@
           return container.indexOf(obj) !== -1;
         } else if (_islist(container)) {
           return container.indexOf(obj) !== -1;
-        } else if (container && typeof container.__contains__ === "function") return container.__contains__(obj);else if (_ismap(container) || _isset(container)) return container.has(obj);else if (_isobject(container)) {
+        } else if (container && typeof container.__contains__ === "function") // test this before the generic object test
+          return container.__contains__(obj);else if (_ismap(container) || _isset(container)) return container.has(obj);else if (_isobject(container)) {
           for (var key in container) {
             if (key === obj) return true;
           }
@@ -6848,16 +6840,16 @@
           return container._r === obj || container._g === obj || container._b === obj || container._a === obj;
         }
 
-        throw new _TypeError(_type(container) + " object is not iterable");
+        throw new TypeError$1(_type(container) + " object is not iterable");
       }
     }]);
 
     return ContainsAST;
   }(BinaryAST);
 
-  ;
-
-  var NotContainsAST = exports.NotContainsAST = function (_BinaryAST11) {
+  var NotContainsAST =
+  /*#__PURE__*/
+  function (_BinaryAST11) {
     _inherits(NotContainsAST, _BinaryAST11);
 
     function NotContainsAST() {
@@ -6876,9 +6868,9 @@
     return NotContainsAST;
   }(BinaryAST);
 
-  ;
-
-  var AddAST = exports.AddAST = function (_BinaryAST12) {
+  var AddAST =
+  /*#__PURE__*/
+  function (_BinaryAST12) {
     _inherits(AddAST, _BinaryAST12);
 
     function AddAST() {
@@ -6891,7 +6883,7 @@
       key: "_do",
       value: function _do(obj1, obj2) {
         if (obj1 && typeof obj1.__add__ === "function") return obj1.__add__(obj2);else if (obj2 && typeof obj2.__radd__ === "function") return obj2.__radd__(obj1);
-        if (obj1 === null || obj2 === null) throw new _TypeError(_type(this.obj1) + " + " + _type(this.obj2) + " is not supported");
+        if (obj1 === null || obj2 === null) throw new TypeError$1(_type(this.obj1) + " + " + _type(this.obj2) + " is not supported");
         if (_islist(obj1) && _islist(obj2)) return [].concat(_toConsumableArray(obj1), _toConsumableArray(obj2));else return obj1 + obj2;
       }
     }, {
@@ -6907,9 +6899,9 @@
     return AddAST;
   }(BinaryAST);
 
-  ;
-
-  var SubAST = exports.SubAST = function (_BinaryAST13) {
+  var SubAST =
+  /*#__PURE__*/
+  function (_BinaryAST13) {
     _inherits(SubAST, _BinaryAST13);
 
     function SubAST() {
@@ -6922,7 +6914,7 @@
       key: "_do",
       value: function _do(obj1, obj2) {
         if (obj1 && typeof obj1.__sub__ === "function") return obj1.__sub__(obj2);else if (obj2 && typeof obj2.__rsub__ === "function") return obj2.__rsub__(obj1);else if (_isdate(obj1) && _isdate(obj2)) return this._date_sub(obj1, obj2);else if (_isdatetime(obj1) && _isdatetime(obj2)) return this._datetime_sub(obj1, obj2);
-        if (obj1 === null || obj2 === null) throw new _TypeError(_type(this.obj1) + " - " + _type(this.obj2) + " is not supported");
+        if (obj1 === null || obj2 === null) throw new TypeError$1(_type(this.obj1) + " - " + _type(this.obj2) + " is not supported");
         return obj1 - obj2;
       }
     }, {
@@ -6939,7 +6931,8 @@
           var t = obj1;
           obj1 = obj2;
           obj2 = t;
-        }
+        } // From now on obj1 is > than obj2
+
 
         var year1 = obj1.getFullYear();
         var yearday1 = DateTimeProtocol.yearday(obj1);
@@ -6980,9 +6973,9 @@
     return SubAST;
   }(BinaryAST);
 
-  ;
-
-  var MulAST = exports.MulAST = function (_BinaryAST14) {
+  var MulAST =
+  /*#__PURE__*/
+  function (_BinaryAST14) {
     _inherits(MulAST, _BinaryAST14);
 
     function MulAST() {
@@ -6995,7 +6988,7 @@
       key: "_do",
       value: function _do(obj1, obj2) {
         if (obj1 && typeof obj1.__mul__ === "function") return obj1.__mul__(obj2);else if (obj2 && typeof obj2.__rmul__ === "function") return obj2.__rmul__(obj1);
-        if (obj1 === null || obj2 === null) throw new _TypeError(_type(obj1) + " * " + _type(obj2) + " not supported");else if (_isint(obj1) || _isbool(obj1)) {
+        if (obj1 === null || obj2 === null) throw new TypeError$1(_type(obj1) + " * " + _type(obj2) + " not supported");else if (_isint(obj1) || _isbool(obj1)) {
           if (typeof obj2 === "string") {
             if (obj1 < 0) throw new ValueError("repetition counter must be positive");
             return _str_repeat(obj2, obj1);
@@ -7035,9 +7028,9 @@
     return MulAST;
   }(BinaryAST);
 
-  ;
-
-  var FloorDivAST = exports.FloorDivAST = function (_BinaryAST15) {
+  var FloorDivAST =
+  /*#__PURE__*/
+  function (_BinaryAST15) {
     _inherits(FloorDivAST, _BinaryAST15);
 
     function FloorDivAST() {
@@ -7050,7 +7043,7 @@
       key: "_do",
       value: function _do(obj1, obj2) {
         if (obj1 && typeof obj1.__floordiv__ === "function") return obj1.__floordiv__(obj2);else if (obj2 && typeof obj2.__rfloordiv__ === "function") return obj2.__rfloordiv__(obj1);
-        if (obj1 === null || obj2 === null) throw new _TypeError(_type(obj1) + " // " + _type(obj2) + " not supported");else if (typeof obj1 === "number" && typeof obj2 === "number" && obj2 === 0) throw new ZeroDivisionError();
+        if (obj1 === null || obj2 === null) throw new TypeError$1(_type(obj1) + " // " + _type(obj2) + " not supported");else if (typeof obj1 === "number" && typeof obj2 === "number" && obj2 === 0) throw new ZeroDivisionError();
         return Math.floor(obj1 / obj2);
       }
     }, {
@@ -7063,9 +7056,9 @@
     return FloorDivAST;
   }(BinaryAST);
 
-  ;
-
-  var TrueDivAST = exports.TrueDivAST = function (_BinaryAST16) {
+  var TrueDivAST =
+  /*#__PURE__*/
+  function (_BinaryAST16) {
     _inherits(TrueDivAST, _BinaryAST16);
 
     function TrueDivAST() {
@@ -7078,7 +7071,7 @@
       key: "_do",
       value: function _do(obj1, obj2) {
         if (obj1 && typeof obj1.__truediv__ === "function") return obj1.__truediv__(obj2);else if (obj2 && typeof obj2.__rtruediv__ === "function") return obj2.__rtruediv__(obj1);
-        if (obj1 === null || obj2 === null) throw new _TypeError(_type(obj1) + " / " + _type(obj2) + " not supported");else if (typeof obj1 === "number" && typeof obj2 === "number" && obj2 === 0) throw new ZeroDivisionError();
+        if (obj1 === null || obj2 === null) throw new TypeError$1(_type(obj1) + " / " + _type(obj2) + " not supported");else if (typeof obj1 === "number" && typeof obj2 === "number" && obj2 === 0) throw new ZeroDivisionError();
         return obj1 / obj2;
       }
     }, {
@@ -7091,9 +7084,9 @@
     return TrueDivAST;
   }(BinaryAST);
 
-  ;
-
-  var ModAST = exports.ModAST = function (_BinaryAST17) {
+  var ModAST =
+  /*#__PURE__*/
+  function (_BinaryAST17) {
     _inherits(ModAST, _BinaryAST17);
 
     function ModAST() {
@@ -7117,9 +7110,9 @@
     return ModAST;
   }(BinaryAST);
 
-  ;
-
-  var ShiftLeftAST = exports.ShiftLeftAST = function (_BinaryAST18) {
+  var ShiftLeftAST =
+  /*#__PURE__*/
+  function (_BinaryAST18) {
     _inherits(ShiftLeftAST, _BinaryAST18);
 
     function ShiftLeftAST() {
@@ -7151,9 +7144,9 @@
     return ShiftLeftAST;
   }(BinaryAST);
 
-  ;
-
-  var ShiftRightAST = exports.ShiftRightAST = function (_BinaryAST19) {
+  var ShiftRightAST =
+  /*#__PURE__*/
+  function (_BinaryAST19) {
     _inherits(ShiftRightAST, _BinaryAST19);
 
     function ShiftRightAST() {
@@ -7185,9 +7178,9 @@
     return ShiftRightAST;
   }(BinaryAST);
 
-  ;
-
-  var BitAndAST = exports.BitAndAST = function (_BinaryAST20) {
+  var BitAndAST =
+  /*#__PURE__*/
+  function (_BinaryAST20) {
     _inherits(BitAndAST, _BinaryAST20);
 
     function BitAndAST() {
@@ -7212,9 +7205,9 @@
     return BitAndAST;
   }(BinaryAST);
 
-  ;
-
-  var BitXOrAST = exports.BitXOrAST = function (_BinaryAST21) {
+  var BitXOrAST =
+  /*#__PURE__*/
+  function (_BinaryAST21) {
     _inherits(BitXOrAST, _BinaryAST21);
 
     function BitXOrAST() {
@@ -7239,9 +7232,9 @@
     return BitXOrAST;
   }(BinaryAST);
 
-  ;
-
-  var BitOrAST = exports.BitOrAST = function (_BinaryAST22) {
+  var BitOrAST =
+  /*#__PURE__*/
+  function (_BinaryAST22) {
     _inherits(BitOrAST, _BinaryAST22);
 
     function BitOrAST() {
@@ -7265,10 +7258,9 @@
 
     return BitOrAST;
   }(BinaryAST);
-
-  ;
-
-  var AndAST = exports.AndAST = function (_BinaryAST23) {
+  var AndAST =
+  /*#__PURE__*/
+  function (_BinaryAST23) {
     _inherits(AndAST, _BinaryAST23);
 
     function AndAST() {
@@ -7292,10 +7284,9 @@
 
     return AndAST;
   }(BinaryAST);
-
-  ;
-
-  var OrAST = exports.OrAST = function (_BinaryAST24) {
+  var OrAST =
+  /*#__PURE__*/
+  function (_BinaryAST24) {
     _inherits(OrAST, _BinaryAST24);
 
     function OrAST() {
@@ -7319,10 +7310,9 @@
 
     return OrAST;
   }(BinaryAST);
-
-  ;
-
-  var AttrAST = exports.AttrAST = function (_CodeAST14) {
+  var AttrAST =
+  /*#__PURE__*/
+  function (_CodeAST14) {
     _inherits(AttrAST, _CodeAST14);
 
     function AttrAST(template, pos, obj, attrname) {
@@ -7385,7 +7375,7 @@
     }, {
       key: "_set",
       value: function _set(object, attrname, value) {
-        if (_typeof(object) === "object" && typeof object.__setattr__ === "function") object.__setattr__(attrname, value);else if (_ismap(object)) object.set(attrname, value);else if (_isobject(object)) object[attrname] = value;else throw new _TypeError(_type(object) + " object has no writable attributes");
+        if (_typeof(object) === "object" && typeof object.__setattr__ === "function") object.__setattr__(attrname, value);else if (_ismap(object)) object.set(attrname, value);else if (_isobject(object)) object[attrname] = value;else throw new TypeError$1(_type(object) + " object has no writable attributes");
       }
     }, {
       key: "_modify",
@@ -7400,11 +7390,10 @@
 
     return AttrAST;
   }(CodeAST);
-
-  ;
   AttrAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["obj", "attrname"]);
-
-  var CallAST = exports.CallAST = function (_CodeAST15) {
+  var CallAST =
+  /*#__PURE__*/
+  function (_CodeAST15) {
     _inherits(CallAST, _CodeAST15);
 
     function CallAST(template, pos, obj, args) {
@@ -7442,8 +7431,8 @@
           _iteratorError35 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion35 && _iterator35.return != null) {
-              _iterator35.return();
+            if (!_iteratorNormalCompletion35 && _iterator35["return"] != null) {
+              _iterator35["return"]();
             }
           } finally {
             if (_didIteratorError35) {
@@ -7474,8 +7463,8 @@
           _iteratorError36 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion36 && _iterator36.return != null) {
-              _iterator36.return();
+            if (!_iteratorNormalCompletion36 && _iterator36["return"] != null) {
+              _iterator36["return"]();
             }
           } finally {
             if (_didIteratorError36) {
@@ -7515,11 +7504,10 @@
 
     return CallAST;
   }(CodeAST);
-
-  ;
   CallAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["obj", "args"]);
-
-  var RenderAST = exports.RenderAST = function (_CallAST) {
+  var RenderAST =
+  /*#__PURE__*/
+  function (_CallAST) {
     _inherits(RenderAST, _CallAST);
 
     function RenderAST(template, pos, obj, args) {
@@ -7563,8 +7551,8 @@
           _iteratorError37 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion37 && _iterator37.return != null) {
-              _iterator37.return();
+            if (!_iteratorNormalCompletion37 && _iterator37["return"] != null) {
+              _iterator37["return"]();
             }
           } finally {
             if (_didIteratorError37) {
@@ -7615,12 +7603,11 @@
 
     return RenderAST;
   }(CallAST);
-
-  ;
   RenderAST.prototype._ul4onattrs = CallAST.prototype._ul4onattrs.concat(["indent"]);
   RenderAST.prototype._reprname = "RenderAST";
-
-  var RenderXAST = exports.RenderXAST = function (_RenderAST) {
+  var RenderXAST =
+  /*#__PURE__*/
+  function (_RenderAST) {
     _inherits(RenderXAST, _RenderAST);
 
     function RenderXAST() {
@@ -7636,7 +7623,7 @@
         var result = null;
 
         try {
-          result = _get2(_getPrototypeOf(RenderXAST.prototype), "_handle_eval", this).call(this, context);
+          result = _get(_getPrototypeOf(RenderXAST.prototype), "_handle_eval", this).call(this, context);
         } finally {
           context.escapes.splice(context.escapes.length - 1, 1);
         }
@@ -7647,10 +7634,9 @@
 
     return RenderXAST;
   }(RenderAST);
-
-  ;
-
-  var RenderBlockAST = exports.RenderBlockAST = function (_RenderAST2) {
+  var RenderBlockAST =
+  /*#__PURE__*/
+  function (_RenderAST2) {
     _inherits(RenderBlockAST, _RenderAST2);
 
     function RenderBlockAST() {
@@ -7670,11 +7656,10 @@
 
     return RenderBlockAST;
   }(RenderAST);
-
-  ;
   RenderBlockAST.prototype._ul4onattrs = RenderAST.prototype._ul4onattrs.concat(["content"]);
-
-  var RenderBlocksAST = exports.RenderBlocksAST = function (_RenderAST3) {
+  var RenderBlocksAST =
+  /*#__PURE__*/
+  function (_RenderAST3) {
     _inherits(RenderBlocksAST, _RenderAST3);
 
     function RenderBlocksAST() {
@@ -7701,11 +7686,11 @@
 
     return RenderBlocksAST;
   }(RenderAST);
+  RenderBlocksAST.prototype._ul4onattrs = RenderAST.prototype._ul4onattrs.concat(["content"]); // Slice object
 
-  ;
-  RenderBlocksAST.prototype._ul4onattrs = RenderAST.prototype._ul4onattrs.concat(["content"]);
-
-  var slice = exports.slice = function (_Proto3) {
+  var slice =
+  /*#__PURE__*/
+  function (_Proto3) {
     _inherits(slice, _Proto3);
 
     function slice(start, stop) {
@@ -7750,9 +7735,9 @@
     return slice;
   }(Proto);
 
-  ;
-
-  var SliceAST = exports.SliceAST = function (_CodeAST16) {
+  var SliceAST =
+  /*#__PURE__*/
+  function (_CodeAST16) {
     _inherits(SliceAST, _CodeAST16);
 
     function SliceAST(template, pos, index1, index2) {
@@ -7796,11 +7781,10 @@
 
     return SliceAST;
   }(CodeAST);
-
-  ;
   SliceAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["index1", "index2"]);
-
-  var SetVarAST = exports.SetVarAST = function (_CodeAST17) {
+  var SetVarAST =
+  /*#__PURE__*/
+  function (_CodeAST17) {
     _inherits(SetVarAST, _CodeAST17);
 
     function SetVarAST(template, pos, lvalue, value) {
@@ -7851,8 +7835,8 @@
           _iteratorError38 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion38 && _iterator38.return != null) {
-              _iterator38.return();
+            if (!_iteratorNormalCompletion38 && _iterator38["return"] != null) {
+              _iterator38["return"]();
             }
           } finally {
             if (_didIteratorError38) {
@@ -7865,11 +7849,10 @@
 
     return SetVarAST;
   }(CodeAST);
-
-  ;
   SetVarAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["lvalue", "value"]);
-
-  var ModifyVarAST = exports.ModifyVarAST = function (_SetVarAST) {
+  var ModifyVarAST =
+  /*#__PURE__*/
+  function (_SetVarAST) {
     _inherits(ModifyVarAST, _SetVarAST);
 
     function ModifyVarAST() {
@@ -7902,8 +7885,8 @@
           _iteratorError39 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion39 && _iterator39.return != null) {
-              _iterator39.return();
+            if (!_iteratorNormalCompletion39 && _iterator39["return"] != null) {
+              _iterator39["return"]();
             }
           } finally {
             if (_didIteratorError39) {
@@ -7916,10 +7899,9 @@
 
     return ModifyVarAST;
   }(SetVarAST);
-
-  ;
-
-  var AddVarAST = exports.AddVarAST = function (_ModifyVarAST) {
+  var AddVarAST =
+  /*#__PURE__*/
+  function (_ModifyVarAST) {
     _inherits(AddVarAST, _ModifyVarAST);
 
     function AddVarAST() {
@@ -7930,11 +7912,10 @@
 
     return AddVarAST;
   }(ModifyVarAST);
-
-  ;
   AddVarAST.prototype._operator = AddAST.prototype;
-
-  var SubVarAST = exports.SubVarAST = function (_ModifyVarAST2) {
+  var SubVarAST =
+  /*#__PURE__*/
+  function (_ModifyVarAST2) {
     _inherits(SubVarAST, _ModifyVarAST2);
 
     function SubVarAST() {
@@ -7945,11 +7926,10 @@
 
     return SubVarAST;
   }(ModifyVarAST);
-
-  ;
   SubVarAST.prototype._operator = SubAST.prototype;
-
-  var MulVarAST = exports.MulVarAST = function (_ModifyVarAST3) {
+  var MulVarAST =
+  /*#__PURE__*/
+  function (_ModifyVarAST3) {
     _inherits(MulVarAST, _ModifyVarAST3);
 
     function MulVarAST() {
@@ -7960,11 +7940,10 @@
 
     return MulVarAST;
   }(ModifyVarAST);
-
-  ;
   MulVarAST.prototype._operator = MulAST.prototype;
-
-  var TrueDivVarAST = exports.TrueDivVarAST = function (_ModifyVarAST4) {
+  var TrueDivVarAST =
+  /*#__PURE__*/
+  function (_ModifyVarAST4) {
     _inherits(TrueDivVarAST, _ModifyVarAST4);
 
     function TrueDivVarAST() {
@@ -7975,11 +7954,10 @@
 
     return TrueDivVarAST;
   }(ModifyVarAST);
-
-  ;
   TrueDivVarAST.prototype._operator = TrueDivAST.prototype;
-
-  var FloorDivVarAST = exports.FloorDivVarAST = function (_ModifyVarAST5) {
+  var FloorDivVarAST =
+  /*#__PURE__*/
+  function (_ModifyVarAST5) {
     _inherits(FloorDivVarAST, _ModifyVarAST5);
 
     function FloorDivVarAST() {
@@ -7990,11 +7968,10 @@
 
     return FloorDivVarAST;
   }(ModifyVarAST);
-
-  ;
   FloorDivVarAST.prototype._operator = FloorDivAST.prototype;
-
-  var ModVarAST = exports.ModVarAST = function (_ModifyVarAST6) {
+  var ModVarAST =
+  /*#__PURE__*/
+  function (_ModifyVarAST6) {
     _inherits(ModVarAST, _ModifyVarAST6);
 
     function ModVarAST() {
@@ -8005,11 +7982,10 @@
 
     return ModVarAST;
   }(ModifyVarAST);
-
-  ;
   ModVarAST.prototype._operator = ModAST.prototype;
-
-  var ShiftLeftVarAST = exports.ShiftLeftVarAST = function (_ModifyVarAST7) {
+  var ShiftLeftVarAST =
+  /*#__PURE__*/
+  function (_ModifyVarAST7) {
     _inherits(ShiftLeftVarAST, _ModifyVarAST7);
 
     function ShiftLeftVarAST() {
@@ -8020,11 +7996,10 @@
 
     return ShiftLeftVarAST;
   }(ModifyVarAST);
-
-  ;
   ShiftLeftVarAST.prototype._operator = ShiftLeftAST.prototype;
-
-  var ShiftRightVarAST = exports.ShiftRightVarAST = function (_ModifyVarAST8) {
+  var ShiftRightVarAST =
+  /*#__PURE__*/
+  function (_ModifyVarAST8) {
     _inherits(ShiftRightVarAST, _ModifyVarAST8);
 
     function ShiftRightVarAST() {
@@ -8035,11 +8010,10 @@
 
     return ShiftRightVarAST;
   }(ModifyVarAST);
-
-  ;
   ShiftRightVarAST.prototype._operator = ShiftRightAST.prototype;
-
-  var BitAndVarAST = exports.BitAndVarAST = function (_ModifyVarAST9) {
+  var BitAndVarAST =
+  /*#__PURE__*/
+  function (_ModifyVarAST9) {
     _inherits(BitAndVarAST, _ModifyVarAST9);
 
     function BitAndVarAST() {
@@ -8050,11 +8024,10 @@
 
     return BitAndVarAST;
   }(ModifyVarAST);
-
-  ;
   BitAndVarAST.prototype._operator = BitAndAST.prototype;
-
-  var BitXOrVarAST = exports.BitXOrVarAST = function (_ModifyVarAST10) {
+  var BitXOrVarAST =
+  /*#__PURE__*/
+  function (_ModifyVarAST10) {
     _inherits(BitXOrVarAST, _ModifyVarAST10);
 
     function BitXOrVarAST() {
@@ -8065,11 +8038,10 @@
 
     return BitXOrVarAST;
   }(ModifyVarAST);
-
-  ;
   BitXOrVarAST.prototype._operator = BitXOrAST.prototype;
-
-  var BitOrVarAST = exports.BitOrVarAST = function (_ModifyVarAST11) {
+  var BitOrVarAST =
+  /*#__PURE__*/
+  function (_ModifyVarAST11) {
     _inherits(BitOrVarAST, _ModifyVarAST11);
 
     function BitOrVarAST() {
@@ -8080,11 +8052,10 @@
 
     return BitOrVarAST;
   }(ModifyVarAST);
-
-  ;
   BitOrVarAST.prototype._operator = BitOrAST.prototype;
-
-  var BlockAST = exports.BlockAST = function (_CodeAST18) {
+  var BlockAST =
+  /*#__PURE__*/
+  function (_CodeAST18) {
     _inherits(BlockAST, _CodeAST18);
 
     function BlockAST(template, pos) {
@@ -8115,8 +8086,8 @@
           _iteratorError40 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion40 && _iterator40.return != null) {
-              _iterator40.return();
+            if (!_iteratorNormalCompletion40 && _iterator40["return"] != null) {
+              _iterator40["return"]();
             }
           } finally {
             if (_didIteratorError40) {
@@ -8146,8 +8117,8 @@
             _iteratorError41 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion41 && _iterator41.return != null) {
-                _iterator41.return();
+              if (!_iteratorNormalCompletion41 && _iterator41["return"] != null) {
+                _iterator41["return"]();
               }
             } finally {
               if (_didIteratorError41) {
@@ -8164,11 +8135,10 @@
 
     return BlockAST;
   }(CodeAST);
-
-  ;
   BlockAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["content"]);
-
-  var ForBlockAST = exports.ForBlockAST = function (_BlockAST) {
+  var ForBlockAST =
+  /*#__PURE__*/
+  function (_BlockAST) {
     _inherits(ForBlockAST, _BlockAST);
 
     function ForBlockAST(template, pos, varname, container) {
@@ -8216,8 +8186,8 @@
             _iteratorError42 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion42 && _iterator42.return != null) {
-                _iterator42.return();
+              if (!_iteratorNormalCompletion42 && _iterator42["return"] != null) {
+                _iterator42["return"]();
               }
             } finally {
               if (_didIteratorError42) {
@@ -8258,8 +8228,8 @@
             _iteratorError43 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion43 && _iterator43.return != null) {
-                _iterator43.return();
+              if (!_iteratorNormalCompletion43 && _iterator43["return"] != null) {
+                _iterator43["return"]();
               }
             } finally {
               if (_didIteratorError43) {
@@ -8269,7 +8239,9 @@
           }
 
           try {
-            _get2(_getPrototypeOf(ForBlockAST.prototype), "_eval", this).call(this, context);
+            // We can't call _handle_eval() here, as this would in turn call this function again, leading to infinite recursion
+            // But we don't have to, as wrapping original exception in ``Error`` has already been done by the lower levels
+            _get(_getPrototypeOf(ForBlockAST.prototype), "_eval", this).call(this, context);
           } catch (exc) {
             if (exc instanceof BreakException) break;else if (exc instanceof ContinueException) ;else throw exc;
           }
@@ -8297,11 +8269,10 @@
 
     return ForBlockAST;
   }(BlockAST);
-
-  ;
   ForBlockAST.prototype._ul4onattrs = BlockAST.prototype._ul4onattrs.concat(["varname", "container"]);
-
-  var WhileBlockAST = exports.WhileBlockAST = function (_BlockAST2) {
+  var WhileBlockAST =
+  /*#__PURE__*/
+  function (_BlockAST2) {
     _inherits(WhileBlockAST, _BlockAST2);
 
     function WhileBlockAST(template, pos, condition) {
@@ -8347,7 +8318,9 @@
           if (!_bool(cond)) break;
 
           try {
-            _get2(_getPrototypeOf(WhileBlockAST.prototype), "_eval", this).call(this, context);
+            // We can't call _handle_eval() here, as this would in turn call this function again, leading to infinite recursion
+            // But we don't have to, as wrapping the original exception in ``Error`` has already been done by the lower levels
+            _get(_getPrototypeOf(WhileBlockAST.prototype), "_eval", this).call(this, context);
           } catch (exc) {
             if (exc instanceof BreakException) break;else if (exc instanceof ContinueException) ;else throw exc;
           }
@@ -8357,11 +8330,10 @@
 
     return WhileBlockAST;
   }(BlockAST);
-
-  ;
   WhileBlockAST.prototype._ul4onattrs = BlockAST.prototype._ul4onattrs.concat(["condition"]);
-
-  var BreakAST = exports.BreakAST = function (_CodeAST19) {
+  var BreakAST =
+  /*#__PURE__*/
+  function (_CodeAST19) {
     _inherits(BreakAST, _CodeAST19);
 
     function BreakAST() {
@@ -8390,10 +8362,9 @@
 
     return BreakAST;
   }(CodeAST);
-
-  ;
-
-  var ContinueAST = exports.ContinueAST = function (_CodeAST20) {
+  var ContinueAST =
+  /*#__PURE__*/
+  function (_CodeAST20) {
     _inherits(ContinueAST, _CodeAST20);
 
     function ContinueAST() {
@@ -8422,10 +8393,9 @@
 
     return ContinueAST;
   }(CodeAST);
-
-  ;
-
-  var CondBlockAST = exports.CondBlockAST = function (_BlockAST3) {
+  var CondBlockAST =
+  /*#__PURE__*/
+  function (_BlockAST3) {
     _inherits(CondBlockAST, _BlockAST3);
 
     function CondBlockAST() {
@@ -8458,8 +8428,8 @@
           _iteratorError44 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion44 && _iterator44.return != null) {
-              _iterator44.return();
+            if (!_iteratorNormalCompletion44 && _iterator44["return"] != null) {
+              _iterator44["return"]();
             }
           } finally {
             if (_didIteratorError44) {
@@ -8472,10 +8442,9 @@
 
     return CondBlockAST;
   }(BlockAST);
-
-  ;
-
-  var ConditionalBlockAST = exports.ConditionalBlockAST = function (_BlockAST4) {
+  var ConditionalBlockAST =
+  /*#__PURE__*/
+  function (_BlockAST4) {
     _inherits(ConditionalBlockAST, _BlockAST4);
 
     function ConditionalBlockAST(template, pos, condition) {
@@ -8527,11 +8496,10 @@
 
     return ConditionalBlockAST;
   }(BlockAST);
-
-  ;
   ConditionalBlockAST.prototype._ul4onattrs = BlockAST.prototype._ul4onattrs.concat(["condition"]);
-
-  var IfBlockAST = exports.IfBlockAST = function (_ConditionalBlockAST) {
+  var IfBlockAST =
+  /*#__PURE__*/
+  function (_ConditionalBlockAST) {
     _inherits(IfBlockAST, _ConditionalBlockAST);
 
     function IfBlockAST() {
@@ -8542,11 +8510,10 @@
 
     return IfBlockAST;
   }(ConditionalBlockAST);
-
-  ;
   IfBlockAST.prototype._strname = "if";
-
-  var ElIfBlockAST = exports.ElIfBlockAST = function (_ConditionalBlockAST2) {
+  var ElIfBlockAST =
+  /*#__PURE__*/
+  function (_ConditionalBlockAST2) {
     _inherits(ElIfBlockAST, _ConditionalBlockAST2);
 
     function ElIfBlockAST() {
@@ -8557,11 +8524,10 @@
 
     return ElIfBlockAST;
   }(ConditionalBlockAST);
-
-  ;
   ElIfBlockAST.prototype._strname = "else if";
-
-  var ElseBlockAST = exports.ElseBlockAST = function (_BlockAST5) {
+  var ElseBlockAST =
+  /*#__PURE__*/
+  function (_BlockAST5) {
     _inherits(ElseBlockAST, _BlockAST5);
 
     function ElseBlockAST() {
@@ -8595,10 +8561,9 @@
 
     return ElseBlockAST;
   }(BlockAST);
-
-  ;
-
-  var Template = exports.Template = function (_BlockAST6) {
+  var Template =
+  /*#__PURE__*/
+  function (_BlockAST6) {
     _inherits(Template, _BlockAST6);
 
     function Template(template, pos, source, name, whitespace, startdelim, enddelim, signature) {
@@ -8677,7 +8642,7 @@
             return renders;
 
           default:
-            return _get2(_getPrototypeOf(Template.prototype), "__getattr__", this).call(this, attrname);
+            return _get(_getPrototypeOf(Template.prototype), "__getattr__", this).call(this, attrname);
         }
       }
     }, {
@@ -8708,8 +8673,8 @@
             _iteratorError45 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion45 && _iterator45.return != null) {
-                _iterator45.return();
+              if (!_iteratorNormalCompletion45 && _iterator45["return"] != null) {
+                _iterator45["return"]();
               }
             } finally {
               if (_didIteratorError45) {
@@ -8723,7 +8688,7 @@
         }
         encoder.dump(signature);
 
-        _get2(_getPrototypeOf(Template.prototype), "ul4ondump", this).call(this, encoder);
+        _get(_getPrototypeOf(Template.prototype), "ul4ondump", this).call(this, encoder);
       }
     }, {
       key: "ul4onload",
@@ -8745,7 +8710,7 @@
         this._ul4_callsignature = signature;
         this._ul4_rendersignature = signature;
 
-        _get2(_getPrototypeOf(Template.prototype), "ul4onload", this).call(this, decoder);
+        _get(_getPrototypeOf(Template.prototype), "ul4onload", this).call(this, decoder);
       }
     }, {
       key: "loads",
@@ -8877,14 +8842,13 @@
 
     return Template;
   }(BlockAST);
-
-  ;
   Template.prototype._ul4_callneedsobject = true;
   Template.prototype._ul4_callneedscontext = true;
   Template.prototype._ul4_renderneedsobject = true;
   Template.prototype._ul4_renderneedscontext = true;
-
-  var SignatureAST = exports.SignatureAST = function (_CodeAST21) {
+  var SignatureAST =
+  /*#__PURE__*/
+  function (_CodeAST21) {
     _inherits(SignatureAST, _CodeAST21);
 
     function SignatureAST(template, pos) {
@@ -8900,7 +8864,7 @@
     _createClass(SignatureAST, [{
       key: "ul4ondump",
       value: function ul4ondump(encoder) {
-        _get2(_getPrototypeOf(SignatureAST.prototype), "ul4ondump", this).call(this, encoder);
+        _get(_getPrototypeOf(SignatureAST.prototype), "ul4ondump", this).call(this, encoder);
 
         var dump = [];
         var _iteratorNormalCompletion46 = true;
@@ -8917,8 +8881,8 @@
           _iteratorError46 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion46 && _iterator46.return != null) {
-              _iterator46.return();
+            if (!_iteratorNormalCompletion46 && _iterator46["return"] != null) {
+              _iterator46["return"]();
             }
           } finally {
             if (_didIteratorError46) {
@@ -8932,7 +8896,7 @@
     }, {
       key: "ul4onload",
       value: function ul4onload(decoder) {
-        _get2(_getPrototypeOf(SignatureAST.prototype), "ul4onload", this).call(this, decoder);
+        _get(_getPrototypeOf(SignatureAST.prototype), "ul4onload", this).call(this, decoder);
 
         var dump = decoder.load();
         this.params = [];
@@ -8950,8 +8914,8 @@
           _iteratorError47 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion47 && _iterator47.return != null) {
-              _iterator47.return();
+            if (!_iteratorNormalCompletion47 && _iterator47["return"] != null) {
+              _iterator47["return"]();
             }
           } finally {
             if (_didIteratorError47) {
@@ -8981,8 +8945,8 @@
           _iteratorError48 = err;
         } finally {
           try {
-            if (!_iteratorNormalCompletion48 && _iterator48.return != null) {
-              _iterator48.return();
+            if (!_iteratorNormalCompletion48 && _iterator48["return"] != null) {
+              _iterator48["return"]();
             }
           } finally {
             if (_didIteratorError48) {
@@ -9008,10 +8972,9 @@
 
     return SignatureAST;
   }(CodeAST);
-
-  ;
-
-  var TemplateClosure = exports.TemplateClosure = function (_Proto4) {
+  var TemplateClosure =
+  /*#__PURE__*/
+  function (_Proto4) {
     _inherits(TemplateClosure, _Proto4);
 
     function TemplateClosure(template, signature, vars) {
@@ -9024,7 +8987,8 @@
       _this41.signature = signature;
       _this41.vars = vars;
       _this41._ul4_callsignature = signature;
-      _this41._ul4_rendersignature = signature;
+      _this41._ul4_rendersignature = signature; // Copy over the required attribute from the template
+
       _this41.name = template.name;
       _this41.tag = template.tag;
       _this41.endtag = template.endtag;
@@ -9105,18 +9069,14 @@
 
     return TemplateClosure;
   }(Proto);
-
-  ;
   TemplateClosure.prototype._ul4_callneedsobject = true;
   TemplateClosure.prototype._ul4_callneedscontext = true;
   TemplateClosure.prototype._ul4_renderneedsobject = true;
-  TemplateClosure.prototype._ul4_renderneedscontext = true;
+  TemplateClosure.prototype._ul4_renderneedscontext = true; // Create a color object from the red, green, blue and alpha values ``r``, ``g``, ``b`` and ``b``
 
   function _rgb(r, g, b, a) {
     return new Color(255 * r, 255 * g, 255 * b, 255 * a);
   }
-
-  ;
 
   function _xmlescape(obj) {
     obj = _str(obj);
@@ -9128,50 +9088,36 @@
     return obj;
   }
 
-  ;
-
   function _csv(obj) {
     if (obj === null) return "";else if (typeof obj !== "string") obj = _repr2(obj);
     if (obj.indexOf(",") !== -1 || obj.indexOf('"') !== -1 || obj.indexOf("\n") !== -1) obj = '"' + obj.replace(/"/g, '""') + '"';
     return obj;
   }
 
-  ;
-
   function _chr(i) {
-    if (typeof i != "number") throw new _TypeError("chr() requires an int");
+    if (typeof i != "number") throw new TypeError$1("chr() requires an int");
     return String.fromCharCode(i);
   }
 
-  ;
-
   function _ord(c) {
-    if (typeof c != "string" || c.length != 1) throw new _TypeError("ord() requires a string of length 1");
+    if (typeof c != "string" || c.length != 1) throw new TypeError$1("ord() requires a string of length 1");
     return c.charCodeAt(0);
   }
 
-  ;
-
   function _hex(number) {
-    if (typeof number != "number") throw new _TypeError("hex() requires an int");
+    if (typeof number != "number") throw new TypeError$1("hex() requires an int");
     if (number < 0) return "-0x" + number.toString(16).substr(1);else return "0x" + number.toString(16);
   }
 
-  ;
-
   function _oct(number) {
-    if (typeof number != "number") throw new _TypeError("oct() requires an int");
+    if (typeof number != "number") throw new TypeError$1("oct() requires an int");
     if (number < 0) return "-0o" + number.toString(8).substr(1);else return "0o" + number.toString(8);
   }
 
-  ;
-
   function _bin(number) {
-    if (typeof number != "number") throw new _TypeError("bin() requires an int");
+    if (typeof number != "number") throw new TypeError$1("bin() requires an int");
     if (number < 0) return "-0b" + number.toString(2).substr(1);else return "0b" + number.toString(2);
   }
-
-  ;
 
   function _min(obj) {
     if (obj.length == 0) throw new ArgumentError("min() requires at least 1 argument, 0 given");else if (obj.length == 1) obj = obj[0];
@@ -9194,8 +9140,6 @@
     }
   }
 
-  ;
-
   function _max(obj) {
     if (obj.length == 0) throw new ArgumentError("max() requires at least 1 argument, 0 given");else if (obj.length == 1) obj = obj[0];
 
@@ -9217,8 +9161,6 @@
     }
   }
 
-  ;
-
   function _sum(iterable) {
     var start = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
 
@@ -9231,8 +9173,6 @@
     return start;
   }
 
-  ;
-
   function _first(iterable) {
     var defaultValue = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
 
@@ -9240,8 +9180,6 @@
 
     return item.done ? defaultValue : item.value;
   }
-
-  ;
 
   function _last(iterable) {
     var defaultValue = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
@@ -9256,13 +9194,12 @@
     return value;
   }
 
-  ;
-
   function _sorted(context, iterable) {
     var key = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
     var reverse = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
 
     if (key === null) {
+      // FIXME: stability
       var cmp = reverse ? function cmp(a, b) {
         return -_cmp("<=>", a, b);
       } : function cmp(a, b) {
@@ -9288,12 +9225,12 @@
         var item = iter.next();
         if (item.done) break;
 
-        var keyvalue = _call(context, key, [item.value], {});
+        var keyvalue = _call(context, key, [item.value], {}); // For a stable sorting we have to use the negative index if
+        // reverse sorting is specified
+
 
         sort.push([keyvalue, reverse ? -i : i, item.value]);
       }
-
-      ;
       sort.sort(_cmp2);
       var _result7 = [];
 
@@ -9306,8 +9243,6 @@
       return _result7;
     }
   }
-
-  ;
 
   function _range(args) {
     var start, stop, step;
@@ -9346,8 +9281,6 @@
       }
     };
   }
-
-  ;
 
   function _slice(args) {
     var iterable, start, stop, step;
@@ -9398,22 +9331,17 @@
     };
   }
 
-  ;
-
   function _urlquote(string) {
     return encodeURIComponent(string);
   }
-
-  ;
 
   function _urlunquote(string) {
     return decodeURIComponent(string);
   }
 
-  ;
-
   function _reversed(sequence) {
-    if (typeof sequence != "string" && !_islist(sequence)) sequence = _list(sequence);
+    if (typeof sequence != "string" && !_islist(sequence)) // We don't have to materialize strings or lists
+      sequence = _list(sequence);
     return {
       index: sequence.length - 1,
       next: function next() {
@@ -9427,13 +9355,9 @@
     };
   }
 
-  ;
-
   function _random() {
     return Math.random();
   }
-
-  ;
 
   function _randrange(args) {
     var start, stop, step;
@@ -9457,17 +9381,13 @@
     return start + step * Math.floor(value * n);
   }
 
-  ;
-
   function _randchoice(sequence) {
     var iscolor = _iscolor(sequence);
 
-    if (typeof sequence !== "string" && !_islist(sequence) && !iscolor) throw new _TypeError("randchoice() requires a string or list");
+    if (typeof sequence !== "string" && !_islist(sequence) && !iscolor) throw new TypeError$1("randchoice() requires a string or list");
     if (iscolor) sequence = _list(sequence);
     return sequence[Math.floor(Math.random() * sequence.length)];
   }
-
-  ;
 
   function _round(x) {
     var digits = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
@@ -9478,19 +9398,12 @@
     } else return Math.round(x);
   }
 
-  ;
-
-  var _md5 = exports._md5 = undefined;
-
-  if (0) {
-    exports._md5 = _md5 = function _md5(string) {
+  {
+    exports._md5 = function _md5(string) {
       return md5(string);
     };
-  } else {
-    exports._md5 = _md5 = function _md5(string) {
-      return md5(string);
-    };
-  }
+  } // Return an iterator over ``[index, item]`` lists from the iterable object ``iterable``. ``index`` starts at ``start`` (defaulting to 0)
+
 
   function _enumerate(iterable) {
     var start = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
@@ -9506,8 +9419,6 @@
       }
     };
   }
-
-  ;
 
   function _isfirst(iterable) {
     var iter = _iter(iterable);
@@ -9526,8 +9437,6 @@
     };
   }
 
-  ;
-
   function _islast(iterable) {
     var iter = _iter(iterable);
 
@@ -9545,8 +9454,6 @@
       }
     };
   }
-
-  ;
 
   function _isfirstlast(iterable) {
     var iter = _iter(iterable);
@@ -9567,8 +9474,6 @@
       }
     };
   }
-
-  ;
 
   function _enumfl(iterable) {
     var start = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
@@ -9593,10 +9498,7 @@
     };
   }
 
-  ;
-
   function _zip(iterables) {
-    var result;
 
     if (iterables.length) {
       var iters = [];
@@ -9614,8 +9516,8 @@
         _iteratorError49 = err;
       } finally {
         try {
-          if (!_iteratorNormalCompletion49 && _iterator49.return != null) {
-            _iterator49.return();
+          if (!_iteratorNormalCompletion49 && _iterator49["return"] != null) {
+            _iterator49["return"]();
           }
         } finally {
           if (_didIteratorError49) {
@@ -9652,21 +9554,14 @@
     }
   }
 
-  ;
-
   function _abs(number) {
     if (number !== null && typeof number.__abs__ === "function") return number.__abs__();
     return Math.abs(number);
   }
 
-  ;
-
   function _date(year, month, day) {
     return new Date_(year, month, day);
   }
-
-  ;
-
   function _datetime(year, month, day) {
     var hour = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : 0;
     var minute = arguments.length > 4 && arguments[4] !== undefined ? arguments[4] : 0;
@@ -9675,8 +9570,6 @@
     return new Date(year, month - 1, day, hour, minute, second, microsecond / 1000);
   }
 
-  ;
-
   function _timedelta() {
     var days = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
     var seconds = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
@@ -9684,14 +9577,10 @@
     return new TimeDelta(days, seconds, microseconds);
   }
 
-  ;
-
   function _monthdelta() {
     var months = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
     return new MonthDelta(months);
   }
-
-  ;
 
   function _hls(h, l, s, a) {
     var _v = function _v(m1, m2, hue) {
@@ -9707,8 +9596,6 @@
     m1 = 2.0 * l - m2;
     return _rgb(_v(m1, m2, h + 1 / 3), _v(m1, m2, h), _v(m1, m2, h - 1 / 3), a);
   }
-
-  ;
 
   function _hsv(h, s, v, a) {
     if (s === 0.0) return _rgb(v, v, v, a);
@@ -9739,9 +9626,7 @@
     }
   }
 
-  ;
-
-  function _get(container, key, defaultvalue) {
+  function _get$1(container, key, defaultvalue) {
     if (_ismap(container)) {
       if (container.has(key)) return container.get(key);
       return defaultvalue;
@@ -9751,36 +9636,29 @@
       return result;
     }
 
-    throw new _TypeError("get() requires a dict");
+    throw new TypeError$1("get() requires a dict");
   }
-
-  ;
 
   function now() {
     return new Date();
   }
 
-  ;
-
   function utcnow() {
-    var now = new Date();
+    var now = new Date(); // FIXME: The timezone is wrong for the new ``Date`` object.
+
     return new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds(), now.getUTCMilliseconds());
   }
-
-  ;
 
   function today() {
     var now = new Date();
     return new Date_(now.getFullYear(), now.getMonth() + 1, now.getDate());
   }
-
-  ;
-  var functions = exports.functions = {
+  var functions = {
     repr: _repr2,
     ascii: _ascii,
     str: _str,
-    int: _int,
-    float: _float,
+    "int": _int,
+    "float": _float,
     list: _list,
     set: _set,
     bool: _bool,
@@ -9853,7 +9731,7 @@
     randrange: _randrange,
     randchoice: _randchoice,
     round: _round,
-    md5: _md5
+    md5: exports._md5
   };
   expose(_repr2, ["obj"], {
     name: "repr"
@@ -10081,9 +9959,9 @@
   expose(_round, ["x", "digit=", 0], {
     name: "round"
   });
-  expose(_md5, ["string"], {
+  expose(exports._md5, ["string"], {
     name: "md5"
-  });
+  }); // Functions implementing UL4 methods
 
   function _count(obj, sub) {
     var start = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
@@ -10112,7 +9990,8 @@
       }
 
       return count;
-    } else {
+    } else // string
+      {
         var lastIndex = start;
 
         for (;;) {
@@ -10126,9 +10005,6 @@
         return count;
       }
   }
-
-  ;
-
   function _find(obj, sub) {
     var start = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
     var end = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
@@ -10147,9 +10023,6 @@
     if (result !== -1) result += start;
     return result;
   }
-
-  ;
-
   function _rfind(obj, sub) {
     var start = arguments.length > 2 && arguments[2] !== undefined ? arguments[2] : null;
     var end = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : null;
@@ -10168,9 +10041,6 @@
     if (result !== -1) result += start;
     return result;
   }
-
-  ;
-
   function _week4format(obj) {
     var firstweekday = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : null;
     if (firstweekday === null) firstweekday = 0;else firstweekday %= 7;
@@ -10186,17 +10056,11 @@
 
     return Math.floor(yearday / 7);
   }
-
-  ;
-
   function _isleap(obj) {
     return new Date(obj.getFullYear(), 1, 29).getMonth() === 1;
   }
-
-  ;
-
   function _update(obj, others, kwargs) {
-    if (!_isdict(obj)) throw new _TypeError("update() requires a dict");
+    if (!_isdict(obj)) throw new TypeError$1("update() requires a dict");
     var _iteratorNormalCompletion50 = true;
     var _didIteratorError50 = false;
     var _iteratorError50 = undefined;
@@ -10207,11 +10071,11 @@
 
         if (_ismap(other)) {
           other.forEach(function (value, key) {
-            _setmap(obj, key, value);
+            exports._setmap(obj, key, value);
           });
         } else if (_isobject(other)) {
           for (var key in other) {
-            _setmap(obj, key, other[key]);
+            exports._setmap(obj, key, other[key]);
           }
         } else if (_islist(other)) {
           var _iteratorNormalCompletion51 = true;
@@ -10221,17 +10085,17 @@
           try {
             for (var _iterator51 = other[Symbol.iterator](), _step51; !(_iteratorNormalCompletion51 = (_step51 = _iterator51.next()).done); _iteratorNormalCompletion51 = true) {
               var item = _step51.value;
-              if (!_islist(item) || item.length != 2) throw new _TypeError("update() requires a dict or a list of (key, value) pairs");
+              if (!_islist(item) || item.length != 2) throw new TypeError$1("update() requires a dict or a list of (key, value) pairs");
 
-              _setmap(obj, item[0], item[1]);
+              exports._setmap(obj, item[0], item[1]);
             }
           } catch (err) {
             _didIteratorError51 = true;
             _iteratorError51 = err;
           } finally {
             try {
-              if (!_iteratorNormalCompletion51 && _iterator51.return != null) {
-                _iterator51.return();
+              if (!_iteratorNormalCompletion51 && _iterator51["return"] != null) {
+                _iterator51["return"]();
               }
             } finally {
               if (_didIteratorError51) {
@@ -10239,15 +10103,15 @@
               }
             }
           }
-        } else throw new _TypeError("update() requires a dict or a list of (key, value) pairs");
+        } else throw new TypeError$1("update() requires a dict or a list of (key, value) pairs");
       }
     } catch (err) {
       _didIteratorError50 = true;
       _iteratorError50 = err;
     } finally {
       try {
-        if (!_iteratorNormalCompletion50 && _iterator50.return != null) {
-          _iterator50.return();
+        if (!_iteratorNormalCompletion50 && _iterator50["return"] != null) {
+          _iterator50["return"]();
         }
       } finally {
         if (_didIteratorError50) {
@@ -10257,14 +10121,13 @@
     }
 
     kwargs.forEach(function (value, key) {
-      _setmap(obj, key, value);
+      exports._setmap(obj, key, value);
     });
     return null;
   }
-
-  ;
-
-  var Color = exports.Color = function (_Proto5) {
+  var Color =
+  /*#__PURE__*/
+  function (_Proto5) {
     _inherits(Color, _Proto5);
 
     function Color() {
@@ -10576,13 +10439,13 @@
     }, {
       key: "witha",
       value: function witha(a) {
-        if (typeof a !== "number") throw new _TypeError("witha() requires a number");
+        if (typeof a !== "number") throw new TypeError$1("witha() requires a number");
         return new Color(this._r, this._g, this._b, a);
       }
     }, {
       key: "withlum",
       value: function withlum(lum) {
-        if (typeof lum !== "number") throw new _TypeError("witha() requires a number");
+        if (typeof lum !== "number") throw new TypeError$1("witha() requires a number");
         var hlsa = this.hlsa();
         return _hls(hlsa[0], lum, hlsa[2], hlsa[3]);
       }
@@ -10595,8 +10458,6 @@
 
     return Color;
   }(Proto);
-
-  ;
   expose(Color.prototype.r, []);
   expose(Color.prototype.g, []);
   expose(Color.prototype.b, []);
@@ -10608,8 +10469,9 @@
   expose(Color.prototype.hsva, []);
   expose(Color.prototype.witha, ["a"]);
   expose(Color.prototype.withlum, ["lum"]);
-
-  var Date_ = exports.Date_ = function (_Proto6) {
+  var Date_ =
+  /*#__PURE__*/
+  function (_Proto6) {
     _inherits(Date_, _Proto6);
 
     function Date_(year, month, day) {
@@ -10690,10 +10552,9 @@
 
     return Date_;
   }(Proto);
-
-  ;
-
-  var TimeDelta = exports.TimeDelta = function (_Proto7) {
+  var TimeDelta =
+  /*#__PURE__*/
+  function (_Proto7) {
     _inherits(TimeDelta, _Proto7);
 
     function TimeDelta() {
@@ -10868,37 +10729,37 @@
       key: "__add__",
       value: function __add__(other) {
         if (other instanceof TimeDelta) return new TimeDelta(this._days + other._days, this._seconds + other._seconds, this._microseconds + other._microseconds);else if (_isdate(other)) return this._adddate(other, this._days);else if (_isdatetime(other)) return this._adddatetime(other, this._days, this._seconds, this._microseconds);
-        throw new _TypeError(_type(this) + " + " + _type(other) + " not supported");
+        throw new TypeError$1(_type(this) + " + " + _type(other) + " not supported");
       }
     }, {
       key: "__radd__",
       value: function __radd__(other) {
         if (_isdate(other)) return this._adddate(other, this._days);else if (_isdatetime(other)) return this._adddatetime(other, this._days, this._seconds, this._microseconds);
-        throw new _TypeError(_type(this) + " + " + _type(other) + " not supported");
+        throw new TypeError$1(_type(this) + " + " + _type(other) + " not supported");
       }
     }, {
       key: "__sub__",
       value: function __sub__(other) {
         if (other instanceof TimeDelta) return new TimeDelta(this._days - other._days, this._seconds - other._seconds, this._microseconds - other._microseconds);
-        throw new _TypeError(_type(this) + " - " + _type(other) + " not supported");
+        throw new TypeError$1(_type(this) + " - " + _type(other) + " not supported");
       }
     }, {
       key: "__rsub__",
       value: function __rsub__(other) {
         if (_isdate(other)) return this._adddate(other, -this._days);else if (_isdatetime(other)) return this._adddatetime(other, -this._days, -this._seconds, -this._microseconds);
-        throw new _TypeError(_type(this) + " - " + _type(other) + " not supported");
+        throw new TypeError$1(_type(this) + " - " + _type(other) + " not supported");
       }
     }, {
       key: "__mul__",
       value: function __mul__(other) {
         if (typeof other === "number") return new TimeDelta(this._days * other, this._seconds * other, this._microseconds * other);
-        throw new _TypeError(_type(this) + " * " + _type(other) + " not supported");
+        throw new TypeError$1(_type(this) + " * " + _type(other) + " not supported");
       }
     }, {
       key: "__rmul__",
       value: function __rmul__(other) {
         if (typeof other === "number") return new TimeDelta(this._days * other, this._seconds * other, this._microseconds * other);
-        throw new _TypeError(_type(this) + " * " + _type(other) + " not supported");
+        throw new TypeError$1(_type(this) + " * " + _type(other) + " not supported");
       }
     }, {
       key: "__truediv__",
@@ -10924,7 +10785,7 @@
           return myValue / otherValue;
         }
 
-        throw new _TypeError(_type(this) + " / " + _type(other) + " not supported");
+        throw new TypeError$1(_type(this) + " / " + _type(other) + " not supported");
       }
     }, {
       key: "__getattr__",
@@ -10984,10 +10845,9 @@
 
     return TimeDelta;
   }(Proto);
-
-  ;
-
-  var MonthDelta = exports.MonthDelta = function (_Proto8) {
+  var MonthDelta =
+  /*#__PURE__*/
+  function (_Proto8) {
     _inherits(MonthDelta, _Proto8);
 
     function MonthDelta() {
@@ -11091,6 +10951,7 @@
         var millisecond = date.getMilliseconds();
 
         while (true) {
+          // As the month might be out of bounds, we have to find out what the real target month is
           var targetmonth = new Date(year, month, 1, hour, minute, second, millisecond).getMonth();
           var result = new Date(year, month, day, hour, minute, second, millisecond);
           if (result.getMonth() === targetmonth) return result;
@@ -11177,8 +11038,6 @@
 
     return MonthDelta;
   }(Proto);
-
-  ;
   var constructors = [TextAST, IndentAST, LineEndAST, ConstAST, SeqItemAST, UnpackSeqItemAST, DictItemAST, UnpackDictItemAST, PosArgAST, KeywordArgAST, UnpackListArgAST, UnpackDictArgAST, ListAST, ListCompAST, DictAST, DictCompAST, SetAST, SetCompAST, GenExprAST, VarAST, NotAST, NegAST, BitNotAST, IfAST, ReturnAST, PrintAST, PrintXAST, ItemAST, IsAST, IsNotAST, EQAST, NEAST, LTAST, LEAST, GTAST, GEAST, NotContainsAST, ContainsAST, AddAST, SubAST, MulAST, FloorDivAST, TrueDivAST, ModAST, ShiftLeftAST, ShiftRightAST, BitAndAST, BitXOrAST, BitOrAST, AndAST, OrAST, SliceAST, AttrAST, CallAST, RenderAST, RenderXAST, RenderBlockAST, RenderBlocksAST, SetVarAST, AddVarAST, SubVarAST, MulVarAST, TrueDivVarAST, FloorDivVarAST, ModVarAST, ShiftLeftVarAST, ShiftRightVarAST, BitAndVarAST, BitXOrVarAST, BitOrVarAST, ForBlockAST, WhileBlockAST, BreakAST, ContinueAST, CondBlockAST, IfBlockAST, ElIfBlockAST, ElseBlockAST, SignatureAST, Template];
 
   for (var _i9 = 0, _constructors = constructors; _i9 < _constructors.length; _i9++) {
@@ -11189,5 +11048,253 @@
     _constructor2.prototype.type = name;
     register("de.livinglogic.ul4." + name, _constructor2);
   }
-});
+
+  exports.AST = AST;
+  exports.AddAST = AddAST;
+  exports.AddVarAST = AddVarAST;
+  exports.AndAST = AndAST;
+  exports.ArgumentError = ArgumentError;
+  exports.AttrAST = AttrAST;
+  exports.AttributeError = AttributeError;
+  exports.BinaryAST = BinaryAST;
+  exports.BitAndAST = BitAndAST;
+  exports.BitAndVarAST = BitAndVarAST;
+  exports.BitNotAST = BitNotAST;
+  exports.BitOrAST = BitOrAST;
+  exports.BitOrVarAST = BitOrVarAST;
+  exports.BitXOrAST = BitXOrAST;
+  exports.BitXOrVarAST = BitXOrVarAST;
+  exports.BlockAST = BlockAST;
+  exports.BreakAST = BreakAST;
+  exports.BreakException = BreakException;
+  exports.CallAST = CallAST;
+  exports.CodeAST = CodeAST;
+  exports.Color = Color;
+  exports.CondBlockAST = CondBlockAST;
+  exports.ConditionalBlockAST = ConditionalBlockAST;
+  exports.ConstAST = ConstAST;
+  exports.ContainsAST = ContainsAST;
+  exports.Context = Context;
+  exports.ContinueAST = ContinueAST;
+  exports.ContinueException = ContinueException;
+  exports.DateProtocol = DateProtocol;
+  exports.DateTimeProtocol = DateTimeProtocol;
+  exports.Date_ = Date_;
+  exports.Decoder = Decoder;
+  exports.DictAST = DictAST;
+  exports.DictCompAST = DictCompAST;
+  exports.DictItemAST = DictItemAST;
+  exports.EQAST = EQAST;
+  exports.ElIfBlockAST = ElIfBlockAST;
+  exports.ElseBlockAST = ElseBlockAST;
+  exports.Encoder = Encoder;
+  exports.Exception = Exception;
+  exports.FloorDivAST = FloorDivAST;
+  exports.FloorDivVarAST = FloorDivVarAST;
+  exports.ForBlockAST = ForBlockAST;
+  exports.GEAST = GEAST;
+  exports.GTAST = GTAST;
+  exports.GenExprAST = GenExprAST;
+  exports.IfAST = IfAST;
+  exports.IfBlockAST = IfBlockAST;
+  exports.IndentAST = IndentAST;
+  exports.IndexError = IndexError;
+  exports.InternalException = InternalException;
+  exports.IsAST = IsAST;
+  exports.IsNotAST = IsNotAST;
+  exports.ItemAST = ItemAST;
+  exports.ItemArgBase = ItemArgBase;
+  exports.KeywordArgAST = KeywordArgAST;
+  exports.LEAST = LEAST;
+  exports.LTAST = LTAST;
+  exports.LValueRequiredError = LValueRequiredError;
+  exports.LineEndAST = LineEndAST;
+  exports.ListAST = ListAST;
+  exports.ListCompAST = ListCompAST;
+  exports.ListProtocol = ListProtocol;
+  exports.LocationError = LocationError;
+  exports.MapProtocol = MapProtocol;
+  exports.ModAST = ModAST;
+  exports.ModVarAST = ModVarAST;
+  exports.ModifyVarAST = ModifyVarAST;
+  exports.MonthDelta = MonthDelta;
+  exports.MulAST = MulAST;
+  exports.MulVarAST = MulVarAST;
+  exports.NEAST = NEAST;
+  exports.NegAST = NegAST;
+  exports.NotAST = NotAST;
+  exports.NotContainsAST = NotContainsAST;
+  exports.NotSubscriptableError = NotSubscriptableError;
+  exports.ObjectProtocol = ObjectProtocol;
+  exports.OrAST = OrAST;
+  exports.PosArgAST = PosArgAST;
+  exports.PrintAST = PrintAST;
+  exports.PrintXAST = PrintXAST;
+  exports.Proto = Proto;
+  exports.Protocol = Protocol;
+  exports.RenderAST = RenderAST;
+  exports.RenderBlockAST = RenderBlockAST;
+  exports.RenderBlocksAST = RenderBlocksAST;
+  exports.RenderXAST = RenderXAST;
+  exports.ReturnAST = ReturnAST;
+  exports.ReturnException = ReturnException;
+  exports.SeqItemAST = SeqItemAST;
+  exports.SetAST = SetAST;
+  exports.SetCompAST = SetCompAST;
+  exports.SetProtocol = SetProtocol;
+  exports.SetVarAST = SetVarAST;
+  exports.ShiftLeftAST = ShiftLeftAST;
+  exports.ShiftLeftVarAST = ShiftLeftVarAST;
+  exports.ShiftRightAST = ShiftRightAST;
+  exports.ShiftRightVarAST = ShiftRightVarAST;
+  exports.Signature = Signature;
+  exports.SignatureAST = SignatureAST;
+  exports.SliceAST = SliceAST;
+  exports.StrProtocol = StrProtocol;
+  exports.SubAST = SubAST;
+  exports.SubVarAST = SubVarAST;
+  exports.SyntaxError = SyntaxError;
+  exports.Template = Template;
+  exports.TemplateClosure = TemplateClosure;
+  exports.TextAST = TextAST;
+  exports.TimeDelta = TimeDelta;
+  exports.TrueDivAST = TrueDivAST;
+  exports.TrueDivVarAST = TrueDivVarAST;
+  exports.TypeError = TypeError$1;
+  exports.UnaryAST = UnaryAST;
+  exports.UnpackDictArgAST = UnpackDictArgAST;
+  exports.UnpackDictItemAST = UnpackDictItemAST;
+  exports.UnpackListArgAST = UnpackListArgAST;
+  exports.UnpackSeqItemAST = UnpackSeqItemAST;
+  exports.ValueError = ValueError;
+  exports.VarAST = VarAST;
+  exports.WhileBlockAST = WhileBlockAST;
+  exports.ZeroDivisionError = ZeroDivisionError;
+  exports._Set = _Set;
+  exports._abs = _abs;
+  exports._all = _all;
+  exports._any = _any;
+  exports._ascii = _ascii;
+  exports._asjson = _asjson;
+  exports._asul4on = _asul4on;
+  exports._bin = _bin;
+  exports._bool = _bool;
+  exports._bound = _bound;
+  exports._call = _call;
+  exports._callfunction = _callfunction;
+  exports._callobject = _callobject;
+  exports._callrender = _callrender;
+  exports._chr = _chr;
+  exports._cmp = _cmp;
+  exports._count = _count;
+  exports._csv = _csv;
+  exports._date = _date;
+  exports._datetime = _datetime;
+  exports._dir = _dir;
+  exports._enumerate = _enumerate;
+  exports._enumfl = _enumfl;
+  exports._eq = _eq;
+  exports._extend = _extend;
+  exports._find = _find;
+  exports._first = _first;
+  exports._float = _float;
+  exports._format = _format;
+  exports._formatsource = _formatsource;
+  exports._fromjson = _fromjson;
+  exports._fromul4on = _fromul4on;
+  exports._ge = _ge;
+  exports._get = _get$1;
+  exports._getattr = _getattr;
+  exports._gt = _gt;
+  exports._hasattr = _hasattr;
+  exports._hex = _hex;
+  exports._hls = _hls;
+  exports._hsv = _hsv;
+  exports._int = _int;
+  exports._internal_call = _internal_call;
+  exports._isanyset = _isanyset;
+  exports._isbool = _isbool;
+  exports._iscolor = _iscolor;
+  exports._isdate = _isdate;
+  exports._isdatetime = _isdatetime;
+  exports._isdefined = _isdefined;
+  exports._isdict = _isdict;
+  exports._isexception = _isexception;
+  exports._isfirst = _isfirst;
+  exports._isfirstlast = _isfirstlast;
+  exports._isfloat = _isfloat;
+  exports._isfunction = _isfunction;
+  exports._isint = _isint;
+  exports._isiter = _isiter;
+  exports._islast = _islast;
+  exports._isleap = _isleap;
+  exports._islist = _islist;
+  exports._ismap = _ismap;
+  exports._ismonthdelta = _ismonthdelta;
+  exports._isnone = _isnone;
+  exports._isobject = _isobject;
+  exports._isset = _isset;
+  exports._isstr = _isstr;
+  exports._istemplate = _istemplate;
+  exports._istimedelta = _istimedelta;
+  exports._isul4set = _isul4set;
+  exports._isundefined = _isundefined;
+  exports._iter = _iter;
+  exports._last = _last;
+  exports._le = _le;
+  exports._len = _len;
+  exports._list = _list;
+  exports._list_repeat = _list_repeat;
+  exports._lpad = _lpad;
+  exports._lt = _lt;
+  exports._makeset = _makeset;
+  exports._map2object = _map2object;
+  exports._max = _max;
+  exports._min = _min;
+  exports._mod = _mod;
+  exports._monthdelta = _monthdelta;
+  exports._ne = _ne;
+  exports._oct = _oct;
+  exports._ord = _ord;
+  exports._randchoice = _randchoice;
+  exports._random = _random;
+  exports._randrange = _randrange;
+  exports._range = _range;
+  exports._repr = _repr2;
+  exports._reversed = _reversed;
+  exports._rfind = _rfind;
+  exports._rgb = _rgb;
+  exports._round = _round;
+  exports._rpad = _rpad;
+  exports._set = _set;
+  exports._slice = _slice;
+  exports._sorted = _sorted;
+  exports._stacktrace = _stacktrace;
+  exports._str = _str;
+  exports._str_repeat = _str_repeat;
+  exports._sum = _sum;
+  exports._timedelta = _timedelta;
+  exports._type = _type;
+  exports._unorderable = _unorderable;
+  exports._unpackvar = _unpackvar;
+  exports._update = _update;
+  exports._urlquote = _urlquote;
+  exports._urlunquote = _urlunquote;
+  exports._week4format = _week4format;
+  exports._xmlescape = _xmlescape;
+  exports._zip = _zip;
+  exports.dumps = dumps;
+  exports.expose = expose;
+  exports.functions = functions;
+  exports.loads = _loads;
+  exports.now = now;
+  exports.register = register;
+  exports.slice = slice;
+  exports.today = today;
+  exports.utcnow = utcnow;
+  exports.version = version;
+
+  Object.defineProperty(exports, '__esModule', { value: true });
+
+}));
 //# sourceMappingURL=ul4.js.map

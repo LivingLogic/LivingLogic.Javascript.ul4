@@ -8017,6 +8017,8 @@ export function _round(x, digits=0)
 
 // Return a hex-encode MD5 hash of the argument
 // This uses the md5 function from https://github.com/blueimp/JavaScript-MD5
+import md5 from 'blueimp-md5';
+
 export let _md5;
 if (0)
 {
