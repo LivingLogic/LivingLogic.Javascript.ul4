@@ -20,22 +20,20 @@ const plugins = [
 export default [
 	{
 		input: './src/ul4.mjs',
-		output: {
-			file: './dist/ul4.js',
-			format: 'umd',
-			name: 'ul4',
-			sourcemap: true,
-		},
-		plugins: plugins
-	},
-	{
-		input: './src/ul4.mjs',
-		output: {
-			file: './dist/es2015/ul4.js',
-			format: 'esm',
-			name: 'ul4',
-			sourcemap: true,
-		},
+		output: [
+			{
+				file: './dist/ul4.js',
+				format: 'umd',
+				name: 'ul4',
+				sourcemap: true
+			},
+			{
+				file: './dist/es2015/ul4.js',
+				format: 'esm',
+				name: 'ul4',
+				sourcemap: true
+			},
+		],
 		plugins: plugins
 	}
 ]
