@@ -46,7 +46,7 @@ export const api_version = "46";
 
 const _registry = {};
 
-const _havemap = (typeof(Map) === "function" && typeof(Map.prototype.forEach) === "function");
+export const _havemap = (typeof(Map) === "function" && typeof(Map.prototype.forEach) === "function");
 
 const _havemapconstructor = (function ()
 {
