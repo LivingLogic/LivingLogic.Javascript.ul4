@@ -8027,21 +8027,9 @@ export function _round(x, digits=0)
 // This uses the md5 function from https://github.com/blueimp/JavaScript-MD5
 import md5 from 'blueimp-md5';
 
-export let _md5;
-if (0)
+export function _md5(string)
 {
-	_md5 = function _md5(string)
-	{
-		let md5 = require('blueimp-md5');
-		return md5(string);
-	};
-}
-else
-{
-	_md5 = function _md5(string)
-	{
-		return md5(string);
-	};
+	return md5(string);
 }
 
 // Return an iterator over ``[index, item]`` lists from the iterable object ``iterable``. ``index`` starts at ``start`` (defaulting to 0)
