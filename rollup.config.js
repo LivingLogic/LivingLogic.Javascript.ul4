@@ -16,7 +16,9 @@ const plugins = [
 			"@babel/preset-env"
 		]
 	}),
-	// terser(),
+	terser({
+		keep_fnames: true
+	}),
 ];
 
 export default [
@@ -38,4 +40,4 @@ export default [
 		],
 		plugins: plugins
 	}
-]
+];
