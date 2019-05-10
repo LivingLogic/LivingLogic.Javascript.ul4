@@ -29,8 +29,16 @@
 
 /*jslint vars: true */
 
+// Version of this Javascipt package
+import { version } from '../package.json';
 
-export const version = "46";
+export { version };
+
+// Version of the UL4 API
+// I.e. this version should be compatible with the Python and Java
+// implementations that support the same API version.
+export const api_version = "46";
+
 
 //
 // UL4ON
@@ -7261,7 +7269,7 @@ export class Template extends BlockAST
 	ul4ondump(encoder)
 	{
 		let signature;
-		encoder.dump(version);
+		encoder.dump(api_version);
 		encoder.dump(this.name);
 		encoder.dump(this._source);
 		encoder.dump(this.whitespace);
@@ -7292,14 +7300,14 @@ export class Template extends BlockAST
 
 	ul4onload(decoder)
 	{
-		let version = decoder.load();
+		let loaded_api_version = decoder.load();
 		let signature;
 
-		if (version === null)
+		if (loaded_api_version === null)
 			throw new ValueError("UL4ON doesn't support templates in 'source' format in Javascript implementation");
 
-		if (version !== version)
-			throw new ValueError("invalid version, expected " + version + ", got " + version);
+		if (loaded_api_version !== api_version)
+			throw new ValueError("invalid version, expected " + api_version + ", got " + loaded_api_version);
 
 		this.name = decoder.load();
 		this._source = decoder.load();
