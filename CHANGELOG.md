@@ -1,5 +1,10 @@
 # Changes
 
+## Changes in 1.1.0 (2019-05-13)
+
+The UMD version is the default version now (i.e. in `package.json/main`).
+
+
 ## Changes in 1.0.0 (2019-05-13)
 
 The UL4 source is a Javascript module now. However the default babeled version

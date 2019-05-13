@@ -1,6 +1,6 @@
 {
 	"name": "@livinglogic/ul4",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"description": "Cross-platform templating library and object serialisation",
 	"keywords": [
 		"UL4",
@@ -18,7 +18,7 @@
 	"scripts": {
 		"build": "npx rollup -c"
 	},
-	"main": "dist/esm/ul4.js",
+	"main": "dist/umd/ul4.js",
 	"browser": "dist/umd/ul4.js",
 	"module": "dist/esm/ul4.js",
 	"devDependencies": {
