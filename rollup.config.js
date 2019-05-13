@@ -23,16 +23,16 @@ const plugins = [
 
 export default [
 	{
-		input: './src/ul4.mjs',
+		input: './src/ul4.js',
 		output: [
 			{
-				file: './dist/ul4.js',
+				file: './dist/umd/ul4.js',
 				format: 'umd',
 				name: 'ul4',
 				sourcemap: true
 			},
 			{
-				file: './dist/es2015/ul4.js',
+				file: './dist/esm/ul4.js',
 				format: 'esm',
 				name: 'ul4',
 				sourcemap: true
