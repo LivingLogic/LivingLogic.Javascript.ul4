@@ -29,7 +29,7 @@
 
 /*jslint vars: true */
 
-// Version of this Javascipt package
+// Version of this Javascript package
 import { version } from '../package.json';
 
 export { version };
