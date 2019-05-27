@@ -14,6 +14,9 @@
 		"type": "git",
 		"url": "git+https://github.com/LivingLogic/LivingLogic.Javascript.ul4.git"
 	},
+	"publishConfig": {
+		"access": "public"
+	},
 	"author": "Walter Doerwald",
 	"scripts": {
 		"build": "npx rollup -c"
