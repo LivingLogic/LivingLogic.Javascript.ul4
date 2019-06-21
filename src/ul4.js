@@ -37,7 +37,7 @@ export { version };
 // Version of the UL4 API
 // I.e. this version should be compatible with the Python and Java
 // implementations that support the same API version.
-export const api_version = "46";
+export const api_version = "47";
 
 
 //
@@ -865,6 +865,81 @@ export function _formatsource(out)
 		finalout.push("\n");
 	return finalout.join("");
 };
+
+// Return a prefix of a location in source code
+function _sourceprefix(source, pos)
+{
+	let outerstartpos = pos;
+	let innerstartpos = outerstartpos;
+
+	let maxprefix = 40;
+	let preprefix = "\u2026";
+	while (maxprefix > 0)
+	{
+		// We arrived at the start of the source code
+		if (outerstartpos === 0)
+		{
+			preprefix = "";
+			break;
+		}
+		// We arrived at the start of the line
+		if (source.charAt(outerstartpos-1) === "\n")
+		{
+			preprefix = "";
+			break;
+		}
+		--maxprefix;
+		--outerstartpos;
+	}
+	return preprefix + source.substring(outerstartpos, innerstartpos);
+}
+
+// Return a suffix of a location in source code
+function _sourcesuffix(source, pos)
+{
+	let outerstoppos = pos;
+	let innerstoppos = outerstoppos;
+
+	let maxsuffix = 40;
+	let postsuffix = "\u2026";
+	while (maxsuffix > 0)
+	{
+		// We arrived at the ed of the source code
+		if (outerstoppos >= source.length)
+		{
+			postsuffix = "";
+			break;
+		}
+		// We arrived at the end of the line
+		if (source.charAt(outerstoppos) === "\n")
+		{
+			postsuffix = "";
+			break;
+		}
+		--maxsuffix;
+		++outerstoppos;
+	}
+	return source.substring(innerstoppos, outerstoppos) + postsuffix;
+}
+
+// Return line and column number of a location in source code
+function _lineColFromPos(source, pos)
+{
+	let line = 1
+	let col = 1;
+	let stop = pos;
+	for (let i = 0; i < stop; ++i)
+	{
+		if (source[i] === "\n")
+		{
+			++line;
+			col = 1;
+		}
+		else
+			++col;
+	}
+	return [line, col];
+}
 
 // Compare ``obj1`` and ``obj2`` if they have the same value
 export function _eq(obj1, obj2)
@@ -4613,9 +4688,9 @@ export class LocationError extends Exception
 		let template = this.location.template;
 		let templateprefix = this._templateprefix();
 
-		let prefix = this.location.sourceprefix;
-		let code = this.location.source;
-		let suffix = this.location.sourcesuffix;
+		let prefix = this.location.startsourceprefix;
+		let code = this.location.startsource;
+		let suffix = this.location.startsourcesuffix;
 		prefix = _repr(prefix).slice(1, -1);
 		code = _repr(code).slice(1, -1);
 		suffix = _repr(suffix).slice(1, -1);
@@ -4646,18 +4721,58 @@ export class LocationError extends Exception
 /// Classes for the syntax tree
 export class AST extends Proto
 {
-	constructor(template, pos)
+	constructor(template, startpos, stoppos=null)
 	{
 		super();
 		this.template = template;
-		this.pos = pos;
-		this._line = null;
-		this._col = null;
+		this.startpos = startpos;
+		this._startline = null;
+		this._startcol = null;
+		this.stoppos = stoppos;
+		this._stopline = null;
+		this._stopcol = null;
+	}
+
+	get startline()
+	{
+		if (this._startline === null)
+			[this._startline, this._startcol] = _lineColFromPos(this.template._source, this.startpos.start);
+		return this._startline;
+	}
+
+	get startcol()
+	{
+		if (this._startcol === null)
+			[this._startline, this._startcol] = _lineColFromPos(this.template._source, this.startpos.start);
+		return this._startcol;
+	}
+
+	get startsource()
+	{
+		return this.startpos.of(this.template._source);
+	}
+
+	get startsourceprefix()
+	{
+		return _sourceprefix(this.template._source, this.startpos.start);
+	}
+
+	get startsourcesuffix()
+	{
+		return _sourcesuffix(this.template._source, this.startpos.stop);
 	}
 
 	get fullsource()
 	{
 		return this.template._source;
+	}
+
+	get pos()
+	{
+		if (this.stoppos === null)
+			return this.startpos;
+		else
+			return new slice(this.startpos.start, this.stoppos.stop);
 	}
 
 	get source()
@@ -4667,94 +4782,59 @@ export class AST extends Proto
 
 	get sourceprefix()
 	{
-		let outerstartpos = this.pos.start;
-		let innerstartpos = outerstartpos;
-		let source = this.fullsource;
-
-		let maxprefix = 40;
-		let preprefix = "\u2026";
-		while (maxprefix > 0)
-		{
-			// We arrived at the start of the source code
-			if (outerstartpos === 0)
-			{
-				preprefix = "";
-				break;
-			}
-			// We arrived at the start of the line
-			if (source.charAt(outerstartpos-1) === "\n")
-			{
-				preprefix = "";
-				break;
-			}
-			--maxprefix;
-			--outerstartpos;
-		}
-		return preprefix + source.substring(outerstartpos, innerstartpos);
+		return _sourceprefix(this.template._source, this.pos.start);
 	}
 
 	get sourcesuffix()
 	{
-		let outerstoppos = this.pos.stop;
-		let innerstoppos = outerstoppos;
-		let source = this.fullsource;
-
-		let maxsuffix = 40;
-		let postsuffix = "\u2026";
-		while (maxsuffix > 0)
-		{
-			// We arrived at the ed of the source code
-			if (outerstoppos >= source.length)
-			{
-				postsuffix = "";
-				break;
-			}
-			// We arrived at the end of the line
-			if (source.charAt(outerstoppos) === "\n")
-			{
-				postsuffix = "";
-				break;
-			}
-			--maxsuffix;
-			++outerstoppos;
-		}
-		return source.substring(innerstoppos, outerstoppos) + postsuffix;
+		return _sourcesuffix(this.template._source, this.pos.stop);
 	}
 
-	get line()
+	get stopline()
 	{
-		if (this._line === null)
-			this._calculateLineCol();
-		return this._line;
+		if (this._stopline === null)
+			[this._stopline, this._stopcol] = _lineColFromPos(this.template._source, this.stoppos.stop);
+		return this._stopline;
 	}
 
-	get col()
+	get stopcol()
 	{
-		if (this._col === null)
-			this._calculateLineCol();
-		return this._col;
+		if (this._stopcol === null)
+			[this._stopline, this._stopcol] = _lineColFromPos(this.template._source, this.stoppos.stop);
+		return this._stopcol;
 	}
 
-	_calculateLineCol()
+	get stopsource()
 	{
-		this._line = 1
-		this._col = 1;
-		let stop = this.pos.start;
-		for (let i = 0; i < stop; ++i)
-		{
-			if (this.template.source[i] === "\n")
-			{
-				++this._line;
-				this._col = 1;
-			}
-			else
-				++this._col;
-		}
+		return this.stoppos != null ? this.stoppos.of(this.template._source) : null;
+	}
+
+	get stopsourceprefix()
+	{
+		return this.stoppos != null ? _sourceprefix(this.template._source, this.stoppos.start) : null;
+	}
+
+	get stopsourcesuffix()
+	{
+		return this.stoppos != null ? _sourcesuffix(this.template._source, this.stoppos.stop) : null;
 	}
 
 	__getattr__(attrname)
 	{
-		if (attrname === "type" || attrname === "fullsource" || attrname === "source" || attrname === "sourceprefix" || attrname === "sourcesuffix" || attrname === "line" || attrname === "col")
+		if (
+			attrname === "type" ||
+			attrname === "startpos" ||
+			attrname === "startline" ||
+			attrname === "startcol" ||
+			attrname === "startsource" ||
+			attrname === "startsourceprefix" ||
+			attrname === "startsourcesuffix" ||
+			attrname === "pos" ||
+			attrname === "source" ||
+			attrname === "sourceprefix" ||
+			attrname === "sourcesuffix" ||
+			attrname === "fullsource"
+		)
 			return this[attrname];
 		else if (this._ul4onattrs.indexOf(attrname) >= 0)
 			return this[attrname];
@@ -4862,7 +4942,7 @@ export class AST extends Proto
 };
 
 // used in ul4ondump/ul4ondump to automatically dump these attributes
-AST.prototype._ul4onattrs = ["template", "pos"];
+AST.prototype._ul4onattrs = ["template", "startpos"];
 
 export class TextAST extends AST
 {
@@ -6706,9 +6786,22 @@ export class RenderBlockAST extends RenderAST
 		let closure = new TemplateClosure(this.content, this.content.signature, context.vars);
 		args.kwargs.content = closure;
 	}
+
+	__getattr__(attrname)
+	{
+		if (
+			attrname === "stoppos" ||
+			attrname === "stopsource" ||
+			attrname === "stopsourceprefix" ||
+			attrname === "stopsourcesuffix"
+		)
+			return this[attrname];
+		else
+			return super.__getattr__(attrname);
+	}
 };
 
-RenderBlockAST.prototype._ul4onattrs = RenderAST.prototype._ul4onattrs.concat(["content"]);
+RenderBlockAST.prototype._ul4onattrs = RenderAST.prototype._ul4onattrs.concat(["stoppos", "content"]);
 
 export class RenderBlocksAST extends RenderAST
 {
@@ -6727,9 +6820,22 @@ export class RenderBlocksAST extends RenderAST
 			}
 		}
 	}
+
+	__getattr__(attrname)
+	{
+		if (
+			attrname === "stoppos" ||
+			attrname === "stopsource" ||
+			attrname === "stopsourceprefix" ||
+			attrname === "stopsourcesuffix"
+		)
+			return this[attrname];
+		else
+			return super.__getattr__(attrname);
+	}
 };
 
-RenderBlocksAST.prototype._ul4onattrs = RenderAST.prototype._ul4onattrs.concat(["content"]);
+RenderBlocksAST.prototype._ul4onattrs = RenderAST.prototype._ul4onattrs.concat(["stoppos", "content"]);
 
 // Slice object
 export class slice extends Proto
@@ -6914,9 +7020,9 @@ BitOrVarAST.prototype._operator = BitOrAST.prototype;
 
 export class BlockAST extends CodeAST
 {
-	constructor(template, pos)
+	constructor(template, startpos, stoppos)
 	{
-		super(template, pos);
+		super(template, startpos, stoppos);
 		this.content = [];
 	}
 
@@ -6942,9 +7048,22 @@ export class BlockAST extends CodeAST
 			out.push(0);
 		}
 	}
+
+	__getattr__(attrname)
+	{
+		if (
+			attrname === "stoppos" ||
+			attrname === "stopsource" ||
+			attrname === "stopsourceprefix" ||
+			attrname === "stopsourcesuffix"
+		)
+			return this[attrname];
+		else
+			return super.__getattr__(attrname);
+	}
 };
 
-BlockAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["content"]);
+BlockAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["stoppos", "content"]);
 
 export class ForBlockAST extends BlockAST
 {
