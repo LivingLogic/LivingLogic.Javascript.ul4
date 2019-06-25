@@ -1,5 +1,20 @@
 # Changes
 
+## Changes in 1.2.1 (2019-06-25)
+
+Protect against renamed classes when the code gets reminified by a minifier that
+changes classes names (which break the UL4ON type names in the UL4ON registry).
+
+
+## Changes in 1.2.0 (2019-06-24)
+
+Added attributes to UL4 AST nodes: `startpos`, `startsource`,
+`startsourceprefix` and `startsourcesuffix`. Renamed `line` to `startline` and
+`col` to `startcol`.
+
+Added attributes to block AST nodes: `stoppos`, `stopline`, `stopcol`,
+`stopsource`, `stopsourceprefix` and `stopsourcesuffix`.
+
 ## Changes in 1.1.0 (2019-05-13)
 
 The UMD version is the default version now (i.e. in `package.json/main`).
