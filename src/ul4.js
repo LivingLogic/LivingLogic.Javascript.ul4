@@ -4025,7 +4025,7 @@ expose(ListProtocol.rfind, ["sub", "start=", null, "end=", null]);
 
 export let MapProtocol = _extend(Protocol,
 {
-	attrs: _makeset("get", "items", "values", "update", "clear"),
+	attrs: _makeset("get", "items", "values", "update", "clear", "pop"),
 
 	ul4type: function ul4type(obj)
 	{
@@ -4085,6 +4085,20 @@ export let MapProtocol = _extend(Protocol,
 	{
 		obj.clear();
 		return null;
+	},
+
+	pop: function pop(obj, key, default_=Object)
+	{
+		if (!obj.has(key))
+		{
+			if (default_ === Object)
+				throw new KeyError(obj, key);
+			else
+				return default_;
+		}
+		let result = obj.get(key);
+		obj.delete(key)
+		return result;
 	}
 });
 
@@ -4093,6 +4107,7 @@ expose(MapProtocol.items, []);
 expose(MapProtocol.values, []);
 expose(MapProtocol.update, ["*other", "**kwargs"]);
 expose(MapProtocol.clear, []);
+expose(MapProtocol.pop, ["key", "default=", Object]);
 
 export let SetProtocol = _extend(Protocol,
 {
@@ -4650,6 +4665,16 @@ export class AttributeError extends Exception
 		super("object of type " + _type(obj) + " has no attribute " + _repr(attrname));
 		this.obj = obj;
 		this.attrname = attrname;
+	}
+};
+
+export class KeyError extends Exception
+{
+	constructor(obj, key)
+	{
+		super("key "  + _repr(key) + " not found in object of type " + _type(obj));
+		this.obj = obj;
+		this.key = key;
 	}
 };
 
