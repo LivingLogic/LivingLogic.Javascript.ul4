@@ -4723,7 +4723,7 @@ export class LocationError extends Exception
 		let text = prefix + code + suffix;
 		let underline = _str_repeat("\u00a0", prefix.length) + _str_repeat("~", code.length);
 
-		let pos = "offset " + this.location.pos.start + ":" + this.location.pos.stop + "; line " + this.location.line + "; col " + this.location.col;
+		let pos = "offset " + this.location.pos.start + ":" + this.location.pos.stop + "; line " + this.location.startline + "; col " + this.location.startcol;
 
 		let message = templateprefix + ": " + pos + "\n" + text + "\n" + underline;
 		return message;
