@@ -37,7 +37,7 @@ export { version };
 // Version of the UL4 API
 // I.e. this version should be compatible with the Python and Java
 // implementations that support the same API version.
-export const api_version = "47";
+export const api_version = "48";
 
 
 //
