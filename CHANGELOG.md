@@ -3,7 +3,7 @@
 ## Changes in 1.2.1 (2019-06-25)
 
 Protect against renamed classes when the code gets reminified by a minifier that
-changes classes names (which break the UL4ON type names in the UL4ON registry).
+changes classes names (which breaks the UL4ON type names in the UL4ON registry).
 
 
 ## Changes in 1.2.0 (2019-06-24)
