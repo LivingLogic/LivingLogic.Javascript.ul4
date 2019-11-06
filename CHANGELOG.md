@@ -1,5 +1,11 @@
 # Changes
 
+## Changes in 1.3.0 (2019-11-??)
+
+The function `scrypt` can't be implemented in Javascript, so a version that
+throws a `NotImplementedError` exception has been added.
+
+
 ## Changes in 1.2.1 (2019-06-25)
 
 Protect against renamed classes when the code gets reminified by a minifier that

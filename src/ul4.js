@@ -4678,6 +4678,10 @@ export class KeyError extends Exception
 	}
 };
 
+export class NotImplementedError extends Exception
+{
+};
+
 /// Exception that wraps other exceptions while they bubble up the stack
 export class LocationError extends Exception
 {
@@ -8176,6 +8180,11 @@ export function _md5(string)
 	return md5(string);
 }
 
+export function _scrypt(string, salt)
+{
+	throw new NotImplementedError("scrypt() is not implemented");
+}
+
 // Return an iterator over ``[index, item]`` lists from the iterable object ``iterable``. ``index`` starts at ``start`` (defaulting to 0)
 export function _enumerate(iterable, start=0)
 {
@@ -8498,7 +8507,8 @@ export let functions = {
 	randrange: _randrange,
 	randchoice: _randchoice,
 	round: _round,
-	md5: _md5
+	md5: _md5,
+	scrypt: _scrypt
 };
 
 expose(_repr, ["obj"], {name: "repr"});
@@ -8579,6 +8589,7 @@ expose(_randrange, ["*args"], {name: "randrange"});
 expose(_randchoice, ["sequence"], {name: "randchoice"});
 expose(_round, ["x", "digit=", 0], {name: "round"});
 expose(_md5, ["string"], {name: "md5"});
+expose(_scrypt, ["string", "salt"], {name: "scrypt"});
 
 // Functions implementing UL4 methods
 export function _count(obj, sub, start=null, end=null)
