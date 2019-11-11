@@ -4097,7 +4097,7 @@ export let MapProtocol = _extend(Protocol,
 				return default_;
 		}
 		let result = obj.get(key);
-		obj.delete(key)
+		obj.delete(key);
 		return result;
 	}
 });
