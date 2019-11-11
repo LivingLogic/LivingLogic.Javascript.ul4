@@ -2,6 +2,8 @@
 
 ## Changes in 1.3.0 (2019-11-??)
 
+Added dictionary method `pop()`.
+
 The function `scrypt` can't be implemented in Javascript, so a version that
 throws a `NotImplementedError` exception has been added.
 
