@@ -251,14 +251,14 @@ export class Encoder
 	{
 		if (obj === null)
 			this._line("n");
-		else if (typeof(obj) == "boolean")
+		else if (typeof(obj) === "boolean")
 			this._line(obj ? "bT" : "bF");
-		else if (typeof(obj) == "number")
+		else if (typeof(obj) === "number")
 		{
 			let type = (Math.round(obj) == obj) ? "i" : "f";
 			this._line(type + obj);
 		}
-		else if (typeof(obj) == "string")
+		else if (typeof(obj) === "string")
 		{
 			let index = this._strings2index[obj];
 			if (typeof(index) !== "undefined")
@@ -289,7 +289,7 @@ export class Encoder
 			if (obj.__id__)
 			{
 				let index = this._ids2index[obj.__id__];
-				if (typeof(index) != "undefined")
+				if (typeof(index) !== "undefined")
 				{
 					this._line("^" + index);
 					return;
@@ -2119,7 +2119,7 @@ export function _bool(obj)
 		return false;
 	else
 	{
-		if (typeof(obj) === "object", typeof(obj.__bool__) === "function")
+		if (typeof(obj) === "object" && typeof(obj.__bool__) === "function")
 			return obj.__bool__();
 		if (_islist(obj))
 			return obj.length !== 0;
@@ -2154,14 +2154,14 @@ export function _int(obj, base)
 	}
 	else
 	{
-		if (typeof(obj) == "string")
+		if (typeof(obj) === "string")
 		{
 			result = parseInt(obj);
 			if (result.toString() == "NaN")
 			throw new TypeError("invalid literal for int()");
 			return result;
 		}
-		else if (typeof(obj) == "number")
+		else if (typeof(obj) === "number")
 			return Math.floor(obj);
 		else if (obj === true)
 			return 1;
@@ -2218,7 +2218,7 @@ export function _set(obj)
 // Return the length of ``sequence``
 export function _len(sequence)
 {
-	if (typeof(sequence) == "string" || _islist(sequence))
+	if (typeof(sequence) === "string" || _islist(sequence))
 		return sequence.length;
 	else if (_ismap(sequence) || _isset(sequence))
 		return sequence.size;
@@ -2302,7 +2302,7 @@ export function _dir(obj)
 // Return whether any of the items in ``iterable`` are true
 export function _any(iterable)
 {
-	if (typeof(iterable) == "string")
+	if (typeof(iterable) === "string")
 	{
 		for (let c of iterable)
 		{
@@ -2327,7 +2327,7 @@ export function _any(iterable)
 // Return whether all of the items in ``iterable`` are true
 export function _all(iterable)
 {
-	if (typeof(iterable) == "string")
+	if (typeof(iterable) === "string")
 	{
 		for (let c of iterable)
 		{
@@ -2371,25 +2371,25 @@ export function _isnone(obj)
 // Check if ``obj`` is a boolean
 export function _isbool(obj)
 {
-	return typeof(obj) == "boolean";
+	return typeof(obj) === "boolean";
 };
 
 // Check if ``obj`` is a int
 export function _isint(obj)
 {
-	return (typeof(obj) == "number") && Math.round(obj) == obj;
+	return (typeof(obj) === "number") && Math.round(obj) == obj;
 };
 
 // Check if ``obj`` is a float
 export function _isfloat(obj)
 {
-	return (typeof(obj) == "number") && Math.round(obj) != obj;
+	return (typeof(obj) === "number") && Math.round(obj) != obj;
 };
 
 // Check if ``obj`` is a string
 export function _isstr(obj)
 {
-	return typeof(obj) == "string";
+	return typeof(obj) === "string";
 };
 
 // Check if ``obj`` is a datetime
@@ -2430,19 +2430,19 @@ export function _istemplate(obj)
 // Check if ``obj`` is a function
 export function _isfunction(obj)
 {
-	return typeof(obj) === "function" || (Object.prototype.toString.call(obj) == "[object Object]" && (obj instanceof Template || obj instanceof TemplateClosure));
+	return typeof(obj) === "function" || (Object.prototype.toString.call(obj) === "[object Object]" && (obj instanceof Template || obj instanceof TemplateClosure));
 };
 
 // Check if ``obj`` is a list
 export function _islist(obj)
 {
-	return Object.prototype.toString.call(obj) == "[object Array]";
+	return Object.prototype.toString.call(obj) === "[object Array]";
 };
 
 // Check if ``obj`` is a set
 export function _isset(obj)
 {
-	return Object.prototype.toString.call(obj) == "[object Set]";
+	return Object.prototype.toString.call(obj) === "[object Set]";
 };
 
 // Check if ``obj`` is an exception (at least a UL4 exception)
@@ -2470,7 +2470,7 @@ export function _isiter(obj)
 // Check if ``obj`` is a JS object
 export function _isobject(obj)
 {
-	return Object.prototype.toString.call(obj) == "[object Object]" && typeof(obj.__type__) === "undefined" && !(obj instanceof Proto);
+	return Object.prototype.toString.call(obj) === "[object Object]" && typeof(obj.__type__) === "undefined" && !(obj instanceof Proto);
 };
 
 // Check if ``obj`` is a ``Map``
@@ -7783,7 +7783,7 @@ export function _csv(obj)
 // Return a string containing one character with the codepoint ``i``
 export function _chr(i)
 {
-	if (typeof(i) != "number")
+	if (typeof(i) !== "number")
 		throw new TypeError("chr() requires an int");
 	return String.fromCharCode(i);
 };
@@ -7791,7 +7791,7 @@ export function _chr(i)
 // Return the codepoint for the one and only character in the string ``c``
 export function _ord(c)
 {
-	if (typeof(c) != "string" || c.length != 1)
+	if (typeof(c) !== "string" || c.length != 1)
 		throw new TypeError("ord() requires a string of length 1");
 	return c.charCodeAt(0);
 };
@@ -7799,7 +7799,7 @@ export function _ord(c)
 // Convert an integer to a hexadecimal string
 export function _hex(number)
 {
-	if (typeof(number) != "number")
+	if (typeof(number) !== "number")
 		throw new TypeError("hex() requires an int");
 	if (number < 0)
 		return "-0x" + number.toString(16).substr(1);
@@ -7810,7 +7810,7 @@ export function _hex(number)
 // Convert an integer to a octal string
 export function _oct(number)
 {
-	if (typeof(number) != "number")
+	if (typeof(number) !== "number")
 		throw new TypeError("oct() requires an int");
 	if (number < 0)
 		return "-0o" + number.toString(8).substr(1);
@@ -7821,7 +7821,7 @@ export function _oct(number)
 // Convert an integer to a binary string
 export function _bin(number)
 {
-	if (typeof(number) != "number")
+	if (typeof(number) !== "number")
 		throw new TypeError("bin() requires an int");
 	if (number < 0)
 		return "-0b" + number.toString(2).substr(1);
@@ -8092,7 +8092,7 @@ export function _urlunquote(string)
 // Return a reverse iterator over ``sequence``
 export function _reversed(sequence)
 {
-	if (typeof(sequence) != "string" && !_islist(sequence)) // We don't have to materialize strings or lists
+	if (typeof(sequence) !== "string" && !_islist(sequence)) // We don't have to materialize strings or lists
 		sequence = _list(sequence);
 	return {
 		index: sequence.length-1,
@@ -8662,7 +8662,7 @@ export function _find(obj, sub, start=null, end=null)
 
 	if (start !== 0 || end !== obj.length)
 	{
-		if (typeof(obj) == "string")
+		if (typeof(obj) === "string")
 			obj = obj.substring(start, end);
 		else
 			obj = obj.slice(start, end);
@@ -8688,7 +8688,7 @@ export function _rfind(obj, sub, start=null, end=null)
 
 	if (start !== 0 || end !== obj.length)
 	{
-		if (typeof(obj) == "string")
+		if (typeof(obj) === "string")
 			obj = obj.substring(start, end);
 		else
 			obj = obj.slice(start, end);
