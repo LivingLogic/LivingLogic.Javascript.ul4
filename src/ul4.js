@@ -261,7 +261,7 @@ export class Encoder
 		else if (typeof(obj) === "string")
 		{
 			let index = this._strings2index[obj];
-			if (typeof(index) !== "undefined")
+			if (index !== undefined)
 			{
 				this._line("^" + index);
 			}
@@ -289,7 +289,7 @@ export class Encoder
 			if (obj.__id__)
 			{
 				let index = this._ids2index[obj.__id__];
-				if (typeof(index) !== "undefined")
+				if (index !== undefined)
 				{
 					this._line("^" + index);
 					return;
@@ -358,7 +358,7 @@ export class Decoder
 		this.data = data;
 		this.pos = 0;
 		this.backrefs = [];
-		this.registry = typeof(registry) === "undefined" ? null : registry;
+		this.registry = registry === undefined ? null : registry;
 		this.stack = []; // Use for informative error messages
 	}
 
@@ -656,12 +656,12 @@ export class Decoder
 				if (this.registry !== null)
 				{
 					constructor = this.registry[name];
-					if (typeof(constructor) === "undefined")
+					if (constructor === undefined)
 						constructor = _registry[name];
 				}
 				else
 					constructor = _registry[name];
-				if (typeof(constructor) === "undefined")
+				if (constructor === undefined)
 					throw new ValueError("can't load object of type " + _repr(name) + " at position " + this.pos + " with path " + this.stack.join("/"));
 				result = new constructor();
 				if (typecode === "O")
@@ -777,21 +777,21 @@ export function _internal_call(context, f, name, functioncontext, signature, nee
 export function _callfunction(context, f, args, kwargs)
 {
 	let name = f._ul4_name || f.name;
-	if (typeof(f._ul4_signature) === "undefined" || typeof(f._ul4_needsobject) === "undefined" || typeof(f._ul4_needscontext) === "undefined")
+	if (f._ul4_signature === undefined || f._ul4_needsobject === undefined || f._ul4_needscontext === undefined)
 		throw new TypeError(_repr(f) + " is not callable by UL4");
 	return _internal_call(context, f, name, null, f._ul4_signature, f._ul4_needscontext, f._ul4_needsobject, args, kwargs);
 };
 
 export function _callobject(context, obj, args, kwargs)
 {
-	if (typeof(obj._ul4_callsignature) === "undefined" || typeof(obj._ul4_callneedsobject) === "undefined" || typeof(obj._ul4_callneedscontext) === "undefined")
+	if (obj._ul4_callsignature === undefined || obj._ul4_callneedsobject === undefined || obj._ul4_callneedscontext === undefined)
 		throw new TypeError(_repr(obj) + " is not callable by UL4");
 	return _internal_call(context, obj.__call__, obj.name, obj, obj._ul4_callsignature, obj._ul4_callneedscontext, obj._ul4_callneedsobject, args, kwargs);
 };
 
 export function _callrender(context, obj, args, kwargs)
 {
-	if (typeof(obj._ul4_rendersignature) === "undefined" || typeof(obj._ul4_renderneedsobject) === "undefined" || typeof(obj._ul4_renderneedscontext) === "undefined")
+	if (obj._ul4_rendersignature === undefined || obj._ul4_renderneedsobject === undefined || obj._ul4_renderneedscontext === undefined)
 		throw new TypeError(_repr(obj) + " is not renderable by UL4");
 	return _internal_call(context, obj.__render__, obj.name, obj, obj._ul4_rendersignature, obj._ul4_renderneedscontext, obj._ul4_renderneedsobject, args, kwargs);
 };
@@ -2007,6 +2007,8 @@ function _repr_internal(obj, ascii)
 {
 	if (obj === null)
 		return "None";
+	else if (obj === undefined)
+		return "<undefined>";
 	else if (obj === false)
 		return "False";
 	else if (obj === true)
@@ -2024,8 +2026,6 @@ function _repr_internal(obj, ascii)
 		return _date_repr(obj, ascii);
 	else if (_isdatetime(obj))
 		return _datetime_repr(obj, ascii);
-	else if (typeof(obj) === "undefined")
-		return "<undefined>";
 	else if (typeof(obj) === "object" && typeof(obj.__repr__) === "function")
 		return obj.__repr__();
 	else if (_islist(obj))
@@ -2081,7 +2081,7 @@ function _datetime_str(obj)
 
 export function _str(obj)
 {
-	if (typeof(obj) === "undefined")
+	if (obj === undefined)
 		return "";
 	else if (obj === null)
 		return "";
@@ -2115,7 +2115,7 @@ export function _str(obj)
 // Convert ``obj`` to bool, according to its "truth value"
 export function _bool(obj)
 {
-	if (typeof(obj) === "undefined" || obj === null || obj === false || obj === 0 || obj === "")
+	if (obj === undefined || obj === null || obj === false || obj === 0 || obj === "")
 		return false;
 	else
 	{
@@ -2238,7 +2238,7 @@ export function _type(obj)
 		return "none";
 	else if (obj === false || obj === true)
 		return "bool";
-	else if (typeof(obj) === "undefined")
+	else if (obj === undefined)
 		return "undefined";
 	else if (typeof(obj) === "number")
 		return Math.round(obj) == obj ? "int" : "float";
@@ -2352,14 +2352,14 @@ export function _all(iterable)
 // Check if ``obj`` is undefined
 export function _isundefined(obj)
 {
-	return typeof(obj) === "undefined";
+	return obj === undefined;
 };
 
 
 // Check if ``obj`` is *not* undefined
 export function _isdefined(obj)
 {
-	return typeof(obj) !== "undefined";
+	return obj !== undefined;
 };
 
 // Check if ``obj`` is ``None``
@@ -2470,7 +2470,7 @@ export function _isiter(obj)
 // Check if ``obj`` is a JS object
 export function _isobject(obj)
 {
-	return Object.prototype.toString.call(obj) === "[object Object]" && typeof(obj.__type__) === "undefined" && !(obj instanceof Proto);
+	return Object.prototype.toString.call(obj) === "[object Object]" && obj.__type__ === undefined && !(obj instanceof Proto);
 };
 
 // Check if ``obj`` is a ``Map``
@@ -2557,7 +2557,7 @@ export function _asjson(obj)
 {
 	if (obj === null)
 		return "null";
-	else if (typeof(obj) === "undefined")
+	else if (obj === undefined)
 		return "undefined";
 	else if (obj === false)
 		return "false";
@@ -3113,16 +3113,16 @@ function _format_int(obj, fmt, lang)
 // Format ``obj`` using the format string ``fmt`` in the language ``lang``
 export function _format(obj, fmt, lang)
 {
-	if (typeof(lang) === "undefined" || lang === null)
+	if (lang === undefined || lang === null)
 		lang = "en";
 	else
 	{
 		let translations = {de: null, en: null, fr: null, es: null, it: null, da: null, sv: null, nl: null, pt: null, cs: null, sk: null, pl: null, hr: null, sr: null, ro: null, hu: null, tr: null, ru: null, zh: null, ko: null, ja: null};
 		lang = lang.toLowerCase();
-		if (typeof(translations[lang]) === "undefined")
+		if (translations[lang] === undefined)
 		{
 			lang = lang.split(/_/)[0];
-			if (typeof(translations[lang]) === "undefined")
+			if (translations[lang] === undefined)
 				lang = "en";
 		}
 	}
@@ -3574,7 +3574,7 @@ export let Protocol = {
 
 	getattr: function getattr(obj, attrname)
 	{
-		if (obj === null || typeof(obj) === "undefined")
+		if (obj === null || obj === undefined)
 			throw new AttributeError(obj, attrname);
 		else if (typeof(obj.__getattr__) === "function")
 			return obj.__getattr__(attrname);
@@ -3597,7 +3597,7 @@ export let Protocol = {
 
 	hasattr: function hasattr(obj, attrname)
 	{
-		if (obj === null || typeof(obj) === "undefined")
+		if (obj === null || obj === undefined)
 			return false;
 		else if (typeof(obj.__getattr__) === "function")
 		{
@@ -4421,7 +4421,7 @@ export let ObjectProtocol = _extend(Protocol,
 	get: function get(obj, key, default_=null)
 	{
 		let result = obj[key];
-		if (typeof(result) === "undefined")
+		if (result === undefined)
 			return default_;
 		return result;
 	},
@@ -5014,7 +5014,7 @@ export class IndentAST extends TextAST
 
 	get text()
 	{
-		if (typeof(this.template) !== "undefined")
+		if (this.template !== undefined)
 			return this._text === null ? this.source : this._text;
 		else
 			return null;
@@ -6035,9 +6035,9 @@ export class ItemAST extends BinaryAST
 			if (key instanceof slice)
 			{
 				let start = key.start, stop = key.stop;
-				if (typeof(start) === "undefined" || start === null)
+				if (start === undefined || start === null)
 					start = 0;
-				if (typeof(stop) === "undefined" || stop === null)
+				if (stop === undefined || stop === null)
 					stop = container.length;
 				return container.slice(start, stop);
 			}
@@ -7432,7 +7432,7 @@ export class Template extends BlockAST
 			signature = [];
 			for (let arg of this.signature.args)
 			{
-				if (typeof(arg.defaultValue) === "undefined")
+				if (arg.defaultValue === undefined)
 					signature.push(arg.name);
 				else
 					signature.push(arg.name+"=", arg.defaultValue);
@@ -8350,7 +8350,7 @@ export function _hls(h, l, s, a)
 	};
 
 	let m1, m2;
-	if (typeof(a) === "undefined")
+	if (a === undefined)
 		a = 1;
 	if (s === 0.0)
 		return _rgb(l, l, l, a);
@@ -8401,7 +8401,7 @@ export function _get(container, key, defaultvalue)
 	else if (_isobject(container))
 	{
 		let result = container[key];
-		if (typeof(result) === "undefined")
+		if (result === undefined)
 			return defaultvalue;
 		return result;
 	}
