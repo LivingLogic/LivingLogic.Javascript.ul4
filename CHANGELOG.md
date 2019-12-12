@@ -1,6 +1,15 @@
 # Changes
 
-## Changes in 1.3.0 (2019-11-??)
+## Changes in 1.4.0 (2019-12-12)
+
+The source code now uses the constant `undefined` for type checks instead of
+`typeof(foo) === "undefined"`.
+
+Added support for global variables in the methods `render`, `renders` and
+`call`.
+
+
+## Changes in 1.3.0 (2019-11-11)
 
 Added dictionary method `pop()`.
 

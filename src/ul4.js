@@ -37,7 +37,7 @@ export { version };
 // Version of the UL4 API
 // I.e. this version should be compatible with the Python and Java
 // implementations that support the same API version.
-export const api_version = "48";
+export const api_version = "49";
 
 
 //
@@ -2109,7 +2109,8 @@ export function _str(obj)
 		return obj.__repr__();
 	else if (_isobject(obj))
 		return _object_repr(obj);
-	return "?";
+	else
+		return _repr(obj);
 };
 
 // Convert ``obj`` to bool, according to its "truth value"
@@ -4457,11 +4458,10 @@ expose(ObjectProtocol.clear, []);
 
 export class Context
 {
-	constructor(vars)
+	constructor(vars, globals)
 	{
-		if (vars === null || typeof(vars) === "undefined")
-			vars = {};
-		this.vars = vars;
+		this.vars = vars || {};
+		this.globals = _extend(functions, globals);
 		this.indents = [];
 		this.escapes = [];
 		this._output = [];
@@ -4497,9 +4497,11 @@ export class Context
 		return context;
 	}
 
-	clone(vars)
+	replacevars(vars)
 	{
-		return Object.create(this);
+		let context = Object.create(this);
+		context.vars = vars;
+		return context;
 	}
 
 	output(value)
@@ -4516,7 +4518,10 @@ export class Context
 
 	get(name)
 	{
-		return this.vars[name];
+		let result = this.vars[name];
+		if (result === undefined)
+			result = this.globals[name];
+		return result;
 	}
 
 	set(name, value)
@@ -5811,10 +5816,7 @@ export class VarAST extends CodeAST
 
 	_get(context, name)
 	{
-		let result = context.get(name);
-		if (typeof(result) === "undefined")
-			result = functions[name];
-		return result;
+		return context.get(name);
 	}
 
 	_set(context, name, value)
@@ -7522,8 +7524,7 @@ export class Template extends BlockAST
 
 	_renderbound(context, vars)
 	{
-		let localcontext = context.clone();
-		localcontext.vars = vars;
+		let localcontext = context.replacevars(vars);
 		try
 		{
 			BlockAST.prototype._eval.call(this, localcontext);
@@ -7552,10 +7553,10 @@ export class Template extends BlockAST
 		return localcontext.getoutput();
 	}
 
-	renders(vars)
+	renders(vars, globals)
 	{
+		let context = new Context({}, globals);
 		vars = vars || {};
-		let context = new Context();
 		if (this.signature !== null)
 			vars = this.signature.bindObject(this.name, [], vars);
 		return this._rendersbound(context, vars);
@@ -7568,8 +7569,7 @@ export class Template extends BlockAST
 
 	_callbound(context, vars)
 	{
-		let localcontext = context.clone();
-		localcontext.vars = vars;
+		let localcontext = context.replacevars(vars);
 		try
 		{
 			BlockAST.prototype._eval.call(this, localcontext);
@@ -7584,10 +7584,10 @@ export class Template extends BlockAST
 		return null;
 	}
 
-	call(vars)
+	call(vars, globals)
 	{
+		let context = new Context({}, globals);
 		vars = vars || {};
-		let context = new Context();
 		if (this.signature !== null)
 			vars = this.signature.bindObject(this.name, [], vars);
 		return this._callbound(context, vars);
