@@ -32,6 +32,11 @@ Added attributes to UL4 AST nodes: `startpos`, `startsource`,
 Added attributes to block AST nodes: `stoppos`, `stopline`, `stopcol`,
 `stopsource`, `stopsourceprefix` and `stopsourcesuffix`.
 
+## Changes in 1.1.1 (2020-04-06)
+
+Update dependencies.
+
+
 ## Changes in 1.1.0 (2019-05-13)
 
 The UMD version is the default version now (i.e. in `package.json/main`).

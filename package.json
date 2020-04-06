@@ -1,6 +1,10 @@
 {
 	"name": "@livinglogic/ul4",
+<<<<<<< HEAD
 	"version": "1.4.0",
+=======
+	"version": "1.1.1",
+>>>>>>> rel-1-1-0-maint
 	"description": "Cross-platform templating library and object serialisation",
 	"keywords": [
 		"UL4",
@@ -25,20 +29,35 @@
 	"browser": "dist/umd/ul4.js",
 	"module": "dist/esm/ul4.js",
 	"devDependencies": {
+<<<<<<< HEAD
 		"@babel/core": "^7.7.0",
 		"@babel/preset-env": "^7.7.1",
 		"rollup": "^1.26.3",
 		"rollup-plugin-babel": "^4.3.3",
+=======
+		"@babel/core": "^7.9.0",
+		"@babel/preset-env": "^7.9.0",
+		"rollup": "^1.32.1",
+		"rollup-plugin-babel": "^4.4.0",
+>>>>>>> rel-1-1-0-maint
 		"rollup-plugin-commonjs": "^9.3.4",
 		"rollup-plugin-json": "^4.0.0",
 		"rollup-plugin-node-resolve": "^4.2.4",
 		"rollup-plugin-sourcemaps": "^0.4.2",
 		"rollup-plugin-terser": "^4.0.4",
+<<<<<<< HEAD
 		"rollup-plugin-uglify": "^6.0.3",
 		"source-map-support": "^0.5.16"
 	},
 	"dependencies": {
 		"blueimp-md5": "^2.12.0"
+=======
+		"rollup-plugin-uglify": "^6.0.4",
+		"source-map-support": "^0.5.12"
+	},
+	"dependencies": {
+		"blueimp-md5": "^2.13.0"
+>>>>>>> rel-1-1-0-maint
 	},
 	"bugs": {
 		"url": "https://github.com/LivingLogic/LivingLogic.Javascript.ul4/issues"

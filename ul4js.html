@@ -1,0 +1,68 @@
+<html>
+<head>
+<script src="dist/umd/ul4.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.3.min.js"></script>
+<script src="sax.js"></script>
+<script src="https://fb.me/react-0.14.3.js"></script>
+<script src="https://fb.me/react-dom-0.14.3.js"></script>
+<script type="text/javascript">
+function parse2react(xml)
+{
+    var root = {children: []};
+    var stack = [root];
+    var parser = sax.parser(true);
+
+    parser.ontext = function(text) {
+       stack[stack.length-1].children.push(text);
+    }
+
+    parser.onopentag = function(data) {
+        stack.push({name: data.name, attributes: data.attributes, children: []});
+    }
+
+    parser.onclosetag = function(name) {
+        var data = stack[stack.length-1];
+        var node = data.children.length ? React.createElement(data.name, data.attributes, data.children) : React.createElement(data.name, data.attributes);
+        stack.pop();
+        stack[stack.length-1].children.push(node);
+    }
+
+    parser.write(xml).close();
+    return root.children;
+}
+
+var t = ul4.loads("O S'de.livinglogic.ul4.template' S'48' n S'\\x3c?def inner?>\\x3c?end def?>\\x3c?print inner.parenttemplate.name?>' S'keep' S'\\x3c?' S'?>' n n n ^0 R i0 i0 R i59 i59 L O S'de.livinglogic.ul4.indent' ^0 R i0 i0 n ) O ^1 ^2 S'inner' ^3 ^4 ^5 ^6 n ^0 n ^13 R i0 i13 R i13 i24 L ] ) O S'de.livinglogic.ul4.print' ^0 R i24 i59 O S'de.livinglogic.ul4.attr' ^0 R i32 i57 O ^22 ^0 R i32 i52 O S'de.livinglogic.ul4.var' ^0 R i32 i37 S'inner' ) S'parenttemplate' ) S'name' ) ) ] )");
+
+var b = true;
+var s1 = 0, s2 = 0, s3 = 0, c = 0;
+function render()
+{
+    var $$ = $("#root");
+    if ($$.length)
+    {
+        var t1 = +new Date();
+        var s = t.renders({b: b});
+        // console.log(s);
+        var t2 = +new Date();
+        var n = parse2react(s)[0];
+        var t3 = +new Date();
+        ReactDOM.render(n, $$.get(0));
+        var t4 = +new Date();
+        s1 += t2 - t1;
+        s2 += t3 - t2;
+        s3 += t4 - t3;
+        ++c;
+        console.log(c, "ul4", (s1/c).toFixed(2), "xml", (s2/c).toFixed(2), "react", (s3/c).toFixed(2));
+        b = !b;
+        window.setTimeout(render, 1000);
+    }
+};
+
+$(render);
+
+</script>
+</head>
+<body>
+<div id="root"></div>
+</body>
+</html>
