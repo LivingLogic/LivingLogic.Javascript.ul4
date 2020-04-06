@@ -1,5 +1,10 @@
 # Changes
 
+## Changes in 1.4.1 (2020-04-06)
+
+Update dependencies.
+
+
 ## Changes in 1.4.0 (2019-12-12)
 
 The source code now uses the constant `undefined` for type checks instead of
@@ -31,6 +36,7 @@ Added attributes to UL4 AST nodes: `startpos`, `startsource`,
 
 Added attributes to block AST nodes: `stoppos`, `stopline`, `stopcol`,
 `stopsource`, `stopsourceprefix` and `stopsourcesuffix`.
+
 
 ## Changes in 1.1.1 (2020-04-06)
 
