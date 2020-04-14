@@ -37,7 +37,7 @@ export { version };
 // Version of the UL4 API
 // I.e. this version should be compatible with the Python and Java
 // implementations that support the same API version.
-export const api_version = "49";
+export const api_version = "50";
 
 
 //
@@ -184,20 +184,21 @@ export function register(name, f)
 };
 
 // Return a string that contains the object ``obj`` in the UL4ON serialization format
-export function dumps(obj, indent)
+export function dumps(obj, indent=null)
 {
 	let encoder = new Encoder(indent);
-	encoder.dump(obj);
-	return encoder.finish();
+	let output = [];
+	encoder.dump(obj, output);
+	return output.join("");
 };
 
-// Load an object from the string ``data``.
-// ``data`` must contain the object in the UL4ON serialization format
+// Load an object from the string ``dump``.
+// ``dump`` must contain the object in the UL4ON serialization format
 // ``registry`` may be null or a dictionary mapping type names to constructor functions
-export function loads(data, registry)
+export function loads(dump, registry=null)
 {
-	let decoder = new Decoder(data, registry);
-	return decoder.load();
+	let decoder = new Decoder(registry);
+	return decoder.loads(dump);
 };
 
 // Helper class for encoding
@@ -207,7 +208,7 @@ export class Encoder
 	constructor(indent=null)
 	{
 		this.indent = indent;
-		this.data = [];
+		this.output = null;
 		this._level = 0;
 		this._strings2index = {};
 		this._ids2index = {};
@@ -219,14 +220,14 @@ export class Encoder
 		if (this.indent !== null)
 		{
 			for (let i = 0; i < this._level; ++i)
-				this.data.push(this.indent);
+				this.output.push(this.indent);
 		}
 		else
 		{
-			if (this.data.length)
-				this.data.push(" ");
+			if (this.output.length)
+				this.output.push(" ");
 		}
-		this.data.push(line);
+		this.output.push(line);
 
 		if (args.length)
 		{
@@ -238,17 +239,23 @@ export class Encoder
 		}
 
 		if (this.indent !== null)
-			this.data.push("\n");
+			this.output.push("\n");
 	}
 
-	// Return the complete string written to the buffer
-	finish()
+	dumps(obj)
 	{
-		return this.data.join("");
+		let output = [];
+		this.dump(obj, output);
+		return output.join("");
 	}
 
-	dump(obj)
+	dump(obj, output=null)
 	{
+		if (output !== null)
+		{
+			this._level = 0;
+			this.output = output;
+		}
 		if (obj === null)
 			this._line("n");
 		else if (typeof(obj) === "boolean")
@@ -346,36 +353,54 @@ export class Encoder
 		}
 		else
 			throw new ValueError("can't create UL4ON dump of object " + _repr(obj));
+		if (output !== null)
+		{
+			this.output = null;
+		}
+	}
+
+	__getattr__(attrname)
+	{
+		let self = this;
+		switch (attrname)
+		{
+			case "dumps":
+				let dumps = this.dumps.bind(this);
+				expose(dumps, ["obj", "indent=", null]);
+				return dumps;
+			default:
+				throw new ul4.AttributeError(this, attrname);
+		}
 	}
 };
 
 // Helper class for decoding
 export class Decoder
 {
-	// Creates a new decoder for reading from the string ``data``
-	constructor(data, registry)
+	// Creates a new decoder for reading an UL4ON dump
+	constructor(registry)
 	{
-		this.data = data;
+		this.input = null;
 		this.pos = 0;
 		this.backrefs = [];
 		this.registry = registry === undefined ? null : registry;
-		this.stack = []; // Use for informative error messages
+		this.stack = null; // Use for informative error messages
 	}
 
 	// Read a character from the buffer
 	readchar()
 	{
-		if (this.pos >= this.data.length)
+		if (this.pos >= this.input.length)
 			throw new ValueError("UL4 decoder at EOF");
-		return this.data.charAt(this.pos++);
+		return this.input.charAt(this.pos++);
 	}
 
 	// Read a character from the buffer (return null on eof)
 	readcharoreof()
 	{
-		if (this.pos >= this.data.length)
+		if (this.pos >= this.input.length)
 			return null;
-		return this.data.charAt(this.pos++);
+		return this.input.charAt(this.pos++);
 	}
 
 	// Read next not-whitespace character from the buffer
@@ -385,9 +410,9 @@ export class Decoder
 
 		for (;;)
 		{
-			if (this.pos >= this.data.length)
+			if (this.pos >= this.input.length)
 				throw new ValueError("UL4 decoder at EOF at position " + this.pos + " with path " + this.stack.join("/"));
-			let c = this.data.charAt(this.pos++);
+			let c = this.input.charAt(this.pos++);
 			if (!c.match(re_white))
 				return c;
 		}
@@ -396,9 +421,9 @@ export class Decoder
 	// Read ``size`` characters from the buffer
 	read(size)
 	{
-		if (this.pos+size > this.length)
-			size = this.length-this.pos;
-		let result = this.data.substring(this.pos, this.pos+size);
+		if (this.pos+size > this.input.length)
+			size = this.input.length-this.pos;
+		let result = this.input.substring(this.pos, this.pos+size);
 		this.pos += size;
 		return result;
 	}
@@ -451,9 +476,20 @@ export class Decoder
 		return String.fromCharCode(codepoint);
 	}
 
-	// Load the next object from the buffer
-	load()
+	loads(dump)
 	{
+		return this.load(dump);
+	}
+
+	// Load the next object from the buffer
+	load(input=null)
+	{
+		if (input !== null)
+		{
+			this.input = input;
+			this.pos = 0;
+			this.stack = [];
+		}
 		let typecode = this.readblackchar();
 		let result;
 		switch (typecode)
@@ -464,7 +500,8 @@ export class Decoder
 			case "N":
 				if (typecode === "N")
 					this.backrefs.push(null);
-				return null;
+				result = null;
+				break;
 			case "b":
 			case "B":
 				result = this.readchar();
@@ -476,7 +513,7 @@ export class Decoder
 					throw new ValueError("wrong value for boolean, expected 'T' or 'F', got " + _repr(result) + " at position " + this.pos + " with path " + this.stack.join("/"));
 				if (typecode === "B")
 					this.backrefs.push(result);
-				return result;
+				break;
 			case "i":
 			case "I":
 			case "f":
@@ -484,7 +521,7 @@ export class Decoder
 				result = this.readnumber();
 				if (typecode === "I" || typecode === "F")
 					this.backrefs.push(result);
-				return result;
+				break;
 			case "s":
 			case "S":
 				result = [];
@@ -530,7 +567,7 @@ export class Decoder
 				result = result.join("");
 				if (typecode === "S")
 					this.backrefs.push(result);
-				return result;
+				break;
 			case "c":
 			case "C":
 				result = new Color();
@@ -540,7 +577,7 @@ export class Decoder
 				result._g = this.load();
 				result._b = this.load();
 				result._a = this.load();
-				return result;
+				break;
 			case "x":
 			case "X":
 			{
@@ -550,7 +587,7 @@ export class Decoder
 				result = new Date_(year, month, day);
 				if (typecode === "X")
 					this.backrefs.push(result);
-				return result;
+				break;
 			}
 			case "z":
 			case "Z":
@@ -565,7 +602,7 @@ export class Decoder
 				result.setMilliseconds(this.load()/1000);
 				if (typecode === "Z")
 					this.backrefs.push(result);
-				return result;
+				break;
 			case "t":
 			case "T":
 				result = new TimeDelta();
@@ -574,7 +611,7 @@ export class Decoder
 				result._microseconds = this.load();
 				if (typecode === "T")
 					this.backrefs.push(result);
-				return result;
+				break;
 			case "r":
 			case "R":
 				result = new slice();
@@ -582,14 +619,14 @@ export class Decoder
 					this.backrefs.push(result);
 				result.start = this.load();
 				result.stop = this.load();
-				return result;
+				break;
 			case "m":
 			case "M":
 				result = new MonthDelta();
 				if (typecode === "M")
 					this.backrefs.push(result);
 				result._months = this.load();
-				return result;
+				break;
 			case "l":
 			case "L":
 				this.stack.push("list");
@@ -605,7 +642,7 @@ export class Decoder
 					result.push(this.load());
 				}
 				this.stack.pop();
-				return result;
+				break;
 			case "d":
 			case "D":
 			case "e":
@@ -627,7 +664,7 @@ export class Decoder
 					_setmap(result, key, value);
 				}
 				this.stack.pop();
-				return result;
+				break;
 			case "y":
 			case "Y":
 				this.stack.push("set");
@@ -643,7 +680,7 @@ export class Decoder
 					result.add(this.load());
 				}
 				this.stack.pop();
-				return result;
+				break;
 			case "o":
 			case "O":
 			{
@@ -671,11 +708,18 @@ export class Decoder
 				if (typecode !== ")")
 					throw new ValueError("object terminator ')' for object of type '" + name + "' expected, got " + _repr(typecode) + " at position " + this.pos + " with path " + this.stack.join("/"));
 				this.stack.pop();
-				return result;
+				break;
 			}
 			default:
 				throw new ValueError("unknown typecode " + _repr(typecode) + " at position " + this.pos + " with path " + this.stack.join("/"));
 		}
+		if (input !== null)
+		{
+			this.input = null;
+			this.pos = 0;
+			this.stack = null;
+		}
+		return result;
 	}
 
 	// Return an iterator for loading the content of a object
@@ -698,7 +742,21 @@ export class Decoder
 			}
 		};
 	}
+
+	__getattr__(attrname)
+	{
+		switch (attrname)
+		{
+			case "loads":
+				let loads = this.loads.bind(this);
+				expose(loads, ["dump"]);
+				return loads;
+			default:
+				throw new ul4.AttributeError(this, attrname);
+		}
+	}
 };
+
 
 //
 // UL4
@@ -3382,7 +3440,7 @@ export class _Set
 		switch (attrname)
 		{
 			case "add":
-				return expose(function add(items){ self.add(...items); }, ["*items"]);
+				return expose(this.bind.add(this), ["*items"]);
 			default:
 				throw new AttributeError(this, attrname);
 		}
@@ -3531,6 +3589,7 @@ export function expose(f, signature, options)
 	f._ul4_signature = signature;
 	f._ul4_needsobject = options.needsobject || false;
 	f._ul4_needscontext = options.needscontext || false;
+	return f;
 };
 
 // Clone an object and extend it
@@ -4461,7 +4520,7 @@ export class Context
 	constructor(vars, globals)
 	{
 		this.vars = vars || {};
-		this.globals = _extend(functions, globals);
+		this.globals = _extend(builtins, globals);
 		this.indents = [];
 		this.escapes = [];
 		this._output = [];
@@ -8429,7 +8488,42 @@ export function today()
 	return new Date_(now.getFullYear(), now.getMonth()+1, now.getDate());
 };
 
-export let functions = {
+function _ul4on_loads(dump)
+{
+	return loads(dump);
+};
+
+expose(_ul4on_loads, ["dump"], {name: "loads"});
+
+function _ul4on_dumps(obj, indent=null)
+{
+	return dumps(obj, indent);
+};
+
+expose(_ul4on_dumps, ["obj", "indent=", null], {name: "dumps"});
+
+function _ul4on_encoder(indent=null)
+{
+	return new Encoder(indent);
+}
+
+expose(_ul4on_encoder, ["indent=", null], {name: "Encoder"});
+
+function _ul4on_decoder()
+{
+	return new Decoder();
+}
+
+expose(_ul4on_decoder, [], {name: "Decoder"});
+
+const _ul4on = {
+	loads: _ul4on_loads,
+	dumps: _ul4on_dumps,
+	Encoder: _ul4on_encoder,
+	Decoder: _ul4on_decoder
+};
+
+export let builtins = {
 	repr: _repr,
 	ascii: _ascii,
 	str: _str,
@@ -8508,7 +8602,8 @@ export let functions = {
 	randchoice: _randchoice,
 	round: _round,
 	md5: _md5,
-	scrypt: _scrypt
+	scrypt: _scrypt,
+	ul4on: _ul4on
 };
 
 expose(_repr, ["obj"], {name: "repr"});
@@ -8549,7 +8644,7 @@ expose(_isexception, ["obj"], {name: "isexception"});
 expose(_asjson, ["obj"], {name: "asjson"});
 expose(_fromjson, ["string"], {name: "fromjson"});
 expose(_asul4on, ["obj"], {name: "asul4on"});
-expose(_fromul4on, ["string"], {name: "fromul4on"});
+expose(_fromul4on, ["dump"], {name: "fromul4on"});
 expose(now, []);
 expose(utcnow, []);
 expose(today, []);
@@ -8866,41 +8961,23 @@ export class Color extends Proto
 				expose(a, []);
 				return a;
 			case "lum":
-				let lum = function lum(){ return self.lum(); };
-				expose(lum, []);
-				return lum;
+				return expose(this.lum.bind(this), []);
 			case "hls":
-				let hls = function hls(){ return self.hls(); };
-				expose(hls, []);
-				return hls;
+				return expose(this.hls.bind(this), []);
 			case "hlsa":
-				let hlsa = function hlsa(){ return self.hlsa(); };
-				expose(hlsa, []);
-				return hlsa;
+				return expose(this.hlsa.bind(this), []);
 			case "hsv":
-				let hsv = function hsv(){ return self.hsv(); };
-				expose(hsv, []);
-				return hsv;
+				return expose(this.hsv.bind(this), []);
 			case "hsva":
-				let hsva = function hsva(){ return self.hsva(); };
-				expose(hsva, []);
-				return hsva;
+				return expose(this.hsva.bind(this), []);
 			case "witha":
-				let witha = function witha(a){ return self.witha(a); };
-				expose(witha, ["a"]);
-				return witha;
+				return expose(this.witha.bind(this), ["a"]);
 			case "withlum":
-				let withlum = function withlum(lum){ return self.withlum(lum); };
-				expose(withlum, ["lum"]);
-				return withlum;
+				return expose(this.withlum.bind(this), ["lum"]);
 			case "abslum":
-				let abslum = function abslum(lum){ return self.abslum(lum); };
-				expose(abslum, ["lum"]);
-				return abslum;
+				return expose(this.abslum.bind(this), ["lum"]);
 			case "rellum":
-				let rellum = function rellum(lum){ return self.rellum(lum); };
-				expose(rellum, ["lum"]);
-				return rellum;
+				return expose(this.rellum.bind(this), ["lum"]);
 			default:
 				throw new AttributeError(this, attrname);
 		}

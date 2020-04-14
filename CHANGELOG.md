@@ -1,5 +1,12 @@
 # Changes
 
+## Changes in 1.5.0 (2020-04-14)
+
+Implement the "module" `ul4on` with the attributes `loads`, `dumps`, `Encoder`
+and `Decoder`. `Encoder` and `Decoder` can be use to encode/decode an UL4ON
+dump in multiple steps.
+
+
 ## Changes in 1.4.1 (2020-04-06)
 
 Update dependencies.
