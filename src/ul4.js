@@ -4517,10 +4517,10 @@ expose(ObjectProtocol.clear, []);
 
 export class Context
 {
-	constructor(vars, globals)
+	constructor(vars=null, globals=null)
 	{
 		this.vars = vars || {};
-		this.globals = _extend(builtins, globals);
+		this.globals = _extend(builtins, globals || {});
 		this.indents = [];
 		this.escapes = [];
 		this._output = [];
@@ -7612,7 +7612,7 @@ export class Template extends BlockAST
 		return localcontext.getoutput();
 	}
 
-	renders(vars, globals)
+	renders(vars=null, globals=null)
 	{
 		let context = new Context({}, globals);
 		vars = vars || {};
@@ -7643,7 +7643,7 @@ export class Template extends BlockAST
 		return null;
 	}
 
-	call(vars, globals)
+	call(vars=null, globals=null)
 	{
 		let context = new Context({}, globals);
 		vars = vars || {};

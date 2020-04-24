@@ -1,5 +1,13 @@
 # Changes
 
+## Changes in 1.6.0 (2020-04-24)
+
+The `Template` methods `renders` and `call` now have default values for the
+parameters and global variables, so they can be called without any global
+variables by passing only the parameter object or without parameters and global
+variables by passing no arguments.
+
+
 ## Changes in 1.5.0 (2020-04-14)
 
 Implement the "module" `ul4on` with the attributes `loads`, `dumps`, `Encoder`
