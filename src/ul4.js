@@ -2315,6 +2315,9 @@ export function _type(obj)
 // (this is non-trivial, because it follows the Python semantic of ``-5 % 2`` being ``1``)
 export function _mod(obj1, obj2)
 {
+	if (obj1 === null || obj1 === undefined || obj2 === null || obj2 === undefined)
+		throw new TypeError(_type(obj1) + " % " + _type(obj2) + " is not supported");
+
 	let div = Math.floor(obj1 / obj2);
 	let mod = obj1 - div * obj2;
 
@@ -6304,8 +6307,8 @@ export class AddAST extends BinaryAST
 			return obj1.__add__(obj2);
 		else if (obj2 && typeof(obj2.__radd__) === "function")
 			return obj2.__radd__(obj1);
-		if (obj1 === null || obj2 === null)
-			throw new TypeError(_type(this.obj1) + " + " + _type(this.obj2) + " is not supported");
+		if (obj1 === null || obj1 === undefined || obj2 === null || obj2 === undefined)
+			throw new TypeError(_type(obj1) + " + " + _type(obj2) + " is not supported");
 		if (_islist(obj1) && _islist(obj2))
 			return [...obj1, ...obj2];
 		else
@@ -6337,8 +6340,8 @@ export class SubAST extends BinaryAST
 			return this._date_sub(obj1, obj2);
 		else if (_isdatetime(obj1) && _isdatetime(obj2))
 			return this._datetime_sub(obj1, obj2);
-		if (obj1 === null || obj2 === null)
-			throw new TypeError(_type(this.obj1) + " - " + _type(this.obj2) + " is not supported");
+		if (obj1 === null || obj1 === undefined || obj2 === null || obj2 === undefined)
+			throw new TypeError(_type(obj1) + " - " + _type(obj2) + " is not supported");
 		return obj1 - obj2;
 	}
 
@@ -6409,8 +6412,8 @@ export class MulAST extends BinaryAST
 			return obj1.__mul__(obj2);
 		else if (obj2 && typeof(obj2.__rmul__) === "function")
 			return obj2.__rmul__(obj1);
-		if (obj1 === null || obj2 === null)
-			throw new TypeError(_type(obj1) + " * " + _type(obj2) + " not supported");
+		if (obj1 === null || obj1 === undefined || obj2 === null || obj2 === undefined)
+			throw new TypeError(obj1 + " * " + obj2 + " not supported");
 		else if (_isint(obj1) || _isbool(obj1))
 		{
 			if (typeof(obj2) === "string")
@@ -6473,7 +6476,7 @@ export class FloorDivAST extends BinaryAST
 			return obj1.__floordiv__(obj2);
 		else if (obj2 && typeof(obj2.__rfloordiv__) === "function")
 			return obj2.__rfloordiv__(obj1);
-		if (obj1 === null || obj2 === null)
+		if (obj1 === null || obj1 === undefined || obj2 === null || obj2 === undefined)
 			throw new TypeError(_type(obj1) + " // " + _type(obj2) + " not supported");
 		else if (typeof(obj1) === "number" && typeof(obj2) === "number" && obj2 === 0)
 			throw new ZeroDivisionError();
@@ -6495,7 +6498,7 @@ export class TrueDivAST extends BinaryAST
 			return obj1.__truediv__(obj2);
 		else if (obj2 && typeof(obj2.__rtruediv__) === "function")
 			return obj2.__rtruediv__(obj1);
-		if (obj1 === null || obj2 === null)
+		if (obj1 === null || obj1 === undefined || obj2 === null || obj2 === undefined)
 			throw new TypeError(_type(obj1) + " / " + _type(obj2) + " not supported");
 		else if (typeof(obj1) === "number" && typeof(obj2) === "number" && obj2 === 0)
 			throw new ZeroDivisionError();

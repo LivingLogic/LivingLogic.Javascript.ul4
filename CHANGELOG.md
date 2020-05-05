@@ -1,5 +1,11 @@
 # Changes
 
+## Changes in 1.8.0 (2020-05-05)
+
+Undefined operands are now rejected in arithmetic operations (i.e. add,
+subtract, multiply, true and floor division, and modulo).
+
+
 ## Changes in 1.7.0 (2020-05-05)
 
 Added a function `report_exc` that can be used to report an exception
