@@ -1,5 +1,11 @@
 # Changes
 
+## Changes in 1.7.0 (2020-05-05)
+
+Added a function `report_exc` that can be used to report an exception
+originating from an UL4 template on the browser console.
+
+
 ## Changes in 1.6.0 (2020-04-24)
 
 The `Template` methods `renders` and `call` now have default values for the

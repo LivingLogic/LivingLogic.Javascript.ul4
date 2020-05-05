@@ -9788,3 +9788,92 @@ for (let [constructor, name] of constructors)
 	constructor.prototype.type = name;
 	register("de.livinglogic.ul4." + name, constructor);
 }
+
+// Report an exception `exc` originating from an UL4 on the browser console.
+export function report_exc(exc)
+{
+	let original_exc = exc;
+	if (console && console.error)
+	{
+		let errors = [];
+		for (;;) 
+		{
+			errors.unshift(exc);
+			if (exc.context !== undefined && exc.context !== null)
+				exc = exc.context;
+			else
+				break;
+		}
+
+		let texts = [];
+		let args = [];
+
+		function text(s)
+		{
+			texts.push(s);
+		}
+
+		function css(text, style)
+		{
+			texts.push("%c");
+			args.push(style);
+			texts.push(text);
+			texts.push("%c");
+			args.push("");
+		}
+
+		function em(s)
+		{
+			css(s, "font-weight: bold");
+		}
+
+		function focus(s)
+		{
+			css(s, "border-bottom: 2px solid #b22");
+		}
+
+		for (let exc of errors)
+		{
+			if (texts.length)
+				text("\n\n");
+
+			if (exc instanceof ul4.LocationError)
+			{
+				let template = exc.location.template;
+				if (template.parenttemplate !== null)
+					text("in local template ");
+				else
+					text("in template ");
+				let first = true;
+				while (template != null)
+				{
+					if (first)
+						first = false;
+					else
+						text(" in ");
+					em(template.name ? _repr(template.name) : "(unnamed)");
+					template = template.parenttemplate;
+				}
+				text(" offset ");
+				em(exc.location.pos.start + "");
+				text(":");
+				em(exc.location.pos.stop + "");
+				text("; line ");
+				em(exc.location.startline + "");
+				text("; column ");
+				em(exc.location.startcol + "");
+				text("\n");
+				text(exc.location.startsourceprefix);
+				focus(exc.location.startsource);
+				text(exc.location.startsourcesuffix);
+			}
+			else
+			{
+				em(exc.constructor.name);
+				text(": ");
+				text(exc.message);
+			}
+		}
+		console.error(texts.join(""), ...args);
+	}
+};
