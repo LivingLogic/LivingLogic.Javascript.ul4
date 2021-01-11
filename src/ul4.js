@@ -3,8 +3,8 @@
  * http://www.livinglogic.de/Python/ul4c/
  * http://www.livinglogic.de/Python/ul4on/
  *
- * Copyright 2011-2019 by LivingLogic AG, Bayreuth/Germany
- * Copyright 2011-2019 by Walter Dörwald
+ * Copyright 2011-2021 by LivingLogic AG, Bayreuth/Germany
+ * Copyright 2011-2021 by Walter Dörwald
  *
  * All Rights Reserved
  *
@@ -4206,6 +4206,7 @@ export let DateProtocol = _extend(Protocol,
 		"day",
 		"month",
 		"year",
+		"date",
 		"mimeformat",
 		"isoformat",
 		"yearday"
@@ -4246,6 +4247,11 @@ export let DateProtocol = _extend(Protocol,
 		return obj._date.getFullYear();
 	},
 
+	date: function date(obj)
+	{
+		return obj;
+	},
+
 	mimeformat: function mimeformat(obj)
 	{
 		let weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -4273,6 +4279,7 @@ expose(DateProtocol.week, ["firstweekday=", 0, "mindaysinfirstweek=", 4]);
 expose(DateProtocol.day, []);
 expose(DateProtocol.month, []);
 expose(DateProtocol.year, []);
+expose(DateProtocol.date, []);
 expose(DateProtocol.mimeformat, []);
 expose(DateProtocol.isoformat, []);
 expose(DateProtocol.yearday, []);
@@ -4291,6 +4298,7 @@ export let DateTimeProtocol = _extend(Protocol,
 		"minute",
 		"second",
 		"microsecond",
+		"date",
 		"mimeformat",
 		"isoformat",
 		"yearday"
@@ -4380,6 +4388,11 @@ export let DateTimeProtocol = _extend(Protocol,
 		return obj.getMilliseconds() * 1000;
 	},
 
+	date: function date(obj)
+	{
+		return new Date_(DateTimeProtocol.year(obj), DateTimeProtocol.month(obj), DateTimeProtocol.day(obj));
+	},
+
 	mimeformat: function mimeformat(obj)
 	{
 		let weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -4447,6 +4460,7 @@ expose(DateTimeProtocol.hour, []);
 expose(DateTimeProtocol.minute, []);
 expose(DateTimeProtocol.second, []);
 expose(DateTimeProtocol.microsecond, []);
+expose(DateTimeProtocol.date, []);
 expose(DateTimeProtocol.mimeformat, []);
 expose(DateTimeProtocol.isoformat, []);
 expose(DateTimeProtocol.yearday, []);
