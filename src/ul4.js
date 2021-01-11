@@ -303,7 +303,10 @@ export class Encoder
 				}
 				this._ids2index[obj.__id__] = this._backrefs++;
 			}
-			this._line("O", obj.ul4onname);
+			if (obj.ul4onid)
+				this._line("P", obj.ul4onname, obj.ul4onid);
+			else
+				this._line("O", obj.ul4onname);
 			++this._level;
 			obj.ul4ondump(this);
 			--this._level;
@@ -384,6 +387,7 @@ export class Decoder
 		this.pos = 0;
 		this.backrefs = [];
 		this.registry = registry === undefined ? null : registry;
+		this.persistent_objects = {};
 		this.stack = null; // Use for informative error messages
 	}
 
@@ -707,6 +711,41 @@ export class Decoder
 				typecode = this.readblackchar();
 				if (typecode !== ")")
 					throw new ValueError("object terminator ')' for object of type '" + name + "' expected, got " + _repr(typecode) + " at position " + this.pos + " with path " + this.stack.join("/"));
+				this.stack.pop();
+				break;
+			}
+			case "p":
+			case "P":
+			{
+				let oldpos;
+				if (typecode === "P")
+					oldpos = this._beginfakeloading();
+				let name = this.load();
+				let id = this.load();
+				this.stack.push(name);
+				let key = name + "=" + id;
+				result = this.persistent_objects[key];
+				if (result === undefined)
+				{
+					let constructor;
+					if (this.registry !== null)
+					{
+						constructor = this.registry[name];
+						if (constructor === undefined)
+							constructor = _registry[name];
+					}
+					else
+						constructor = _registry[name];
+					if (constructor === undefined)
+						throw new ValueError("can't load object of type " + _repr(name) + " with id " + _repr(id) + " at position " + this.pos + " with path " + this.stack.join("/"));
+					result = new constructor(id);
+				}
+				if (typecode === "P")
+					this._endfakeloading(oldpos, result);
+				result.ul4onload(this);
+				typecode = this.readblackchar();
+				if (typecode !== ")")
+					throw new ValueError("object terminator ')' for object of type " + _repr(name) + " with id " + _repr(id) + " expected, got " + _repr(typecode) + " at position " + this.pos + " with path " + this.stack.join("/"));
 				this.stack.pop();
 				break;
 			}
