@@ -739,6 +739,7 @@ export class Decoder
 					if (constructor === undefined)
 						throw new ValueError("can't load object of type " + _repr(name) + " with id " + _repr(id) + " at position " + this.pos + " with path " + this.stack.join("/"));
 					result = new constructor(id);
+					this.persistent_objects[key] = result;
 				}
 				if (typecode === "P")
 					this._endfakeloading(oldpos, result);
