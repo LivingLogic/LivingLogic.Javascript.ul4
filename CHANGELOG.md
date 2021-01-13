@@ -1,5 +1,10 @@
 # Changes
 
+## Changes in 1.9.0 (2021-01-13)
+
+Addes support for persistent objects to UL4ON.
+
+
 ## Changes in 1.8.0 (2020-05-05)
 
 Undefined operands are now rejected in arithmetic operations (i.e. add,

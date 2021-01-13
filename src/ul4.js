@@ -480,6 +480,13 @@ export class Decoder
 		return String.fromCharCode(codepoint);
 	}
 
+	reset()
+	{
+		this.pos = 0;
+		this.stack = [];
+		this.backrefs = []
+	}
+
 	loads(dump)
 	{
 		return this.load(dump);
