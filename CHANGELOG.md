@@ -1,8 +1,13 @@
 # Changes
 
+## Changes in 1.9.1 (2021-01-15)
+
+Fixed the implementation of various division operations.
+
+
 ## Changes in 1.9.0 (2021-01-13)
 
-Addes support for persistent objects to UL4ON.
+Added support for persistent objects to UL4ON.
 
 
 ## Changes in 1.8.0 (2020-05-05)

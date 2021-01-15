@@ -40,9 +40,9 @@ export { version };
 export const api_version = "50";
 
 
-//
-// UL4ON
-//
+///
+/// UL4ON
+///
 
 const _registry = {};
 
@@ -805,9 +805,9 @@ export class Decoder
 };
 
 
-//
-// UL4
-//
+///
+/// UL4
+///
 
 // REs for parsing JSON
 const _rvalidchars = /^[\],:{}\s]*$/;
@@ -833,7 +833,7 @@ export function _map2object(obj)
 	return obj;
 };
 
-// Clip a number to the range [0;max)
+// Clip a number to the range [0;max]
 export function _bound(value, upper)
 {
 	if (value < 0)
@@ -6539,7 +6539,7 @@ export class FloorDivAST extends BinaryAST
 			return obj2.__rfloordiv__(obj1);
 		if (obj1 === null || obj1 === undefined || obj2 === null || obj2 === undefined)
 			throw new TypeError(_type(obj1) + " // " + _type(obj2) + " not supported");
-		else if (typeof(obj1) === "number" && typeof(obj2) === "number" && obj2 === 0)
+		else if ((typeof(obj1) === "number" || typeof(obj1) === "boolean") && (typeof(obj2) === "number" || typeof(obj2) === "boolean") && obj2 == 0)
 			throw new ZeroDivisionError();
 		return Math.floor(obj1 / obj2);
 	}
@@ -6561,7 +6561,7 @@ export class TrueDivAST extends BinaryAST
 			return obj2.__rtruediv__(obj1);
 		if (obj1 === null || obj1 === undefined || obj2 === null || obj2 === undefined)
 			throw new TypeError(_type(obj1) + " / " + _type(obj2) + " not supported");
-		else if (typeof(obj1) === "number" && typeof(obj2) === "number" && obj2 === 0)
+		else if ((typeof(obj1) === "number" || typeof(obj1) === "boolean") && (typeof(obj2) === "number" || typeof(obj2) === "boolean") && obj2 == 0)
 			throw new ZeroDivisionError();
 		return obj1 / obj2;
 	}
@@ -9296,6 +9296,11 @@ export class TimeDelta extends Proto
 		this._days = days;
 	}
 
+	total_seconds()
+	{
+		return this._days * 24 * 60 * 60 + this._seconds;
+	}
+
 	__repr__()
 	{
 		let v = [], first = true;
@@ -9496,8 +9501,10 @@ export class TimeDelta extends Proto
 
 	__truediv__(other)
 	{
-		if (typeof(other) === "number")
+		if (typeof(other) === "number" || typeof(other) === "boolean")
 		{
+			if (other == 0)
+				throw new ZeroDivisionError();
 			return new TimeDelta(this._days / other, this._seconds / other, this._microseconds / other);
 		}
 		else if (other instanceof TimeDelta)
@@ -9516,9 +9523,29 @@ export class TimeDelta extends Proto
 					otherValue = otherValue * 1000000 + other._microseconds;
 				}
 			}
+			if (otherValue == 0)
+				throw new ZeroDivisionError();
 			return myValue/otherValue;
 		}
 		throw new TypeError(_type(this) + " / " + _type(other) + " not supported");
+	}
+
+	__floordiv__(other)
+	{
+		if (typeof(other) === "number" || typeof(other) === "boolean")
+		{
+			if (other == 0)
+				throw new ZeroDivisionError();
+			if (_isint(other))
+			{
+				return new TimeDelta(this._days / other, this._seconds / other, this._microseconds / other);
+			}
+		}
+		else if (other instanceof TimeDelta)
+		{
+			let result = this.__truediv__(other);
+			return Math.floor(result);
+		}
 	}
 
 	__getattr__(attrname)
@@ -9711,25 +9738,16 @@ export class MonthDelta extends Proto
 
 	__mul__(other)
 	{
-		if (typeof(other) === "number")
+		if (typeof(other) === "number" || typeof(other) === "boolean")
 			return new MonthDelta(this._months * Math.floor(other));
 		throw new ArgumentError(_type(this) + " * " + _type(other) + " not supported");
 	}
 
 	__rmul__(other)
 	{
-		if (typeof(other) === "number")
+		if (typeof(other) === "number" || typeof(other) === "boolean")
 			return new MonthDelta(this._months * Math.floor(other));
 		throw new ArgumentError(_type(this) + " * " + _type(other) + " not supported");
-	}
-
-	__floordiv__(other)
-	{
-		if (typeof(other) === "number")
-			return new MonthDelta(Math.floor(this._months / other));
-		else if (_ismonthdelta(other))
-			return Math.floor(this._months / other._months);
-		throw new ArgumentError(_type(this) + " // " + _type(other) + " not supported");
 	}
 
 	__truediv__(other)
@@ -9737,6 +9755,24 @@ export class MonthDelta extends Proto
 		if (_ismonthdelta(other))
 			return this._months / other._months;
 		throw new ArgumentError(_type(this) + " / " + _type(other) + " not supported");
+	}
+
+	__floordiv__(other)
+	{
+		if (typeof(other) === "number" || typeof(other) === "boolean")
+		{
+			if (other == 0)
+				throw new ZeroDivisionError();
+			if (_isint(other))
+				return new MonthDelta(Math.floor(this._months / other));
+		}
+		else if (_ismonthdelta(other))
+		{
+			if (other._months == 0)
+				throw new ZeroDivisionError();
+			return Math.floor(this._months / other._months);
+		}
+		throw new ArgumentError(_type(this) + " // " + _type(other) + " not supported");
 	}
 
 	__getattr__(attrname)
