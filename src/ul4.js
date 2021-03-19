@@ -8587,6 +8587,21 @@ const _ul4on = {
 	Decoder: _ul4on_decoder
 };
 
+expose(Math.cos, ["x"]);
+expose(Math.sin, ["x"]);
+expose(Math.tan, ["x"]);
+expose(Math.sqrt, ["x"]);
+
+const _math = {
+	pi: Math.PI,
+	e: Math.E,
+	tau: 2 * Math.PI,
+	cos: Math.cos,
+	sin: Math.sin,
+	tan: Math.tan,
+	sqrl: Math.sqrt
+};
+
 export let builtins = {
 	repr: _repr,
 	ascii: _ascii,
@@ -8667,7 +8682,8 @@ export let builtins = {
 	round: _round,
 	md5: _md5,
 	scrypt: _scrypt,
-	ul4on: _ul4on
+	ul4on: _ul4on,
+	math: _math
 };
 
 expose(_repr, ["obj"], {name: "repr"});
