@@ -8599,7 +8599,7 @@ const _math = {
 	cos: Math.cos,
 	sin: Math.sin,
 	tan: Math.tan,
-	sqrl: Math.sqrt
+	sqrt: Math.sqrt
 };
 
 export let builtins = {
