@@ -8552,6 +8552,24 @@ export function today()
 	return new Date_(now.getFullYear(), now.getMonth()+1, now.getDate());
 };
 
+export class Module
+{
+	constructor(name, doc, content={})
+	{
+		this.__name__ = name;
+		this.__doc__ = doc;
+		for (let [key, value] of Object.entries(content))
+			this[key] = value;
+	}
+
+	__getattr__(attrname)
+	{
+		if (this.hasOwnProperty(attrname))
+			return this[attrname];
+		throw new ul4.AttributeError(this, attrname);
+	}
+};
+
 function _ul4on_loads(dump)
 {
 	return loads(dump);
@@ -8580,27 +8598,93 @@ function _ul4on_decoder()
 
 expose(_ul4on_decoder, [], {name: "Decoder"});
 
-const _ul4on = {
-	loads: _ul4on_loads,
-	dumps: _ul4on_dumps,
-	Encoder: _ul4on_encoder,
-	Decoder: _ul4on_decoder
-};
+export const _ul4on = new Module(
+	"ul4on",
+	"Object serialization",
+	{
+		loads: _ul4on_loads,
+		dumps: _ul4on_dumps,
+		Encoder: _ul4on_encoder,
+		Decoder: _ul4on_decoder
+	}
+);
+
+function isclose(a, b, rel_tol=1e-9, abs_tol=0.0)
+{
+	if (a === b)
+		return true;
+
+	if (a === Infinity || a === -Infinity || b === Infinity || b === -Infinity)
+		return false;
+
+	let diff = Math.abs(b - a);
+
+	if (diff <= Math.abs(rel_tol * a))
+		return true;
+	if (diff <= Math.abs(rel_tol * b))
+		return true;
+	if (diff <= abs_tol)
+		return true;
+	return false;
+}
 
 expose(Math.cos, ["x"]);
 expose(Math.sin, ["x"]);
 expose(Math.tan, ["x"]);
 expose(Math.sqrt, ["x"]);
+expose(isclose, ["a", "b", "rel_tol=", 1e-9, "abs_tol=", 0.0]);
 
-const _math = {
-	pi: Math.PI,
-	e: Math.E,
-	tau: 2 * Math.PI,
-	cos: Math.cos,
-	sin: Math.sin,
-	tan: Math.tan,
-	sqrt: Math.sqrt
-};
+export const _math = new Module(
+	"math",
+	"Math related functions and constants",
+	{
+		pi: Math.PI,
+		e: Math.E,
+		tau: 2 * Math.PI,
+		cos: Math.cos,
+		sin: Math.sin,
+		tan: Math.tan,
+		sqrt: Math.sqrt,
+		isclose: isclose
+	}
+);
+
+
+export function _attrgetter(attrnames)
+{
+	function getone(obj, dottedname)
+	{
+		let result = obj;
+		for (let name of dottedname.split("."))
+			result = AttrAST.prototype._get(result, name);
+		return result;
+	}
+
+	function get(obj)
+	{
+		if (attrnames.length === 1)
+			return getone(obj, attrnames[0]);
+		else
+		{
+			let result = [];
+			for (let dottedattrname of attrnames)
+				result.push(getone(obj, dottedattrname));
+			return result;
+		}
+	}
+	expose(get, ["obj"]);
+	return get;
+}
+
+expose(_attrgetter, ["*attrs"]);
+
+export const _operator = new Module(
+	"operator",
+	"Various operators as functions",
+	{
+		attrgetter: _attrgetter
+	}
+);
 
 export let builtins = {
 	repr: _repr,
@@ -8683,7 +8767,8 @@ export let builtins = {
 	md5: _md5,
 	scrypt: _scrypt,
 	ul4on: _ul4on,
-	math: _math
+	math: _math,
+	operator: _operator
 };
 
 expose(_repr, ["obj"], {name: "repr"});
