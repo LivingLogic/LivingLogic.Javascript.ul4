@@ -40,6 +40,68 @@ export { version };
 export const api_version = "50";
 
 
+/// Symbols for interfaces implemented in UL4
+
+export let symbols = {
+	// Convert an object to a string via UL4s `str()` function
+	str: Symbol("ul4.str"),
+	// Return a unambiguous string representation of the object via UL4s `repr()` function
+	repr: Symbol("ul4.repr"),
+	// Convert an object to a boolean value via UL4s `bool()` function
+	bool: Symbol("ul4.bool"),
+	// Implementing this interface makes an object callable in UL4
+	call: Symbol("ul4.call"),
+	// Implementing this interface makes an object renderable in UL4
+	render: Symbol("ul4.render"),
+	// Test whether an object is contained in this object UL4s `in` operator
+	contains: Symbol("ul4.contains"),
+	// Compare two objects for equality via UL4s `==` operator
+	eq: Symbol("ul4.eq"),
+	// Compare two objects for inequality via UL4s `!=` operator
+	ne: Symbol("ul4.ne"),
+	// Compare two objects for "less then" via UL4s `<` operator
+	lt: Symbol("ul4.lt"),
+	// Compare two objects for "less then or equal" via UL4s `<=` operator
+	le: Symbol("ul4.le"),
+	// Compare two objects for "greater then" via UL4s `>` operator
+	gt: Symbol("ul4.gt"),
+	// Compare two objects for "greater then or equal" via UL4s `>=` operator
+	ge: Symbol("ul4.ge"),
+	// Negate an object via UL4s unary `-` operator
+	neg: Symbol("ul4.neg"),
+	// Return the absolute value of an object via UL4s `abs()` function
+	abs: Symbol("ul4.abs"),
+	// Add two objects via UL4s `+` operator (as a method of the left operand)
+	add: Symbol("ul4.add"),
+	// Add two objects via UL4s `+` operator (as a method of the right operand)
+	radd: Symbol("ul4.radd"),
+	// Subtract two objects via UL4s `-` operator (as a method of the left operand)
+	sub: Symbol("ul4.sub"),
+	// Subtract two objects via UL4s `-` operator (as a method of the right operand)
+	rsub: Symbol("ul4.rsub"),
+	// Multiply two objects via UL4s `*` operator (as a method of the left operand)
+	mul: Symbol("ul4.mul"),
+	// Multiply two objects via UL4s `*` operator (as a method of the right operand)
+	rmul: Symbol("ul4.rmul"),
+	// Divide two objects via UL4s `/` operator (as a method of the left operand)
+	truediv: Symbol("ul4.truediv"),
+	// Divide two objects via UL4s `/` operator (as a method of the right operand)
+	rtruediv: Symbol("ul4.rtruediv"),
+	// Divide two objects via UL4s `//` operator (as a method of the left operand)
+	floordiv: Symbol("ul4.floordiv"),
+	// Divide two objects via UL4s `//` operator (as a method of the right operand)
+	rfloordiv: Symbol("ul4.rfloordiv"),
+	// Get an attribute of an object via UL4
+	getattr: Symbol("ul4.getattr"),
+	// Set an attribute of an object via UL4
+	setattr: Symbol("ul4.setattr"),
+	// Get an item of a container object via UL4s `[]` operator
+	getitem: Symbol("ul4.getitem"),
+	// Set an itemibute of an object via UL4 UL4s `[] =` operator
+	setitem: Symbol("ul4.setitem"),
+};
+
+
 ///
 /// UL4ON
 ///
@@ -362,7 +424,7 @@ export class Encoder
 		}
 	}
 
-	__getattr__(attrname)
+	[symbols.getattr](attrname)
 	{
 		let self = this;
 		switch (attrname)
@@ -790,7 +852,7 @@ export class Decoder
 		};
 	}
 
-	__getattr__(attrname)
+	[symbols.getattr](attrname)
 	{
 		switch (attrname)
 		{
@@ -891,21 +953,21 @@ export function _callobject(context, obj, args, kwargs)
 {
 	if (obj._ul4_callsignature === undefined || obj._ul4_callneedsobject === undefined || obj._ul4_callneedscontext === undefined)
 		throw new TypeError(_repr(obj) + " is not callable by UL4");
-	return _internal_call(context, obj.__call__, obj.name, obj, obj._ul4_callsignature, obj._ul4_callneedscontext, obj._ul4_callneedsobject, args, kwargs);
+	return _internal_call(context, obj[symbols.call], obj.name, obj, obj._ul4_callsignature, obj._ul4_callneedscontext, obj._ul4_callneedsobject, args, kwargs);
 };
 
 export function _callrender(context, obj, args, kwargs)
 {
 	if (obj._ul4_rendersignature === undefined || obj._ul4_renderneedsobject === undefined || obj._ul4_renderneedscontext === undefined)
 		throw new TypeError(_repr(obj) + " is not renderable by UL4");
-	return _internal_call(context, obj.__render__, obj.name, obj, obj._ul4_rendersignature, obj._ul4_renderneedscontext, obj._ul4_renderneedsobject, args, kwargs);
+	return _internal_call(context, obj[symbols.render], obj.name, obj, obj._ul4_rendersignature, obj._ul4_renderneedscontext, obj._ul4_renderneedsobject, args, kwargs);
 };
 
 export function _call(context, f, args, kwargs)
 {
 	if (typeof(f) === "function")
 		return _callfunction(context, f, args, kwargs);
-	else if (f && typeof(f.__call__) === "function")
+	else if (f && typeof(f[symbols.call]) === "function")
 		return _callobject(context, f, args, kwargs);
 	else
 		throw new TypeError(_type(f) + " is not callable");
@@ -1051,10 +1113,10 @@ export function _eq(obj1, obj2)
 {
 	let numbertypes = ["boolean", "number"];
 
-	if (obj1 && typeof(obj1.__eq__) === "function")
-		return obj1.__eq__(obj2);
-	else if (obj2 && typeof(obj2.__eq__) === "function")
-		return obj2.__eq__(obj1);
+	if (obj1 && typeof(obj1[symbols.eq]) === "function")
+		return obj1[symbols.eq](obj2);
+	else if (obj2 && typeof(obj2[symbols.eq]) === "function")
+		return obj2[symbols.eq](obj1);
 	else if (obj1 === null)
 		return obj2 === null;
 	else if (numbertypes.indexOf(typeof(obj1)) != -1)
@@ -1188,7 +1250,7 @@ export function _eq(obj1, obj2)
 	}
 	else if (_isset(obj1))
 	{
-		// We don't have to test for ``_Set`` as ``_Set`` implements ``__eq__``
+		// We don't have to test for ``_Set`` as ``_Set`` implements ``symbols.eq``
 		if (_isset(obj2))
 		{
 			// Shortcut, if it's the same object
@@ -1213,10 +1275,10 @@ export function _eq(obj1, obj2)
 // Compare ``obj1`` and ``obj2`` if they don't have the same value
 export function _ne(obj1, obj2)
 {
-	if (obj1 && typeof(obj1.__ne__) === "function")
-		return obj1.__ne__(obj2);
-	else if (obj2 && typeof(obj2.__ne__) === "function")
-		return obj2.__ne__(obj1);
+	if (obj1 && typeof(obj1[symbols.ne]) === "function")
+		return obj1[symbols.ne](obj2);
+	else if (obj2 && typeof(obj2[symbols.ne]) === "function")
+		return obj2[symbols.ne](obj1);
 	else
 		return !_eq(obj1, obj2);
 };
@@ -1328,8 +1390,8 @@ export function _lt(obj1, obj2)
 {
 	let numbertypes = ["boolean", "number"];
 
-	if (obj1 && typeof(obj1.__lt__) === "function")
-		return obj1.__lt__(obj2);
+	if (obj1 && typeof(obj1[symbols.lt]) === "function")
+		return obj1[symbols.lt](obj2);
 	else if (numbertypes.indexOf(typeof(obj1)) != -1)
 	{
 		if (numbertypes.indexOf(typeof(obj2)) != -1)
@@ -1461,8 +1523,8 @@ export function _le(obj1, obj2)
 {
 	let numbertypes = ["boolean", "number"];
 
-	if (obj1 && typeof(obj1.__le__) === "function")
-		return obj1.__le__(obj2);
+	if (obj1 && typeof(obj1[symbols.le]) === "function")
+		return obj1[symbols.le](obj2);
 	if (numbertypes.indexOf(typeof(obj1)) != -1)
 	{
 		if (numbertypes.indexOf(typeof(obj2)) != -1)
@@ -1593,8 +1655,8 @@ export function _gt(obj1, obj2)
 {
 	let numbertypes = ["boolean", "number"];
 
-	if (obj1 && typeof(obj1.__gt__) === "function")
-		return obj1.__gt__(obj2);
+	if (obj1 && typeof(obj1[symbols.gt]) === "function")
+		return obj1[symbols.gt](obj2);
 	if (numbertypes.indexOf(typeof(obj1)) != -1)
 	{
 		if (numbertypes.indexOf(typeof(obj2)) != -1)
@@ -1723,8 +1785,8 @@ export function _ge(obj1, obj2)
 {
 	let numbertypes = ["boolean", "number"];
 
-	if (obj1 && typeof(obj1.__ge__) === "function")
-		return obj1.__ge__(obj2);
+	if (obj1 && typeof(obj1[symbols.ge]) === "function")
+		return obj1[symbols.ge](obj2);
 	else if (numbertypes.indexOf(typeof(obj1)) != -1)
 	{
 		if (numbertypes.indexOf(typeof(obj2)) != -1)
@@ -1868,8 +1930,6 @@ export function _iter(obj)
 	}
 	else if (_isiter(obj))
 		return obj;
-	else if (obj !== null && typeof(obj.__iter__) === "function")
-		return obj.__iter__();
 	else if (_ismap(obj))
 	{
 		let keys = [];
@@ -1921,6 +1981,9 @@ export function _iter(obj)
 			}
 		};
 	}
+	// Check for an iterator implementation last, as otherwise, we'd get an item iterator for maps
+	else if (obj !== null && typeof(obj[Symbol.iterator]) === "function")
+		return obj[Symbol.iterator]();
 	throw new TypeError(_type(obj) + " object is not iterable");
 };
 
@@ -2131,8 +2194,8 @@ function _repr_internal(obj, ascii)
 		return _date_repr(obj, ascii);
 	else if (_isdatetime(obj))
 		return _datetime_repr(obj, ascii);
-	else if (typeof(obj) === "object" && typeof(obj.__repr__) === "function")
-		return obj.__repr__();
+	else if (typeof(obj) === "object" && typeof(obj[symbols.repr]) === "function")
+		return obj[symbols.repr]();
 	else if (_islist(obj))
 		return _list_repr(obj, ascii);
 	else if (_ismap(obj))
@@ -2208,10 +2271,10 @@ export function _str(obj)
 		return _set_repr(obj);
 	else if (_ismap(obj))
 		return _map_repr(obj);
-	else if (typeof(obj) === "object" && typeof(obj.__str__) === "function")
-		return obj.__str__();
-	else if (typeof(obj) === "object" && typeof(obj.__repr__) === "function")
-		return obj.__repr__();
+	else if (typeof(obj) === "object" && typeof(obj[symbols.str]) === "function")
+		return obj[symbols.str]();
+	else if (typeof(obj) === "object" && typeof(obj[symbols.repr]) === "function")
+		return obj[symbols.repr]();
 	else if (_isobject(obj))
 		return _object_repr(obj);
 	else
@@ -2225,8 +2288,8 @@ export function _bool(obj)
 		return false;
 	else
 	{
-		if (typeof(obj) === "object" && typeof(obj.__bool__) === "function")
-			return obj.__bool__();
+		if (typeof(obj) === "object" && typeof(obj[symbols.bool]) === "function")
+			return obj[symbols.bool]();
 		if (_islist(obj))
 			return obj.length !== 0;
 		else if (_ismap(obj) || _isset(obj))
@@ -3283,23 +3346,23 @@ export class Proto
 	}
 
 	// equality comparison of objects defaults to identity comparison
-	__eq__(other)
+	[symbols.eq](other)
 	{
 		return this === other;
 	}
 
-	// To overwrite equality comparison, you only have to overwrite ``__eq__``,
-	// ``__ne__`` will be synthesized from that
-	__ne__(other)
+	// To overwrite equality comparison, you only have to overwrite ``[symbols.eq]``,
+	// ``[symbols.ne]`` will be synthesized from that
+	[symbols.ne](other)
 	{
-		return !this.__eq__(other);
+		return !this[symbols.eq](other);
 	}
 
 	// For other comparison operators, each method has to be implemented:
-	// ``<`` calls ``__lt__``, ``<=`` calls ``__le__``, ``>`` calls ``__gt__`` and
-	// ``>=`` calls ``__ge__``
+	// ``<`` calls ``[symbols.lt]``, ``<=`` calls ``[symbols.le]``, ``>`` calls ``[symbols.gt]`` and
+	// ``>=`` calls ``[symbols.ge]``
 
-	__bool__()
+	[symbols.bool]()
 	{
 		return true;
 	}
@@ -3559,12 +3622,12 @@ export class Signature extends Proto
 		return argObject;
 	}
 
-	__repr__()
+	[symbols.repr]()
 	{
 		return "<Signature " + this.toString() + ">";
 	}
 
-	__str__()
+	[symbols.str]()
 	{
 		return this.toString();
 	}
@@ -3642,7 +3705,7 @@ export class _Set
 		this.items = {};
 	}
 
-	__getattr__(attrname)
+	[symbols.getattr](attrname)
 	{
 		let self = this;
 		switch (attrname)
@@ -3654,7 +3717,7 @@ export class _Set
 		}
 	}
 
-	__contains__(item)
+	[symbols.contains](item)
 	{
 		return this.items[item] || false;
 	}
@@ -3664,7 +3727,7 @@ export class _Set
 		return this.items[item] || false;
 	}
 
-	__bool__()
+	[symbols.bool]()
 	{
 		for (let item in this.items)
 		{
@@ -3675,7 +3738,7 @@ export class _Set
 		return false;
 	}
 
-	__repr__()
+	[symbols.repr]()
 	{
 		let v = [];
 		v.push("{");
@@ -3694,7 +3757,7 @@ export class _Set
 		return v.join("");
 	}
 
-	__eq__(other)
+	[symbols.eq](other)
 	{
 		// We'll check that everything in ``this`` is in ``other``
 		// and if both have the same number of items they are equal
@@ -3729,7 +3792,7 @@ export class _Set
 			return false;
 	}
 
-	__le__(other)
+	[symbols.le](other)
 	{
 		// check that ``this`` is a subset of ``other``,
 		// i.e. everything in ``this`` is also in ``other``
@@ -3757,7 +3820,7 @@ export class _Set
 			_unorderable("<", this, other);
 	}
 
-	__ge__(other)
+	[symbols.ge](other)
 	{
 		// check that ``this`` is a superset of ``other``,
 		// i.e. everything in ``other`` is also in ``this``
@@ -3844,8 +3907,8 @@ export let Protocol = {
 	{
 		if (obj === null || obj === undefined)
 			throw new AttributeError(obj, attrname);
-		else if (typeof(obj.__getattr__) === "function")
-			return obj.__getattr__(attrname);
+		else if (typeof(obj[symbols.getattr]) === "function")
+			return obj[symbols.getattr](attrname);
 		else if (this.attrs.has(attrname))
 		{
 			let attr = this[attrname];
@@ -3867,11 +3930,11 @@ export let Protocol = {
 	{
 		if (obj === null || obj === undefined)
 			return false;
-		else if (typeof(obj.__getattr__) === "function")
+		else if (typeof(obj[symbols.getattr]) === "function")
 		{
 			try
 			{
-				obj.__getattr__(attrname);
+				obj[symbols.getattr](attrname);
 				return true;
 			}
 			catch (exc)
@@ -4683,8 +4746,8 @@ export let ObjectProtocol = _extend(Protocol,
 	getattr: function getattr(obj, attrname)
 	{
 		let result;
-		if (obj && typeof(obj.__getattr__) === "function") // test this before the generic object test
-			result = obj.__getattr__(attrname);
+		if (obj && typeof(obj[symbols.getattr]) === "function") // test this before the generic object test
+			result = obj[symbols.getattr](attrname);
 		else
 			result = obj[attrname];
 		if (typeof(result) !== "function")
@@ -4820,7 +4883,7 @@ export function Exception(message, fileName, lineNumber)
 	if (Object.setPrototypeOf)
 		Object.setPrototypeOf(instance, Object.getPrototypeOf(this));
 	else
-		instance.__proto = this;
+		instance.__proto__ = this;
 	instance.__id__ = _nextid++;
 	instance.context = null;
 	return instance;
@@ -4840,7 +4903,7 @@ if (Object.setPrototypeOf)
 else
 	Exception.__proto__ = Error;
 
-Exception.prototype.__getattr__ = function __getattr__(attrname)
+Exception.prototype[symbols.getattr] = function getattr(attrname)
 {
 	switch (attrname)
 	{
@@ -5023,7 +5086,7 @@ export class LocationError extends Exception
 		return message;
 	}
 
-	__getattr__(attrname)
+	[symbols.getattr](attrname)
 	{
 		switch (attrname)
 		{
@@ -5138,7 +5201,7 @@ export class AST extends Proto
 		return this.stoppos != null ? _sourcesuffix(this.template._source, this.stoppos.stop) : null;
 	}
 
-	__getattr__(attrname)
+	[symbols.getattr](attrname)
 	{
 		if (
 			attrname === "type" ||
@@ -5160,19 +5223,19 @@ export class AST extends Proto
 		throw new AttributeError(this, attrname);
 	}
 
-	__setitem__(attrname, value)
+	[symbols.setitem](attrname, value)
 	{
 		throw new TypeError("object is immutable");
 	}
 
-	__str__()
+	[symbols.str]()
 	{
 		let out = [];
 		this._str(out);
 		return _formatsource(out);
 	}
 
-	__repr__()
+	[symbols.repr]()
 	{
 		let out = [];
 		this._repr(out);
@@ -5846,7 +5909,7 @@ export class SetCompAST extends CodeAST
 		this.condition = condition;
 	}
 
-	__getattr__(attrname)
+	[symbols.getattr](attrname)
 	{
 		switch (attrname)
 		{
@@ -5859,7 +5922,7 @@ export class SetCompAST extends CodeAST
 			case "condition":
 				return this.condition;
 			default:
-				return super.__getattr__(attrname);
+				return super[symbols.getattr](attrname);
 		}
 	}
 
@@ -5913,14 +5976,14 @@ export class DictAST extends CodeAST
 		this.items = [];
 	}
 
-	__getattr__(attrname)
+	[symbols.getattr](attrname)
 	{
 		switch (attrname)
 		{
 			case "items":
 				return this.items;
 			default:
-				return super.__getattr__(attrname);
+				return super[symbols.getattr](attrname);
 		}
 	}
 
@@ -6149,8 +6212,8 @@ export class NegAST extends UnaryAST
 {
 	_do(obj)
 	{
-		if (obj !== null && typeof(obj.__neg__) === "function")
-			return obj.__neg__();
+		if (obj !== null && typeof(obj[symbols.neg]) === "function")
+			return obj[symbols.neg]();
 		return -obj;
 	}
 };
@@ -6338,8 +6401,8 @@ export class ItemAST extends BinaryAST
 				return container[key];
 			}
 		}
-		else if (container && typeof(container.__getitem__) === "function") // objects without ``_getitem__`` don't support item access
-			return container.__getitem__(key);
+		else if (container && typeof(container[symbols.getitem]) === "function") // objects without ``_getitem__`` don't support item access
+			return container[symbols.getitem](key);
 		else if (_ismap(container))
 			return container.get(key);
 		else
@@ -6390,8 +6453,8 @@ export class ItemAST extends BinaryAST
 				container[key] = value;
 			}
 		}
-		else if (container && typeof(container.__setitem__) === "function") // test this before the generic object test
-			container.__setitem__(key, value);
+		else if (container && typeof(container[symbols.setitem]) === "function") // test this before the generic object test
+			container[symbols.setitem](key, value);
 		else if (_ismap(container))
 			container.set(key, value);
 		else if (_isobject(container))
@@ -6491,8 +6554,8 @@ export class ContainsAST extends BinaryAST
 		{
 			return container.indexOf(obj) !== -1;
 		}
-		else if (container && typeof(container.__contains__) === "function") // test this before the generic object test
-			return container.__contains__(obj);
+		else if (container && typeof(container[symbols.contains]) === "function") // test this before the generic object test
+			return container[symbols.contains](obj);
 		else if (_ismap(container) || _isset(container))
 			return container.has(obj);
 		else if (_isobject(container))
@@ -6526,10 +6589,10 @@ export class AddAST extends BinaryAST
 {
 	_do(obj1, obj2)
 	{
-		if (obj1 && typeof(obj1.__add__) === "function")
-			return obj1.__add__(obj2);
-		else if (obj2 && typeof(obj2.__radd__) === "function")
-			return obj2.__radd__(obj1);
+		if (obj1 && typeof(obj1[symbols.add]) === "function")
+			return obj1[symbols.add](obj2);
+		else if (obj2 && typeof(obj2[symbols.radd]) === "function")
+			return obj2[symbols.radd](obj1);
 		if (obj1 === null || obj1 === undefined || obj2 === null || obj2 === undefined)
 			throw new TypeError(_type(obj1) + " + " + _type(obj2) + " is not supported");
 		if (_islist(obj1) && _islist(obj2))
@@ -6555,10 +6618,10 @@ export class SubAST extends BinaryAST
 {
 	_do(obj1, obj2)
 	{
-		if (obj1 && typeof(obj1.__sub__) === "function")
-			return obj1.__sub__(obj2);
-		else if (obj2 && typeof(obj2.__rsub__) === "function")
-			return obj2.__rsub__(obj1);
+		if (obj1 && typeof(obj1[symbols.sub]) === "function")
+			return obj1[symbols.sub](obj2);
+		else if (obj2 && typeof(obj2[symbols.rsub]) === "function")
+			return obj2[symbols.rsub](obj1);
 		else if (_isdate(obj1) && _isdate(obj2))
 			return this._date_sub(obj1, obj2);
 		else if (_isdatetime(obj1) && _isdatetime(obj2))
@@ -6631,10 +6694,10 @@ export class MulAST extends BinaryAST
 {
 	_do(obj1, obj2)
 	{
-		if (obj1 && typeof(obj1.__mul__) === "function")
-			return obj1.__mul__(obj2);
-		else if (obj2 && typeof(obj2.__rmul__) === "function")
-			return obj2.__rmul__(obj1);
+		if (obj1 && typeof(obj1[symbols.mul]) === "function")
+			return obj1[symbols.mul](obj2);
+		else if (obj2 && typeof(obj2[symbols.rmul]) === "function")
+			return obj2[symbols.rmul](obj1);
 		if (obj1 === null || obj1 === undefined || obj2 === null || obj2 === undefined)
 			throw new TypeError(obj1 + " * " + obj2 + " not supported");
 		else if (_isint(obj1) || _isbool(obj1))
@@ -6695,10 +6758,10 @@ export class FloorDivAST extends BinaryAST
 {
 	_do(obj1, obj2)
 	{
-		if (obj1 && typeof(obj1.__floordiv__) === "function")
-			return obj1.__floordiv__(obj2);
-		else if (obj2 && typeof(obj2.__rfloordiv__) === "function")
-			return obj2.__rfloordiv__(obj1);
+		if (obj1 && typeof(obj1[symbols.floordiv]) === "function")
+			return obj1[symbols.floordiv](obj2);
+		else if (obj2 && typeof(obj2[symbols.rfloordiv]) === "function")
+			return obj2[symbols.rfloordiv](obj1);
 		if (obj1 === null || obj1 === undefined || obj2 === null || obj2 === undefined)
 			throw new TypeError(_type(obj1) + " // " + _type(obj2) + " not supported");
 		else if ((typeof(obj1) === "number" || typeof(obj1) === "boolean") && (typeof(obj2) === "number" || typeof(obj2) === "boolean") && obj2 == 0)
@@ -6717,10 +6780,10 @@ export class TrueDivAST extends BinaryAST
 {
 	_do(obj1, obj2)
 	{
-		if (obj1 && typeof(obj1.__truediv__) === "function")
-			return obj1.__truediv__(obj2);
-		else if (obj2 && typeof(obj2.__rtruediv__) === "function")
-			return obj2.__rtruediv__(obj1);
+		if (obj1 && typeof(obj1[symbols.truediv]) === "function")
+			return obj1[symbols.truediv](obj2);
+		else if (obj2 && typeof(obj2[symbols.rtruediv]) === "function")
+			return obj2[symbols.rtruediv](obj1);
 		if (obj1 === null || obj1 === undefined || obj2 === null || obj2 === undefined)
 			throw new TypeError(_type(obj1) + " / " + _type(obj2) + " not supported");
 		else if ((typeof(obj1) === "number" || typeof(obj1) === "boolean") && (typeof(obj2) === "number" || typeof(obj2) === "boolean") && obj2 == 0)
@@ -6934,8 +6997,8 @@ export class AttrAST extends CodeAST
 
 	_set(object, attrname, value)
 	{
-		if (typeof(object) === "object" && typeof(object.__setattr__) === "function")
-			object.__setattr__(attrname, value);
+		if (typeof(object) === "object" && typeof(object[symbols.setattr]) === "function")
+			object[symbols.setattr](attrname, value);
 		else if (_ismap(object))
 			object.set(attrname, value);
 		else if (_isobject(object))
@@ -7103,7 +7166,7 @@ export class RenderBlockAST extends RenderAST
 		kwargs.content = closure;
 	}
 
-	__getattr__(attrname)
+	[symbols.getattr](attrname)
 	{
 		if (
 			attrname === "stoppos" ||
@@ -7113,7 +7176,7 @@ export class RenderBlockAST extends RenderAST
 		)
 			return this[attrname];
 		else
-			return super.__getattr__(attrname);
+			return super[symbols.getattr](attrname);
 	}
 };
 
@@ -7137,7 +7200,7 @@ export class RenderBlocksAST extends RenderAST
 		}
 	}
 
-	__getattr__(attrname)
+	[symbols.getattr](attrname)
 	{
 		if (
 			attrname === "stoppos" ||
@@ -7147,7 +7210,7 @@ export class RenderBlocksAST extends RenderAST
 		)
 			return this[attrname];
 		else
-			return super.__getattr__(attrname);
+			return super[symbols.getattr](attrname);
 	}
 };
 
@@ -7170,12 +7233,12 @@ export class slice extends Proto
 		return string.slice(start, stop);
 	}
 
-	__repr__()
+	[symbols.repr]()
 	{
 		return "slice(" + _repr(this.start) + ", " + _repr(this.stop) + ", None)";
 	}
 
-	__getattr__(attrname)
+	[symbols.getattr](attrname)
 	{
 		switch (attrname)
 		{
@@ -7365,7 +7428,7 @@ export class BlockAST extends CodeAST
 		}
 	}
 
-	__getattr__(attrname)
+	[symbols.getattr](attrname)
 	{
 		if (
 			attrname === "stoppos" ||
@@ -7375,7 +7438,7 @@ export class BlockAST extends CodeAST
 		)
 			return this[attrname];
 		else
-			return super.__getattr__(attrname);
+			return super[symbols.getattr](attrname);
 	}
 };
 
@@ -7665,7 +7728,7 @@ export class Template extends BlockAST
 		this.parenttemplate = null;
 	}
 
-	__getattr__(attrname)
+	[symbols.getattr](attrname)
 	{
 		let self = this;
 		switch (attrname)
@@ -7697,7 +7760,7 @@ export class Template extends BlockAST
 				expose(renders, this.signature, {needscontext: true, needsobject: true});
 				return renders;
 			default:
-				return super.__getattr__(attrname);
+				return super[symbols.getattr](attrname);
 		}
 	}
 
@@ -7817,7 +7880,7 @@ export class Template extends BlockAST
 		}
 	}
 
-	__render__(context, vars)
+	[symbols.render](context, vars)
 	{
 		this._renderbound(context, vars);
 	}
@@ -7874,7 +7937,7 @@ export class Template extends BlockAST
 		return this._callbound(context, vars);
 	}
 
-	__call__(context, vars)
+	[symbols.call](context, vars)
 	{
 		return this._callbound(context, vars);
 	}
@@ -7992,7 +8055,7 @@ export class TemplateClosure extends Proto
 		this.content = template.content;
 	}
 
-	__render__(context, vars)
+	[symbols.render](context, vars)
 	{
 		this.template._renderbound(context, _extend(this.vars, vars));
 	}
@@ -8002,7 +8065,7 @@ export class TemplateClosure extends Proto
 		this.template._renderbound(context, _extend(this.vars, vars));
 	}
 
-	__call__(context, vars)
+	[symbols.call](context, vars)
 	{
 		return this.template._callbound(context, _extend(this.vars, vars));
 	}
@@ -8017,7 +8080,7 @@ export class TemplateClosure extends Proto
 		return this.template._rendersbound(context, _extend(this.vars, vars));
 	}
 
-	__getattr__(attrname)
+	[symbols.getattr](attrname)
 	{
 		let self = this;
 		switch (attrname)
@@ -8033,7 +8096,7 @@ export class TemplateClosure extends Proto
 			case "signature":
 				return this.signature;
 			default:
-				return this.template.__getattr__(attrname);
+				return this.template[symbols.getattr](attrname);
 		}
 	}
 
@@ -8599,8 +8662,8 @@ export function _zip(iterables)
 // Return the absolute value for the number ``number``
 export function _abs(number)
 {
-	if (number !== null && typeof(number.__abs__) === "function")
-		return number.__abs__();
+	if (number !== null && typeof(number[symbols.abs]) === "function")
+		return number[symbols.abs]();
 	return Math.abs(number);
 };
 
@@ -8732,7 +8795,7 @@ export class Module
 			this[key] = value;
 	}
 
-	__getattr__(attrname)
+	[symbols.getattr](attrname)
 	{
 		if (this.hasOwnProperty(attrname))
 			return this[attrname];
@@ -9214,7 +9277,7 @@ export class Color extends Proto
 		this._a = a;
 	}
 
-	__repr__()
+	[symbols.repr]()
 	{
 		let r = _lpad(this._r.toString(16), "0", 2);
 		let g = _lpad(this._g.toString(16), "0", 2);
@@ -9236,7 +9299,7 @@ export class Color extends Proto
 		}
 	}
 
-	__str__()
+	[symbols.str]()
 	{
 		if (this._a !== 0xff)
 		{
@@ -9254,7 +9317,7 @@ export class Color extends Proto
 		}
 	}
 
-	__iter__()
+	[Symbol.iterator]()
 	{
 		return {
 			obj: this,
@@ -9286,7 +9349,7 @@ export class Color extends Proto
 		};
 	}
 
-	__getattr__(attrname)
+	[symbols.getattr](attrname)
 	{
 		let self = this;
 		switch (attrname)
@@ -9330,7 +9393,7 @@ export class Color extends Proto
 		}
 	}
 
-	__getitem__(key)
+	[symbols.getitem](key)
 	{
 		let orgkey = key;
 		if (key < 0)
@@ -9350,7 +9413,7 @@ export class Color extends Proto
 		}
 	}
 
-	__eq__(other)
+	[symbols.eq](other)
 	{
 		if (other instanceof Color)
 			return this._r == other._r && this._g == other._g && this._b == other._b && this._a == other._a;
@@ -9490,45 +9553,45 @@ export class Date_ extends Proto
 		this._date = new Date(year, month-1, day);
 	}
 
-	__repr__()
+	[symbols.repr]()
 	{
-		return '@(' + this.__str__() + ")";
+		return '@(' + this[symbols.str]() + ")";
 	}
 
-	__str__()
+	[symbols.str]()
 	{
 		return _lpad(this._date.getFullYear(), "0", 4) + "-" + _lpad(this._date.getMonth()+1, "0", 2) + "-" + _lpad(this._date.getDate(), "0", 2);
 	}
 
-	__eq__(other)
+	[symbols.eq](other)
 	{
 		if (other instanceof Date_)
 			return this._date.getTime() === other._date.getTime();
 		return false;
 	}
 
-	__lt__(other)
+	[symbols.lt](other)
 	{
 		if (other instanceof Date_)
 			return this._date < other._date;
 		_unorderable("<", this, other);
 	}
 
-	__le__(other)
+	[symbols.le](other)
 	{
 		if (other instanceof Date_)
 			return this._date <= other._date;
 		_unorderable("<=", this, other);
 	}
 
-	__gt__(other)
+	[symbols.gt](other)
 	{
 		if (other instanceof Date_)
 			return this._date > other._date;
 		_unorderable(">", this, other);
 	}
 
-	__ge__(other)
+	[symbols.ge](other)
 	{
 		if (other instanceof Date_)
 			return this._date >= other._date;
@@ -9584,7 +9647,7 @@ export class TimeDelta extends Proto
 		return this._days * 24 * 60 * 60 + this._seconds;
 	}
 
-	__repr__()
+	[symbols.repr]()
 	{
 		let v = [], first = true;
 		v.push("timedelta(");
@@ -9610,7 +9673,7 @@ export class TimeDelta extends Proto
 		return v.join("");
 	}
 
-	__str__()
+	[symbols.str]()
 	{
 		let v = [];
 		if (this._days)
@@ -9638,24 +9701,24 @@ export class TimeDelta extends Proto
 		return v.join("");
 	}
 
-	__bool__()
+	[symbols.bool]()
 	{
 		return this._days !== 0 || this._seconds !== 0 || this._microseconds !== 0;
 	}
 
-	__abs__()
+	[symbols.abs]()
 	{
 		return this._days < 0 ? new TimeDelta(-this._days, -this._seconds, -this._microseconds) : this;
 	}
 
-	__eq__(other)
+	[symbols.eq](other)
 	{
 		if (other instanceof TimeDelta)
 			return (this._days === other._days) && (this._seconds === other._seconds) && (this._microseconds === other._microseconds);
 		return false;
 	}
 
-	__lt__(other)
+	[symbols.lt](other)
 	{
 		if (other instanceof TimeDelta)
 		{
@@ -9668,7 +9731,7 @@ export class TimeDelta extends Proto
 		_unorderable("<", this, other);
 	}
 
-	__le__(other)
+	[symbols.le](other)
 	{
 		if (other instanceof TimeDelta)
 		{
@@ -9681,7 +9744,7 @@ export class TimeDelta extends Proto
 		_unorderable("<=", this, other);
 	}
 
-	__gt__(other)
+	[symbols.gt](other)
 	{
 		if (other instanceof TimeDelta)
 		{
@@ -9694,7 +9757,7 @@ export class TimeDelta extends Proto
 		_unorderable(">", this, other);
 	}
 
-	__ge__(other)
+	[symbols.ge](other)
 	{
 		if (other instanceof TimeDelta)
 		{
@@ -9707,7 +9770,7 @@ export class TimeDelta extends Proto
 		_unorderable(">=", this, other);
 	}
 
-	__neg__()
+	[symbols.neg]()
 	{
 		return new TimeDelta(-this._days, -this._seconds, -this._microseconds);
 	}
@@ -9732,7 +9795,7 @@ export class TimeDelta extends Proto
 		return new Date(year, month, day, hour, minute, second, millisecond);
 	}
 
-	__add__(other)
+	[symbols.add](other)
 	{
 		if (other instanceof TimeDelta)
 			return new TimeDelta(this._days + other._days, this._seconds + other._seconds, this._microseconds + other._microseconds);
@@ -9743,7 +9806,7 @@ export class TimeDelta extends Proto
 		throw new TypeError(_type(this) + " + " + _type(other) + " not supported");
 	}
 
-	__radd__(other)
+	[symbols.radd](other)
 	{
 		if (_isdate(other))
 			return this._adddate(other, this._days);
@@ -9752,14 +9815,14 @@ export class TimeDelta extends Proto
 		throw new TypeError(_type(this) + " + " + _type(other) + " not supported");
 	}
 
-	__sub__(other)
+	[symbols.sub](other)
 	{
 		if (other instanceof TimeDelta)
 			return new TimeDelta(this._days - other._days, this._seconds - other._seconds, this._microseconds - other._microseconds);
 		throw new TypeError(_type(this) + " - " + _type(other) + " not supported");
 	}
 
-	__rsub__(other)
+	[symbols.rsub](other)
 	{
 		if (_isdate(other))
 			return this._adddate(other, -this._days);
@@ -9768,21 +9831,21 @@ export class TimeDelta extends Proto
 		throw new TypeError(_type(this) + " - " + _type(other) + " not supported");
 	}
 
-	__mul__(other)
+	[symbols.mul](other)
 	{
 		if (typeof(other) === "number")
 			return new TimeDelta(this._days * other, this._seconds * other, this._microseconds * other);
 		throw new TypeError(_type(this) + " * " + _type(other) + " not supported");
 	}
 
-	__rmul__(other)
+	[symbols.rmul](other)
 	{
 		if (typeof(other) === "number")
 			return new TimeDelta(this._days * other, this._seconds * other, this._microseconds * other);
 		throw new TypeError(_type(this) + " * " + _type(other) + " not supported");
 	}
 
-	__truediv__(other)
+	[symbols.truediv](other)
 	{
 		if (typeof(other) === "number" || typeof(other) === "boolean")
 		{
@@ -9813,7 +9876,7 @@ export class TimeDelta extends Proto
 		throw new TypeError(_type(this) + " / " + _type(other) + " not supported");
 	}
 
-	__floordiv__(other)
+	[symbols.floordiv](other)
 	{
 		if (typeof(other) === "number" || typeof(other) === "boolean")
 		{
@@ -9826,12 +9889,12 @@ export class TimeDelta extends Proto
 		}
 		else if (other instanceof TimeDelta)
 		{
-			let result = this.__truediv__(other);
+			let result = this[symbols.truediv](other);
 			return Math.floor(result);
 		}
 	}
 
-	__getattr__(attrname)
+	[symbols.getattr](attrname)
 	{
 		let self = this;
 		switch (attrname)
@@ -9883,14 +9946,14 @@ export class MonthDelta extends Proto
 		this._months = months;
 	}
 
-	__repr__()
+	[symbols.repr]()
 	{
 		if (!this._months)
 			return "monthdelta()";
 		return "monthdelta(" + this._months + ")";
 	}
 
-	__str__()
+	[symbols.str]()
 	{
 		if (this._months)
 		{
@@ -9903,55 +9966,55 @@ export class MonthDelta extends Proto
 
 	toString()
 	{
-		return this.__str__();
+		return this[symbols.str]();
 	}
 
-	__bool__()
+	[symbols.bool]()
 	{
 		return this._months !== 0;
 	}
 
-	__abs__()
+	[symbols.abs]()
 	{
 		return this._months < 0 ? new MonthDelta(-this._months) : this;
 	}
 
-	__eq__(other)
+	[symbols.eq](other)
 	{
 		if (other instanceof MonthDelta)
 			return this._months === other._months;
 		return false;
 	}
 
-	__lt__(other)
+	[symbols.lt](other)
 	{
 		if (other instanceof MonthDelta)
 			return this._months < other._months;
 		_unorderable("<", this, other);
 	}
 
-	__le__(other)
+	[symbols.le](other)
 	{
 		if (other instanceof MonthDelta)
 			return this._months <= other._months;
 		_unorderable("<=", this, other);
 	}
 
-	__gt__(other)
+	[symbols.gt](other)
 	{
 		if (other instanceof MonthDelta)
 			return this._months > other._months;
 		_unorderable(">", this, other);
 	}
 
-	__ge__(other)
+	[symbols.ge](other)
 	{
 		if (other instanceof MonthDelta)
 			return this._months >= other._months;
 		_unorderable(">=", this, other);
 	}
 
-	__neg__()
+	[symbols.neg]()
 	{
 		return new MonthDelta(-this._months);
 	}
@@ -9983,7 +10046,7 @@ export class MonthDelta extends Proto
 		}
 	}
 
-	__add__(other)
+	[symbols.add](other)
 	{
 		if (_ismonthdelta(other))
 			return new MonthDelta(this._months + other._months);
@@ -9994,7 +10057,7 @@ export class MonthDelta extends Proto
 		throw new ArgumentError(_type(this) + " + " + _type(other) + " not supported");
 	}
 
-	__radd__(other)
+	[symbols.radd](other)
 	{
 		if (_isdate(other))
 			return this._adddate(other, this._months);
@@ -10003,14 +10066,14 @@ export class MonthDelta extends Proto
 		throw new ArgumentError(_type(this) + " + " + _type(other) + " not supported");
 	}
 
-	__sub__(other)
+	[symbols.sub](other)
 	{
 		if (_ismonthdelta(other))
 			return new MonthDelta(this._months - other._months);
 		throw new ArgumentError(_type(this) + " - " + _type(other) + " not supported");
 	}
 
-	__rsub__(other)
+	[symbols.rsub](other)
 	{
 		if (_isdate(other))
 			return this._adddate(other, -this._months);
@@ -10019,28 +10082,28 @@ export class MonthDelta extends Proto
 		throw new ArgumentError(_type(this) + " - " + _type(other) + " not supported");
 	}
 
-	__mul__(other)
+	[symbols.mul](other)
 	{
 		if (typeof(other) === "number" || typeof(other) === "boolean")
 			return new MonthDelta(this._months * Math.floor(other));
 		throw new ArgumentError(_type(this) + " * " + _type(other) + " not supported");
 	}
 
-	__rmul__(other)
+	[symbols.rmul](other)
 	{
 		if (typeof(other) === "number" || typeof(other) === "boolean")
 			return new MonthDelta(this._months * Math.floor(other));
 		throw new ArgumentError(_type(this) + " * " + _type(other) + " not supported");
 	}
 
-	__truediv__(other)
+	[symbols.truediv](other)
 	{
 		if (_ismonthdelta(other))
 			return this._months / other._months;
 		throw new ArgumentError(_type(this) + " / " + _type(other) + " not supported");
 	}
 
-	__floordiv__(other)
+	[symbols.floordiv](other)
 	{
 		if (typeof(other) === "number" || typeof(other) === "boolean")
 		{
@@ -10058,7 +10121,7 @@ export class MonthDelta extends Proto
 		throw new ArgumentError(_type(this) + " // " + _type(other) + " not supported");
 	}
 
-	__getattr__(attrname)
+	[symbols.getattr](attrname)
 	{
 		let self = this;
 		switch (attrname)
