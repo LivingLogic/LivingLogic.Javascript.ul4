@@ -369,7 +369,7 @@ export class Encoder
 		{
 			case "dumps":
 				let dumps = this.dumps.bind(this);
-				expose(dumps, ["obj", "indent=", null]);
+				expose(dumps, ["obj", "pk"]);
 				return dumps;
 			default:
 				throw new ul4.AttributeError(this, attrname);
@@ -796,7 +796,7 @@ export class Decoder
 		{
 			case "loads":
 				let loads = this.loads.bind(this);
-				expose(loads, ["dump"]);
+				expose(loads, ["dump", "p"]);
 				return loads;
 			default:
 				throw new ul4.AttributeError(this, attrname);
@@ -2246,7 +2246,7 @@ export function _bool(obj)
 };
 
 // Convert ``obj`` to an integer (if ``base`` is given ``obj`` must be a string and ``base`` is the base for the conversion (default is 10))
-export function _int(obj, base)
+export function _int(obj=0, base=null)
 {
 	let result;
 	if (base !== null)
@@ -2769,9 +2769,9 @@ export function _fromjson(string)
 };
 
 // Encodes ``obj`` in the UL4 Object Notation format
-export function _asul4on(obj)
+export function _asul4on(obj, indent=null)
 {
-	return dumps(obj);
+	return dumps(obj, indent);
 };
 
 // Decodes the string ``string`` from the UL4 Object Notation format and returns the resulting decoded object
@@ -3307,116 +3307,239 @@ export class Proto
 
 export class Signature extends Proto
 {
-	constructor(...args)
+	constructor(...params)
 	{
 		super();
-		this.args = [];
-		this.argNames = {};
-		this.remargs = null;
-		this.remkwargs = null;
+		this.paramsByPos = [];
+		this.paramsByName = {};
+		this.countpos = 0;
+		this.countposdef = 0;
+		this.countposkw = 0;
+		this.countposkwdef = 0;
+		this.countkw = 0;
+		this.countkwdef = 0;
+		this.varpos = null;
+		this.varkw = null;
 
-		let nextDefault = false;
-		let lastArgname = null;
-		for (let argName of args)
+		let state = 0;
+		let name = null;
+		let type = null;
+		for (let value of params)
 		{
-			if (nextDefault)
+			if (state == 0)
 			{
-				this.args.push({name: lastArgname, defaultValue: argName});
-				this.argNames[lastArgname] = true;
-				nextDefault = false;
+				name = value;
+				state = 1;
+			}
+			else if (state == 1)
+			{
+				type = value;
+				if (type.endsWith("="))
+					state = 2;
+				else
+				{
+					this.add(name, type, null);
+					state = 0;
+				}
 			}
 			else
 			{
-				if (argName.substr(argName.length-1) === "=")
-				{
-					lastArgname = argName.substr(0, argName.length-1);
-					nextDefault = true;
-				}
-				else if (argName.substr(0, 2) === "**")
-					this.remkwargs = argName.substr(2);
-				else if (argName.substr(0, 1) === "*")
-					this.remargs = argName.substr(1);
-				else
-				{
-					this.args.push({name: argName});
-					this.argNames[argName] = true;
-				}
+				this.add(name, type, value);
+				state = 0;
 			}
+		}
+	}
+
+	// Add a parameter
+	add(name, type, defaultValue)
+	{
+		let pos = this.paramsByPos.length;
+		if (this.varpos !== null)
+			++pos;
+		if (this.varkw !== null)
+			++pos;
+		let param = {name: name, pos: pos, type: type, defaultValue: defaultValue};
+		switch (type)
+		{
+			case "p":
+				if (this.countposdef > 0 || this.countposkwdef > 0 || this.countkwdef > 0)
+					throw new ParameterError("parameter without default after parameter with default");
+				else if (this.countposkw > 0 || this.countposkwdef > 0)
+					throw new ParameterError("positional-only parameter after positional/keyword parameter");
+				else if (this.countkw > 0 || this.countkwdef > 0)
+					throw new ParameterError("positional-only parameter after keyword-only parameter");
+				else if (this.varpos !== null)
+					throw new ParameterError("positional-only parameter after * parameter");
+				else if (this.varkw !== null)
+					throw new ParameterError("positional-only parameter after ** parameter");
+				this.paramsByPos.push(param);
+				this.paramsByName[name] = param;
+				++this.countpos;
+				break;
+			case "p=":
+				if (this.countposkw > 0 || this.countposkwdef > 0)
+					throw new ParameterError("positional-only parameter after positional/keyword parameter");
+				else if (this.countkw > 0 || this.countkwdef > 0)
+					throw new ParameterError("positional-only parameter after keyword-only parameter");
+				else if (this.varpos !== null)
+					throw new ParameterError("positional-only parameter after * parameter");
+				else if (this.varkw !== null)
+					throw new ParameterError("positional-only parameter after ** parameter");
+				this.paramsByPos.push(param);
+				this.paramsByName[name] = param;
+				++this.countposdef;
+				break;
+			case "pk":
+				if (this.countposdef > 0 || this.countposkwdef > 0 || this.countkwdef > 0)
+					throw new ParameterError("parameter without default after parameter with default");
+				else if (this.countkw > 0 || this.countkwdef > 0)
+					throw new ParameterError("positional/keyword parameter after keyword-only parameter");
+				else if (this.varpos !== null)
+					throw new ParameterError("positional/keyword parameter after * parameter");
+				else if (this.varkw !== null)
+					throw new ParameterError("positional/keyword parameter after ** parameter");
+				this.paramsByPos.push(param);
+				this.paramsByName[name] = param;
+				++this.countposkw;
+				break;
+			case "pk=":
+				if (this.countkw > 0 || this.countkwdef > 0)
+					throw new ParameterError("positional/keyword parameter after keyword-only parameter");
+				else if (this.varpos !== null)
+					throw new ParameterError("positional/keyword parameter after * parameter");
+				else if (this.varkw !== null)
+					throw new ParameterError("positional/keyword parameter after ** parameter");
+				this.paramsByPos.push(param);
+				this.paramsByName[name] = param;
+				++this.countposkwdef;
+				break;
+			case "k":
+				if (this.countposdef > 0 || this.countposkwdef > 0 || this.countkwdef > 0)
+					throw new ParameterError("parameter without default after parameter with default");
+				else if (this.varpos !== null)
+					throw new ParameterError("keyword-only parameter after * parameter");
+				else if (this.varkw !== null)
+					throw new ParameterError("keyword-only parameter after ** parameter");
+				this.paramsByPos.push(param);
+				this.paramsByName[name] = param;
+				++this.countkw;
+				break;
+			case "k=":
+				if (this.varpos !== null)
+					throw new ParameterError("keyword-only parameter after * parameter");
+				else if (this.varkw !== null)
+					throw new ParameterError("keyword-only parameter after ** parameter");
+				this.paramsByPos.push(param);
+				this.paramsByName[name] = param;
+				++this.countkwdef;
+				break;
+			case "*":
+				if (this.varpos !== null)
+					throw new ParameterError("* parameter specified twice!");
+				else if (this.varkw !== null)
+					throw new ParameterError("* parameter can come after ** parameter!");
+				this.varpos = param;
+				break;
+			case "**":
+				if (this.varkw !== null)
+					throw new ParameterError("** parameter specified twice!");
+				this.varkw = param;
+				break;
 		}
 	}
 
 	// Create the argument array for calling a function with this signature with the arguments available from ``args``
 	bindArray(name, args, kwargs)
 	{
-		let finalargs = [];
 		let decname = name !== null ? name + "() " : "";
 
-		let i = 0;
-		for (let arg of this.args)
+		let varpos = this.varpos != null ? [] : null;
+		let varkw = this.varkw != null ? _emptymap() : null;
+
+		let count = this.countpos + this.countposdef + this.countposkw + this.countposkwdef + this.countkw + this.countkwdef;
+		let finalargs = Array(count).fill(null);
+		let haveValues = Array(count).fill(false);
+
+		// Handle psotional arguments
+		if (args !== null)
 		{
-			if (i < args.length)
+			let i = 0;
+			for (let arg of args)
 			{
-				if (kwargs.hasOwnProperty(arg.name))
-					throw new ArgumentError(decname + "argument " + _repr(arg.name) + " (position " + i + ") specified multiple times");
-				finalargs.push(args[i]);
-			}
-			else
-			{
-				if (kwargs.hasOwnProperty(arg.name))
-					finalargs.push(kwargs[arg.name]);
+				let param = this.paramsByPos[i];
+				if (param !== undefined && param.type.indexOf("p") >= 0)
+				{
+					finalargs[i] = arg;
+					haveValues[i] = true;
+				}
 				else
 				{
-					if (arg.hasOwnProperty("defaultValue"))
-						finalargs.push(arg.defaultValue);
+					if (varpos !== null)
+						varpos.push(arg);
 					else
-						throw new ArgumentError("required " + decname + "argument " + _repr(arg.name) + " (position " + i + ") missing");
+					{
+						let count_nodef = this.countpos + this.countposkw;
+						let count_def = this.countposdef + this.countposkwdef;
+						if (count_def == 0)
+							throw new ArgumentError(name + "() takes exactly " + count_nodef + " positional argument" + (count_nodef != 1 ? "s" : "") + ", " + args.length + " given");
+						else
+							throw new ArgumentError(name + "() takes at most " + (count_nodef + count_def) + " positional argument" + ((count_nodef + count_def) != 1 ? "s" : "") + ", " + args.length + " given");
+					}
 				}
+				++i;
+			}
+		}
+
+		// Handle keyword arguments
+		if (kwargs !== null)
+		{
+			for (let [argname, argvalue] of Object.entries(kwargs))
+			{
+				let param = this.paramsByName[argname];
+
+				if (param !== undefined && param.type.indexOf("k") >= 0)
+				{
+					if (haveValues[param.pos])
+						throw new ArgumentError("Duplicate keyword argument " + argname + " for " + name + "()");
+					finalargs[param.pos] = argvalue;
+					haveValues[param.pos] = true;
+				}
+				else
+				{
+					if (varkw !== null)
+					{
+						if (varkw.has(argname))
+							throw new ArgumentError("Duplicate keyword argument " + argname + " for " + name + "()");
+						_setmap(varkw, argname, argvalue);
+					}
+					else
+						throw new ArgumentError(name + "() doesn't support an argument named " + argname);
+				}
+			}
+		}
+
+		// Fill in default values and check that every parameter has a value
+		let i = 0;
+		for (let param of this.paramsByPos)
+		{
+			if (!haveValues[i])
+			{
+				if (param.type.endsWith("="))
+				{
+					finalargs[i] = param.defaultValue;
+					haveValues[i] = true;
+				}
+				else
+					throw new ArgumentError("Required " + name + "() argument " + param.name + " (position " + param.pos + ") missing");
 			}
 			++i;
 		}
 
-		// Do we accept additional positional arguments?
-		if (this.remargs === null)
-		{
-			// No, but we have them -> complain
-			if (args.length > this.args.length)
-			{
-				let prefix = name === null ? "expected" : name + "() expects";
-				throw new ArgumentError(prefix + " at most " + this.args.length + " positional argument" + (this.args.length != 1 ? "s" : "") + ", " + args.length + " given");
-			}
-		}
-		else
-		{
-			// Put additional positional arguments in the call into the ``*`` argument (if there are none, this pushes an empty list)
-			finalargs.push(args.slice(this.args.length));
-		}
-
-		// Do we accept arbitrary keyword arguments?
-		if (this.remkwargs === null)
-		{
-			// No => complain about unknown ones
-			for (let key in kwargs)
-			{
-				if (!this.argNames[key])
-				{
-					if (name === null)
-						throw new ArgumentError("an argument named " + _repr(key) + " isn't supported");
-					else
-						throw new ArgumentError(name + "() doesn't support an argument named " + _repr(key));
-				}
-			}
-		}
-		else
-		{
-			// Yes => Put the unknown ones into an object and add that to the arguments array
-			let remkwargs = _emptymap();
-			for (let key in kwargs)
-			{
-				if (!this.argNames[key])
-					_setmap(remkwargs, key, kwargs[key]);
-			}
-			finalargs.push(remkwargs);
-		}
+		// Set variable parameters
+		if (varpos !== null)
+			finalargs.push(varpos);
+		if (varkw !== null)
+			finalargs.push(varkw);
 
 		return finalargs;
 	}
@@ -3426,13 +3549,13 @@ export class Signature extends Proto
 	{
 		args = this.bindArray(name, args, kwargs);
 		let argObject = {};
-		let i;
-		for (i = 0; i < this.args.length; ++i)
-			argObject[this.args[i].name] = args[i];
-		if (this.remargs !== null)
-			argObject[this.remargs] = args[i++];
-		if (this.remkwargs !== null)
-			argObject[this.remkwargs] = args[i++];
+		let i = 0;
+		for (let param of this.paramsByPos)
+			argObject[param.name] = args[i++];
+		if (this.varpos !== null)
+			argObject[this.varpos.name] = args[i++];
+		if (this.varkw !== null)
+			argObject[this.varkw.name] = args[i++];
 		return argObject;
 	}
 
@@ -3446,21 +3569,56 @@ export class Signature extends Proto
 		return this.toString();
 	}
 
+	_appendParam(buffer, lasttype, param)
+	{
+		let sep;
+		if (lasttype === null)
+			sep = ["k", "k="].includes(param.type) ? "*, " : "";
+		else if (["pk", "pk="].includes(lasttype))
+			sep = ["k", "k="].includes(param.type) ? ", *, " : ", ";
+		else if (["p", "p="].includes(lasttype))
+		{
+			if (["pk", "pk="].includes(param.type))
+				sep = ", /, ";
+			else if (["k", "k="].includes(param.type))
+				sep = ", /, *, ";
+			else
+				sep = ", ";
+		}
+		else
+			sep = ", ";
+		lasttype = param.type;
+		buffer.push(sep);
+		if (["*", "**"].includes(param.type))
+			buffer.push(param.type);
+		buffer.push(param.name);
+		if (param.type.endsWith("="))
+		{
+			buffer.push("=");
+			buffer.push(_repr(param.defaultValue));
+		}
+	}
+
 	toString()
 	{
 		let v = [];
-		for (let arg of this.args)
+		let lasttype = null;
+		for (let param of this.paramsByPos)
 		{
-			if (arg.hasOwnProperty("defaultValue"))
-				v.push(arg.name + "=" + _repr(arg.defaultValue));
-			else
-				v.push(arg.name);
+			this._appendParam(v, lasttype, param);
+			lasttype = param.type;
 		}
-		if (this.remargs !== null)
-			v.push("*" + this.remargs);
-		if (this.remkwargs !== null)
-			v.push("**" + this.remkwargs);
-		return "(" + v.join(", ") + ")";
+		if (this.varpos !== null)
+		{
+			this._appendParam(v, lasttype, this.varpos);
+			lasttype = this.varpos.type;
+		}
+		if (this.varkw !== null)
+		{
+			this._appendParam(v, lasttype, this.varkw);
+			lasttype = this.varkw.type;
+		}
+		return "(" + v.join("") + ")";
 	}
 };
 
@@ -3490,7 +3648,7 @@ export class _Set
 		switch (attrname)
 		{
 			case "add":
-				return expose(this.bind.add(this), ["*items"]);
+				return expose(this.bind.add(this), ["items", "*"]);
 			default:
 				throw new AttributeError(this, attrname);
 		}
@@ -3827,12 +3985,12 @@ export let StrProtocol = _extend(Protocol,
 		return obj;
 	},
 
-	split: function split(obj, sep=null, count=null)
+	split: function split(obj, sep=null, maxsplit=null)
 	{
 		if (sep !== null && typeof(sep) !== "string")
 			throw new TypeError("split() requires a string");
 
-		if (count === null)
+		if (maxsplit === null)
 		{
 			let result = obj.split(sep !== null ? sep : /[ \n\r\t]+/);
 			if (sep === null)
@@ -3852,7 +4010,7 @@ export let StrProtocol = _extend(Protocol,
 				while (obj.length)
 				{
 					let pos = obj.indexOf(sep);
-					if (pos === -1 || !count--)
+					if (pos === -1 || !maxsplit--)
 					{
 						result.push(obj);
 						break;
@@ -3869,7 +4027,7 @@ export let StrProtocol = _extend(Protocol,
 				{
 					obj = StrProtocol.lstrip(obj, null);
 					let part;
-					if (!count--)
+					if (!maxsplit--)
 						 part = obj; // Take the rest of the string
 					else
 						part = obj.split(/[ \n\r\t]+/, 1)[0];
@@ -3882,12 +4040,12 @@ export let StrProtocol = _extend(Protocol,
 		}
 	},
 
-	rsplit: function rsplit(obj, sep=null, count=null)
+	rsplit: function rsplit(obj, sep=null, maxsplit=null)
 	{
 		if (sep !== null && typeof(sep) !== "string")
 			throw new TypeError("rsplit() requires a string as second argument");
 
-		if (count === null)
+		if (maxsplit === null)
 		{
 			let result = obj.split(sep !== null ? sep : /[ \n\r\t]+/);
 			if (sep === null)
@@ -3907,7 +4065,7 @@ export let StrProtocol = _extend(Protocol,
 				while (obj.length)
 				{
 					let pos = obj.lastIndexOf(sep);
-					if (pos === -1 || !count--)
+					if (pos === -1 || !maxsplit--)
 					{
 						result.unshift(obj);
 						break;
@@ -3924,7 +4082,7 @@ export let StrProtocol = _extend(Protocol,
 				{
 					obj = StrProtocol.rstrip(obj);
 					let part;
-					if (!count--)
+					if (!maxsplit--)
 						 part = obj; // Take the rest of the string
 					else
 					{
@@ -4048,22 +4206,22 @@ export let StrProtocol = _extend(Protocol,
 	}
 });
 
-expose(StrProtocol.count, ["sub", "start=", null, "end=", null]);
-expose(StrProtocol.find, ["sub", "start=", null, "end=", null]);
-expose(StrProtocol.rfind, ["sub", "start=", null, "end=", null]);
-expose(StrProtocol.replace, ["old", "new", "count=", null]);
-expose(StrProtocol.strip, ["chars=", null]);
-expose(StrProtocol.lstrip, ["chars=", null]);
-expose(StrProtocol.rstrip, ["chars=", null]);
-expose(StrProtocol.split, ["sep=", null, "count=", null]);
-expose(StrProtocol.rsplit, ["sep=", null, "count=", null]);
-expose(StrProtocol.splitlines, ["keepends=", false]);
+expose(StrProtocol.count, ["sub", "p", "start", "p=", null, "end", "p=", null]);
+expose(StrProtocol.find, ["sub", "p", "start", "p=", null, "end", "p=", null]);
+expose(StrProtocol.rfind, ["sub", "p", "start", "p=", null, "end", "p=", null]);
+expose(StrProtocol.replace, ["old", "p", "new", "p", "count", "p=", null]);
+expose(StrProtocol.strip, ["chars", "p=", null]);
+expose(StrProtocol.lstrip, ["chars", "p=", null]);
+expose(StrProtocol.rstrip, ["chars", "p=", null]);
+expose(StrProtocol.split, ["sep", "pk=", null, "maxsplit", "pk=", null]);
+expose(StrProtocol.rsplit, ["sep", "pk=", null, "maxsplit", "pk=", null]);
+expose(StrProtocol.splitlines, ["keepends", "pk=", false]);
 expose(StrProtocol.lower, []);
 expose(StrProtocol.upper, []);
 expose(StrProtocol.capitalize, []);
-expose(StrProtocol.join, ["iterable"]);
-expose(StrProtocol.startswith, ["prefix"]);
-expose(StrProtocol.endswith, ["suffix"]);
+expose(StrProtocol.join, ["iterable", "p"]);
+expose(StrProtocol.startswith, ["prefix", "p"]);
+expose(StrProtocol.endswith, ["suffix", "p"]);
 
 
 export let ListProtocol = _extend(Protocol,
@@ -4125,12 +4283,12 @@ export let ListProtocol = _extend(Protocol,
 	}
 });
 
-expose(ListProtocol.append, ["*items"]);
-expose(ListProtocol.insert, ["pos", "*items"]);
-expose(ListProtocol.pop, ["pos=", -1]);
-expose(ListProtocol.count, ["sub", "start=", null, "end=", null]);
-expose(ListProtocol.find, ["sub", "start=", null, "end=", null]);
-expose(ListProtocol.rfind, ["sub", "start=", null, "end=", null]);
+expose(ListProtocol.append, ["items", "*"]);
+expose(ListProtocol.insert, ["pos", "p", "items", "*"]);
+expose(ListProtocol.pop, ["pos", "p=", -1]);
+expose(ListProtocol.count, ["sub", "p", "start", "p=", null, "end", "p=", null]);
+expose(ListProtocol.find, ["sub", "p", "start", "p=", null, "end", "p=", null]);
+expose(ListProtocol.rfind, ["sub", "p", "start", "p=", null, "end", "p=", null]);
 
 
 export let MapProtocol = _extend(Protocol,
@@ -4186,9 +4344,9 @@ export let MapProtocol = _extend(Protocol,
 		return result;
 	},
 
-	update: function update(obj, other, kwargs)
+	update: function update(obj, others, kwargs)
 	{
-		return _update(obj, other, kwargs);
+		return _update(obj, others, kwargs);
 	},
 
 	clear: function clear(obj)
@@ -4212,12 +4370,12 @@ export let MapProtocol = _extend(Protocol,
 	}
 });
 
-expose(MapProtocol.get, ["key", "default=", null]);
+expose(MapProtocol.get, ["key", "p", "default", "p=", null]);
 expose(MapProtocol.items, []);
 expose(MapProtocol.values, []);
-expose(MapProtocol.update, ["*other", "**kwargs"]);
+expose(MapProtocol.update, ["others", "*", "kwargs", "**"]);
 expose(MapProtocol.clear, []);
-expose(MapProtocol.pop, ["key", "default=", Object]);
+expose(MapProtocol.pop, ["key", "p", "default", "p=", Object]);
 
 export let SetProtocol = _extend(Protocol,
 {
@@ -4241,7 +4399,7 @@ export let SetProtocol = _extend(Protocol,
 	}
 });
 
-expose(SetProtocol.add, ["*items"]);
+expose(SetProtocol.add, ["items", "*"]);
 expose(SetProtocol.clear, []);
 
 export let DateProtocol = _extend(Protocol,
@@ -4321,8 +4479,8 @@ export let DateProtocol = _extend(Protocol,
 });
 
 expose(DateProtocol.weekday, []);
-expose(DateProtocol.calendar, ["firstweekday=", 0, "mindaysinfirstweek=", 4]);
-expose(DateProtocol.week, ["firstweekday=", 0, "mindaysinfirstweek=", 4]);
+expose(DateProtocol.calendar, ["firstweekday", "pk=", 0, "mindaysinfirstweek", "pk=", 4]);
+expose(DateProtocol.week, ["firstweekday", "pk=", 0, "mindaysinfirstweek", "pk=", 4]);
 expose(DateProtocol.day, []);
 expose(DateProtocol.month, []);
 expose(DateProtocol.year, []);
@@ -4498,8 +4656,8 @@ export let DateTimeProtocol = _extend(Protocol,
 });
 
 expose(DateTimeProtocol.weekday, []);
-expose(DateTimeProtocol.calendar, ["firstweekday=", 0, "mindaysinfirstweek=", 4]);
-expose(DateTimeProtocol.week, ["firstweekday=", 0, "mindaysinfirstweek=", 4]);
+expose(DateTimeProtocol.calendar, ["firstweekday", "pk=", 0, "mindaysinfirstweek", "pk=", 4]);
+expose(DateTimeProtocol.week, ["firstweekday", "pk=", 0, "mindaysinfirstweek", "pk=", 4]);
 expose(DateTimeProtocol.day, []);
 expose(DateTimeProtocol.month, []);
 expose(DateTimeProtocol.year, []);
@@ -4573,7 +4731,7 @@ export let ObjectProtocol = _extend(Protocol,
 	}
 });
 
-expose(ObjectProtocol.get, ["key", "default=", null]);
+expose(ObjectProtocol.get, ["key", "p", "default", "p=", null]);
 expose(ObjectProtocol.items, []);
 expose(ObjectProtocol.values, []);
 expose(ObjectProtocol.clear, []);
@@ -4746,6 +4904,10 @@ export class ValueError extends Exception
 };
 
 export class ArgumentError extends Exception
+{
+};
+
+export class ParameterError extends Exception
 {
 };
 
@@ -6819,7 +6981,7 @@ export class CallAST extends CodeAST
 		let args = [], kwargs = {};
 		for (let arg of this.args)
 			arg._handle_eval_call(context, args, kwargs);
-		return {args: args, kwargs: kwargs};
+		return [args, kwargs];
 	}
 
 	_handle_eval(context)
@@ -6838,8 +7000,8 @@ export class CallAST extends CodeAST
 	_eval(context)
 	{
 		let obj = this.obj._handle_eval(context);
-		let args = this._makeargs(context);
-		let result = _call(context, obj, args.args, args.kwargs);
+		let [args, kwargs] = this._makeargs(context);
+		let result = _call(context, obj, args, kwargs);
 		return result;
 	}
 };
@@ -6889,12 +7051,12 @@ export class RenderAST extends CallAST
 	{
 		let localcontext = context.withindent(this.indent !== null ? this.indent.text : null);
 		let obj = this.obj._handle_eval(localcontext);
-		let args = this._makeargs(localcontext);
-		this._handle_additional_arguments(localcontext, args);
+		let [args, kwargs] = this._makeargs(localcontext);
+		this._handle_additional_arguments(localcontext, args, kwargs);
 
 		try
 		{
-			let result = _callrender(localcontext, obj, args.args, args.kwargs);
+			let result = _callrender(localcontext, obj, args, kwargs);
 			return result;
 		}
 		catch (exc)
@@ -6933,12 +7095,12 @@ export class RenderXAST extends RenderAST
 
 export class RenderBlockAST extends RenderAST
 {
-	_handle_additional_arguments(context, args)
+	_handle_additional_arguments(context, args, kwargs)
 	{
-		if (args.kwargs.hasOwnProperty("content"))
+		if (kwargs.hasOwnProperty("content"))
 			throw new ArgumentError("duplicate keyword argument content");
 		let closure = new TemplateClosure(this.content, this.content.signature, context.vars);
-		args.kwargs.content = closure;
+		kwargs.content = closure;
 	}
 
 	__getattr__(attrname)
@@ -6959,7 +7121,7 @@ RenderBlockAST.prototype._ul4onattrs = RenderAST.prototype._ul4onattrs.concat(["
 
 export class RenderBlocksAST extends RenderAST
 {
-	_handle_additional_arguments(context, args)
+	_handle_additional_arguments(context, args, kwargs)
 	{
 		let localcontext = context.inheritvars();
 		BlockAST.prototype._eval.call(this, localcontext);
@@ -6968,9 +7130,9 @@ export class RenderBlocksAST extends RenderAST
 		{
 			if (localcontext.vars.hasOwnProperty(key))
 			{
-				if (key in args.kwargs)
+				if (key in kwargs)
 					throw new ArgumentError("duplicate keyword argument " + key);
-				args.kwargs[key] = localcontext.get(key);
+				kwargs[key] = localcontext.get(key);
 			}
 		}
 	}
@@ -7555,17 +7717,13 @@ export class Template extends BlockAST
 		else
 		{
 			signature = [];
-			for (let arg of this.signature.args)
+			for (let param of this.signature.params)
 			{
-				if (arg.defaultValue === undefined)
-					signature.push(arg.name);
-				else
-					signature.push(arg.name+"=", arg.defaultValue);
+				signature.push(param.name);
+				signature.push(param.type);
+				if (param.type.endsWith("="))
+					signature.push(param.defaultValue);
 			}
-			if (this.signature.remargs !== null)
-				signature.push("*" + this.signature.remargs);
-			if (this.signature.remkwargs !== null)
-				signature.push("**" + this.signature.remkwargs);
 		}
 		encoder.dump(signature);
 		super.ul4ondump(encoder);
@@ -7748,10 +7906,10 @@ export class SignatureAST extends CodeAST
 
 		for (let param of this.params)
 		{
-			if (param[1] === null)
-				dump.push(param[0]);
-			else
-				dump.push(param);
+			dump.push(param[0]);
+			dump.push(param[1]);
+			if (param[1].endsWith("="))
+				dump.push(param[2]);
 		}
 		encoder.dump(dump);
 	}
@@ -7761,12 +7919,32 @@ export class SignatureAST extends CodeAST
 		super.ul4onload(decoder);
 		let dump = decoder.load();
 		this.params = [];
+		let name;
+		let type;
+		let state = 0;
 		for (let param of dump)
 		{
-			if (typeof(param) === "string")
-				this.params.push([param, null]);
+			if (state == 0)
+			{
+				name = param;
+				state = 1;
+			}
+			else if (state == 1)
+			{
+				type = param;
+				if (type.endsWith("="))
+					state = 2;
+				else
+				{
+					this.params.push({name: name, type: type, defaultValue: null});
+					state = 0;
+				}
+			}
 			else
-				this.params.push(param);
+			{
+				this.params.push({name: name, type: type, defaultValue: param});
+				state = 0;
+			}
 		}
 	}
 
@@ -7775,13 +7953,10 @@ export class SignatureAST extends CodeAST
 		let args = [];
 		for (let param of this.params)
 		{
-			if (param[1] === null)
-				args.push(param[0]);
-			else
-			{
-				args.push(param[0] + "=");
-				args.push(param[1]._handle_eval(context));
-			}
+			args.push(param.name);
+			args.push(param.type);
+			if (param.type.endsWith("="))
+				args.push(param.defaultValue._handle_eval(context));
 		}
 		return new Signature(...args);
 	}
@@ -7953,14 +8128,15 @@ export function _bin(number)
 };
 
 // Return the minimum value
-export function _min(obj)
+export function _min(context, defaultValue=Object, key=null, args=[])
 {
-	if (obj.length == 0)
+	if (args.length == 0)
 		throw new ArgumentError("min() requires at least 1 argument, 0 given");
-	else if (obj.length == 1)
-		obj = obj[0];
-	let iter = _iter(obj);
+	else if (args.length == 1)
+		args = args[0];
+	let iter = _iter(args);
 	let result;
+	let minvalue;
 	let first = true;
 	while (true)
 	{
@@ -7968,24 +8144,35 @@ export function _min(obj)
 		if (item.done)
 		{
 			if (first)
-				throw new ValueError("min() argument is an empty sequence!");
+			{
+				if (defaultValue === Object)
+					throw new ValueError("min() argument is an empty sequence!");
+				return defaultValue;
+			}
 			return result;
 		}
-		if (first || (item.value < result))
+		let testvalue = item.value;
+		if (key !== null)
+			testvalue = _call(context, key, [testvalue], {});
+		if (first || (testvalue < minvalue))
+		{
 			result = item.value;
+			minvalue = testvalue;
+		}
 		first = false;
 	}
 };
 
 // Return the maximum value
-export function _max(obj)
+export function _max(context, defaultValue=Object, key=null, args=[])
 {
-	if (obj.length == 0)
+	if (args.length == 0)
 		throw new ArgumentError("max() requires at least 1 argument, 0 given");
-	else if (obj.length == 1)
-		obj = obj[0];
-	let iter = _iter(obj);
+	else if (args.length == 1)
+		args = args[0];
+	let iter = _iter(args);
 	let result;
+	let minvalue;
 	let first = true;
 	while (true)
 	{
@@ -7993,11 +8180,21 @@ export function _max(obj)
 		if (item.done)
 		{
 			if (first)
-				throw new ValueError("max() argument is an empty sequence!");
+			{
+				if (defaultValue === Object)
+					throw new ValueError("max() argument is an empty sequence!");
+				return defaultValue;
+			}
 			return result;
 		}
-		if (first || (item.value > result))
+		let testvalue = item.value;
+		if (key !== null)
+			testvalue = _call(context, key, [testvalue], {});
+		if (first || (testvalue > minvalue))
+		{
 			result = item.value;
+			minvalue = testvalue;
+		}
 		first = false;
 	}
 };
@@ -8087,30 +8284,14 @@ export function _sorted(context, iterable, key=null, reverse=false)
 };
 
 // Return a iterable object iterating from ``start`` up to (but not including) ``stop`` with a step size of ``step``
-export function _range(args)
+export function _range(start, stop=Object, step=Object)
 {
-	let start, stop, step;
-	if (args.length < 1)
-		throw new ArgumentError("required range() argument missing");
-	else if (args.length > 3)
-		throw new ArgumentError("range() expects at most 3 positional arguments, " + args.length + " given");
-	else if (args.length == 1)
+	if (step === Object)
+		step = 1;
+	if (stop === Object)
 	{
+		stop = start;
 		start = 0;
-		stop = args[0];
-		step = 1;
-	}
-	else if (args.length == 2)
-	{
-		start = args[0];
-		stop = args[1];
-		step = 1;
-	}
-	else if (args.length == 3)
-	{
-		start = args[0];
-		stop = args[1];
-		step = args[2];
 	}
 	let lower, higher;
 	if (step === 0)
@@ -8139,33 +8320,14 @@ export function _range(args)
 };
 
 // Return a iterable object returning a slice from the argument
-export function _slice(args)
+export function _slice(iterable, start, stop=Object, step=Object)
 {
-	let iterable, start, stop, step;
-	if (args.length < 2)
-		throw new ArgumentError("required slice() argument missing");
-	else if (args.length > 4)
-		throw new ArgumentError("slice() expects at most 4 positional arguments, " + args.length + " given");
-	else if (args.length == 2)
+	if (step === Object)
+		step = 1;
+	if (stop === Object)
 	{
-		iterable = args[0];
+		stop = start;
 		start = 0;
-		stop = args[1];
-		step = 1;
-	}
-	else if (args.length == 3)
-	{
-		iterable = args[0];
-		start = args[1] !== null ? args[1] : 0;
-		stop = args[2];
-		step = 1;
-	}
-	else if (args.length == 4)
-	{
-		iterable = args[0];
-		start = args[1] !== null ? args[1] : 0;
-		stop = args[2];
-		step = args[3] !== null ? args[3] : 1;
 	}
 	if (start < 0)
 		throw new ValueError("slice() requires a start argument >= 0");
@@ -8232,30 +8394,14 @@ export function _random()
 };
 
 // Return a randomly select item from ``range(start, stop, step)``
-export function _randrange(args)
+export function _randrange(start, stop=Object, step=Object)
 {
-	let start, stop, step;
-	if (args.length < 1)
-		throw new ArgumentError("required randrange() argument missing");
-	else if (args.length > 3)
-		throw new ArgumentError("randrange() expects at most 3 positional arguments, " + args.length + " given");
-	else if (args.length == 1)
+	if (step === Object)
+		step = 1;
+	if (stop === Object)
 	{
+		stop = start;
 		start = 0;
-		stop = args[0];
-		step = 1;
-	}
-	else if (args.length == 2)
-	{
-		start = args[0];
-		stop = args[1];
-		step = 1;
-	}
-	else if (args.length == 3)
-	{
-		start = args[0];
-		stop = args[1];
-		step = args[2];
 	}
 	let width = stop-start;
 
@@ -8292,6 +8438,30 @@ export function _round(x, digits=0)
 	}
 	else
 		return Math.round(x);
+};
+
+// Round a number ``x`` down to ``digits`` decimal places (may be negative)
+export function _floor(x, digits=0)
+{
+	if (digits)
+	{
+		let threshold = Math.pow(10, digits);
+		return Math.floor(x*threshold)/threshold;
+	}
+	else
+		return Math.floor(x);
+};
+
+// Round a number ``x`` up to ``digits`` decimal places (may be negative)
+export function _ceil(x, digits=0)
+{
+	if (digits)
+	{
+		let threshold = Math.pow(10, digits);
+		return Math.ceil(x*threshold)/threshold;
+	}
+	else
+		return Math.ceil(x);
 };
 
 // Return a hex-encode MD5 hash of the argument
@@ -8575,21 +8745,21 @@ function _ul4on_loads(dump)
 	return loads(dump);
 };
 
-expose(_ul4on_loads, ["dump"], {name: "loads"});
+expose(_ul4on_loads, ["dump", "p"], {name: "loads"});
 
 function _ul4on_dumps(obj, indent=null)
 {
 	return dumps(obj, indent);
 };
 
-expose(_ul4on_dumps, ["obj", "indent=", null], {name: "dumps"});
+expose(_ul4on_dumps, ["obj", "p", "indent", "pk=", null], {name: "dumps"});
 
 function _ul4on_encoder(indent=null)
 {
 	return new Encoder(indent);
 }
 
-expose(_ul4on_encoder, ["indent=", null], {name: "Encoder"});
+expose(_ul4on_encoder, ["indent", "pk=", null], {name: "Encoder"});
 
 function _ul4on_decoder()
 {
@@ -8628,11 +8798,11 @@ function isclose(a, b, rel_tol=1e-9, abs_tol=0.0)
 	return false;
 }
 
-expose(Math.cos, ["x"]);
-expose(Math.sin, ["x"]);
-expose(Math.tan, ["x"]);
-expose(Math.sqrt, ["x"]);
-expose(isclose, ["a", "b", "rel_tol=", 1e-9, "abs_tol=", 0.0]);
+expose(Math.cos, ["x", "p"]);
+expose(Math.sin, ["x", "p"]);
+expose(Math.tan, ["x", "p"]);
+expose(Math.sqrt, ["x", "p"]);
+expose(isclose, ["a", "pk", "b", "pk", "rel_tol", "k=", 1e-9, "abs_tol", "k=", 0.0]);
 
 export const _math = new Module(
 	"math",
@@ -8672,17 +8842,24 @@ export function _attrgetter(attrnames)
 			return result;
 		}
 	}
-	expose(get, ["obj"]);
+	expose(get, ["obj", "p"]);
 	return get;
 }
 
-expose(_attrgetter, ["*attrs"]);
+expose(_attrgetter, ["attrs", "*"]);
 
 export const _operator = new Module(
 	"operator",
 	"Various operators as functions",
 	{
 		attrgetter: _attrgetter
+	}
+);
+
+export const _ul4 = new Module(
+	"ul4",
+	"UL4 - a templating language",
+	{
 	}
 );
 
@@ -8764,92 +8941,97 @@ export let builtins = {
 	randrange: _randrange,
 	randchoice: _randchoice,
 	round: _round,
+	floor: _floor,
+	ceil: _ceil,
 	md5: _md5,
 	scrypt: _scrypt,
 	ul4on: _ul4on,
+	ul4: _ul4,
 	math: _math,
 	operator: _operator
 };
 
-expose(_repr, ["obj"], {name: "repr"});
-expose(_ascii, ["obj"], {name: "ascii"});
-expose(_str, ["obj=", ""], {name: "str"});
-expose(_int, ["obj=", 0, "base=", null], {name: "int"});
-expose(_float, ["obj=", 0.0], {name: "float"});
-expose(_list, ["iterable=", []], {name: "list"});
-expose(_set, ["iterable=", []], {name: "set"});
-expose(_bool, ["obj=", false], {name: "bool"});
-expose(_len, ["sequence"], {name: "len"});
-expose(_type, ["obj"], {name: "type"});
-expose(_format, ["obj", "fmt", "lang=", null], {name: "format"});
-expose(_any, ["iterable"], {name: "any"});
-expose(_all, ["iterable"], {name: "all"});
-expose(_zip, ["*iterables"], {name: "zip"});
-expose(_getattr, ["obj", "attrname", "default=", null], {name: "getattr"});
-expose(_hasattr, ["obj", "attrname"], {name: "hasattr"});
-expose(_dir, ["obj"], {name: "dir"});
-expose(_isundefined, ["obj"], {name: "isundefined"});
-expose(_isdefined, ["obj"], {name: "isdefined"});
-expose(_isnone, ["obj"], {name: "isnone"});
-expose(_isbool, ["obj"], {name: "isbool"});
-expose(_isint, ["obj"], {name: "isint"});
-expose(_isfloat, ["obj"], {name: "isfloat"});
-expose(_isstr, ["obj"], {name: "isstr"});
-expose(_isdate, ["obj"], {name: "isdate"});
-expose(_isdatetime, ["obj"], {name: "isdatetime"});
-expose(_iscolor, ["obj"], {name: "iscolor"});
-expose(_istimedelta, ["obj"], {name: "istimedelta"});
-expose(_ismonthdelta, ["obj"], {name: "ismonthdelta"});
-expose(_istemplate, ["obj"], {name: "istemplate"});
-expose(_isfunction, ["obj"], {name: "isfunction"});
-expose(_islist, ["obj"], {name: "islist"});
-expose(_isanyset, ["obj"], {name: "isset"});
-expose(_isdict, ["obj"], {name: "isdict"});
-expose(_isexception, ["obj"], {name: "isexception"});
-expose(_asjson, ["obj"], {name: "asjson"});
-expose(_fromjson, ["string"], {name: "fromjson"});
-expose(_asul4on, ["obj"], {name: "asul4on"});
-expose(_fromul4on, ["dump"], {name: "fromul4on"});
+expose(_repr, ["obj", "p"], {name: "repr"});
+expose(_ascii, ["obj", "p"], {name: "ascii"});
+expose(_str, ["obj", "p=", ""], {name: "str"});
+expose(_int, ["obj", "p=", 0, "base", "pk=", null], {name: "int"});
+expose(_float, ["obj", "p=", 0.0], {name: "float"});
+expose(_list, ["iterable", "p=", []], {name: "list"});
+expose(_set, ["iterable", "p=", []], {name: "set"});
+expose(_bool, ["obj", "p=", false], {name: "bool"});
+expose(_len, ["sequence", "p"], {name: "len"});
+expose(_type, ["obj", "p"], {name: "type"});
+expose(_format, ["obj", "pk", "fmt", "pk", "lang", "pk=", null], {name: "format"});
+expose(_any, ["iterable", "p"], {name: "any"});
+expose(_all, ["iterable", "p"], {name: "all"});
+expose(_zip, ["iterables", "*"], {name: "zip"});
+expose(_getattr, ["obj", "p", "attrname", "p", "default", "p=", null], {name: "getattr"});
+expose(_hasattr, ["obj", "p", "attrname", "p"], {name: "hasattr"});
+expose(_dir, ["obj", "p"], {name: "dir"});
+expose(_isundefined, ["obj", "p"], {name: "isundefined"});
+expose(_isdefined, ["obj", "p"], {name: "isdefined"});
+expose(_isnone, ["obj", "p"], {name: "isnone"});
+expose(_isbool, ["obj", "p"], {name: "isbool"});
+expose(_isint, ["obj", "p"], {name: "isint"});
+expose(_isfloat, ["obj", "p"], {name: "isfloat"});
+expose(_isstr, ["obj", "p"], {name: "isstr"});
+expose(_isdate, ["obj", "p"], {name: "isdate"});
+expose(_isdatetime, ["obj", "p"], {name: "isdatetime"});
+expose(_iscolor, ["obj", "p"], {name: "iscolor"});
+expose(_istimedelta, ["obj", "p"], {name: "istimedelta"});
+expose(_ismonthdelta, ["obj", "p"], {name: "ismonthdelta"});
+expose(_istemplate, ["obj", "p"], {name: "istemplate"});
+expose(_isfunction, ["obj", "p"], {name: "isfunction"});
+expose(_islist, ["obj", "p"], {name: "islist"});
+expose(_isanyset, ["obj", "p"], {name: "isset"});
+expose(_isdict, ["obj", "p"], {name: "isdict"});
+expose(_isexception, ["obj", "p"], {name: "isexception"});
+expose(_asjson, ["obj", "p"], {name: "asjson"});
+expose(_fromjson, ["string", "p"], {name: "fromjson"});
+expose(_asul4on, ["obj", "p", "indent", "pk=",null], {name: "asul4on"});
+expose(_fromul4on, ["dump", "p"], {name: "fromul4on"});
 expose(now, []);
 expose(utcnow, []);
 expose(today, []);
-expose(_enumerate, ["iterable", "start=", 0], {name: "enumerate"});
-expose(_isfirst, ["iterable"], {name: "isfirst"});
-expose(_islast, ["iterable"], {name: "islast"});
-expose(_isfirstlast, ["iterable"], {name: "isfirstlast"});
-expose(_enumfl, ["iterable", "start=", 0], {name: "enumfl"});
-expose(_abs, ["number"], {name: "abs"});
-expose(_date, ["year", "month", "day"], {name: "date"});
-expose(_datetime, ["year", "month", "day", "hour=", 0, "minute=", 0, "second=", 0, "microsecond=", 0], {name: "datetime"});
-expose(_timedelta, ["days=", 0, "seconds=", 0, "microseconds=", 0], {name: "timedelta"});
-expose(_monthdelta, ["months=", 0], {name: "monthdelta"});
-expose(_rgb, ["r", "g", "b", "a=", 1.0], {name: "rgb"});
-expose(_hls, ["h", "l", "s", "a=", 1.0], {name: "hls"});
-expose(_hsv, ["h", "s", "v", "a=", 1.0], {name: "hsv"});
-expose(_xmlescape, ["obj"], {name: "xmlescape"});
-expose(_csv, ["obj"], {name: "csv"});
-expose(_chr, ["i"], {name: "chr"});
-expose(_ord, ["c"], {name: "ord"});
-expose(_hex, ["number"], {name: "hex"});
-expose(_oct, ["number"], {name: "oct"});
-expose(_bin, ["number"], {name: "bin"});
-expose(_min, ["*obj"], {name: "min"});
-expose(_max, ["*obj"], {name: "max"});
-expose(_sum, ["iterable", "start=", 0], {name: "sum"});
-expose(_first, ["iterable", "default=", null], {name: "first"});
-expose(_last, ["iterable", "default=", null], {name: "last"});
-expose(_sorted, ["iterable", "key=", null, "reverse=", false], {name: "sorted", needscontext: true});
-expose(_range, ["*args"], {name: "range"});
-expose(_slice, ["*args"], {name: "slice"});
-expose(_urlquote, ["string"], {name: "urlquote"});
-expose(_urlunquote, ["string"], {name: "urlunquote"});
-expose(_reversed, ["sequence"], {name: "reversed"});
+expose(_enumerate, ["iterable", "pk", "start", "pk=", 0], {name: "enumerate"});
+expose(_isfirst, ["iterable", "p"], {name: "isfirst"});
+expose(_islast, ["iterable", "p"], {name: "islast"});
+expose(_isfirstlast, ["iterable", "p"], {name: "isfirstlast"});
+expose(_enumfl, ["iterable", "p", "start", "pk=", 0], {name: "enumfl"});
+expose(_abs, ["number", "p"], {name: "abs"});
+expose(_date, ["year", "pk", "month", "pk", "day", "pk"], {name: "date"});
+expose(_datetime, ["year", "pk", "month", "pk", "day", "pk", "hour", "pk=", 0, "minute", "pk=", 0, "second", "pk=", 0, "microsecond", "pk=", 0], {name: "datetime"});
+expose(_timedelta, ["days", "pk=", 0, "seconds", "pk=", 0, "microseconds", "pk=", 0], {name: "timedelta"});
+expose(_monthdelta, ["months", "p=", 0], {name: "monthdelta"});
+expose(_rgb, ["r", "pk", "g", "pk", "b", "pk", "a", "pk=", 1.0], {name: "rgb"});
+expose(_hls, ["h", "pk", "l", "pk", "s", "pk", "a", "pk=", 1.0], {name: "hls"});
+expose(_hsv, ["h", "pk", "s", "pk", "v", "pk", "a", "pk=", 1.0], {name: "hsv"});
+expose(_xmlescape, ["obj", "p"], {name: "xmlescape"});
+expose(_csv, ["obj", "p"], {name: "csv"});
+expose(_chr, ["i", "p"], {name: "chr"});
+expose(_ord, ["c", "p"], {name: "ord"});
+expose(_hex, ["number", "p"], {name: "hex"});
+expose(_oct, ["number", "p"], {name: "oct"});
+expose(_bin, ["number", "p"], {name: "bin"});
+expose(_min, ["default", "k=", Object, "key", "k=", null, "args", "*"], {name: "min", needscontext: true});
+expose(_max, ["default", "k=", Object, "key", "k=", null, "args", "*"], {name: "max", needscontext: true});
+expose(_sum, ["iterable", "p", "start", "pk=", 0], {name: "sum"});
+expose(_first, ["iterable", "p", "default", "pk=", null], {name: "first"});
+expose(_last, ["iterable", "p", "default", "pk=", null], {name: "last"});
+expose(_sorted, ["iterable", "p", "key", "pk=", null, "reverse", "pk=", false], {name: "sorted", needscontext: true});
+expose(_range, ["start", "p", "stop", "p=", Object, "step", "p=", Object], {name: "range"});
+expose(_slice, ["iterable", "p", "start", "p", "stop", "p=", Object, "step", "p=", Object], {name: "slice"});
+expose(_urlquote, ["string", "pk"], {name: "urlquote"});
+expose(_urlunquote, ["string", "pk"], {name: "urlunquote"});
+expose(_reversed, ["sequence", "p"], {name: "reversed"});
 expose(_random, [], {name: "random"});
-expose(_randrange, ["*args"], {name: "randrange"});
-expose(_randchoice, ["sequence"], {name: "randchoice"});
-expose(_round, ["x", "digit=", 0], {name: "round"});
-expose(_md5, ["string"], {name: "md5"});
-expose(_scrypt, ["string", "salt"], {name: "scrypt"});
+expose(_randrange, ["start", "p", "stop", "p=", Object, "step", "p=", Object], {name: "randrange"});
+expose(_randchoice, ["seq", "pk"], {name: "randchoice"});
+expose(_round, ["x", "p", "digit", "pk=", 0], {name: "round"});
+expose(_floor, ["x", "p", "digit", "pk=", 0], {name: "floor"});
+expose(_ceil, ["x", "p", "digit", "pk=", 0], {name: "ceil"});
+expose(_md5, ["string", "p"], {name: "md5"});
+expose(_scrypt, ["string", "p", "salt", "pk"], {name: "scrypt"});
 
 // Functions implementing UL4 methods
 export function _count(obj, sub, start=null, end=null)
@@ -9136,13 +9318,13 @@ export class Color extends Proto
 			case "hsva":
 				return expose(this.hsva.bind(this), []);
 			case "witha":
-				return expose(this.witha.bind(this), ["a"]);
+				return expose(this.witha.bind(this), ["a", "pk"]);
 			case "withlum":
-				return expose(this.withlum.bind(this), ["lum"]);
+				return expose(this.withlum.bind(this), ["lum", "pk"]);
 			case "abslum":
-				return expose(this.abslum.bind(this), ["lum"]);
+				return expose(this.abslum.bind(this), ["lum", "pk"]);
 			case "rellum":
-				return expose(this.rellum.bind(this), ["lum"]);
+				return expose(this.rellum.bind(this), ["lum", "pk"]);
 			default:
 				throw new AttributeError(this, attrname);
 		}
@@ -9297,8 +9479,8 @@ expose(Color.prototype.hls, []);
 expose(Color.prototype.hlsa, []);
 expose(Color.prototype.hsv, []);
 expose(Color.prototype.hsva, []);
-expose(Color.prototype.witha, ["a"]);
-expose(Color.prototype.withlum, ["lum"]);
+expose(Color.prototype.witha, ["a", "pk"]);
+expose(Color.prototype.withlum, ["lum", "pk"]);
 
 export class Date_ extends Proto
 {
