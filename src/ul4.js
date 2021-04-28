@@ -97,7 +97,7 @@ export let symbols = {
 	setattr: Symbol("ul4.setattr"),
 	// Get an item of a container object via UL4s `[]` operator
 	getitem: Symbol("ul4.getitem"),
-	// Set an itemibute of an object via UL4 UL4s `[] =` operator
+	// Set an item of a container object via UL4 UL4s `[] =` operator
 	setitem: Symbol("ul4.setitem"),
 };
 
@@ -107,136 +107,6 @@ export let symbols = {
 ///
 
 const _registry = {};
-
-export const _havemap = (typeof(Map) === "function" && typeof(Map.prototype.forEach) === "function");
-
-const _havemapconstructor = (function ()
-{
-	if (_havemap)
-	{
-		try
-		{
-			if (new Map([[1, 2]]).size == 1)
-				return true;
-		}
-		catch (error)
-		{
-		}
-	}
-	return false;
-})();
-
-const _haveset = (typeof(Set) === "function" && typeof(Set.prototype.forEach) === "function");
-
-const _havesetconstructor = (function ()
-{
-	if (_haveset)
-	{
-		try
-		{
-			if (new Set([1, 2]).size == 2)
-				return true;
-		}
-		catch (error)
-		{
-		}
-		return false;
-	}
-	else
-		return false;
-})();
-
-export let _makemap;
-export let _setmap;
-export let _emptymap;
-export let _getmap;
-
-// helper functions that work with Maps and objects
-if (_havemap)
-{
-	_makemap = function _makemap(...items)
-	{
-		let map = new Map();
-
-		for (let [key, value] of items)
-			map.set(key, value);
-		return map;
-	};
-
-	_setmap = function _setmap(map, key, value)
-	{
-		if (map.__proto__ === Map.prototype)
-			map.set(key, value);
-		else
-			map[key] = value;
-	};
-
-	_emptymap = function _emptymap()
-	{
-		return new Map();
-	};
-
-	_getmap = function _getmap(map, key, value)
-	{
-		if (map.__proto__ === Map.prototype)
-			return map.get(key);
-		else
-			return map[key];
-	};
-}
-else
-{
-	_makemap = function _makemap(...items)
-	{
-		let map = {};
-
-		for (let [key, value] of items)
-			map[key] = value;
-		return map;
-	};
-
-	_setmap = function _setmap(map, key, value)
-	{
-		map[key] = value;
-	};
-
-	_emptymap = function _emptymap()
-	{
-		return {};
-	};
-
-	_getmap = function _getmap(map, key, value)
-	{
-		return map[key];
-	};
-}
-
-export let _emptyset;
-
-// Function used for making sets, when the Set constructor doesn't work (or we don't have sets)
-if (_haveset)
-{
-	_emptyset = function _emptyset()
-	{
-		return new Set();
-	};
-}
-else
-{
-	_emptyset = function _emptyset()
-	{
-		return new _Set();
-	};
-}
-
-export let _makeset = function _makeset(...items)
-{
-	let set = _emptyset();
-
-	for (let item of items)
-		set.add(item);
-	return set;
-};
 
 // Register the constructor function ``f`` under the name ``name`` with the UL4ON machinery
 export function register(name, f)
@@ -720,9 +590,7 @@ export class Decoder
 			case "D":
 			case "e":
 			case "E":
-				if (!_havemap && (typecode == "e" || typecode == "E"))
-					throw new ValueError("ordered dictionaries are not supported at position " + this.pos + " with path " + this.stack.join("/"));
-				result = _emptymap();
+				result = new Map();
 				this.stack.push(typecode === "d" || typecode === "D" ? "dict" : "odict");
 				if (typecode === "D" || typecode === "E")
 					this.backrefs.push(result);
@@ -734,14 +602,14 @@ export class Decoder
 					this.backup();
 					let key = this.load();
 					let value = this.load();
-					_setmap(result, key, value);
+					result.set(key, value);
 				}
 				this.stack.pop();
 				break;
 			case "y":
 			case "Y":
 				this.stack.push("set");
-				result = _makeset();
+				result = new Set();
 				if (typecode === "Y")
 					this.backrefs.push(result);
 				for (;;)
@@ -2374,7 +2242,7 @@ export function _set(obj)
 {
 	let iter = _iter(obj);
 
-	let result = _emptyset();
+	let result = new Set();
 	for (;;)
 	{
 		let value = iter.next();
@@ -2646,28 +2514,16 @@ export function _isobject(obj)
 };
 
 // Check if ``obj`` is a ``Map``
-export let _ismap = _havemap ? function _ismap(obj)
-	{
-		return obj !== null && typeof(obj) === "object" && typeof(obj.__proto__) === "object" && obj.__proto__ === Map.prototype;
-	}
-:
-	function _ismap(obj)
-	{
-		return false;
-	}
-;
+export function _ismap(obj)
+{
+	return obj !== null && typeof(obj) === "object" && typeof(obj.__proto__) === "object" && obj.__proto__ === Map.prototype;
+};
 
 	// Check if ``obj`` is a dict (i.e. a normal Javascript object or a ``Map``)
-export let _isdict = _havemap ? function _isdict(obj)
-	{
-		return _isobject(obj) || _ismap(obj);
-	}
-:
-	function _isdict(obj)
-	{
-		return _isobject(obj);
-	}
-;
+export function _isdict(obj)
+{
+	return _isobject(obj) || _ismap(obj);
+};
 
 // Repeat string ``str`` ``rep`` times
 export function _str_repeat(str, rep)
@@ -3517,7 +3373,7 @@ export class Signature extends Proto
 		let decname = name !== null ? name + "() " : "";
 
 		let varpos = this.varpos != null ? [] : null;
-		let varkw = this.varkw != null ? _emptymap() : null;
+		let varkw = this.varkw != null ? new Map() : null;
 
 		let count = this.countpos + this.countposdef + this.countposkw + this.countposkwdef + this.countkw + this.countkwdef;
 		let finalargs = Array(count).fill(null);
@@ -3573,7 +3429,7 @@ export class Signature extends Proto
 					{
 						if (varkw.has(argname))
 							throw new ArgumentError("Duplicate keyword argument " + argname + " for " + name + "()");
-						_setmap(varkw, argname, argvalue);
+						varkw.set(argname, argvalue);
 					}
 					else
 						throw new ArgumentError(name + "() doesn't support an argument named " + argname);
@@ -3869,9 +3725,9 @@ export function _extend(baseobj, attrs)
 	return Object.assign(Object.create(baseobj), attrs);
 };
 
-// Protocol objects for all builtin types
+// Type objects for all builtin types
 export let Protocol = {
-	attrs: _emptyset(),
+	attrs: new Set(),
 
 	ul4type: function ul4type()
 	{
@@ -3953,7 +3809,7 @@ export let Protocol = {
 
 export let StrProtocol = _extend(Protocol,
 {
-	attrs: _makeset(
+	attrs: new Set([
 		"split",
 		"rsplit",
 		"splitlines",
@@ -3970,7 +3826,7 @@ export let StrProtocol = _extend(Protocol,
 		"find",
 		"rfind",
 		"join"
-	),
+	]),
 
 	ul4type: function ul4type(obj)
 	{
@@ -4289,14 +4145,14 @@ expose(StrProtocol.endswith, ["suffix", "p"]);
 
 export let ListProtocol = _extend(Protocol,
 {
-	attrs: _makeset(
+	attrs: new Set([
 		"append",
 		"insert",
 		"pop",
 		"count",
 		"find",
 		"rfind"
-	),
+	]),
 
 	ul4type: function ul4type(obj)
 	{
@@ -4356,7 +4212,7 @@ expose(ListProtocol.rfind, ["sub", "p", "start", "p=", null, "end", "p=", null])
 
 export let MapProtocol = _extend(Protocol,
 {
-	attrs: _makeset("get", "items", "values", "update", "clear", "pop"),
+	attrs: new Set(["get", "items", "values", "update", "clear", "pop"]),
 
 	ul4type: function ul4type(obj)
 	{
@@ -4442,7 +4298,7 @@ expose(MapProtocol.pop, ["key", "p", "default", "p=", Object]);
 
 export let SetProtocol = _extend(Protocol,
 {
-	attrs: _makeset("add", "clear"),
+	attrs: new Set(["add", "clear"]),
 
 	ul4type: function ul4type(obj)
 	{
@@ -4467,7 +4323,7 @@ expose(SetProtocol.clear, []);
 
 export let DateProtocol = _extend(Protocol,
 {
-	attrs: _makeset(
+	attrs: new Set([
 		"weekday",
 		"week",
 		"calendar",
@@ -4478,7 +4334,7 @@ export let DateProtocol = _extend(Protocol,
 		"mimeformat",
 		"isoformat",
 		"yearday"
-	),
+	]),
 
 	ul4type: function ul4type(obj)
 	{
@@ -4555,7 +4411,7 @@ expose(DateProtocol.yearday, []);
 
 export let DateTimeProtocol = _extend(Protocol,
 {
-	attrs: _makeset(
+	attrs: new Set([
 		"weekday",
 		"week",
 		"calendar",
@@ -4570,7 +4426,7 @@ export let DateTimeProtocol = _extend(Protocol,
 		"mimeformat",
 		"isoformat",
 		"yearday"
-	),
+	]),
 
 	ul4type: function ul4type(obj)
 	{
@@ -4736,7 +4592,7 @@ expose(DateTimeProtocol.yearday, []);
 
 export let ObjectProtocol = _extend(Protocol,
 {
-	attrs: _makeset("get", "items", "values", "update", "clear"),
+	attrs: new Set(["get", "items", "values", "update", "clear"]),
 
 	ul4type: function ul4type(obj)
 	{
@@ -5606,7 +5462,7 @@ export class DictItemAST extends ItemArgBase
 	{
 		let key = this.key._handle_eval(context);
 		let value = this.value._handle_eval(context);
-		_setmap(result, key, value);
+		result.set(key, value);
 	}
 };
 
@@ -5636,19 +5492,19 @@ export class UnpackDictItemAST extends ItemArgBase
 			{
 				if (!_islist(subitem) || subitem.length != 2)
 					throw new ArgumentError("** requires a list of (key, value) pairs");
-				_setmap(result, subitem[0], subitem[1]);
+				result.set(subitem[0], subitem[1]);
 			}
 		}
 		else if (_ismap(item))
 		{
 			item.forEach(function(value, key) {
-				_setmap(result, key, value);
+				result.set(key, value);
 			});
 		}
 		else if (_isobject(item))
 		{
 			for (let key in item)
-				_setmap(result, key, item[key]);
+				result.set(key, item[key]);
 		}
 	}
 };
@@ -5887,7 +5743,7 @@ export class SetAST extends CodeAST
 
 	_eval(context)
 	{
-		let result = _emptyset();
+		let result = new Set();
 
 		for (let item of this.items)
 			item._handle_eval_set(context, result);
@@ -5949,7 +5805,7 @@ export class SetCompAST extends CodeAST
 
 		let localcontext = context.inheritvars();
 
-		let result = _emptyset();
+		let result = new Set();
 		for (let iter = _iter(container);;)
 		{
 			let item = iter.next();
@@ -6000,7 +5856,7 @@ export class DictAST extends CodeAST
 
 	_eval(context)
 	{
-		let result = _emptymap();
+		let result = new Map();
 		for (let item of this.items)
 			item._handle_eval_dict(context, result);
 		return result;
@@ -6046,7 +5902,7 @@ export class DictCompAST extends CodeAST
 
 		let localcontext = context.inheritvars();
 
-		let result = _emptymap();
+		let result = new Map();
 
 		for (let iter = _iter(container);;)
 		{
@@ -6060,7 +5916,7 @@ export class DictCompAST extends CodeAST
 			{
 				let key = this.key._handle_eval(localcontext);
 				let value = this.value._handle_eval(localcontext);
-				_setmap(result, key, value);
+				result.set(key, value);
 			}
 		}
 
@@ -9240,13 +9096,13 @@ export function _update(obj, others, kwargs)
 		if (_ismap(other))
 		{
 			other.forEach(function(value, key) {
-				_setmap(obj, key, value);
+				obj.set(key, value);
 			});
 		}
 		else if (_isobject(other))
 		{
 			for (let key in other)
-				_setmap(obj, key, other[key]);
+				obj.set(key, other[key]);
 		}
 		else if (_islist(other))
 		{
@@ -9254,14 +9110,14 @@ export function _update(obj, others, kwargs)
 			{
 				if (!_islist(item) || (item.length != 2))
 					throw new TypeError("update() requires a dict or a list of (key, value) pairs");
-				_setmap(obj, item[0], item[1]);
+				obj.set(item[0], item[1]);
 			}
 		}
 		else
 			throw new TypeError("update() requires a dict or a list of (key, value) pairs");
 	}
 	kwargs.forEach(function(value, key) {
-		_setmap(obj, key, value);
+		obj.set(key, value);
 	});
 	return null;
 };
