@@ -99,6 +99,8 @@ export let symbols = {
 	getitem: Symbol("ul4.getitem"),
 	// Set an item of a container object via UL4 UL4s `[] =` operator
 	setitem: Symbol("ul4.setitem"),
+	// Return the UL4 type of an object
+	type: Symbol("ul4.type"),
 };
 
 
@@ -257,10 +259,11 @@ export class Encoder
 		{
 			this._line("e");
 			++this._level;
-			obj.forEach(function(value, key) {
+			for (let [key, value] of obj)
+			{
 				this.dump(key);
 				this.dump(value);
-			}, this);
+			}
 			--this._level;
 			this._line("}");
 		}
@@ -280,9 +283,8 @@ export class Encoder
 		{
 			this._line("y");
 			++this._level;
-			obj.forEach(function(value) {
+			for (let value of obj)
 				this.dump(value);
-			}, this);
 			--this._level;
 			this._line("}");
 		}
@@ -753,11 +755,12 @@ export function _map2object(obj)
 	if (_ismap(obj))
 	{
 		let newobj = {};
-		obj.forEach(function(value, key){
+		for (let [key, value] of obj)
+		{
 			if (typeof(key) !== "string")
 				throw new TypeError("keys must be strings");
 			newobj[key] = value;
-		});
+		}
 		return newobj;
 	}
 	return obj;
@@ -1067,12 +1070,12 @@ export function _eq(obj1, obj2)
 					return false;
 			}
 			// Test that each attribute of ``obj2`` is also in ``obj1`` (the value has been tested before)
-			let result = true;
-			obj2.forEach(function(value, key) {
+			for (let [ket, value] of obj2)
+			{
 				if (!obj1.hasOwnProperty(key))
-					result = false;
-			}, this);
-			return result;
+					return false;
+			}
+			return true;
 		}
 		else
 			return false;
@@ -1082,12 +1085,13 @@ export function _eq(obj1, obj2)
 		if (_isobject(obj2))
 		{
 			// Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
-			obj1.forEach(function(value, key) {
+			for (let [key, value] of obj1)
+			{
 				if (!obj2.hasOwnProperty(key))
 					return false;
 				else if (!_eq(obj1.get(key), obj2[key]))
 					return false;
-			}, this);
+			}
 			// Test that each attribute of ``obj2`` is also in ``obj1`` (the value has been tested before)
 			for (let key in obj2)
 			{
@@ -1105,12 +1109,13 @@ export function _eq(obj1, obj2)
 				return false;
 			let result = true;
 			// Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
-			obj1.forEach(function(value, key) {
+			for (let [key, value] of obj1)
+			{
 				if (!obj2.has(key))
 					result = false;
 				else if (!_eq(obj1.get(key), obj2.get(key)))
 					result = false;
-			});
+			}
 			return result;
 		}
 		else
@@ -1127,10 +1132,11 @@ export function _eq(obj1, obj2)
 			if (obj1.size != obj2.size)
 				return false;
 			let result = true;
-			obj1.forEach(function(value) {
+			for (let value of obj1)
+			{
 				if (!obj2.has(value))
 					result = false;
-			});
+			}
 			return result;
 		}
 		else
@@ -1435,21 +1441,24 @@ export function _le(obj1, obj2)
 		{
 			if (_isset(obj2))
 			{
-				obj1.forEach(function(value) {
+				for (let value of obj1)
+				{
 					if (!obj2.has(value))
 						in1only = true;
-				});
-				obj2.forEach(function(value) {
+				}
+				for (let value of obj2)
+				{
 					if (!obj1.has(value))
 						in2only = true;
-				});
+				}
 			}
 			else if (_isul4set(obj2))
 			{
-				obj1.forEach(function(value) {
+				for (let value of obj1)
+				{
 					if (!obj2.items[value])
 						in1only = true;
-				});
+				}
 				for (let value in obj2.items)
 				{
 					if (!obj1.has(value))
@@ -1472,10 +1481,11 @@ export function _le(obj1, obj2)
 						break;
 					}
 				}
-				obj2.forEach(function(value) {
+				for (let value of obj2)
+				{
 					if (!obj1.items[value])
 						in2only = true;
-				});
+				}
 			}
 			else if (_isul4set(obj2))
 			{
@@ -1567,27 +1577,31 @@ export function _gt(obj1, obj2)
 		{
 			if (_isset(obj2))
 			{
-				obj1.forEach(function(value) {
+				for (let value of obj1)
+				{
 					if (!obj2.has(value))
 						in1only = true;
-				});
-				obj2.forEach(function(value) {
+				}
+				for (let value of obj2)
+				{
 					if (!obj1.has(value))
 						in2only = true;
-				});
+				}
 			}
 			else if (_isul4set(obj2))
 			{
-				obj1.forEach(function(value) {
+				for (let value of obj1)
+				{
 					if (!obj2.items[value])
 						in1only = true;
-				});
-				obj2.forEach(function(value) {
+				}
+				for (let value of obj2)
+				{
 					if (!obj1.has(value))
 					{
 						in2only = true;
 					}
-				});
+				}
 			}
 		}
 		else if (_isul4set(obj2))
@@ -1602,10 +1616,11 @@ export function _gt(obj1, obj2)
 						break;
 					}
 				}
-				obj2.forEach(function(value) {
+				for (let value of obj2)
+				{
 					if (!obj1.items[value])
 						in2only = true;
-				});
+				}
 			}
 			else if (_isul4set(obj2))
 			{
@@ -1697,21 +1712,24 @@ export function _ge(obj1, obj2)
 		{
 			if (_isset(obj2))
 			{
-				obj1.forEach(function(value) {
+				for (let value of obj1)
+				{
 					if (!obj2.has(value))
 						in1only = true;
-				});
-				obj2.forEach(function(value) {
+				}
+				for (let value of obj2)
+				{
 					if (!obj1.has(value))
 						in2only = true;
-				});
+				}
 			}
 			else if (_isul4set(obj2))
 			{
-				obj1.forEach(function(value) {
+				for (let value of obj1)
+				{
 					if (!obj2.items[value])
 						in1only = true;
-				});
+				}
 				for (let value in obj2.items)
 				{
 					if (!obj1.has(value))
@@ -1734,10 +1752,11 @@ export function _ge(obj1, obj2)
 						break;
 					}
 				}
-				obj2.forEach(function(value, key) {
+				for (let [key, value] of obj2)
+				{
 					if (!obj1.items[value])
 						in2only = true;
-				});
+				}
 			}
 			else if (_isul4set(obj2))
 			{
@@ -1801,9 +1820,8 @@ export function _iter(obj)
 	else if (_ismap(obj))
 	{
 		let keys = [];
-		obj.forEach(function(value, key) {
+		for (let [key, value] of obj)
 			keys.push(key);
-		});
 		return {
 			index: 0,
 			next: function()
@@ -1817,9 +1835,8 @@ export function _iter(obj)
 	else if (_isset(obj))
 	{
 		let values = [];
-		obj.forEach(function(item) {
+		for (let item of obj)
 			values.push(item);
-		});
 		return {
 			index: 0,
 			next: function()
@@ -1972,13 +1989,14 @@ function _map_repr(obj, ascii)
 	v.push("{");
 
 	let i = 0;
-	obj.forEach(function(value, key) {
+	for (let [key, value] of obj)
+	{
 		if (i++)
 			v.push(", ");
 		v.push(_repr_internal(key, ascii));
 		v.push(": ");
 		v.push(_repr_internal(value, ascii));
-	});
+	}
 
 	v.push("}");
 	return v.join("");
@@ -2010,11 +2028,12 @@ function _set_repr(obj, ascii)
 	else
 	{
 		let i = 0;
-		obj.forEach(function(value) {
+		for (let value of obj)
+		{
 			if (i++)
 				v.push(", ");
 			v.push(_repr_internal(value, ascii));
-		});
+		}
 	}
 	v.push("}");
 	return v.join("");
@@ -2618,7 +2637,8 @@ export function _asjson(obj)
 		let v = [];
 		v.push("{");
 		let first = true;
-		obj.forEach(function(value, key) {
+		for (let [key, value] of obj)
+		{
 			if (first)
 				first = false;
 			else
@@ -2626,7 +2646,7 @@ export function _asjson(obj)
 			v.push(_asjson(key));
 			v.push(": ");
 			v.push(_asjson(value));
-		});
+		}
 		v.push("}");
 		return v.join("");
 	}
@@ -3682,10 +3702,11 @@ export class _Set
 		// i.e. everything in ``other`` is also in ``this``
 		if (_isset(other))
 		{
-			other.forEach(function(value) {
+			for (let value of other)
+			{
 				if (!this.items[value])
 					return false;
-			}, this);
+			}
 			return true;
 		}
 		else if (_isul4set(other))
@@ -4248,18 +4269,16 @@ export let MapProtocol = _extend(Protocol,
 	items: function items(obj)
 	{
 		let result = [];
-		obj.forEach(function(value, key) {
+		for (let [key, value] of obj)
 			result.push([key, value]);
-		});
 		return result;
 	},
 
 	values: function values(obj)
 	{
 		let result = [];
-		obj.forEach(function(value, key) {
+		for (let [key, value] of obj)
 			result.push(value);
-		});
 		return result;
 	},
 
@@ -5497,9 +5516,8 @@ export class UnpackDictItemAST extends ItemArgBase
 		}
 		else if (_ismap(item))
 		{
-			item.forEach(function(value, key) {
+			for (let [key, value] of item)
 				result.set(key, value);
-			});
 		}
 		else if (_isobject(item))
 		{
@@ -5620,11 +5638,12 @@ export class UnpackDictArgAST extends ItemArgBase
 		}
 		else if (_ismap(item))
 		{
-			item.forEach(function(value, key) {
+			for (let [key, value] of item)
+			{
 				if (kwargs.hasOwnProperty(key))
 					throw new ArgumentError("duplicate keyword argument " + key);
 				kwargs[key] = value;
-			});
+			}
 		}
 		else if (_isobject(item))
 		{
@@ -9095,9 +9114,8 @@ export function _update(obj, others, kwargs)
 	{
 		if (_ismap(other))
 		{
-			other.forEach(function(value, key) {
+			for (let [key, value] of other)
 				obj.set(key, value);
-			});
 		}
 		else if (_isobject(other))
 		{
@@ -9116,9 +9134,8 @@ export function _update(obj, others, kwargs)
 		else
 			throw new TypeError("update() requires a dict or a list of (key, value) pairs");
 	}
-	kwargs.forEach(function(value, key) {
+	for (let [key, value] of kwargs)
 		obj.set(key, value);
-	});
 	return null;
 };
 
