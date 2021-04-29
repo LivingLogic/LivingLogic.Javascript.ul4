@@ -822,16 +822,16 @@ export function _callfunction(context, f, args, kwargs)
 
 export function _callobject(context, obj, args, kwargs)
 {
-	if (obj._ul4_callsignature === undefined || obj._ul4_callneedsobject === undefined || obj._ul4_callneedscontext === undefined)
+	if (obj._ul4_signature === undefined || obj._ul4_needsobject === undefined || obj._ul4_needscontext === undefined)
 		throw new TypeError(_repr(obj) + " is not callable by UL4");
-	return _internal_call(context, obj[symbols.call], obj.name, obj, obj._ul4_callsignature, obj._ul4_callneedscontext, obj._ul4_callneedsobject, args, kwargs);
+	return _internal_call(context, obj[symbols.call], obj.name, obj, obj._ul4_signature, obj._ul4_needscontext, obj._ul4_needsobject, args, kwargs);
 };
 
 export function _callrender(context, obj, args, kwargs)
 {
-	if (obj._ul4_rendersignature === undefined || obj._ul4_renderneedsobject === undefined || obj._ul4_renderneedscontext === undefined)
+	if (obj._ul4_signature === undefined || obj._ul4_needsobject === undefined || obj._ul4_needscontext === undefined)
 		throw new TypeError(_repr(obj) + " is not renderable by UL4");
-	return _internal_call(context, obj[symbols.render], obj.name, obj, obj._ul4_rendersignature, obj._ul4_renderneedscontext, obj._ul4_renderneedsobject, args, kwargs);
+	return _internal_call(context, obj[symbols.render], obj.name, obj, obj._ul4_signature, obj._ul4_needscontext, obj._ul4_needsobject, args, kwargs);
 };
 
 export function _call(context, f, args, kwargs)
@@ -1123,7 +1123,6 @@ export function _eq(obj1, obj2)
 	}
 	else if (_isset(obj1))
 	{
-		// We don't have to test for ``_Set`` as ``_Set`` implements ``symbols.eq``
 		if (_isset(obj2))
 		{
 			// Shortcut, if it's the same object
@@ -1210,9 +1209,9 @@ export function _cmp(operator, obj1, obj2)
 			return obj2.length > obj1.length ? -1 : 0;
 		}
 	}
-	else if (_isset(obj1) || _isul4set(obj1))
+	else if (_isset(obj1))
 	{
-		if (_isset(obj2) || _isul4set(obj2))
+		if (_isset(obj2))
 		{
 			let in1only = false;
 			let in2only = false;
@@ -1303,72 +1302,15 @@ export function _lt(obj1, obj2)
 	{
 		if (_isset(obj2))
 		{
-			if (_isset(obj2))
+			for (let key in obj1)
 			{
-				for (let key in obj1)
-				{
-					if (!obj2.has(obj1[key]))
-						in1only = true;
-				}
-				for (let key in obj2)
-				{
-					if (!obj1.has(obj2[key]))
-						in2only = true;
-				}
+				if (!obj2.has(obj1[key]))
+					in1only = true;
 			}
-			else if (_isul4set(obj2))
+			for (let key in obj2)
 			{
-				for (let key in obj1)
-				{
-					if (!obj2.items[obj1[key]])
-						in1only = true;
-				}
-				for (let value in obj2.items)
-				{
-					if (!obj1.has(value))
-					{
-						in2only = true;
-						break;
-					}
-				}
-			}
-		}
-		else if (_isul4set(obj2))
-		{
-			if (_isset(obj2))
-			{
-				for (let value in obj1.items)
-				{
-					if (!obj2.has(value))
-					{
-						in1only = true;
-						break;
-					}
-				}
-				for (let key in obj2)
-				{
-					if (!obj1.items[obj2[key]])
-						in2only = true;
-				}
-			}
-			else if (_isul4set(obj2))
-			{
-				for (let value in obj1.items)
-				{
-					if (!obj2.items[value])
-					{
-						in1only = true;
-						break;
-					}
-				}
-				for (let value in obj2.items)
-				{
-					if (!obj1.items[value])
-					{
-						in2only = true;
-						break;
-					}
-				}
+				if (!obj1.has(obj2[key]))
+					in2only = true;
 			}
 		}
 		else
@@ -1432,7 +1374,7 @@ export function _le(obj1, obj2)
 		}
 	}
 	// FIXME: Set comparison
-	else if (_isset(obj1) || _isul4set(obj1))
+	else if (_isset(obj1))
 	{
 		let in1only = false;
 		let in2only = false;
@@ -1452,60 +1394,8 @@ export function _le(obj1, obj2)
 						in2only = true;
 				}
 			}
-			else if (_isul4set(obj2))
-			{
-				for (let value of obj1)
-				{
-					if (!obj2.items[value])
-						in1only = true;
-				}
-				for (let value in obj2.items)
-				{
-					if (!obj1.has(value))
-					{
-						in2only = true;
-						break;
-					}
-				}
-			}
-		}
-		else if (_isul4set(obj2))
-		{
-			if (_isset(obj2))
-			{
-				for (let value in obj1.items)
-				{
-					if (!obj2.has(value))
-					{
-						in1only = true;
-						break;
-					}
-				}
-				for (let value of obj2)
-				{
-					if (!obj1.items[value])
-						in2only = true;
-				}
-			}
-			else if (_isul4set(obj2))
-			{
-				for (let value in obj1.items)
-				{
-					if (!obj2.items[value])
-					{
-						in1only = true;
-						break;
-					}
-				}
-				for (let value in obj2.items)
-				{
-					if (!obj1.items[value])
-					{
-						in2only = true;
-						break;
-					}
-				}
-			}
+			else
+				_unorderable(operator, obj1, obj2);
 		}
 		else
 			_unorderable(operator, obj1, obj2);
@@ -1568,7 +1458,7 @@ export function _gt(obj1, obj2)
 		}
 	}
 	// FIXME: Set comparison
-	else if (_isset(obj1) || _isul4set(obj1))
+	else if (_isset(obj1))
 	{
 		let in1only = false;
 		let in2only = false;
@@ -1588,59 +1478,8 @@ export function _gt(obj1, obj2)
 						in2only = true;
 				}
 			}
-			else if (_isul4set(obj2))
-			{
-				for (let value of obj1)
-				{
-					if (!obj2.items[value])
-						in1only = true;
-				}
-				for (let value of obj2)
-				{
-					if (!obj1.has(value))
-					{
-						in2only = true;
-					}
-				}
-			}
-		}
-		else if (_isul4set(obj2))
-		{
-			if (_isset(obj2))
-			{
-				for (let value in obj1.items)
-				{
-					if (!obj2.has(value))
-					{
-						in1only = true;
-						break;
-					}
-				}
-				for (let value of obj2)
-				{
-					if (!obj1.items[value])
-						in2only = true;
-				}
-			}
-			else if (_isul4set(obj2))
-			{
-				for (let value in obj1.items)
-				{
-					if (!obj2.items[value])
-					{
-						in1only = true;
-						break;
-					}
-				}
-				for (let value in obj2.items)
-				{
-					if (!obj1.items[value])
-					{
-						in2only = true;
-						break;
-					}
-				}
-			}
+			else
+				_unorderable(operator, obj1, obj2);
 		}
 		else
 			_unorderable(operator, obj1, obj2);
@@ -1703,7 +1542,7 @@ export function _ge(obj1, obj2)
 		}
 	}
 	// FIXME: Set comparison
-	else if (_isset(obj1) || _isul4set(obj1))
+	else if (_isset(obj1))
 	{
 		let in1only = false;
 		let in2only = false;
@@ -1723,60 +1562,8 @@ export function _ge(obj1, obj2)
 						in2only = true;
 				}
 			}
-			else if (_isul4set(obj2))
-			{
-				for (let value of obj1)
-				{
-					if (!obj2.items[value])
-						in1only = true;
-				}
-				for (let value in obj2.items)
-				{
-					if (!obj1.has(value))
-					{
-						in2only = true;
-						break;
-					}
-				}
-			}
-		}
-		else if (_isul4set(obj2))
-		{
-			if (_isset(obj2))
-			{
-				for (let value in obj1.items)
-				{
-					if (!obj2.has(value))
-					{
-						in1only = true;
-						break;
-					}
-				}
-				for (let [key, value] of obj2)
-				{
-					if (!obj1.items[value])
-						in2only = true;
-				}
-			}
-			else if (_isul4set(obj2))
-			{
-				for (let value in obj1.items)
-				{
-					if (!obj2.items[value])
-					{
-						in1only = true;
-						break;
-					}
-				}
-				for (let value in obj2.items)
-				{
-					if (!obj1.items[value])
-					{
-						in2only = true;
-						break;
-					}
-				}
-			}
+			else
+				_unorderable(operator, obj1, obj2);
 		}
 		else
 			_unorderable(operator, obj1, obj2);
@@ -1846,10 +1633,6 @@ export function _iter(obj)
 				return {value: values[this.index++], done: false};
 			}
 		};
-	}
-	else if (_isul4set(obj))
-	{
-		return _iter(obj.items);
 	}
 	else if (_isobject(obj))
 	{
@@ -2134,141 +1917,40 @@ function _datetime_str(obj)
 	return result;
 };
 
-export function _str(obj)
+// Convert ``obj`` to a string
+export function _str(obj="")
 {
-	if (obj === undefined)
-		return "";
-	else if (obj === null)
-		return "";
-	else if (obj === false)
-		return "False";
-	else if (obj === true)
-		return "True";
-	else if (typeof(obj) === "string")
-		return obj;
-	else if (typeof(obj) === "number")
-		return obj.toString();
-	else if (_isdate(obj))
-		return _date_str(obj);
-	else if (_isdatetime(obj))
-		return _datetime_str(obj);
-	else if (_islist(obj))
-		return _list_repr(obj);
-	else if (_isset(obj))
-		return _set_repr(obj);
-	else if (_ismap(obj))
-		return _map_repr(obj);
-	else if (typeof(obj) === "object" && typeof(obj[symbols.str]) === "function")
-		return obj[symbols.str]();
-	else if (typeof(obj) === "object" && typeof(obj[symbols.repr]) === "function")
-		return obj[symbols.repr]();
-	else if (_isobject(obj))
-		return _object_repr(obj);
-	else
-		return _repr(obj);
-};
+	return strtype[symbols.call](obj);
+}
 
 // Convert ``obj`` to bool, according to its "truth value"
 export function _bool(obj)
 {
-	if (obj === undefined || obj === null || obj === false || obj === 0 || obj === "")
-		return false;
-	else
-	{
-		if (typeof(obj) === "object" && typeof(obj[symbols.bool]) === "function")
-			return obj[symbols.bool]();
-		if (_islist(obj))
-			return obj.length !== 0;
-		else if (_ismap(obj) || _isset(obj))
-			return obj.size != 0;
-		else if (_isobject(obj))
-		{
-			for (let key in obj)
-			{
-				if (!obj.hasOwnProperty(key))
-					continue;
-				return true;
-			}
-			return false;
-		}
-		return true;
-	}
+	return booltype[symbols.call](obj);
 };
 
 // Convert ``obj`` to an integer (if ``base`` is given ``obj`` must be a string and ``base`` is the base for the conversion (default is 10))
 export function _int(obj=0, base=null)
 {
-	let result;
-	if (base !== null)
-	{
-		if (typeof(obj) !== "string" || !_isint(base))
-			throw new TypeError("int() requires a string and an integer");
-		result = parseInt(obj, base);
-		if (result.toString() == "NaN")
-			throw new TypeError("invalid literal for int()");
-		return result;
-	}
-	else
-	{
-		if (typeof(obj) === "string")
-		{
-			result = parseInt(obj);
-			if (result.toString() == "NaN")
-			throw new TypeError("invalid literal for int()");
-			return result;
-		}
-		else if (typeof(obj) === "number")
-			return Math.floor(obj);
-		else if (obj === true)
-			return 1;
-		else if (obj === false)
-			return 0;
-		throw new TypeError("int() argument must be a string or a number");
-	}
+	return inttype[symbols.call](obj, base);
 };
 
 // Convert ``obj`` to a float
 export function _float(obj)
 {
-	if (typeof(obj) === "string")
-		return parseFloat(obj);
-	else if (typeof(obj) === "number")
-		return obj;
-	else if (obj === true)
-		return 1.0;
-	else if (obj === false)
-		return 0.0;
-	throw new TypeError("float() argument must be a string or a number");
+	return floattype[symbols.call](obj);
 };
 
 // Convert ``obj`` to a list
 export function _list(obj)
 {
-	let iter = _iter(obj);
-
-	let result = [];
-	for (;;)
-	{
-		let value = iter.next();
-		if (value.done)
-			return result;
-		result.push(value.value);
-	}
+	return listtype[symbols.call](obj);
 };
 
 // Convert ``obj`` to a set
-export function _set(obj)
+export function _set(obj=[])
 {
-	let iter = _iter(obj);
-
-	let result = new Set();
-	for (;;)
-	{
-		let value = iter.next();
-		if (value.done)
-			return result;
-		result.add(value.value);
-	}
+	return settype[symbols.call](obj);
 };
 
 // Return the length of ``sequence``
@@ -2290,23 +1972,30 @@ export function _len(sequence)
 
 export function _type(obj)
 {
-	if (obj === null)
-		return "none";
-	else if (obj === false || obj === true)
-		return "bool";
-	else if (obj === undefined)
-		return "undefined";
-	else if (typeof(obj) === "number")
-		return Math.round(obj) == obj ? "int" : "float";
-	else if (typeof(obj) === "function")
-		return "function";
+	if (obj !== null && typeof(obj[symbols.type]) === "function")
+		return obj[symbols.type]();
+	else if (_isbool(obj))
+		return booltype;
+	else if (_isint(obj))
+		return inttype;
+	else if (_isfloat(obj))
+		return floattype;
+	else if (_isstr(obj))
+		return strtype;
+	else if (_islist(obj))
+		return listtype;
+	else if (_isdate(obj))
+		return datetype;
+	else if (_isset(obj))
+		return settype;
+	else if (_ismap(obj))
+		return maptype;
+	else if (_isdatetime(obj))
+		return datetimetype;
+	else if (_isobject(obj))
+		return objecttype;
 	else
-	{
-		if (typeof(obj.ul4type) === "function")
-			return obj.ul4type();
-		else
-			return Protocol.get(obj).ul4type(obj);
-	}
+		throw new TypeError("Can't find a type for " + _repr(obj));
 };
 
 // (this is non-trivial, because it follows the Python semantic of ``-5 % 2`` being ``1``)
@@ -2330,10 +2019,10 @@ export function _mod(obj1, obj2)
 // If ``obj`` doesn't have such an attribute, return ``default_``
 export function _getattr(obj, attrname, default_=null)
 {
-	let proto = Protocol.get(obj);
+	let type = _type(obj);
 	try
 	{
-		return proto.getattr(obj, attrname);
+		return type.getattr(obj, attrname);
 	}
 	catch (exc)
 	{
@@ -2508,16 +2197,6 @@ export function _isset(obj)
 export function _isexception(obj)
 {
 	return (obj instanceof Exception);
-};
-
-export function _isul4set(obj)
-{
-	return (obj instanceof _Set);
-};
-
-export function _isanyset(obj)
-{
-	return (_isset(obj) || _isul4set(obj));
 };
 
 // Check if ``obj`` is an iterator
@@ -3561,170 +3240,6 @@ export class Signature extends Proto
 	}
 };
 
-// When we don't have a real ``Set`` type, emulate one that supports strings
-export class _Set
-{
-	constructor(...items)
-	{
-		this.items = {};
-		this.add(...items);
-	}
-
-	add(...items)
-	{
-		for (let item of items)
-			this.items[item] = true;
-	}
-
-	clear()
-	{
-		this.items = {};
-	}
-
-	[symbols.getattr](attrname)
-	{
-		let self = this;
-		switch (attrname)
-		{
-			case "add":
-				return expose(this.bind.add(this), ["items", "*"]);
-			default:
-				throw new AttributeError(this, attrname);
-		}
-	}
-
-	[symbols.contains](item)
-	{
-		return this.items[item] || false;
-	}
-
-	has(item)
-	{
-		return this.items[item] || false;
-	}
-
-	[symbols.bool]()
-	{
-		for (let item in this.items)
-		{
-			if (!this.items.hasOwnProperty(item))
-				continue;
-			return true;
-		}
-		return false;
-	}
-
-	[symbols.repr]()
-	{
-		let v = [];
-		v.push("{");
-		let i = 0;
-		for (let item in this.items)
-		{
-			if (!this.items.hasOwnProperty(item))
-				continue;
-			if (i++)
-				v.push(", ");
-			v.push(_repr(item));
-		}
-		if (!i)
-			v.push("/");
-		v.push("}");
-		return v.join("");
-	}
-
-	[symbols.eq](other)
-	{
-		// We'll check that everything in ``this`` is in ``other``
-		// and if both have the same number of items they are equal
-		if (_isset(other))
-		{
-			let count = 0;
-			for (let item in this.items)
-			{
-				if (!other.has(item))
-					return false;
-				// count the number of items we have
-				++count;
-			}
-			return other.size == count;
-		}
-		else if (_isul4set(other))
-		{
-			let count = 0;
-			for (let item in this.items)
-			{
-				if (!other[item])
-					return false;
-				// count the number of items we have
-				++count;
-			}
-			// Subtract the number of items that ``other`` has
-			for (let item in other.items)
-				--count;
-			return count == 0;
-		}
-		else
-			return false;
-	}
-
-	[symbols.le](other)
-	{
-		// check that ``this`` is a subset of ``other``,
-		// i.e. everything in ``this`` is also in ``other``
-		if (_isset(other))
-		{
-			let count = 0;
-			for (let item in this.items)
-			{
-				if (!other.has(item))
-					return false;
-			}
-			return true;
-		}
-		else if (_isul4set(other))
-		{
-			let count = 0;
-			for (let item in this.items)
-			{
-				if (!other.items[item])
-					return false;
-			}
-			return true;
-		}
-		else
-			_unorderable("<", this, other);
-	}
-
-	[symbols.ge](other)
-	{
-		// check that ``this`` is a superset of ``other``,
-		// i.e. everything in ``other`` is also in ``this``
-		if (_isset(other))
-		{
-			for (let value of other)
-			{
-				if (!this.items[value])
-					return false;
-			}
-			return true;
-		}
-		else if (_isul4set(other))
-		{
-			let count = 0;
-			for (let key in other.items)
-			{
-				if (!this.items[key])
-					return false;
-			}
-			return true;
-		}
-		else
-			_unorderable("<=", this, other);
-	}
-};
-
-_Set.prototype.__type__ = "set";
 
 // Adds name and signature to a function/method and makes the method callable in templates
 export function expose(f, signature, options)
@@ -3747,6 +3262,761 @@ export function _extend(baseobj, attrs)
 };
 
 // Type objects for all builtin types
+export class Type
+{
+	constructor(module, name, doc=null)
+	{
+		this.module = module;
+		this.name = name;
+		this.doc = doc;
+		this.content = {};
+	}
+
+	[symbols.getattr](attrname)
+	{
+		switch (attrname)
+		{
+			case "__module__":
+				return this.module;
+			case "__name__":
+				return this.name;
+			case "__doc__":
+				return this.doc;
+			default:
+				if (this.content.hasOwnProperty(attrname))
+					return this.content[attrname];
+				throw new AttributeError(this, attrname);
+		}
+	}
+
+	[symbols.repr]()
+	{
+		if (this.module === null)
+			return "<type " + this.name + ">";
+		else
+			return "<type " + this.module + "." + this.name + ">";
+	}
+
+	dir()
+	{
+		return this.attrs;
+	}
+
+	getattr(obj, attrname)
+	{
+		if (obj === null || obj === undefined)
+			throw new AttributeError(obj, attrname);
+		else if (typeof(obj[symbols.getattr]) === "function")
+			return obj[symbols.getattr](attrname);
+		else if (this.attrs.has(attrname))
+		{
+			let attr = this[attrname];
+			let realattr = function realattr(...args) {
+				return attr.apply(this, [obj, ...args]);
+			};
+			// Unfortunately we can't set ``realattr.name``;
+			realattr._ul4_name = attr._ul4_name || attr.name;
+			realattr._ul4_signature = attr._ul4_signature;
+			realattr._ul4_needsobject = attr._ul4_needsobject;
+			realattr._ul4_needscontext = attr._ul4_needscontext;
+			return realattr;
+		}
+		else
+			throw new AttributeError(obj, attrname);
+	}
+
+	hasattr(obj, attrname)
+	{
+		if (obj === null || obj === undefined)
+			return false;
+		else if (typeof(obj[symbols.getattr]) === "function")
+		{
+			try
+			{
+				obj[symbols.getattr](attrname);
+				return true;
+			}
+			catch (exc)
+			{
+				if (exc instanceof AttributeError && exc.obj === object)
+					return false;
+				else
+					throw exc;
+			}
+		}
+		else
+			return this.attrs.has(attrname);
+	}
+};
+
+Type.prototype.attrs = new Set();
+
+
+export class StrType extends Type
+{
+	[symbols.call](obj="")
+	{
+		if (obj === undefined)
+			return "";
+		else if (obj === null)
+			return "";
+		else if (obj === false)
+			return "False";
+		else if (obj === true)
+			return "True";
+		else if (typeof(obj) === "string")
+			return obj;
+		else if (typeof(obj) === "number")
+			return obj.toString();
+		else if (_isdate(obj))
+			return _date_str(obj);
+		else if (_isdatetime(obj))
+			return _datetime_str(obj);
+		else if (_islist(obj))
+			return _list_repr(obj);
+		else if (_isset(obj))
+			return _set_repr(obj);
+		else if (_ismap(obj))
+			return _map_repr(obj);
+		else if (typeof(obj) === "object" && typeof(obj[symbols.str]) === "function")
+			return obj[symbols.str]();
+		else if (typeof(obj) === "object" && typeof(obj[symbols.repr]) === "function")
+			return obj[symbols.repr]();
+		else if (_isobject(obj))
+			return _object_repr(obj);
+		else
+			return _repr(obj);
+	}
+
+	count(obj, sub, start=null, end=null)
+	{
+		return _count(obj, sub, start, end);
+	}
+
+	find(obj, sub, start=null, end=null)
+	{
+		return _find(obj, sub, start, end);
+	}
+
+	rfind(obj, sub, start=null, end=null)
+	{
+		return _rfind(obj, sub, start, end);
+	}
+
+	replace(obj, old, new_, count=null)
+	{
+		if (count === null)
+			count = obj.length;
+
+		let result = [];
+		while (obj.length)
+		{
+			let pos = obj.indexOf(old);
+			if (pos === -1 || !count--)
+			{
+				result.push(obj);
+				break;
+			}
+			result.push(obj.substr(0, pos));
+			result.push(new_);
+			obj = obj.substr(pos + old.length);
+		}
+		return result.join("");
+	}
+
+	strip(obj, chars=null)
+	{
+		chars = chars || " \r\n\t";
+		if (typeof(chars) !== "string")
+			throw new TypeError("strip() requires a string argument");
+
+		while (obj && chars.indexOf(obj[0]) >= 0)
+			obj = obj.substr(1);
+		while (obj && chars.indexOf(obj[obj.length-1]) >= 0)
+			obj = obj.substr(0, obj.length-1);
+		return obj;
+	}
+
+	lstrip(obj, chars=null)
+	{
+		chars = chars || " \r\n\t";
+		if (typeof(chars) !== "string")
+			throw new TypeError("lstrip() requires a string argument");
+
+		while (obj && chars.indexOf(obj[0]) >= 0)
+			obj = obj.substr(1);
+		return obj;
+	}
+
+	rstrip(obj, chars=null)
+	{
+		chars = chars || " \r\n\t";
+		if (typeof(chars) !== "string")
+			throw new TypeError("rstrip() requires a string argument");
+
+		while (obj && chars.indexOf(obj[obj.length-1]) >= 0)
+			obj = obj.substr(0, obj.length-1);
+		return obj;
+	}
+
+	split(obj, sep=null, maxsplit=null)
+	{
+		if (sep !== null && typeof(sep) !== "string")
+			throw new TypeError("split() requires a string");
+
+		if (maxsplit === null)
+		{
+			let result = obj.split(sep !== null ? sep : /[ \n\r\t]+/);
+			if (sep === null)
+			{
+				if (result.length && !result[0].length)
+					result.splice(0, 1);
+				if (result.length && !result[result.length-1].length)
+					result.splice(-1);
+			}
+			return result;
+		}
+		else
+		{
+			if (sep !== null)
+			{
+				let result = [];
+				while (obj.length)
+				{
+					let pos = obj.indexOf(sep);
+					if (pos === -1 || !maxsplit--)
+					{
+						result.push(obj);
+						break;
+					}
+					result.push(obj.substr(0, pos));
+					obj = obj.substr(pos + sep.length);
+				}
+				return result;
+			}
+			else
+			{
+				let result = [];
+				while (obj.length)
+				{
+					obj = StrProtocol.lstrip(obj, null);
+					let part;
+					if (!maxsplit--)
+						 part = obj; // Take the rest of the string
+					else
+						part = obj.split(/[ \n\r\t]+/, 1)[0];
+					if (part.length)
+						result.push(part);
+					obj = obj.substr(part.length);
+				}
+				return result;
+			}
+		}
+	}
+
+	rsplit(obj, sep=null, maxsplit=null)
+	{
+		if (sep !== null && typeof(sep) !== "string")
+			throw new TypeError("rsplit() requires a string as second argument");
+
+		if (maxsplit === null)
+		{
+			let result = obj.split(sep !== null ? sep : /[ \n\r\t]+/);
+			if (sep === null)
+			{
+				if (result.length && !result[0].length)
+					result.splice(0, 1);
+				if (result.length && !result[result.length-1].length)
+					result.splice(-1);
+			}
+			return result;
+		}
+		else
+		{
+			if (sep !== null)
+			{
+				let result = [];
+				while (obj.length)
+				{
+					let pos = obj.lastIndexOf(sep);
+					if (pos === -1 || !maxsplit--)
+					{
+						result.unshift(obj);
+						break;
+					}
+					result.unshift(obj.substr(pos+sep.length));
+					obj = obj.substr(0, pos);
+				}
+				return result;
+			}
+			else
+			{
+				let result = [];
+				while (obj.length)
+				{
+					obj = StrProtocol.rstrip(obj);
+					let part;
+					if (!maxsplit--)
+						 part = obj; // Take the rest of the string
+					else
+					{
+						part = obj.split(/[ \n\r\t]+/);
+						part = part[part.length-1];
+					}
+					if (part.length)
+						result.unshift(part);
+					obj = obj.substr(0, obj.length-part.length);
+				}
+				return result;
+			}
+		}
+	}
+
+	splitlines(obj, keepends=false)
+	{
+		let pos = 0;
+		let startpos;
+		let lookingAtLineEnd = function lookingAtLineEnd()
+		{
+			let c = obj[pos];
+			if (c === '\n' || c == '\u000B' || c == '\u000C' || c == '\u001C' || c == '\u001D' || c == '\u001E' || c == '\u0085' || c == '\u2028' || c == '\u2029')
+				return 1;
+			if (c === '\r')
+			{
+				if (pos == length-1)
+					return 1;
+				if (obj[pos+1] === '\n')
+					return 2;
+				return 1;
+			}
+			return 0;
+		};
+
+		let result = [], length = obj.length;
+
+		for (pos = 0, startpos = 0;;)
+		{
+			if (pos >= length)
+			{
+				if (startpos != pos)
+					result.push(obj.substring(startpos));
+				return result;
+			}
+			let lineendlen = lookingAtLineEnd();
+			if (!lineendlen)
+				++pos;
+			else
+			{
+				let endpos = pos + (keepends ? lineendlen : 0);
+				result.push(obj.substring(startpos, endpos));
+				pos += lineendlen;
+				startpos = pos;
+			}
+		}
+	}
+
+	lower(obj)
+	{
+		return obj.toLowerCase();
+	}
+
+	upper(obj)
+	{
+		return obj.toUpperCase();
+	}
+
+	capitalize(obj)
+	{
+		if (obj.length)
+			obj = obj[0].toUpperCase() + obj.slice(1).toLowerCase();
+		return obj;
+	}
+
+	join(obj, iterable)
+	{
+		let resultlist = [];
+		for (let iter = _iter(iterable);;)
+		{
+			let item = iter.next();
+			if (item.done)
+				break;
+			resultlist.push(item.value);
+		}
+		return resultlist.join(obj);
+	}
+
+	startswith(obj, prefix)
+	{
+		if (typeof(prefix) === "string")
+			return obj.substr(0, prefix.length) === prefix;
+		else if (_islist(prefix))
+		{
+			for (let singlepre of prefix)
+			{
+				if (obj.substr(0, singlepre.length) === singlepre)
+					return true;
+			}
+			return false;
+		}
+		else
+			throw new TypeError("startswith() argument must be string");
+	}
+
+	endswith(obj, suffix)
+	{
+		if (typeof(suffix) === "string")
+			return obj.substr(obj.length-suffix.length) === suffix;
+		else if (_islist(suffix))
+		{
+			for (let singlesuf of suffix)
+			{
+				if (obj.substr(obj.length-singlesuf.length) === singlesuf)
+					return true;
+			}
+			return false;
+		}
+		else
+			throw new TypeError("endswith() argument must be string or list of strings");
+	}
+};
+
+StrType.prototype.attrs = new Set([
+	"split",
+	"rsplit",
+	"splitlines",
+	"strip",
+	"lstrip",
+	"rstrip",
+	"upper",
+	"lower",
+	"capitalize",
+	"startswith",
+	"endswith",
+	"replace",
+	"count",
+	"find",
+	"rfind",
+	"join"
+]);
+
+expose(StrType.prototype.count, ["sub", "p", "start", "p=", null, "end", "p=", null]);
+expose(StrType.prototype.find, ["sub", "p", "start", "p=", null, "end", "p=", null]);
+expose(StrType.prototype.rfind, ["sub", "p", "start", "p=", null, "end", "p=", null]);
+expose(StrType.prototype.replace, ["old", "p", "new", "p", "count", "p=", null]);
+expose(StrType.prototype.strip, ["chars", "p=", null]);
+expose(StrType.prototype.lstrip, ["chars", "p=", null]);
+expose(StrType.prototype.rstrip, ["chars", "p=", null]);
+expose(StrType.prototype.split, ["sep", "pk=", null, "maxsplit", "pk=", null]);
+expose(StrType.prototype.rsplit, ["sep", "pk=", null, "maxsplit", "pk=", null]);
+expose(StrType.prototype.splitlines, ["keepends", "pk=", false]);
+expose(StrType.prototype.lower, []);
+expose(StrType.prototype.upper, []);
+expose(StrType.prototype.capitalize, []);
+expose(StrType.prototype.join, ["iterable", "p"]);
+expose(StrType.prototype.startswith, ["prefix", "p"]);
+expose(StrType.prototype.endswith, ["suffix", "p"]);
+expose(StrType.prototype, ["obj", "p=", ""], {name: "str"});
+
+export let strtype = new StrType(null, "str", "A string.");
+
+
+
+export class ListType extends Type
+{
+	// Convert ``obj`` to a list
+	[symbols.call](obj)
+	{
+		let iter = _iter(obj);
+
+		let result = [];
+		for (;;)
+		{
+			let value = iter.next();
+			if (value.done)
+				return result;
+			result.push(value.value);
+		}
+	}
+
+	append(obj, items)
+	{
+		for (let item of items)
+			obj.push(item);
+		return null;
+	}
+
+	insert(obj, pos, items)
+	{
+		if (pos < 0)
+			pos += obj.length;
+
+		for (let item of items)
+			obj.splice(pos++, 0, item);
+		return null;
+	}
+
+	pop(obj, pos)
+	{
+		if (pos < 0)
+			pos += obj.length;
+
+		let result = obj[pos];
+		obj.splice(pos, 1);
+		return result;
+	}
+
+	count(obj, sub, start=null, end=null)
+	{
+		return _count(obj, sub, start, end);
+	}
+
+	find(obj, sub, start=null, end=null)
+	{
+		return _find(obj, sub, start, end);
+	}
+
+	rfind(obj, sub, start=null, end=null)
+	{
+		return _rfind(obj, sub, start, end);
+	}
+};
+
+ListType.prototype.attrs = new Set([
+	"append",
+	"insert",
+	"pop",
+	"count",
+	"find",
+	"rfind"
+]);
+
+expose(ListType.prototype.append, ["items", "*"]);
+expose(ListType.prototype.insert, ["pos", "p", "items", "*"]);
+expose(ListType.prototype.pop, ["pos", "p=", -1]);
+expose(ListType.prototype.count, ["sub", "p", "start", "p=", null, "end", "p=", null]);
+expose(ListType.prototype.find, ["sub", "p", "start", "p=", null, "end", "p=", null]);
+expose(ListType.prototype.rfind, ["sub", "p", "start", "p=", null, "end", "p=", null]);
+expose(ListType.prototype, ["iterable", "p=", []], {name: "list"});
+
+export let listtype = new ListType(null, "list", "A list.");
+
+
+
+class MapType extends Type
+{
+	getattr(obj, attrname)
+	{
+		if (this.attrs.has(attrname))
+		{
+			let attr = this[attrname];
+			let realattr = function realattr(...args) {
+				return attr.apply(this, [obj, ...args]);
+			};
+			// Unfortunately we can't set ``realattr.name``;
+			realattr._ul4_name = attr._ul4_name || attr.name;
+			realattr._ul4_signature = attr._ul4_signature;
+			realattr._ul4_needsobject = attr._ul4_needsobject;
+			realattr._ul4_needscontext = attr._ul4_needscontext;
+			return realattr;
+		}
+		else
+			return obj.get(attrname);
+	}
+
+	get(obj, key, default_=null)
+	{
+		if (obj.has(key))
+			return obj.get(key);
+		return default_;
+	}
+
+	items(obj)
+	{
+		let result = [];
+		for (let [key, value] of obj)
+			result.push([key, value]);
+		return result;
+	}
+
+	values(obj)
+	{
+		let result = [];
+		for (let [key, value] of obj)
+			result.push(value);
+		return result;
+	}
+
+	update(obj, others, kwargs)
+	{
+		return _update(obj, others, kwargs);
+	}
+
+	clear(obj)
+	{
+		obj.clear();
+		return null;
+	}
+
+	pop(obj, key, default_=Object)
+	{
+		if (!obj.has(key))
+		{
+			if (default_ === Object)
+				throw new KeyError(obj, key);
+			else
+				return default_;
+		}
+		let result = obj.get(key);
+		obj.delete(key);
+		return result;
+	}
+};
+
+MapType.prototype.attrs = new Set(["get", "items", "values", "update", "clear", "pop"]);
+
+expose(MapType.prototype.get, ["key", "p", "default", "p=", null]);
+expose(MapType.prototype.items, []);
+expose(MapType.prototype.values, []);
+expose(MapType.prototype.update, ["others", "*", "kwargs", "**"]);
+expose(MapType.prototype.clear, []);
+expose(MapType.prototype.pop, ["key", "p", "default", "p=", Object]);
+
+export let maptype = new MapType(null, "dict", "A dictionary.");
+
+
+export class SetType extends Type
+{
+	// Convert ``obj`` to a set
+	[symbols.call](obj=[])
+	{
+		let iter = _iter(obj);
+
+		let result = new Set();
+		for (;;)
+		{
+			let value = iter.next();
+			if (value.done)
+				return result;
+			result.add(value.value);
+		}
+	}
+
+	add(obj, items)
+	{
+		for (let item of items)
+			obj.add(item);
+	}
+
+	clear(obj)
+	{
+		obj.clear();
+		return null;
+	}
+};
+
+SetType.prototype.attrs = new Set(["add", "clear"]);
+
+expose(SetType.prototype.add, ["items", "*"]);
+expose(SetType.prototype.clear, []);
+expose(SetType.prototype, ["iterable", "p=", []], {name: "set"});
+
+export let settype = new SetType(null, "set", "A set.");
+
+
+class BoolType extends Type
+{
+	// Convert ``obj`` to bool, according to its "truth value"
+	[symbols.call](obj=false)
+	{
+		if (obj === undefined || obj === null || obj === false || obj === 0 || obj === "")
+			return false;
+		else if (typeof(obj) === "object" && typeof(obj[symbols.bool]) === "function")
+			return obj[symbols.bool]();
+		else if (_islist(obj))
+			return obj.length !== 0;
+		else if (_ismap(obj) || _isset(obj))
+			return obj.size != 0;
+		else if (_isobject(obj))
+		{
+			for (let key in obj)
+			{
+				if (!obj.hasOwnProperty(key))
+					continue;
+				return true;
+			}
+			return false;
+		}
+		return true;
+	}
+};
+
+expose(BoolType.prototype, ["obj", "p=", false], {name: "bool"});
+
+export let booltype = new BoolType(null, "bool", "An boolean value");
+
+
+class IntType extends Type
+{
+	// Convert ``obj`` to an integer (if ``base`` is given ``obj`` must be a string and ``base`` is the base for the conversion (default is 10))
+	[symbols.call](obj=0, base=null)
+	{
+		let result;
+		if (base !== null)
+		{
+			if (typeof(obj) !== "string" || !_isint(base))
+				throw new TypeError("int() requires a string and an integer");
+			result = parseInt(obj, base);
+			if (result.toString() == "NaN")
+				throw new TypeError("invalid literal for int()");
+			return result;
+		}
+		else
+		{
+			if (typeof(obj) === "string")
+			{
+				result = parseInt(obj);
+				if (result.toString() == "NaN")
+				throw new TypeError("invalid literal for int()");
+				return result;
+			}
+			else if (typeof(obj) === "number")
+				return Math.floor(obj);
+			else if (obj === true)
+				return 1;
+			else if (obj === false)
+				return 0;
+			throw new TypeError("int() argument must be a string or a number");
+		}
+	}
+};
+
+expose(IntType.prototype, ["obj", "p=", 0, "base", "pk=", null], {name: "int"});
+
+export let inttype = new IntType(null, "int", "An integer");
+
+
+class FloatType extends Type
+{
+	// Convert ``obj`` to a float
+	[symbols.call](obj=0.0)
+	{
+		if (typeof(obj) === "string")
+			return parseFloat(obj);
+		else if (typeof(obj) === "number")
+			return obj;
+		else if (obj === true)
+			return 1.0;
+		else if (obj === false)
+			return 0.0;
+		throw new TypeError("float() argument must be a string or a number");
+	}
+};
+
+expose(FloatType.prototype, ["obj", "p=", 0.0], {name: "float"});
+
+export let floattype = new FloatType(null, "float", "A floating point number");
+
+
 export let Protocol = {
 	attrs: new Set(),
 
@@ -4751,7 +5021,7 @@ export class Context
 
 /// Exceptions
 
-// Note that extending ``Error`` doesn't work, so we do it the "classic" way
+// Note that extending ``Error`` doesn't work, so we do it the "clasr" way
 export function Exception(message, fileName, lineNumber)
 {
 	let instance = new Error(message, fileName, lineNumber);
@@ -6856,10 +7126,10 @@ export class AttrAST extends CodeAST
 
 	_get(object, attrname)
 	{
-		let proto = Protocol.get(object);
+		let type = _type(object);
 		try
 		{
-			return proto.getattr(object, attrname);
+			return type.getattr(object, attrname);
 		}
 		catch (exc)
 		{
@@ -7101,6 +7371,11 @@ export class slice extends Proto
 		this.stop = stop;
 	}
 
+	[symbols.type]()
+	{
+		return this.type;
+	}
+
 	of(string)
 	{
 		let start = this.start || 0;
@@ -7126,6 +7401,8 @@ export class slice extends Proto
 		}
 	}
 };
+
+slice.prototype.type = new Type(null, "slice", "A slice.");
 
 
 // List/String slice
@@ -7598,8 +7875,7 @@ export class Template extends BlockAST
 		this.docpos = null;
 		this.signature = signature;
 		this._asts = null;
-		this._ul4_callsignature = signature;
-		this._ul4_rendersignature = signature;
+		this._ul4_signature = signature;
 		this.parenttemplate = null;
 	}
 
@@ -7689,8 +7965,7 @@ export class Template extends BlockAST
 		if (_islist(signature))
 			signature = new Signature(...signature);
 		this.signature = signature;
-		this._ul4_callsignature = signature;
-		this._ul4_rendersignature = signature;
+		this._ul4_signature = signature;
 		super.ul4onload(decoder);
 	}
 
@@ -7823,10 +8098,8 @@ export class Template extends BlockAST
 	}
 };
 
-Template.prototype._ul4_callneedsobject = true;
-Template.prototype._ul4_callneedscontext = true;
-Template.prototype._ul4_renderneedsobject = true;
-Template.prototype._ul4_renderneedscontext = true;
+Template.prototype._ul4_needsobject = true;
+Template.prototype._ul4_needscontext = true;
 
 export class SignatureAST extends CodeAST
 {
@@ -7917,8 +8190,7 @@ export class TemplateClosure extends Proto
 		this.template = template;
 		this.signature = signature;
 		this.vars = vars;
-		this._ul4_callsignature = signature;
-		this._ul4_rendersignature = signature;
+		this._ul4_signature = signature;
 		// Copy over the required attribute from the template
 		this.name = template.name;
 		this.tag = template.tag;
@@ -7981,10 +8253,8 @@ export class TemplateClosure extends Proto
 	}
 };
 
-TemplateClosure.prototype._ul4_callneedsobject = true;
-TemplateClosure.prototype._ul4_callneedscontext = true;
-TemplateClosure.prototype._ul4_renderneedsobject = true;
-TemplateClosure.prototype._ul4_renderneedscontext = true;
+TemplateClosure.prototype._ul4_needsobject = true;
+TemplateClosure.prototype._ul4_needscontext = true;
 
 // Create a color object from the red, green, blue and alpha values ``r``, ``g``, ``b`` and ``b``
 export function _rgb(r, g, b, a)
@@ -8804,12 +9074,12 @@ export const _ul4 = new Module(
 export let builtins = {
 	repr: _repr,
 	ascii: _ascii,
-	str: _str,
-	int: _int,
-	float: _float,
-	list: _list,
-	set: _set,
-	bool: _bool,
+	str: strtype,
+	int: inttype,
+	float: floattype,
+	list: listtype,
+	set: settype,
+	bool: booltype,
 	len: _len,
 	type: _type,
 	format: _format,
@@ -8834,7 +9104,7 @@ export let builtins = {
 	istemplate: _istemplate,
 	isfunction: _isfunction,
 	islist: _islist,
-	isset: _isanyset,
+	isset: _isset,
 	isdict: _isdict,
 	isexception: _isexception,
 	asjson: _asjson,
@@ -8891,12 +9161,6 @@ export let builtins = {
 
 expose(_repr, ["obj", "p"], {name: "repr"});
 expose(_ascii, ["obj", "p"], {name: "ascii"});
-expose(_str, ["obj", "p=", ""], {name: "str"});
-expose(_int, ["obj", "p=", 0, "base", "pk=", null], {name: "int"});
-expose(_float, ["obj", "p=", 0.0], {name: "float"});
-expose(_list, ["iterable", "p=", []], {name: "list"});
-expose(_set, ["iterable", "p=", []], {name: "set"});
-expose(_bool, ["obj", "p=", false], {name: "bool"});
 expose(_len, ["sequence", "p"], {name: "len"});
 expose(_type, ["obj", "p"], {name: "type"});
 expose(_format, ["obj", "pk", "fmt", "pk", "lang", "pk=", null], {name: "format"});
@@ -8921,7 +9185,7 @@ expose(_ismonthdelta, ["obj", "p"], {name: "ismonthdelta"});
 expose(_istemplate, ["obj", "p"], {name: "istemplate"});
 expose(_isfunction, ["obj", "p"], {name: "isfunction"});
 expose(_islist, ["obj", "p"], {name: "islist"});
-expose(_isanyset, ["obj", "p"], {name: "isset"});
+expose(_isset, ["obj", "p"], {name: "isset"});
 expose(_isdict, ["obj", "p"], {name: "isdict"});
 expose(_isexception, ["obj", "p"], {name: "isexception"});
 expose(_asjson, ["obj", "p"], {name: "asjson"});
@@ -9819,6 +10083,11 @@ export class MonthDelta extends Proto
 		this._months = months;
 	}
 
+	[symbols.type]()
+	{
+		return this.type;
+	}
+
 	[symbols.repr]()
 	{
 		if (!this._months)
@@ -10018,6 +10287,9 @@ export class MonthDelta extends Proto
 		return "monthdelta";
 	}
 };
+
+MonthDelta.prototype.type = new Type(null, "monthdelta", "A number of months");
+
 
 const constructors = [
 	[TextAST, "text"],
