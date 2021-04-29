@@ -14,6 +14,9 @@ const plugins = [
 		exclude: 'node_modules/**', // only transpile our source code
 		presets: [
 			"@babel/preset-env"
+		],
+		plugins: [
+			"@babel/plugin-proposal-class-properties"
 		]
 	}),
 	terser({

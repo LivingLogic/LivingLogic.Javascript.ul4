@@ -841,7 +841,7 @@ export function _call(context, f, args, kwargs)
 	else if (f && typeof(f[symbols.call]) === "function")
 		return _callobject(context, f, args, kwargs);
 	else
-		throw new TypeError(_type(f) + " is not callable");
+		throw new TypeError(_type(f).fullname() + " is not callable");
 };
 
 export function _unpackvar(lvalue, value)
@@ -1158,7 +1158,7 @@ export function _ne(obj1, obj2)
 
 export function _unorderable(operator, obj1, obj2)
 {
-	throw new TypeError("unorderable types: " + _type(obj1) + " " + operator + " " + _type(obj2));
+	throw new TypeError("unorderable types: " + _type(obj1).fullname() + " " + operator + " " + _type(obj2).fullname());
 };
 
 // Return:
@@ -1652,7 +1652,7 @@ export function _iter(obj)
 	// Check for an iterator implementation last, as otherwise, we'd get an item iterator for maps
 	else if (obj !== null && typeof(obj[Symbol.iterator]) === "function")
 		return obj[Symbol.iterator]();
-	throw new TypeError(_type(obj) + " object is not iterable");
+	throw new TypeError(_type(obj).fullname() + " object is not iterable");
 };
 
 function _str_repr(str, ascii)
@@ -1967,12 +1967,25 @@ export function _len(sequence)
 			++i;
 		return i;
 	}
-	throw new TypeError("object of type '" + _type(sequence) + "' has no len()");
+	throw new TypeError("object of type '" + _type(sequence).fullname() + "' has no len()");
 };
+
+export let constructors2types = new Map();
+
+function _maketype(constructor)
+{
+	let type = new GenericType(constructor);
+	constructors2types.set(constructor, type);
+	return type;
+}
 
 export function _type(obj)
 {
-	if (obj !== null && typeof(obj[symbols.type]) === "function")
+	if (obj === null)
+		return nonetype;
+	else if (obj === undefined)
+		return undefinedtype;
+	else if (typeof(obj[symbols.type]) === "function")
 		return obj[symbols.type]();
 	else if (_isbool(obj))
 		return booltype;
@@ -1984,8 +1997,6 @@ export function _type(obj)
 		return strtype;
 	else if (_islist(obj))
 		return listtype;
-	else if (_isdate(obj))
-		return datetype;
 	else if (_isset(obj))
 		return settype;
 	else if (_ismap(obj))
@@ -1995,14 +2006,20 @@ export function _type(obj)
 	else if (_isobject(obj))
 		return objecttype;
 	else
-		throw new TypeError("Can't find a type for " + _repr(obj));
+	{
+		let constructor = obj.constructor;
+		let type = constructors2types.get(constructor);
+		if (type === undefined)
+			type = _maketype(constructor);
+		return type;
+	}
 };
 
 // (this is non-trivial, because it follows the Python semantic of ``-5 % 2`` being ``1``)
 export function _mod(obj1, obj2)
 {
 	if (obj1 === null || obj1 === undefined || obj2 === null || obj2 === undefined)
-		throw new TypeError(_type(obj1) + " % " + _type(obj2) + " is not supported");
+		throw new TypeError(_type(obj1).fullname() + " % " + _type(obj2).fullname() + " is not supported");
 
 	let div = Math.floor(obj1 / obj2);
 	let mod = obj1 - div * obj2;
@@ -2019,9 +2036,9 @@ export function _mod(obj1, obj2)
 // If ``obj`` doesn't have such an attribute, return ``default_``
 export function _getattr(obj, attrname, default_=null)
 {
-	let type = _type(obj);
 	try
 	{
+		let type = _type(obj);
 		return type.getattr(obj, attrname);
 	}
 	catch (exc)
@@ -2113,42 +2130,42 @@ export function _isdefined(obj)
 // Check if ``obj`` is ``None``
 export function _isnone(obj)
 {
-	return obj === null;
+	return nonetype.instancecheck(obj);
 };
 
 // Check if ``obj`` is a boolean
 export function _isbool(obj)
 {
-	return typeof(obj) === "boolean";
+	return booltype.instancecheck(obj);
 };
 
 // Check if ``obj`` is a int
 export function _isint(obj)
 {
-	return (typeof(obj) === "number") && Math.round(obj) == obj;
+	return inttype.instancecheck(obj);
 };
 
 // Check if ``obj`` is a float
 export function _isfloat(obj)
 {
-	return (typeof(obj) === "number") && Math.round(obj) != obj;
+	return floattype.instancecheck(obj);
 };
 
 // Check if ``obj`` is a string
 export function _isstr(obj)
 {
-	return typeof(obj) === "string";
+	return strtype.instancecheck(obj);
 };
 
 // Check if ``obj`` is a datetime
 export function _isdatetime(obj)
 {
-	return Object.prototype.toString.call(obj) == "[object Date]";
+	return datetimetype.instancecheck(obj);
 };
 
 export function _isdate(obj)
 {
-	return (obj instanceof Date_);
+	return datetype.instancecheck(obj);
 };
 
 // Check if ``obj`` is a color
@@ -2217,10 +2234,16 @@ export function _ismap(obj)
 	return obj !== null && typeof(obj) === "object" && typeof(obj.__proto__) === "object" && obj.__proto__ === Map.prototype;
 };
 
-	// Check if ``obj`` is a dict (i.e. a normal Javascript object or a ``Map``)
+// Check if ``obj`` is a dict (i.e. a normal Javascript object or a ``Map``)
 export function _isdict(obj)
 {
 	return _isobject(obj) || _ismap(obj);
+};
+
+// Check if ``obj`` is an instance of ``type``
+export function _isinstance(obj, type)
+{
+	return type.instancecheck(obj);
 };
 
 // Repeat string ``str`` ``rep`` times
@@ -3241,7 +3264,7 @@ export class Signature extends Proto
 };
 
 
-// Adds name and signature to a function/method and makes the method callable in templates
+// Adds name and signature to a function/method and makes the method callable by UL4
 export function expose(f, signature, options)
 {
 	options = options || {};
@@ -3264,14 +3287,18 @@ export function _extend(baseobj, attrs)
 // Type objects for all builtin types
 export class Type
 {
-	constructor(module, name, doc=null)
+	constructor(module, name, doc, constructor=null)
 	{
 		this.module = module;
 		this.name = name;
 		this.doc = doc;
-		this.content = {};
+		this._constructor = constructor;
 	}
 
+	instancecheck(obj)
+	{
+		return obj instanceof this._constructor;
+	}
 	[symbols.getattr](attrname)
 	{
 		switch (attrname)
@@ -3283,18 +3310,26 @@ export class Type
 			case "__doc__":
 				return this.doc;
 			default:
-				if (this.content.hasOwnProperty(attrname))
-					return this.content[attrname];
 				throw new AttributeError(this, attrname);
 		}
 	}
 
 	[symbols.repr]()
 	{
+		return this.toString();
+	}
+
+	toString()
+	{
+		return "<type " + this.fullname() + ">";
+	}
+
+	fullname()
+	{
 		if (this.module === null)
-			return "<type " + this.name + ">";
+			return this.name;
 		else
-			return "<type " + this.module + "." + this.name + ">";
+			return this.module + "." + this.name;
 	}
 
 	dir()
@@ -3352,6 +3387,137 @@ export class Type
 Type.prototype.attrs = new Set();
 
 
+class NoneType extends Type
+{
+	instancecheck(obj)
+	{
+		return obj === null;
+	}
+};
+
+export let nonetype = new NoneType(null, "None", "The constant `None`.");
+
+
+class UndefinedType extends Type
+{
+	instancecheck(obj)
+	{
+		return obj === undefined;
+	}
+};
+
+export let undefinedtype = new UndefinedType(null, "undefined", "An undefined variable or object attribute.");
+
+
+class BoolType extends Type
+{
+	// Convert ``obj`` to bool, according to its "truth value"
+	[symbols.call](obj=false)
+	{
+		if (obj === undefined || obj === null || obj === false || obj === 0 || obj === "")
+			return false;
+		else if (typeof(obj) === "object" && typeof(obj[symbols.bool]) === "function")
+			return obj[symbols.bool]();
+		else if (_islist(obj))
+			return obj.length !== 0;
+		else if (_ismap(obj) || _isset(obj))
+			return obj.size != 0;
+		else if (_isobject(obj))
+		{
+			for (let key in obj)
+			{
+				if (!obj.hasOwnProperty(key))
+					continue;
+				return true;
+			}
+			return false;
+		}
+		return true;
+	}
+
+	instancecheck(obj)
+	{
+		return typeof(obj) === "boolean";
+	}
+};
+
+expose(BoolType.prototype, ["obj", "p=", false], {name: "bool"});
+
+export let booltype = new BoolType(null, "bool", "An boolean value");
+
+
+class IntType extends Type
+{
+	// Convert ``obj`` to an integer (if ``base`` is given ``obj`` must be a string and ``base`` is the base for the conversion (default is 10))
+	[symbols.call](obj=0, base=null)
+	{
+		let result;
+		if (base !== null)
+		{
+			if (typeof(obj) !== "string" || !_isint(base))
+				throw new TypeError("int() requires a string and an integer");
+			result = parseInt(obj, base);
+			if (result.toString() == "NaN")
+				throw new TypeError("invalid literal for int()");
+			return result;
+		}
+		else
+		{
+			if (typeof(obj) === "string")
+			{
+				result = parseInt(obj);
+				if (result.toString() == "NaN")
+				throw new TypeError("invalid literal for int()");
+				return result;
+			}
+			else if (typeof(obj) === "number")
+				return Math.floor(obj);
+			else if (obj === true)
+				return 1;
+			else if (obj === false)
+				return 0;
+			throw new TypeError("int() argument must be a string or a number");
+		}
+	}
+
+	instancecheck(obj)
+	{
+		return (typeof(obj) === "number") && Math.round(obj) == obj;
+	}
+};
+
+expose(IntType.prototype, ["obj", "p=", 0, "base", "pk=", null], {name: "int"});
+
+export let inttype = new IntType(null, "int", "An integer");
+
+
+class FloatType extends Type
+{
+	// Convert ``obj`` to a float
+	[symbols.call](obj=0.0)
+	{
+		if (typeof(obj) === "string")
+			return parseFloat(obj);
+		else if (typeof(obj) === "number")
+			return obj;
+		else if (obj === true)
+			return 1.0;
+		else if (obj === false)
+			return 0.0;
+		throw new TypeError("float() argument must be a string or a number");
+	}
+
+	instancecheck(obj)
+	{
+		return (typeof(obj) === "number") && Math.round(obj) != obj;
+	}
+};
+
+expose(FloatType.prototype, ["obj", "p=", 0.0], {name: "float"});
+
+export let floattype = new FloatType(null, "float", "A floating point number");
+
+
 export class StrType extends Type
 {
 	[symbols.call](obj="")
@@ -3386,6 +3552,11 @@ export class StrType extends Type
 			return _object_repr(obj);
 		else
 			return _repr(obj);
+	}
+
+	instancecheck(obj)
+	{
+		return typeof(obj) === "string";
 	}
 
 	count(obj, sub, start=null, end=null)
@@ -3720,7 +3891,6 @@ expose(StrType.prototype, ["obj", "p=", ""], {name: "str"});
 export let strtype = new StrType(null, "str", "A string.");
 
 
-
 export class ListType extends Type
 {
 	// Convert ``obj`` to a list
@@ -3799,7 +3969,6 @@ expose(ListType.prototype.rfind, ["sub", "p", "start", "p=", null, "end", "p=", 
 expose(ListType.prototype, ["iterable", "p=", []], {name: "list"});
 
 export let listtype = new ListType(null, "list", "A list.");
-
 
 
 class MapType extends Type
@@ -3881,7 +4050,7 @@ expose(MapType.prototype.update, ["others", "*", "kwargs", "**"]);
 expose(MapType.prototype.clear, []);
 expose(MapType.prototype.pop, ["key", "p", "default", "p=", Object]);
 
-export let maptype = new MapType(null, "dict", "A dictionary.");
+export let maptype = new MapType(null, "dict", "An object that maps keys to values.");
 
 
 export class SetType extends Type
@@ -3923,99 +4092,392 @@ expose(SetType.prototype, ["iterable", "p=", []], {name: "set"});
 export let settype = new SetType(null, "set", "A set.");
 
 
-class BoolType extends Type
+export class DateType extends Type
 {
-	// Convert ``obj`` to bool, according to its "truth value"
-	[symbols.call](obj=false)
+	// Return a ``Date`` object from the arguments passed in
+	[symbols.call](year, month, day)
 	{
-		if (obj === undefined || obj === null || obj === false || obj === 0 || obj === "")
-			return false;
-		else if (typeof(obj) === "object" && typeof(obj[symbols.bool]) === "function")
-			return obj[symbols.bool]();
-		else if (_islist(obj))
-			return obj.length !== 0;
-		else if (_ismap(obj) || _isset(obj))
-			return obj.size != 0;
-		else if (_isobject(obj))
-		{
-			for (let key in obj)
-			{
-				if (!obj.hasOwnProperty(key))
-					continue;
-				return true;
-			}
-			return false;
-		}
-		return true;
+		return new Date_(year, month, day);
+	}
+
+	instancecheck(obj)
+	{
+		return (obj instanceof Date_);
+	}
+
+	weekday(obj)
+	{
+		return datetimetype.weekday(obj._date);
+	}
+
+	calendar(obj, firstweekday=0, mindaysinfirstweek=4)
+	{
+		return datetimetype.calendar(obj._date, firstweekday, mindaysinfirstweek);
+	}
+
+	week(obj, firstweekday=0, mindaysinfirstweek=4)
+	{
+		return datetimetype.calendar(obj._date, firstweekday, mindaysinfirstweek)[1];
+	}
+
+	day(obj)
+	{
+		return obj._date.getDate();
+	}
+
+	month(obj)
+	{
+		return obj._date.getMonth()+1;
+	}
+
+	year(obj)
+	{
+		return obj._date.getFullYear();
+	}
+
+	date(obj)
+	{
+		return obj;
+	}
+
+	mimeformat(obj)
+	{
+		let weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+		let monthname = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+		let d = obj._date;
+
+		return weekdayname[datetimetype.weekday(d)] + ", " + _lpad(d.getDate(), "0", 2) + " " + monthname[d.getMonth()] + " " + d.getFullYear();
+	}
+
+	isoformat(obj)
+	{
+		let d = obj._date;
+		return d.getFullYear() + "-" + _lpad((d.getMonth()+1).toString(), "0", 2) + "-" + _lpad(d.getDate().toString(), "0", 2);
+	}
+
+	yearday(obj)
+	{
+		return datetimetype.yearday(obj._date);
 	}
 };
 
-expose(BoolType.prototype, ["obj", "p=", false], {name: "bool"});
+DateType.prototype.attrs = new Set([
+	"weekday",
+	"week",
+	"calendar",
+	"day",
+	"month",
+	"year",
+	"date",
+	"mimeformat",
+	"isoformat",
+	"yearday"
+]);
 
-export let booltype = new BoolType(null, "bool", "An boolean value");
+expose(DateType.prototype.weekday, []);
+expose(DateType.prototype.calendar, ["firstweekday", "pk=", 0, "mindaysinfirstweek", "pk=", 4]);
+expose(DateType.prototype.week, ["firstweekday", "pk=", 0, "mindaysinfirstweek", "pk=", 4]);
+expose(DateType.prototype.day, []);
+expose(DateType.prototype.month, []);
+expose(DateType.prototype.year, []);
+expose(DateType.prototype.date, []);
+expose(DateType.prototype.mimeformat, []);
+expose(DateType.prototype.isoformat, []);
+expose(DateType.prototype.yearday, []);
+expose(DateType.prototype, ["year", "pk", "month", "pk", "day", "pk"], {name: "date"});
+
+export let datetype = new DateType(null, "date", "A date");
 
 
-class IntType extends Type
+export class DateTimeType extends Type
 {
-	// Convert ``obj`` to an integer (if ``base`` is given ``obj`` must be a string and ``base`` is the base for the conversion (default is 10))
-	[symbols.call](obj=0, base=null)
+	instancecheck(obj)
+	{
+		return Object.prototype.toString.call(obj) == "[object Date]";
+	}
+
+	weekday(obj)
+	{
+		let d = obj.getDay();
+		return d ? d-1 : 6;
+	}
+
+	calendar(obj, firstweekday=0, mindaysinfirstweek=4)
+	{
+		// Normalize parameters
+		firstweekday = _mod(firstweekday, 7);
+		if (mindaysinfirstweek < 1)
+			mindaysinfirstweek = 1;
+		else if (mindaysinfirstweek > 7)
+			mindaysinfirstweek = 7;
+
+		// ``obj`` might be in the first week of the next year, or last week of
+		// the previous year, so we might have to try those too.
+		for (let offset = +1; offset >= -1; --offset)
+		{
+			let year = obj.getFullYear() + offset;
+			// ``refdate`` will always be in week 1
+			let refDate = new Date(year, 0, mindaysinfirstweek);
+			// Go back to the start of ``refdate``s week (i.e. day 1 of week 1)
+			let weekDayDiff = _mod(this.weekday(refDate) - firstweekday, 7);
+			let weekStartYear = refDate.getFullYear();
+			let weekStartMonth = refDate.getMonth();
+			let weekStartDay = refDate.getDate() - weekDayDiff;
+			let weekStart = new Date(weekStartYear, weekStartMonth, weekStartDay);
+			// Is our date ``obj`` at or after day 1 of week 1?
+			if (obj.getTime() >= weekStart.getTime())
+			{
+				let diff = SubAST.prototype._do(obj, weekStart);
+				// Add 1, because the first week is week 1, not week 0
+				let week = Math.floor(diff.days()/7) + 1;
+				return [year, week, this.weekday(obj)];
+			}
+		}
+	}
+
+	week(obj, firstweekday=0, mindaysinfirstweek=4)
+	{
+		return this.calendar(obj, firstweekday, mindaysinfirstweek)[1];
+	}
+
+	day(obj)
+	{
+		return obj.getDate();
+	}
+
+	month(obj)
+	{
+		return obj.getMonth()+1;
+	}
+
+	year(obj)
+	{
+		return obj.getFullYear();
+	}
+
+	hour(obj)
+	{
+		return obj.getHours();
+	}
+
+	minute(obj)
+	{
+		return obj.getMinutes();
+	}
+
+	second(obj)
+	{
+		return obj.getSeconds();
+	}
+
+	microsecond(obj)
+	{
+		return obj.getMilliseconds() * 1000;
+	}
+
+	date(obj)
+	{
+		return new Date_(this.year(obj), this.month(obj), this.day(obj));
+	}
+
+	mimeformat(obj)
+	{
+		let weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+		let monthname = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+		return weekdayname[this.weekday(obj)] + ", " + _lpad(obj.getDate(), "0", 2) + " " + monthname[obj.getMonth()] + " " + obj.getFullYear() + " " + _lpad(obj.getHours(), "0", 2) + ":" + _lpad(obj.getMinutes(), "0", 2) + ":" + _lpad(obj.getSeconds(), "0", 2) + " GMT";
+	}
+
+	isoformat(obj)
+	{
+		let year = obj.getFullYear();
+		let month = obj.getMonth()+1;
+		let day = obj.getDate();
+		let hour = obj.getHours();
+		let minute = obj.getMinutes();
+		let second = obj.getSeconds();
+		let ms = obj.getMilliseconds();
+		let result = year + "-" + _lpad(month.toString(), "0", 2) + "-" + _lpad(day.toString(), "0", 2) + "T" + _lpad(hour.toString(), "0", 2) + ":" + _lpad(minute.toString(), "0", 2) + ":" + _lpad(second.toString(), "0", 2);
+		if (ms)
+			result += "." + _lpad(ms.toString(), "0", 3) + "000";
+		return result;
+	}
+
+	yearday(obj)
+	{
+		let leap = _isleap(obj) ? 1 : 0;
+		let day = obj.getDate();
+		switch (obj.getMonth())
+		{
+			case 0:
+				return day;
+			case 1:
+				return 31 + day;
+			case 2:
+				return 31 + 28 + leap + day;
+			case 3:
+				return 31 + 28 + leap + 31 + day;
+			case 4:
+				return 31 + 28 + leap + 31 + 30 + day;
+			case 5:
+				return 31 + 28 + leap + 31 + 30 + 31 + day;
+			case 6:
+				return 31 + 28 + leap + 31 + 30 + 31 + 30 + day;
+			case 7:
+				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + day;
+			case 8:
+				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + day;
+			case 9:
+				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + day;
+			case 10:
+				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + day;
+			case 11:
+				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30 + day;
+		}
+	}
+};
+
+DateTimeType.prototype.attrs = new Set([
+	"weekday",
+	"week",
+	"calendar",
+	"day",
+	"month",
+	"year",
+	"hour",
+	"minute",
+	"second",
+	"microsecond",
+	"date",
+	"mimeformat",
+	"isoformat",
+	"yearday"
+]);
+
+expose(DateTimeType.prototype.weekday, []);
+expose(DateTimeType.prototype.calendar, ["firstweekday", "pk=", 0, "mindaysinfirstweek", "pk=", 4]);
+expose(DateTimeType.prototype.week, ["firstweekday", "pk=", 0, "mindaysinfirstweek", "pk=", 4]);
+expose(DateTimeType.prototype.day, []);
+expose(DateTimeType.prototype.month, []);
+expose(DateTimeType.prototype.year, []);
+expose(DateTimeType.prototype.hour, []);
+expose(DateTimeType.prototype.minute, []);
+expose(DateTimeType.prototype.second, []);
+expose(DateTimeType.prototype.microsecond, []);
+expose(DateTimeType.prototype.date, []);
+expose(DateTimeType.prototype.mimeformat, []);
+expose(DateTimeType.prototype.isoformat, []);
+expose(DateTimeType.prototype.yearday, []);
+expose(DateTimeType.prototype, ["year", "pk", "month", "pk", "day", "pk", "hour", "pk=", 0, "minute", "pk=", 0, "second", "pk=", 0, "microsecond", "pk=", 0], {name: "datetime"});
+
+export let datetimetype = new DateTimeType(null, "datetime", "A datetime");
+
+
+export class ObjectType extends Type
+{
+	getattr(obj, attrname)
 	{
 		let result;
-		if (base !== null)
-		{
-			if (typeof(obj) !== "string" || !_isint(base))
-				throw new TypeError("int() requires a string and an integer");
-			result = parseInt(obj, base);
-			if (result.toString() == "NaN")
-				throw new TypeError("invalid literal for int()");
+		if (obj && typeof(obj[symbols.getattr]) === "function") // test this before the generic object test
+			result = obj[symbols.getattr](attrname);
+		else
+			result = obj[attrname];
+		if (typeof(result) !== "function")
 			return result;
+		let realresult = function(...args) {
+			// We can use ``apply`` here, as we know that ``obj`` is a real object.
+			return result.apply(obj, args);
+		};
+		realresult._ul4_name = result._ul4_name || result.name;
+		realresult._ul4_signature = result._ul4_signature;
+		realresult._ul4_needsobject = result._ul4_needsobject;
+		realresult._ul4_needscontext = result._ul4_needscontext;
+		return realresult;
+	}
+
+	get(obj, key, default_=null)
+	{
+		let result = obj[key];
+		if (result === undefined)
+			return default_;
+		return result;
+	}
+
+	items(obj)
+	{
+		let result = [];
+		for (let key in obj)
+			result.push([key, obj[key]]);
+		return result;
+	}
+
+	values(obj)
+	{
+		let result = [];
+		for (let key in obj)
+			result.push(obj[key]);
+		return result;
+	}
+
+	clear(obj)
+	{
+		for (let key in obj)
+			delete obj[key];
+	}
+};
+
+ObjectType.prototype.attrs = new Set(["get", "items", "values", "update", "clear"]);
+
+expose(ObjectType.prototype.get, ["key", "p", "default", "p=", null]);
+expose(ObjectType.prototype.items, []);
+expose(ObjectType.prototype.values, []);
+expose(ObjectType.prototype.clear, []);
+
+export let objecttype = new ObjectType(null, "dict", "An object that maps keys to values.");
+
+
+export class GenericType extends Type
+{
+	constructor(constructor)
+	{
+		super(constructor.classmodule || null, constructor.classname || constructor.name, constructor.classdoc || null);
+		this._constructor = constructor;
+	}
+
+	getattr(obj, attrname)
+	{
+		if (typeof(obj[symbols.getattr]) === "function")
+			return obj[symbols.getattr](attrname);
+		else
+			throw new AttributeError(obj, attrname);
+	}
+
+	hasattr(obj, attrname)
+	{
+		if (typeof(obj[symbols.getattr]) === "function")
+		{
+			try
+			{
+				obj[symbols.getattr](attrname);
+				return true;
+			}
+			catch (exc)
+			{
+				if (exc instanceof AttributeError && exc.obj === object)
+					return false;
+				else
+					throw exc;
+			}
 		}
 		else
-		{
-			if (typeof(obj) === "string")
-			{
-				result = parseInt(obj);
-				if (result.toString() == "NaN")
-				throw new TypeError("invalid literal for int()");
-				return result;
-			}
-			else if (typeof(obj) === "number")
-				return Math.floor(obj);
-			else if (obj === true)
-				return 1;
-			else if (obj === false)
-				return 0;
-			throw new TypeError("int() argument must be a string or a number");
-		}
+			return false;
 	}
-};
 
-expose(IntType.prototype, ["obj", "p=", 0, "base", "pk=", null], {name: "int"});
-
-export let inttype = new IntType(null, "int", "An integer");
-
-
-class FloatType extends Type
-{
-	// Convert ``obj`` to a float
-	[symbols.call](obj=0.0)
+	instancecheck(obj)
 	{
-		if (typeof(obj) === "string")
-			return parseFloat(obj);
-		else if (typeof(obj) === "number")
-			return obj;
-		else if (obj === true)
-			return 1.0;
-		else if (obj === false)
-			return 0.0;
-		throw new TypeError("float() argument must be a string or a number");
+		return obj instanceof this._constructor;
 	}
-};
-
-expose(FloatType.prototype, ["obj", "p=", 0.0], {name: "float"});
-
-export let floattype = new FloatType(null, "float", "A floating point number");
-
+}
 
 export let Protocol = {
 	attrs: new Set(),
@@ -5123,13 +5585,13 @@ export class NotSubscriptableError extends Exception
 {
 	constructor(obj)
 	{
-		super("Object of type " + _type(obj) + " is not subscriptable");
+		super("Object of type " + _type(obj).fullname() + " is not subscriptable");
 		this.obj = obj;
 	}
 
 	toString()
 	{
-		return "Object of type " + _type(this.obj) + " is not subscriptable";
+		return "Object of type " + _type(this.obj).fullname() + " is not subscriptable";
 	}
 };
 
@@ -5152,7 +5614,7 @@ export class IndexError extends Exception
 
 	toString()
 	{
-		return "index " + this.index + " out of range for " + _type(this.obj);
+		return "index " + this.index + " out of range for " + _type(this.obj).fullname();
 	}
 };
 
@@ -5160,7 +5622,7 @@ export class AttributeError extends Exception
 {
 	constructor(obj, attrname)
 	{
-		super("object of type " + _type(obj) + " has no attribute " + _repr(attrname));
+		super("object of type " + _type(obj).fullname() + " has no attribute " + _repr(attrname));
 		this.obj = obj;
 		this.attrname = attrname;
 	}
@@ -5170,7 +5632,7 @@ export class KeyError extends Exception
 {
 	constructor(obj, key)
 	{
-		super("key "  + _repr(key) + " not found in object of type " + _type(obj));
+		super("key "  + _repr(key) + " not found in object of type " + _type(obj).fullname());
 		this.obj = obj;
 		this.key = key;
 	}
@@ -5248,6 +5710,9 @@ export class LocationError extends Exception
 /// Classes for the syntax tree
 export class AST extends Proto
 {
+	static classmodule = "ul4";
+	static classdoc = "Base type of all UL4 syntax tree nodes";
+
 	constructor(template, startpos, stoppos=null)
 	{
 		super();
@@ -5799,7 +6264,7 @@ export class UnpackDictItemAST extends ItemArgBase
 
 UnpackDictItemAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["item"]);
 
-export class PosArgAST extends ItemArgBase
+export class PositionalArgumentAST extends ItemArgBase
 {
 	constructor(template, pos, value)
 	{
@@ -5809,7 +6274,7 @@ export class PosArgAST extends ItemArgBase
 
 	_repr(out)
 	{
-		out.push("<PosArgAST value=");
+		out.push("<PositionalArgumentAST value=");
 		this.value._repr(out);
 		out.push(">");
 	}
@@ -5821,9 +6286,9 @@ export class PosArgAST extends ItemArgBase
 	}
 };
 
-PosArgAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["value"]);
+PositionalArgumentAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["value"]);
 
-export class KeywordArgAST extends ItemArgBase
+export class KeywordArgumentAST extends ItemArgBase
 {
 	constructor(template, pos, name, value)
 	{
@@ -5834,7 +6299,7 @@ export class KeywordArgAST extends ItemArgBase
 
 	_repr(out)
 	{
-		out.push("<KeywordArgAST name=");
+		out.push("<KeywordArgumentAST name=");
 		out.push(_repr(this.name));
 		out.push(" value=");
 		this.value._repr(out);
@@ -5850,9 +6315,9 @@ export class KeywordArgAST extends ItemArgBase
 	}
 };
 
-KeywordArgAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["name", "value"]);
+KeywordArgumentAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["name", "value"]);
 
-export class UnpackListArgAST extends ItemArgBase
+export class UnpackListArgumentAST extends ItemArgBase
 {
 	constructor(template, pos, item)
 	{
@@ -5862,7 +6327,7 @@ export class UnpackListArgAST extends ItemArgBase
 
 	_repr(out)
 	{
-		out.push("<UnpackListArgAST item=");
+		out.push("<UnpackListArgumentAST item=");
 		this.item._repr(out);
 		out.push(">");
 	}
@@ -5874,9 +6339,9 @@ export class UnpackListArgAST extends ItemArgBase
 	}
 };
 
-UnpackListArgAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["item"]);
+UnpackListArgumentAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["item"]);
 
-export class UnpackDictArgAST extends ItemArgBase
+export class UnpackDictArgumentAST extends ItemArgBase
 {
 	constructor(template, pos, item)
 	{
@@ -5886,7 +6351,7 @@ export class UnpackDictArgAST extends ItemArgBase
 
 	_repr(out)
 	{
-		out.push("<UnpackDictArgAST item=");
+		out.push("<UnpackDictArgumentAST item=");
 		this.item._repr(out);
 		out.push(">");
 	}
@@ -5927,7 +6392,7 @@ export class UnpackDictArgAST extends ItemArgBase
 	}
 };
 
-UnpackDictArgAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["item"]);
+UnpackDictArgumentAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["item"]);
 
 export class ListAST extends CodeAST
 {
@@ -5959,7 +6424,7 @@ export class ListAST extends CodeAST
 
 ListAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["items"]);
 
-export class ListCompAST extends CodeAST
+export class ListComprehensionAST extends CodeAST
 {
 	constructor(template, pos, item, varname, container, condition)
 	{
@@ -5972,7 +6437,7 @@ export class ListCompAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<ListCompAST");
+		out.push("<ListComprehensionAST");
 		out.push(" item=");
 		this.item._repr(out);
 		out.push(" varname=");
@@ -6009,7 +6474,7 @@ export class ListCompAST extends CodeAST
 	}
 };
 
-ListCompAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["item", "varname", "container", "condition"]);
+ListComprehensionAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["item", "varname", "container", "condition"]);
 
 export class SetAST extends CodeAST
 {
@@ -6043,7 +6508,7 @@ export class SetAST extends CodeAST
 
 SetAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["items"]);
 
-export class SetCompAST extends CodeAST
+export class SetComprehensionAST extends CodeAST
 {
 	constructor(template, pos, item, varname, container, condition)
 	{
@@ -6073,7 +6538,7 @@ export class SetCompAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<SetCompAST");
+		out.push("<SetComprehensionAST");
 		out.push(" item=");
 		this.item._repr(out);
 		out.push(" varname=");
@@ -6111,7 +6576,7 @@ export class SetCompAST extends CodeAST
 	}
 };
 
-SetCompAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["item", "varname", "container", "condition"]);
+SetComprehensionAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["item", "varname", "container", "condition"]);
 
 export class DictAST extends CodeAST
 {
@@ -6154,7 +6619,7 @@ export class DictAST extends CodeAST
 
 DictAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["items"]);
 
-export class DictCompAST extends CodeAST
+export class DictComprehensionAST extends CodeAST
 {
 	constructor(template, pos, key, value, varname, container, condition)
 	{
@@ -6168,7 +6633,7 @@ export class DictCompAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<DictCompAST");
+		out.push("<DictComprehensionAST");
 		out.push(" key=");
 		this.key._repr(out);
 		out.push(" value=");
@@ -6213,9 +6678,9 @@ export class DictCompAST extends CodeAST
 	}
 };
 
-DictCompAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["key", "value", "varname", "container", "condition"]);
+DictComprehensionAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["key", "value", "varname", "container", "condition"]);
 
-export class GenExprAST extends CodeAST
+export class GeneratorExpressionAST extends CodeAST
 {
 	constructor(template, pos, item, varname, container, condition)
 	{
@@ -6228,7 +6693,7 @@ export class GenExprAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<GenExprAST");
+		out.push("<GeneratorExpressionAST");
 		out.push(" item=");
 		this.item._repr(out);
 		out.push(" varname=");
@@ -6275,7 +6740,7 @@ export class GenExprAST extends CodeAST
 	}
 };
 
-GenExprAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["item", "varname", "container", "condition"]);
+GeneratorExpressionAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["item", "varname", "container", "condition"]);
 
 export class VarAST extends CodeAST
 {
@@ -6551,7 +7016,7 @@ export class ItemAST extends BinaryAST
 		else if (_ismap(container))
 			return container.get(key);
 		else
-			throw new TypeError(_type(container) + " object is not subscriptable");
+			throw new TypeError(_type(container).fullname() + " object is not subscriptable");
 	}
 
 	_set(container, key, value)
@@ -6716,7 +7181,7 @@ export class ContainsAST extends BinaryAST
 		{
 			return container._r === obj || container._g === obj || container._b === obj || container._a === obj;
 		}
-		throw new TypeError(_type(container) + " object is not iterable");
+		throw new TypeError(_type(container).fullname() + " object is not iterable");
 	}
 };
 
@@ -6739,7 +7204,7 @@ export class AddAST extends BinaryAST
 		else if (obj2 && typeof(obj2[symbols.radd]) === "function")
 			return obj2[symbols.radd](obj1);
 		if (obj1 === null || obj1 === undefined || obj2 === null || obj2 === undefined)
-			throw new TypeError(_type(obj1) + " + " + _type(obj2) + " is not supported");
+			throw new TypeError(_type(obj1).fullname() + " + " + _type(obj2).fullname() + " is not supported");
 		if (_islist(obj1) && _islist(obj2))
 			return [...obj1, ...obj2];
 		else
@@ -6772,7 +7237,7 @@ export class SubAST extends BinaryAST
 		else if (_isdatetime(obj1) && _isdatetime(obj2))
 			return this._datetime_sub(obj1, obj2);
 		if (obj1 === null || obj1 === undefined || obj2 === null || obj2 === undefined)
-			throw new TypeError(_type(obj1) + " - " + _type(obj2) + " is not supported");
+			throw new TypeError(_type(obj1).fullname() + " - " + _type(obj2).fullname() + " is not supported");
 		return obj1 - obj2;
 	}
 
@@ -6908,7 +7373,7 @@ export class FloorDivAST extends BinaryAST
 		else if (obj2 && typeof(obj2[symbols.rfloordiv]) === "function")
 			return obj2[symbols.rfloordiv](obj1);
 		if (obj1 === null || obj1 === undefined || obj2 === null || obj2 === undefined)
-			throw new TypeError(_type(obj1) + " // " + _type(obj2) + " not supported");
+			throw new TypeError(_type(obj1).fullname() + " // " + _type(obj2).fullname() + " not supported");
 		else if ((typeof(obj1) === "number" || typeof(obj1) === "boolean") && (typeof(obj2) === "number" || typeof(obj2) === "boolean") && obj2 == 0)
 			throw new ZeroDivisionError();
 		return Math.floor(obj1 / obj2);
@@ -6930,7 +7395,7 @@ export class TrueDivAST extends BinaryAST
 		else if (obj2 && typeof(obj2[symbols.rtruediv]) === "function")
 			return obj2[symbols.rtruediv](obj1);
 		if (obj1 === null || obj1 === undefined || obj2 === null || obj2 === undefined)
-			throw new TypeError(_type(obj1) + " / " + _type(obj2) + " not supported");
+			throw new TypeError(_type(obj1).fullname() + " / " + _type(obj2).fullname() + " not supported");
 		else if ((typeof(obj1) === "number" || typeof(obj1) === "boolean") && (typeof(obj2) === "number" || typeof(obj2) === "boolean") && obj2 == 0)
 			throw new ZeroDivisionError();
 		return obj1 / obj2;
@@ -7149,7 +7614,7 @@ export class AttrAST extends CodeAST
 		else if (_isobject(object))
 			object[attrname] = value;
 		else
-			throw new TypeError(_type(object) + " object has no writable attributes");
+			throw new TypeError(_type(object).fullname() + " object has no writable attributes");
 	}
 
 	_modify(operator, object, attrname, value)
@@ -7402,7 +7867,7 @@ export class slice extends Proto
 	}
 };
 
-slice.prototype.type = new Type(null, "slice", "A slice.");
+slice.prototype.type = new Type(null, "slice", "A slice specification.");
 
 
 // List/String slice
@@ -7774,7 +8239,7 @@ export class ContinueAST extends CodeAST
 	}
 };
 
-export class CondBlockAST extends BlockAST
+export class ConditionalBlocksAST extends BlockAST
 {
 	_eval(context)
 	{
@@ -8184,6 +8649,9 @@ export class SignatureAST extends CodeAST
 
 export class TemplateClosure extends Proto
 {
+	static classmodule = "ul4";
+	static classdoc = "A locally defined UL4 template.";
+
 	constructor(template, signature, vars)
 	{
 		super();
@@ -8815,24 +9283,24 @@ export function _abs(number)
 // Return a ``Date`` object from the arguments passed in
 export function _date(year, month, day)
 {
-	return new Date_(year, month, day);
+	return datetype[symbols.call](year, month, day);
 };
 
 export function _datetime(year, month, day, hour=0, minute=0, second=0, microsecond=0)
 {
-	return new Date(year, month-1, day, hour, minute, second, microsecond/1000);
+	return datetimetype[symbols.call](year, month, day, hour, minute, second, microsecond);
 };
 
 // Return a ``TimeDelta`` object from the arguments passed in
 export function _timedelta(days=0, seconds=0, microseconds=0)
 {
-	return new TimeDelta(days, seconds, microseconds);
+	return TimeDelta.type[symbols.call](days, seconds, microseconds);
 };
 
 // Return a ``MonthDelta`` object from the arguments passed in
 export function _monthdelta(months=0)
 {
-	return new MonthDelta(months);
+	return MonthDelta.type[symbols.call](months);
 };
 
 // Return a ``Color`` object from the hue, luminescence, saturation and alpha values ``h``, ``l``, ``s`` and ``a`` (i.e. using the HLS color model)
@@ -9066,98 +9534,92 @@ export const _operator = new Module(
 
 export const _ul4 = new Module(
 	"ul4",
-	"UL4 - a templating language",
+	"UL4 - A templating language",
 	{
+		TextAST: _maketype(TextAST),
+		IndentAST: _maketype(IndentAST),
+		LineEndAST: _maketype(LineEndAST),
+		ConstAST: _maketype(ConstAST),
+		SeqItemAST: _maketype(SeqItemAST),
+		UnpackSeqItemAST: _maketype(UnpackSeqItemAST),
+		ListAST: _maketype(ListAST),
+		ListComprehensionAST: _maketype(ListComprehensionAST),
+		SetAST: _maketype(SetAST),
+		SetComprehensionAST: _maketype(SetComprehensionAST),
+		DictItemAST: _maketype(DictItemAST),
+		UnpackDictItemAST: _maketype(UnpackDictItemAST),
+		DictAST: _maketype(DictAST),
+		DictComprehensionAST: _maketype(DictComprehensionAST),
+		GeneratorExpressionAST: _maketype(GeneratorExpressionAST),
+		VarAST: _maketype(VarAST),
+		ConditionalBlocksAST: _maketype(ConditionalBlocksAST),
+		IfBlockAST: _maketype(IfBlockAST),
+		ElIfBlockAST: _maketype(ElIfBlockAST),
+		ElseBlockAST: _maketype(ElseBlockAST),
+		ForBlockAST: _maketype(ForBlockAST),
+		WhileBlockAST: _maketype(WhileBlockAST),
+		BreakAST: _maketype(BreakAST),
+		ContinueAST: _maketype(ContinueAST),
+		AttrAST: _maketype(AttrAST),
+		SliceAST: _maketype(SliceAST),
+		NotAST: _maketype(NotAST),
+		IfAST: _maketype(IfAST),
+		NegAST: _maketype(NegAST),
+		BitNotAST: _maketype(BitNotAST),
+		PrintAST: _maketype(PrintAST),
+		PrintXAST: _maketype(PrintXAST),
+		ReturnAST: _maketype(ReturnAST),
+		ItemAST: _maketype(ItemAST),
+		ShiftLeftAST: _maketype(ShiftLeftAST),
+		ShiftRightAST: _maketype(ShiftRightAST),
+		BitAndAST: _maketype(BitAndAST),
+		BitXOrAST: _maketype(BitXOrAST),
+		BitOrAST: _maketype(BitOrAST),
+		IsAST: _maketype(IsAST),
+		IsNotAST: _maketype(IsNotAST),
+		EQAST: _maketype(EQAST),
+		NEAST: _maketype(NEAST),
+		LTAST: _maketype(LTAST),
+		LEAST: _maketype(LEAST),
+		GTAST: _maketype(GTAST),
+		GEAST: _maketype(GEAST),
+		ContainsAST: _maketype(ContainsAST),
+		NotContainsAST: _maketype(NotContainsAST),
+		AddAST: _maketype(AddAST),
+		SubAST: _maketype(SubAST),
+		MulAST: _maketype(MulAST),
+		FloorDivAST: _maketype(FloorDivAST),
+		TrueDivAST: _maketype(TrueDivAST),
+		OrAST: _maketype(OrAST),
+		AndAST: _maketype(AndAST),
+		ModAST: _maketype(ModAST),
+		SetVarAST: _maketype(SetVarAST),
+		AddVarAST: _maketype(AddVarAST),
+		SubVarAST: _maketype(SubVarAST),
+		MulVarAST: _maketype(MulVarAST),
+		FloorDivVarAST: _maketype(FloorDivVarAST),
+		TrueDivVarAST: _maketype(TrueDivVarAST),
+		ModVarAST: _maketype(ModVarAST),
+		ShiftLeftVarAST: _maketype(ShiftLeftVarAST),
+		ShiftRightVarAST: _maketype(ShiftRightVarAST),
+		BitAndVarAST: _maketype(BitAndVarAST),
+		BitXOrVarAST: _maketype(BitXOrVarAST),
+		BitOrVarAST: _maketype(BitOrVarAST),
+		PositionalArgumentAST: _maketype(PositionalArgumentAST),
+		KeywordArgumentAST: _maketype(KeywordArgumentAST),
+		UnpackListArgumentAST: _maketype(UnpackListArgumentAST),
+		UnpackDictArgumentAST: _maketype(UnpackDictArgumentAST),
+		CallAST: _maketype(CallAST),
+		RenderAST: _maketype(RenderAST),
+		RenderXAST: _maketype(RenderXAST),
+		RenderBlockAST: _maketype(RenderBlockAST),
+		RenderBlocksAST: _maketype(RenderBlocksAST),
+		SignatureAST: _maketype(SignatureAST),
+		Template: _maketype(Template),
+		TemplateClosure: _maketype(TemplateClosure),
 	}
 );
 
-export let builtins = {
-	repr: _repr,
-	ascii: _ascii,
-	str: strtype,
-	int: inttype,
-	float: floattype,
-	list: listtype,
-	set: settype,
-	bool: booltype,
-	len: _len,
-	type: _type,
-	format: _format,
-	any: _any,
-	all: _all,
-	zip: _zip,
-	getattr: _getattr,
-	hasattr: _hasattr,
-	dir: _dir,
-	isundefined: _isundefined,
-	isdefined: _isdefined,
-	isnone: _isnone,
-	isbool: _isbool,
-	isint: _isint,
-	isfloat: _isfloat,
-	isstr: _isstr,
-	isdate: _isdate,
-	isdatetime: _isdatetime,
-	iscolor: _iscolor,
-	istimedelta: _istimedelta,
-	ismonthdelta: _ismonthdelta,
-	istemplate: _istemplate,
-	isfunction: _isfunction,
-	islist: _islist,
-	isset: _isset,
-	isdict: _isdict,
-	isexception: _isexception,
-	asjson: _asjson,
-	fromjson: _fromjson,
-	asul4on: _asul4on,
-	fromul4on: _fromul4on,
-	now: now,
-	utcnow: utcnow,
-	today: today,
-	enumerate: _enumerate,
-	isfirst: _isfirst,
-	islast: _islast,
-	isfirstlast: _isfirstlast,
-	enumfl: _enumfl,
-	abs: _abs,
-	date: _date,
-	datetime: _datetime,
-	timedelta: _timedelta,
-	monthdelta: _monthdelta,
-	rgb: _rgb,
-	hls: _hls,
-	hsv: _hsv,
-	xmlescape: _xmlescape,
-	csv: _csv,
-	chr: _chr,
-	ord: _ord,
-	hex: _hex,
-	oct: _oct,
-	bin: _bin,
-	min: _min,
-	max: _max,
-	sum: _sum,
-	first: _first,
-	last: _last,
-	sorted: _sorted,
-	range: _range,
-	slice: _slice,
-	urlquote: _urlquote,
-	urlunquote: _urlunquote,
-	reversed: _reversed,
-	random: _random,
-	randrange: _randrange,
-	randchoice: _randchoice,
-	round: _round,
-	floor: _floor,
-	ceil: _ceil,
-	md5: _md5,
-	scrypt: _scrypt,
-	ul4on: _ul4on,
-	ul4: _ul4,
-	math: _math,
-	operator: _operator
-};
 
 expose(_repr, ["obj", "p"], {name: "repr"});
 expose(_ascii, ["obj", "p"], {name: "ascii"});
@@ -9188,6 +9650,7 @@ expose(_islist, ["obj", "p"], {name: "islist"});
 expose(_isset, ["obj", "p"], {name: "isset"});
 expose(_isdict, ["obj", "p"], {name: "isdict"});
 expose(_isexception, ["obj", "p"], {name: "isexception"});
+expose(_isinstance, ["obj", "p", "type", "p"], {name: "isinstance"});
 expose(_asjson, ["obj", "p"], {name: "asjson"});
 expose(_fromjson, ["string", "p"], {name: "fromjson"});
 expose(_asul4on, ["obj", "p", "indent", "pk=",null], {name: "asul4on"});
@@ -9201,10 +9664,6 @@ expose(_islast, ["iterable", "p"], {name: "islast"});
 expose(_isfirstlast, ["iterable", "p"], {name: "isfirstlast"});
 expose(_enumfl, ["iterable", "p", "start", "pk=", 0], {name: "enumfl"});
 expose(_abs, ["number", "p"], {name: "abs"});
-expose(_date, ["year", "pk", "month", "pk", "day", "pk"], {name: "date"});
-expose(_datetime, ["year", "pk", "month", "pk", "day", "pk", "hour", "pk=", 0, "minute", "pk=", 0, "second", "pk=", 0, "microsecond", "pk=", 0], {name: "datetime"});
-expose(_timedelta, ["days", "pk=", 0, "seconds", "pk=", 0, "microseconds", "pk=", 0], {name: "timedelta"});
-expose(_monthdelta, ["months", "p=", 0], {name: "monthdelta"});
 expose(_rgb, ["r", "pk", "g", "pk", "b", "pk", "a", "pk=", 1.0], {name: "rgb"});
 expose(_hls, ["h", "pk", "l", "pk", "s", "pk", "a", "pk=", 1.0], {name: "hls"});
 expose(_hsv, ["h", "pk", "s", "pk", "v", "pk", "a", "pk=", 1.0], {name: "hsv"});
@@ -9229,9 +9688,9 @@ expose(_reversed, ["sequence", "p"], {name: "reversed"});
 expose(_random, [], {name: "random"});
 expose(_randrange, ["start", "p", "stop", "p=", Object, "step", "p=", Object], {name: "randrange"});
 expose(_randchoice, ["seq", "pk"], {name: "randchoice"});
-expose(_round, ["x", "p", "digit", "pk=", 0], {name: "round"});
-expose(_floor, ["x", "p", "digit", "pk=", 0], {name: "floor"});
-expose(_ceil, ["x", "p", "digit", "pk=", 0], {name: "ceil"});
+expose(_round, ["x", "p", "digits", "pk=", 0], {name: "round"});
+expose(_floor, ["x", "p", "digits", "pk=", 0], {name: "floor"});
+expose(_ceil, ["x", "p", "digits", "pk=", 0], {name: "ceil"});
 expose(_md5, ["string", "p"], {name: "md5"});
 expose(_scrypt, ["string", "p", "salt", "pk"], {name: "scrypt"});
 
@@ -9403,6 +9862,23 @@ export function _update(obj, others, kwargs)
 	return null;
 };
 
+export class ColorType extends Type
+{
+	[symbols.call](r=0, g=0, b=0, a=255)
+	{
+		return new Color(r, g, b, a);
+	}
+
+	instancecheck(obj)
+	{
+		return obj instanceof Color;
+	}
+};
+
+expose(ColorType.prototype, ["r", "pk=", 0, "g", "pk=", 0, "b", "pk=", 0, "a", "pk=", 255], {name: "color"});
+
+let colortype = new ColorType(null, "color", "An RGBA color (with 8-bit red, green, blue and alpha values).");
+
 export class Color extends Proto
 {
 	constructor(r=0, g=0, b=0, a=255)
@@ -9412,6 +9888,11 @@ export class Color extends Proto
 		this._g = g;
 		this._b = b;
 		this._a = a;
+	}
+
+	[symbols.type]()
+	{
+		return colortype;
 	}
 
 	[symbols.repr]()
@@ -9690,6 +10171,11 @@ export class Date_ extends Proto
 		this._date = new Date(year, month-1, day);
 	}
 
+	[symbols.type]()
+	{
+		return datetype;
+	}
+
 	[symbols.repr]()
 	{
 		return '@(' + this[symbols.str]() + ")";
@@ -9757,6 +10243,23 @@ export class Date_ extends Proto
 };
 
 
+export class TimeDeltaType extends Type
+{
+	[symbols.call](days=0, seconds=0, microseconds=0)
+	{
+		return new TimeDelta(days, seconds, microseconds);
+	}
+
+	instancecheck(obj)
+	{
+		return obj instanceof TimeDelta;
+	}
+}
+
+expose(TimeDeltaType.prototype, ["days", "pk=", 0, "seconds", "pk=", 0, "microseconds", "pk=", 0], {name: "timedelta"});
+
+export let timedeltatype = new TimeDeltaType(null, "timedelta", "A time span (days/seconds/microseconds).");
+
 export class TimeDelta extends Proto
 {
 	constructor(days=0, seconds=0, microseconds=0)
@@ -9777,6 +10280,11 @@ export class TimeDelta extends Proto
 		this._microseconds = microseconds;
 		this._seconds = seconds;
 		this._days = days;
+	}
+
+	[symbols.type]()
+	{
+		return timedeltatype;
 	}
 
 	total_seconds()
@@ -9940,7 +10448,7 @@ export class TimeDelta extends Proto
 			return this._adddate(other, this._days);
 		else if (_isdatetime(other))
 			return this._adddatetime(other, this._days, this._seconds, this._microseconds);
-		throw new TypeError(_type(this) + " + " + _type(other) + " not supported");
+		throw new TypeError(_type(this).fullname() + " + " + _type(other).fullname() + " not supported");
 	}
 
 	[symbols.radd](other)
@@ -9949,14 +10457,14 @@ export class TimeDelta extends Proto
 			return this._adddate(other, this._days);
 		else if (_isdatetime(other))
 			return this._adddatetime(other, this._days, this._seconds, this._microseconds);
-		throw new TypeError(_type(this) + " + " + _type(other) + " not supported");
+		throw new TypeError(_type(this).fullname() + " + " + _type(other).fullname() + " not supported");
 	}
 
 	[symbols.sub](other)
 	{
 		if (other instanceof TimeDelta)
 			return new TimeDelta(this._days - other._days, this._seconds - other._seconds, this._microseconds - other._microseconds);
-		throw new TypeError(_type(this) + " - " + _type(other) + " not supported");
+		throw new TypeError(_type(this).fullname() + " - " + _type(other).fullname() + " not supported");
 	}
 
 	[symbols.rsub](other)
@@ -9965,21 +10473,21 @@ export class TimeDelta extends Proto
 			return this._adddate(other, -this._days);
 		else if (_isdatetime(other))
 			return this._adddatetime(other, -this._days, -this._seconds, -this._microseconds);
-		throw new TypeError(_type(this) + " - " + _type(other) + " not supported");
+		throw new TypeError(_type(this).fullname() + " - " + _type(other).fullname() + " not supported");
 	}
 
 	[symbols.mul](other)
 	{
 		if (typeof(other) === "number")
 			return new TimeDelta(this._days * other, this._seconds * other, this._microseconds * other);
-		throw new TypeError(_type(this) + " * " + _type(other) + " not supported");
+		throw new TypeError(_type(this).fullname() + " * " + _type(other).fullname() + " not supported");
 	}
 
 	[symbols.rmul](other)
 	{
 		if (typeof(other) === "number")
 			return new TimeDelta(this._days * other, this._seconds * other, this._microseconds * other);
-		throw new TypeError(_type(this) + " * " + _type(other) + " not supported");
+		throw new TypeError(_type(this).fullname() + " * " + _type(other).fullname() + " not supported");
 	}
 
 	[symbols.truediv](other)
@@ -10010,7 +10518,7 @@ export class TimeDelta extends Proto
 				throw new ZeroDivisionError();
 			return myValue/otherValue;
 		}
-		throw new TypeError(_type(this) + " / " + _type(other) + " not supported");
+		throw new TypeError(_type(this).fullname() + " / " + _type(other).fullname() + " not supported");
 	}
 
 	[symbols.floordiv](other)
@@ -10075,8 +10583,29 @@ export class TimeDelta extends Proto
 };
 
 
+export class MonthDeltaType extends Type
+{
+	// Return a ``MonthDelta`` object from the arguments passed in
+	[symbols.call](months=0)
+	{
+		return new MonthDelta(months);
+	}
+
+	instancecheck(obj)
+	{
+		return obj instanceof MonthDelta;
+	}
+}
+
+export let monthdeltatype = new MonthDeltaType(null, "monthdelta", "A time span of a number of months.");
+
+expose(MonthDeltaType.prototype, ["months", "p=", 0], {name: "monthdelta"});
+
 export class MonthDelta extends Proto
 {
+	static classname = "monthdelta";
+	static classdoc = "A time span of a number of months.";
+
 	constructor(months=0)
 	{
 		super();
@@ -10085,7 +10614,7 @@ export class MonthDelta extends Proto
 
 	[symbols.type]()
 	{
-		return this.type;
+		return monthdeltatype;
 	}
 
 	[symbols.repr]()
@@ -10196,7 +10725,7 @@ export class MonthDelta extends Proto
 			return this._adddate(other, this._months);
 		else if (_isdatetime(other))
 			return this._adddatetime(other, this._months);
-		throw new ArgumentError(_type(this) + " + " + _type(other) + " not supported");
+		throw new ArgumentError(_type(this).fullname() + " + " + _type(other).fullname() + " not supported");
 	}
 
 	[symbols.radd](other)
@@ -10205,14 +10734,14 @@ export class MonthDelta extends Proto
 			return this._adddate(other, this._months);
 		else if (_isdatetime(other))
 			return this._adddatetime(other, this._months);
-		throw new ArgumentError(_type(this) + " + " + _type(other) + " not supported");
+		throw new ArgumentError(_type(this).fullname() + " + " + _type(other).fullname() + " not supported");
 	}
 
 	[symbols.sub](other)
 	{
 		if (_ismonthdelta(other))
 			return new MonthDelta(this._months - other._months);
-		throw new ArgumentError(_type(this) + " - " + _type(other) + " not supported");
+		throw new ArgumentError(_type(this).fullname() + " - " + _type(other).fullname() + " not supported");
 	}
 
 	[symbols.rsub](other)
@@ -10221,28 +10750,28 @@ export class MonthDelta extends Proto
 			return this._adddate(other, -this._months);
 		else if (_isdatetime(other))
 			return this._adddatetime(other, -this._months);
-		throw new ArgumentError(_type(this) + " - " + _type(other) + " not supported");
+		throw new ArgumentError(_type(this).fullname() + " - " + _type(other).fullname() + " not supported");
 	}
 
 	[symbols.mul](other)
 	{
 		if (typeof(other) === "number" || typeof(other) === "boolean")
 			return new MonthDelta(this._months * Math.floor(other));
-		throw new ArgumentError(_type(this) + " * " + _type(other) + " not supported");
+		throw new ArgumentError(_type(this).fullname() + " * " + _type(other).fullname() + " not supported");
 	}
 
 	[symbols.rmul](other)
 	{
 		if (typeof(other) === "number" || typeof(other) === "boolean")
 			return new MonthDelta(this._months * Math.floor(other));
-		throw new ArgumentError(_type(this) + " * " + _type(other) + " not supported");
+		throw new ArgumentError(_type(this).fullname() + " * " + _type(other).fullname() + " not supported");
 	}
 
 	[symbols.truediv](other)
 	{
 		if (_ismonthdelta(other))
 			return this._months / other._months;
-		throw new ArgumentError(_type(this) + " / " + _type(other) + " not supported");
+		throw new ArgumentError(_type(this).fullname() + " / " + _type(other).fullname() + " not supported");
 	}
 
 	[symbols.floordiv](other)
@@ -10260,7 +10789,7 @@ export class MonthDelta extends Proto
 				throw new ZeroDivisionError();
 			return Math.floor(this._months / other._months);
 		}
-		throw new ArgumentError(_type(this) + " // " + _type(other) + " not supported");
+		throw new ArgumentError(_type(this).fullname() + " // " + _type(other).fullname() + " not supported");
 	}
 
 	[symbols.getattr](attrname)
@@ -10281,14 +10810,97 @@ export class MonthDelta extends Proto
 	{
 		return this._months;
 	}
-
-	ul4type()
-	{
-		return "monthdelta";
-	}
 };
 
-MonthDelta.prototype.type = new Type(null, "monthdelta", "A number of months");
+
+export let builtins = {
+	repr: _repr,
+	ascii: _ascii,
+	str: strtype,
+	int: inttype,
+	float: floattype,
+	list: listtype,
+	set: settype,
+	bool: booltype,
+	len: _len,
+	type: _type,
+	format: _format,
+	any: _any,
+	all: _all,
+	zip: _zip,
+	getattr: _getattr,
+	hasattr: _hasattr,
+	dir: _dir,
+	isundefined: _isundefined,
+	isdefined: _isdefined,
+	isnone: _isnone,
+	isbool: _isbool,
+	isint: _isint,
+	isfloat: _isfloat,
+	isstr: _isstr,
+	isdate: _isdate,
+	isdatetime: _isdatetime,
+	iscolor: _iscolor,
+	istimedelta: _istimedelta,
+	ismonthdelta: _ismonthdelta,
+	istemplate: _istemplate,
+	isfunction: _isfunction,
+	islist: _islist,
+	isset: _isset,
+	isdict: _isdict,
+	isexception: _isexception,
+	isinstance: _isinstance,
+	asjson: _asjson,
+	fromjson: _fromjson,
+	asul4on: _asul4on,
+	fromul4on: _fromul4on,
+	now: now,
+	utcnow: utcnow,
+	today: today,
+	enumerate: _enumerate,
+	isfirst: _isfirst,
+	islast: _islast,
+	isfirstlast: _isfirstlast,
+	enumfl: _enumfl,
+	abs: _abs,
+	date: datetype,
+	datetime: datetimetype,
+	timedelta: timedeltatype,
+	monthdelta: monthdeltatype,
+	rgb: _rgb,
+	hls: _hls,
+	hsv: _hsv,
+	xmlescape: _xmlescape,
+	csv: _csv,
+	chr: _chr,
+	ord: _ord,
+	hex: _hex,
+	oct: _oct,
+	bin: _bin,
+	min: _min,
+	max: _max,
+	sum: _sum,
+	first: _first,
+	last: _last,
+	sorted: _sorted,
+	range: _range,
+	slice: _slice,
+	urlquote: _urlquote,
+	urlunquote: _urlunquote,
+	reversed: _reversed,
+	random: _random,
+	randrange: _randrange,
+	randchoice: _randchoice,
+	round: _round,
+	floor: _floor,
+	ceil: _ceil,
+	md5: _md5,
+	scrypt: _scrypt,
+	ul4on: _ul4on,
+	ul4: _ul4,
+	math: _math,
+	operator: _operator
+};
 
 
 const constructors = [
@@ -10300,17 +10912,17 @@ const constructors = [
 	[UnpackSeqItemAST, "unpackseqitem"],
 	[DictItemAST, "dictitem"],
 	[UnpackDictItemAST, "unpackdictitem"],
-	[PosArgAST, "posarg"],
-	[KeywordArgAST, "keywordarg"],
-	[UnpackListArgAST, "unpacklistarg"],
-	[UnpackDictArgAST, "unpackdictarg"],
+	[PositionalArgumentAST, "posarg"],
+	[KeywordArgumentAST, "keywordarg"],
+	[UnpackListArgumentAST, "unpacklistarg"],
+	[UnpackDictArgumentAST, "unpackdictarg"],
 	[ListAST, "list"],
-	[ListCompAST, "listcomp"],
+	[ListComprehensionAST, "listcomp"],
 	[DictAST, "dict"],
-	[DictCompAST, "dictcomp"],
+	[DictComprehensionAST, "dictcomp"],
 	[SetAST, "set"],
-	[SetCompAST, "setcomp"],
-	[GenExprAST, "genexpr"],
+	[SetComprehensionAST, "setcomp"],
+	[GeneratorExpressionAST, "genexpr"],
 	[VarAST, "var"],
 	[NotAST, "not"],
 	[NegAST, "neg"],
@@ -10366,7 +10978,7 @@ const constructors = [
 	[WhileBlockAST, "whileblock"],
 	[BreakAST, "break"],
 	[ContinueAST, "continue"],
-	[CondBlockAST, "condblock"],
+	[ConditionalBlocksAST, "condblock"],
 	[IfBlockAST, "ifblock"],
 	[ElIfBlockAST, "elifblock"],
 	[ElseBlockAST, "elseblock"],
