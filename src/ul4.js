@@ -8448,25 +8448,11 @@ export class ElseBlockAST extends BlockAST
 	}
 };
 
-export class TemplateType extends Type
-{
-	[symbols.call](r=0, g=0, b=0, a=255)
-	{
-		return new Color(r, g, b, a);
-	}
-
-	instancecheck(obj)
-	{
-		return obj instanceof Template;
-	}
-};
-
-expose(TemplateType.prototype, ["source", "pk", "name", "pk=", null, "whitespace", "k=", "keep", "startdelim", "k=", "<?", "enddelim", "k=", "?>", "signature", "k=", null], {name: "Template"});
-
-let templatetype = new TemplateType("ul4", "Template", "An UL4 template.");
 
 export class Template extends BlockAST
 {
+	static classdoc = "An UL4 template.";
+
 	constructor(template, pos, source, name, whitespace, startdelim, enddelim, signature)
 	{
 		super(template, pos);
@@ -8480,11 +8466,6 @@ export class Template extends BlockAST
 		this._asts = null;
 		this._ul4_signature = signature;
 		this.parenttemplate = null;
-	}
-
-	[symbols.type]()
-	{
-		return templatetype;
 	}
 
 	[symbols.getattr](attrname)
@@ -9801,7 +9782,7 @@ export const _ul4 = new Module(
 		RenderBlockAST: _maketype(RenderBlockAST),
 		RenderBlocksAST: _maketype(RenderBlocksAST),
 		SignatureAST: _maketype(SignatureAST),
-		Template: templatetype,
+		Template: _maketype(Template),
 		TemplateClosure: _maketype(TemplateClosure),
 	}
 );
