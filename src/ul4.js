@@ -104,6 +104,483 @@ export let symbols = {
 };
 
 
+// Adds name and signature to a function/method and makes the method callable by UL4
+export function expose(f, signature, options)
+{
+	options = options || {};
+	if (options.name)
+		f._ul4_name = options.name;
+	// This is the `_islist` function, inlined here because of order problems.
+	if (Object.prototype.toString.call(signature) === "[object Array]")
+		signature = new Signature(...signature);
+	f._ul4_signature = signature;
+	f._ul4_needsobject = options.needsobject || false;
+	f._ul4_needscontext = options.needscontext || false;
+	return f;
+};
+
+
+// This is outside of ``Proto`` on purpose
+// This way reactive frameworks like ``Vue.js`` don't get to see it
+// and complain about mutating render functions when those create new objects.
+let _nextid = 1;
+
+///
+/// Base class for all our classes.
+/// This implements support for proper UL4ON serialization:
+/// AS Javascript has no way to look up an object by its identity, we need to
+/// give each instance a unique identifier ourselves.
+///
+export class Proto
+{
+	constructor()
+	{
+		this.__id__ = _nextid++;
+	}
+
+	// equality comparison of objects defaults to identity comparison
+	[symbols.eq](other)
+	{
+		return this === other;
+	}
+
+	// To overwrite equality comparison, you only have to overwrite ``[symbols.eq]``,
+	// ``[symbols.ne]`` will be synthesized from that
+	[symbols.ne](other)
+	{
+		return !this[symbols.eq](other);
+	}
+
+	// For other comparison operators, each method has to be implemented:
+	// ``<`` calls ``[symbols.lt]``, ``<=`` calls ``[symbols.le]``, ``>`` calls ``[symbols.gt]`` and
+	// ``>=`` calls ``[symbols.ge]``
+
+	[symbols.bool]()
+	{
+		return true;
+	}
+};
+
+
+///
+/// The signature of a callable (i.e. which arguments it takes, their default, etc.)
+///
+export class Signature extends Proto
+{
+	constructor(...params)
+	{
+		super();
+		this.paramsByPos = [];
+		this.paramsByName = {};
+		this.countpos = 0;
+		this.countposdef = 0;
+		this.countposkw = 0;
+		this.countposkwdef = 0;
+		this.countkw = 0;
+		this.countkwdef = 0;
+		this.varpos = null;
+		this.varkw = null;
+
+		let state = 0;
+		let name = null;
+		let type = null;
+		for (let value of params)
+		{
+			if (state == 0)
+			{
+				name = value;
+				state = 1;
+			}
+			else if (state == 1)
+			{
+				type = value;
+				if (type.endsWith("="))
+					state = 2;
+				else
+				{
+					this.add(name, type, null);
+					state = 0;
+				}
+			}
+			else
+			{
+				this.add(name, type, value);
+				state = 0;
+			}
+		}
+	}
+
+	// Add a parameter
+	add(name, type, defaultValue)
+	{
+		let pos = this.paramsByPos.length;
+		if (this.varpos !== null)
+			++pos;
+		if (this.varkw !== null)
+			++pos;
+		let param = {name: name, pos: pos, type: type, defaultValue: defaultValue};
+		switch (type)
+		{
+			case "p":
+				if (this.countposdef > 0 || this.countposkwdef > 0 || this.countkwdef > 0)
+					throw new ParameterError("parameter without default after parameter with default");
+				else if (this.countposkw > 0 || this.countposkwdef > 0)
+					throw new ParameterError("positional-only parameter after positional/keyword parameter");
+				else if (this.countkw > 0 || this.countkwdef > 0)
+					throw new ParameterError("positional-only parameter after keyword-only parameter");
+				else if (this.varpos !== null)
+					throw new ParameterError("positional-only parameter after * parameter");
+				else if (this.varkw !== null)
+					throw new ParameterError("positional-only parameter after ** parameter");
+				this.paramsByPos.push(param);
+				this.paramsByName[name] = param;
+				++this.countpos;
+				break;
+			case "p=":
+				if (this.countposkw > 0 || this.countposkwdef > 0)
+					throw new ParameterError("positional-only parameter after positional/keyword parameter");
+				else if (this.countkw > 0 || this.countkwdef > 0)
+					throw new ParameterError("positional-only parameter after keyword-only parameter");
+				else if (this.varpos !== null)
+					throw new ParameterError("positional-only parameter after * parameter");
+				else if (this.varkw !== null)
+					throw new ParameterError("positional-only parameter after ** parameter");
+				this.paramsByPos.push(param);
+				this.paramsByName[name] = param;
+				++this.countposdef;
+				break;
+			case "pk":
+				if (this.countposdef > 0 || this.countposkwdef > 0 || this.countkwdef > 0)
+					throw new ParameterError("parameter without default after parameter with default");
+				else if (this.countkw > 0 || this.countkwdef > 0)
+					throw new ParameterError("positional/keyword parameter after keyword-only parameter");
+				else if (this.varpos !== null)
+					throw new ParameterError("positional/keyword parameter after * parameter");
+				else if (this.varkw !== null)
+					throw new ParameterError("positional/keyword parameter after ** parameter");
+				this.paramsByPos.push(param);
+				this.paramsByName[name] = param;
+				++this.countposkw;
+				break;
+			case "pk=":
+				if (this.countkw > 0 || this.countkwdef > 0)
+					throw new ParameterError("positional/keyword parameter after keyword-only parameter");
+				else if (this.varpos !== null)
+					throw new ParameterError("positional/keyword parameter after * parameter");
+				else if (this.varkw !== null)
+					throw new ParameterError("positional/keyword parameter after ** parameter");
+				this.paramsByPos.push(param);
+				this.paramsByName[name] = param;
+				++this.countposkwdef;
+				break;
+			case "k":
+				if (this.countposdef > 0 || this.countposkwdef > 0 || this.countkwdef > 0)
+					throw new ParameterError("parameter without default after parameter with default");
+				else if (this.varpos !== null)
+					throw new ParameterError("keyword-only parameter after * parameter");
+				else if (this.varkw !== null)
+					throw new ParameterError("keyword-only parameter after ** parameter");
+				this.paramsByPos.push(param);
+				this.paramsByName[name] = param;
+				++this.countkw;
+				break;
+			case "k=":
+				if (this.varpos !== null)
+					throw new ParameterError("keyword-only parameter after * parameter");
+				else if (this.varkw !== null)
+					throw new ParameterError("keyword-only parameter after ** parameter");
+				this.paramsByPos.push(param);
+				this.paramsByName[name] = param;
+				++this.countkwdef;
+				break;
+			case "*":
+				if (this.varpos !== null)
+					throw new ParameterError("* parameter specified twice!");
+				else if (this.varkw !== null)
+					throw new ParameterError("* parameter can come after ** parameter!");
+				this.varpos = param;
+				break;
+			case "**":
+				if (this.varkw !== null)
+					throw new ParameterError("** parameter specified twice!");
+				this.varkw = param;
+				break;
+		}
+	}
+
+	// Create the argument array for calling a function with this signature with the arguments available from ``args``
+	bindArray(name, args, kwargs)
+	{
+		let decname = name !== null ? name + "() " : "";
+
+		let varpos = this.varpos != null ? [] : null;
+		let varkw = this.varkw != null ? new Map() : null;
+
+		let count = this.countpos + this.countposdef + this.countposkw + this.countposkwdef + this.countkw + this.countkwdef;
+		let finalargs = Array(count).fill(null);
+		let haveValues = Array(count).fill(false);
+
+		// Handle psotional arguments
+		if (args !== null)
+		{
+			let i = 0;
+			for (let arg of args)
+			{
+				let param = this.paramsByPos[i];
+				if (param !== undefined && param.type.indexOf("p") >= 0)
+				{
+					finalargs[i] = arg;
+					haveValues[i] = true;
+				}
+				else
+				{
+					if (varpos !== null)
+						varpos.push(arg);
+					else
+					{
+						let count_nodef = this.countpos + this.countposkw;
+						let count_def = this.countposdef + this.countposkwdef;
+						if (count_def == 0)
+							throw new ArgumentError(name + "() takes exactly " + count_nodef + " positional argument" + (count_nodef != 1 ? "s" : "") + ", " + args.length + " given");
+						else
+							throw new ArgumentError(name + "() takes at most " + (count_nodef + count_def) + " positional argument" + ((count_nodef + count_def) != 1 ? "s" : "") + ", " + args.length + " given");
+					}
+				}
+				++i;
+			}
+		}
+
+		// Handle keyword arguments
+		if (kwargs !== null)
+		{
+			for (let [argname, argvalue] of Object.entries(kwargs))
+			{
+				let param = this.paramsByName[argname];
+
+				if (param !== undefined && param.type.indexOf("k") >= 0)
+				{
+					if (haveValues[param.pos])
+						throw new ArgumentError("Duplicate keyword argument " + argname + " for " + name + "()");
+					finalargs[param.pos] = argvalue;
+					haveValues[param.pos] = true;
+				}
+				else
+				{
+					if (varkw !== null)
+					{
+						if (varkw.has(argname))
+							throw new ArgumentError("Duplicate keyword argument " + argname + " for " + name + "()");
+						varkw.set(argname, argvalue);
+					}
+					else
+						throw new ArgumentError(name + "() doesn't support an argument named " + argname);
+				}
+			}
+		}
+
+		// Fill in default values and check that every parameter has a value
+		let i = 0;
+		for (let param of this.paramsByPos)
+		{
+			if (!haveValues[i])
+			{
+				if (param.type.endsWith("="))
+				{
+					finalargs[i] = param.defaultValue;
+					haveValues[i] = true;
+				}
+				else
+					throw new ArgumentError("Required " + name + "() argument " + param.name + " (position " + param.pos + ") missing");
+			}
+			++i;
+		}
+
+		// Set variable parameters
+		if (varpos !== null)
+			finalargs.push(varpos);
+		if (varkw !== null)
+			finalargs.push(varkw);
+
+		return finalargs;
+	}
+
+	// Create the argument object for calling a function with this signature with the arguments available from ``args``
+	bindObject(name, args, kwargs)
+	{
+		args = this.bindArray(name, args, kwargs);
+		let argObject = {};
+		let i = 0;
+		for (let param of this.paramsByPos)
+			argObject[param.name] = args[i++];
+		if (this.varpos !== null)
+			argObject[this.varpos.name] = args[i++];
+		if (this.varkw !== null)
+			argObject[this.varkw.name] = args[i++];
+		return argObject;
+	}
+
+	[symbols.repr]()
+	{
+		return "<Signature " + this.toString() + ">";
+	}
+
+	[symbols.str]()
+	{
+		return this.toString();
+	}
+
+	_appendParam(buffer, lasttype, param)
+	{
+		let sep;
+		if (lasttype === null)
+			sep = ["k", "k="].includes(param.type) ? "*, " : "";
+		else if (["pk", "pk="].includes(lasttype))
+			sep = ["k", "k="].includes(param.type) ? ", *, " : ", ";
+		else if (["p", "p="].includes(lasttype))
+		{
+			if (["pk", "pk="].includes(param.type))
+				sep = ", /, ";
+			else if (["k", "k="].includes(param.type))
+				sep = ", /, *, ";
+			else
+				sep = ", ";
+		}
+		else
+			sep = ", ";
+		lasttype = param.type;
+		buffer.push(sep);
+		if (["*", "**"].includes(param.type))
+			buffer.push(param.type);
+		buffer.push(param.name);
+		if (param.type.endsWith("="))
+		{
+			buffer.push("=");
+			buffer.push(_repr(param.defaultValue));
+		}
+	}
+
+	toString()
+	{
+		let v = [];
+		let lasttype = null;
+		for (let param of this.paramsByPos)
+		{
+			this._appendParam(v, lasttype, param);
+			lasttype = param.type;
+		}
+		if (this.varpos !== null)
+		{
+			this._appendParam(v, lasttype, this.varpos);
+			lasttype = this.varpos.type;
+		}
+		if (this.varkw !== null)
+		{
+			this._appendParam(v, lasttype, this.varkw);
+			lasttype = this.varkw.type;
+		}
+		return "(" + v.join("") + ")";
+	}
+};
+
+
+///
+/// Base class for type objects of all types
+/// Must be defined first, as it's used by many classes
+///
+export class Type
+{
+	constructor(module, name, doc)
+	{
+		this.module = module;
+		this.name = name;
+		this.doc = doc;
+		this._constructor = constructor;
+	}
+
+	[symbols.getattr](attrname)
+	{
+		switch (attrname)
+		{
+			case "__module__":
+				return this.module;
+			case "__name__":
+				return this.name;
+			case "__doc__":
+				return this.doc;
+			default:
+				throw new AttributeError(this, attrname);
+		}
+	}
+
+	[symbols.repr]()
+	{
+		return this.toString();
+	}
+
+	toString()
+	{
+		return "<type " + this.fullname() + ">";
+	}
+
+	fullname()
+	{
+		if (this.module === null)
+			return this.name;
+		else
+			return this.module + "." + this.name;
+	}
+
+	dir()
+	{
+		return this.attrs;
+	}
+
+	getattr(obj, attrname)
+	{
+		if (typeof(obj[symbols.getattr]) === "function")
+			return obj[symbols.getattr](attrname);
+		else if (this.attrs.has(attrname))
+		{
+			let attr = this[attrname];
+			let realattr = function realattr(...args) {
+				return attr.apply(this, [obj, ...args]);
+			};
+			// Unfortunately we can't set ``realattr.name``;
+			realattr._ul4_name = attr._ul4_name || attr.name;
+			realattr._ul4_signature = attr._ul4_signature;
+			realattr._ul4_needsobject = attr._ul4_needsobject;
+			realattr._ul4_needscontext = attr._ul4_needscontext;
+			return realattr;
+		}
+		else
+			throw new AttributeError(obj, attrname);
+	}
+
+	hasattr(obj, attrname)
+	{
+		if (typeof(obj[symbols.getattr]) === "function")
+		{
+			try
+			{
+				obj[symbols.getattr](attrname);
+				return true;
+			}
+			catch (exc)
+			{
+				if (exc instanceof AttributeError && exc.obj === object)
+					return false;
+				else
+					throw exc;
+			}
+		}
+		else
+			return this.attrs.has(attrname);
+	}
+};
+
+Type.prototype.attrs = new Set();
+
+
 ///
 /// UL4ON
 ///
@@ -135,6 +612,23 @@ export function loads(dump, registry=null)
 	return decoder.loads(dump);
 };
 
+export class EncoderType extends Type
+{
+	[symbols.call](indent=null)
+	{
+		return new Encoder(indent);
+	}
+
+	instancecheck(obj)
+	{
+		return obj instanceof Encoder;
+	}
+};
+
+expose(EncoderType.prototype, ["indent", "pk=", null], {name: "Encoder"});
+
+let encodertype = new EncoderType("ul4on", "Encoder", "An UL4ON encoder");
+
 // Helper class for encoding
 export class Encoder
 {
@@ -147,6 +641,11 @@ export class Encoder
 		this._strings2index = {};
 		this._ids2index = {};
 		this._backrefs = 0;
+	}
+
+	[symbols.type]()
+	{
+		return encodertype;
 	}
 
 	_line(line, ...args)
@@ -311,6 +810,23 @@ export class Encoder
 	}
 };
 
+export class DecoderType extends Type
+{
+	[symbols.call]()
+	{
+		return new Decoder();
+	}
+
+	instancecheck(obj)
+	{
+		return obj instanceof Decoder;
+	}
+};
+
+expose(DecoderType.prototype, [], {name: "Decoder"});
+
+let decodertype = new DecoderType("ul4on", "Decoder", "An UL4ON decoder");
+
 // Helper class for decoding
 export class Decoder
 {
@@ -323,6 +839,11 @@ export class Decoder
 		this.registry = registry === undefined ? null : registry;
 		this.persistent_objects = {};
 		this.stack = null; // Use for informative error messages
+	}
+
+	[symbols.type]()
+	{
+		return decodertype;
 	}
 
 	// Read a character from the buffer
@@ -1999,12 +2520,10 @@ export function _type(obj)
 		return listtype;
 	else if (_isset(obj))
 		return settype;
-	else if (_ismap(obj))
-		return maptype;
+	else if (_isdict(obj)) // These are both `Map`s and "foreign" objects, i.e. ones that don't inherit from `Proto`
+		return dicttype;
 	else if (_isdatetime(obj))
 		return datetimetype;
-	else if (_isobject(obj))
-		return objecttype;
 	else
 	{
 		let constructor = obj.constructor;
@@ -2171,19 +2690,19 @@ export function _isdate(obj)
 // Check if ``obj`` is a color
 export function _iscolor(obj)
 {
-	return (obj instanceof Color);
+	return colortype.instancecheck(obj);
 };
 
 // Check if ``obj`` is a timedelta object
 export function _istimedelta(obj)
 {
-	return (obj instanceof TimeDelta);
+	return timedeltatype.instancecheck(obj);
 };
 
 // Check if ``obj`` is a monthdelta object
 export function _ismonthdelta(obj)
 {
-	return (obj instanceof MonthDelta);
+	return monthdeltatype.instancecheck(obj);
 };
 
 // Check if ``obj`` is a template
@@ -2201,13 +2720,13 @@ export function _isfunction(obj)
 // Check if ``obj`` is a list
 export function _islist(obj)
 {
-	return Object.prototype.toString.call(obj) === "[object Array]";
+	return listtype.instancecheck(obj);
 };
 
 // Check if ``obj`` is a set
 export function _isset(obj)
 {
-	return Object.prototype.toString.call(obj) === "[object Set]";
+	return settype.instancecheck(obj);
 };
 
 // Check if ``obj`` is an exception (at least a UL4 exception)
@@ -2225,19 +2744,19 @@ export function _isiter(obj)
 // Check if ``obj`` is a JS object
 export function _isobject(obj)
 {
-	return Object.prototype.toString.call(obj) === "[object Object]" && obj.__type__ === undefined && !(obj instanceof Proto);
+	return dicttype._isobject(obj);
 };
 
 // Check if ``obj`` is a ``Map``
 export function _ismap(obj)
 {
-	return obj !== null && typeof(obj) === "object" && typeof(obj.__proto__) === "object" && obj.__proto__ === Map.prototype;
+	return dicttype._ismap(obj);
 };
 
 // Check if ``obj`` is a dict (i.e. a normal Javascript object or a ``Map``)
 export function _isdict(obj)
 {
-	return _isobject(obj) || _ismap(obj);
+	return dicttype.instancecheck(obj);
 };
 
 // Check if ``obj`` is an instance of ``type``
@@ -2906,485 +3425,12 @@ export function _rpad(string, pad, len)
 	return string;
 };
 
-// This is outside of ``Proto`` on purpose
-// This way reactive frameworks like ``Vue.js`` don't get to see it
-// and complain about mutating render functions when those create new objects.
-let _nextid = 1;
-
-export class Proto
-{
-	constructor()
-	{
-		this.__id__ = _nextid++;
-	}
-
-	ul4type()
-	{
-		return this.constructor.name;
-	}
-
-	// equality comparison of objects defaults to identity comparison
-	[symbols.eq](other)
-	{
-		return this === other;
-	}
-
-	// To overwrite equality comparison, you only have to overwrite ``[symbols.eq]``,
-	// ``[symbols.ne]`` will be synthesized from that
-	[symbols.ne](other)
-	{
-		return !this[symbols.eq](other);
-	}
-
-	// For other comparison operators, each method has to be implemented:
-	// ``<`` calls ``[symbols.lt]``, ``<=`` calls ``[symbols.le]``, ``>`` calls ``[symbols.gt]`` and
-	// ``>=`` calls ``[symbols.ge]``
-
-	[symbols.bool]()
-	{
-		return true;
-	}
-};
-
-export class Signature extends Proto
-{
-	constructor(...params)
-	{
-		super();
-		this.paramsByPos = [];
-		this.paramsByName = {};
-		this.countpos = 0;
-		this.countposdef = 0;
-		this.countposkw = 0;
-		this.countposkwdef = 0;
-		this.countkw = 0;
-		this.countkwdef = 0;
-		this.varpos = null;
-		this.varkw = null;
-
-		let state = 0;
-		let name = null;
-		let type = null;
-		for (let value of params)
-		{
-			if (state == 0)
-			{
-				name = value;
-				state = 1;
-			}
-			else if (state == 1)
-			{
-				type = value;
-				if (type.endsWith("="))
-					state = 2;
-				else
-				{
-					this.add(name, type, null);
-					state = 0;
-				}
-			}
-			else
-			{
-				this.add(name, type, value);
-				state = 0;
-			}
-		}
-	}
-
-	// Add a parameter
-	add(name, type, defaultValue)
-	{
-		let pos = this.paramsByPos.length;
-		if (this.varpos !== null)
-			++pos;
-		if (this.varkw !== null)
-			++pos;
-		let param = {name: name, pos: pos, type: type, defaultValue: defaultValue};
-		switch (type)
-		{
-			case "p":
-				if (this.countposdef > 0 || this.countposkwdef > 0 || this.countkwdef > 0)
-					throw new ParameterError("parameter without default after parameter with default");
-				else if (this.countposkw > 0 || this.countposkwdef > 0)
-					throw new ParameterError("positional-only parameter after positional/keyword parameter");
-				else if (this.countkw > 0 || this.countkwdef > 0)
-					throw new ParameterError("positional-only parameter after keyword-only parameter");
-				else if (this.varpos !== null)
-					throw new ParameterError("positional-only parameter after * parameter");
-				else if (this.varkw !== null)
-					throw new ParameterError("positional-only parameter after ** parameter");
-				this.paramsByPos.push(param);
-				this.paramsByName[name] = param;
-				++this.countpos;
-				break;
-			case "p=":
-				if (this.countposkw > 0 || this.countposkwdef > 0)
-					throw new ParameterError("positional-only parameter after positional/keyword parameter");
-				else if (this.countkw > 0 || this.countkwdef > 0)
-					throw new ParameterError("positional-only parameter after keyword-only parameter");
-				else if (this.varpos !== null)
-					throw new ParameterError("positional-only parameter after * parameter");
-				else if (this.varkw !== null)
-					throw new ParameterError("positional-only parameter after ** parameter");
-				this.paramsByPos.push(param);
-				this.paramsByName[name] = param;
-				++this.countposdef;
-				break;
-			case "pk":
-				if (this.countposdef > 0 || this.countposkwdef > 0 || this.countkwdef > 0)
-					throw new ParameterError("parameter without default after parameter with default");
-				else if (this.countkw > 0 || this.countkwdef > 0)
-					throw new ParameterError("positional/keyword parameter after keyword-only parameter");
-				else if (this.varpos !== null)
-					throw new ParameterError("positional/keyword parameter after * parameter");
-				else if (this.varkw !== null)
-					throw new ParameterError("positional/keyword parameter after ** parameter");
-				this.paramsByPos.push(param);
-				this.paramsByName[name] = param;
-				++this.countposkw;
-				break;
-			case "pk=":
-				if (this.countkw > 0 || this.countkwdef > 0)
-					throw new ParameterError("positional/keyword parameter after keyword-only parameter");
-				else if (this.varpos !== null)
-					throw new ParameterError("positional/keyword parameter after * parameter");
-				else if (this.varkw !== null)
-					throw new ParameterError("positional/keyword parameter after ** parameter");
-				this.paramsByPos.push(param);
-				this.paramsByName[name] = param;
-				++this.countposkwdef;
-				break;
-			case "k":
-				if (this.countposdef > 0 || this.countposkwdef > 0 || this.countkwdef > 0)
-					throw new ParameterError("parameter without default after parameter with default");
-				else if (this.varpos !== null)
-					throw new ParameterError("keyword-only parameter after * parameter");
-				else if (this.varkw !== null)
-					throw new ParameterError("keyword-only parameter after ** parameter");
-				this.paramsByPos.push(param);
-				this.paramsByName[name] = param;
-				++this.countkw;
-				break;
-			case "k=":
-				if (this.varpos !== null)
-					throw new ParameterError("keyword-only parameter after * parameter");
-				else if (this.varkw !== null)
-					throw new ParameterError("keyword-only parameter after ** parameter");
-				this.paramsByPos.push(param);
-				this.paramsByName[name] = param;
-				++this.countkwdef;
-				break;
-			case "*":
-				if (this.varpos !== null)
-					throw new ParameterError("* parameter specified twice!");
-				else if (this.varkw !== null)
-					throw new ParameterError("* parameter can come after ** parameter!");
-				this.varpos = param;
-				break;
-			case "**":
-				if (this.varkw !== null)
-					throw new ParameterError("** parameter specified twice!");
-				this.varkw = param;
-				break;
-		}
-	}
-
-	// Create the argument array for calling a function with this signature with the arguments available from ``args``
-	bindArray(name, args, kwargs)
-	{
-		let decname = name !== null ? name + "() " : "";
-
-		let varpos = this.varpos != null ? [] : null;
-		let varkw = this.varkw != null ? new Map() : null;
-
-		let count = this.countpos + this.countposdef + this.countposkw + this.countposkwdef + this.countkw + this.countkwdef;
-		let finalargs = Array(count).fill(null);
-		let haveValues = Array(count).fill(false);
-
-		// Handle psotional arguments
-		if (args !== null)
-		{
-			let i = 0;
-			for (let arg of args)
-			{
-				let param = this.paramsByPos[i];
-				if (param !== undefined && param.type.indexOf("p") >= 0)
-				{
-					finalargs[i] = arg;
-					haveValues[i] = true;
-				}
-				else
-				{
-					if (varpos !== null)
-						varpos.push(arg);
-					else
-					{
-						let count_nodef = this.countpos + this.countposkw;
-						let count_def = this.countposdef + this.countposkwdef;
-						if (count_def == 0)
-							throw new ArgumentError(name + "() takes exactly " + count_nodef + " positional argument" + (count_nodef != 1 ? "s" : "") + ", " + args.length + " given");
-						else
-							throw new ArgumentError(name + "() takes at most " + (count_nodef + count_def) + " positional argument" + ((count_nodef + count_def) != 1 ? "s" : "") + ", " + args.length + " given");
-					}
-				}
-				++i;
-			}
-		}
-
-		// Handle keyword arguments
-		if (kwargs !== null)
-		{
-			for (let [argname, argvalue] of Object.entries(kwargs))
-			{
-				let param = this.paramsByName[argname];
-
-				if (param !== undefined && param.type.indexOf("k") >= 0)
-				{
-					if (haveValues[param.pos])
-						throw new ArgumentError("Duplicate keyword argument " + argname + " for " + name + "()");
-					finalargs[param.pos] = argvalue;
-					haveValues[param.pos] = true;
-				}
-				else
-				{
-					if (varkw !== null)
-					{
-						if (varkw.has(argname))
-							throw new ArgumentError("Duplicate keyword argument " + argname + " for " + name + "()");
-						varkw.set(argname, argvalue);
-					}
-					else
-						throw new ArgumentError(name + "() doesn't support an argument named " + argname);
-				}
-			}
-		}
-
-		// Fill in default values and check that every parameter has a value
-		let i = 0;
-		for (let param of this.paramsByPos)
-		{
-			if (!haveValues[i])
-			{
-				if (param.type.endsWith("="))
-				{
-					finalargs[i] = param.defaultValue;
-					haveValues[i] = true;
-				}
-				else
-					throw new ArgumentError("Required " + name + "() argument " + param.name + " (position " + param.pos + ") missing");
-			}
-			++i;
-		}
-
-		// Set variable parameters
-		if (varpos !== null)
-			finalargs.push(varpos);
-		if (varkw !== null)
-			finalargs.push(varkw);
-
-		return finalargs;
-	}
-
-	// Create the argument object for calling a function with this signature with the arguments available from ``args``
-	bindObject(name, args, kwargs)
-	{
-		args = this.bindArray(name, args, kwargs);
-		let argObject = {};
-		let i = 0;
-		for (let param of this.paramsByPos)
-			argObject[param.name] = args[i++];
-		if (this.varpos !== null)
-			argObject[this.varpos.name] = args[i++];
-		if (this.varkw !== null)
-			argObject[this.varkw.name] = args[i++];
-		return argObject;
-	}
-
-	[symbols.repr]()
-	{
-		return "<Signature " + this.toString() + ">";
-	}
-
-	[symbols.str]()
-	{
-		return this.toString();
-	}
-
-	_appendParam(buffer, lasttype, param)
-	{
-		let sep;
-		if (lasttype === null)
-			sep = ["k", "k="].includes(param.type) ? "*, " : "";
-		else if (["pk", "pk="].includes(lasttype))
-			sep = ["k", "k="].includes(param.type) ? ", *, " : ", ";
-		else if (["p", "p="].includes(lasttype))
-		{
-			if (["pk", "pk="].includes(param.type))
-				sep = ", /, ";
-			else if (["k", "k="].includes(param.type))
-				sep = ", /, *, ";
-			else
-				sep = ", ";
-		}
-		else
-			sep = ", ";
-		lasttype = param.type;
-		buffer.push(sep);
-		if (["*", "**"].includes(param.type))
-			buffer.push(param.type);
-		buffer.push(param.name);
-		if (param.type.endsWith("="))
-		{
-			buffer.push("=");
-			buffer.push(_repr(param.defaultValue));
-		}
-	}
-
-	toString()
-	{
-		let v = [];
-		let lasttype = null;
-		for (let param of this.paramsByPos)
-		{
-			this._appendParam(v, lasttype, param);
-			lasttype = param.type;
-		}
-		if (this.varpos !== null)
-		{
-			this._appendParam(v, lasttype, this.varpos);
-			lasttype = this.varpos.type;
-		}
-		if (this.varkw !== null)
-		{
-			this._appendParam(v, lasttype, this.varkw);
-			lasttype = this.varkw.type;
-		}
-		return "(" + v.join("") + ")";
-	}
-};
-
-
-// Adds name and signature to a function/method and makes the method callable by UL4
-export function expose(f, signature, options)
-{
-	options = options || {};
-	if (options.name)
-		f._ul4_name = options.name;
-	if (_islist(signature))
-		signature = new Signature(...signature);
-	f._ul4_signature = signature;
-	f._ul4_needsobject = options.needsobject || false;
-	f._ul4_needscontext = options.needscontext || false;
-	return f;
-};
 
 // Clone an object and extend it
 export function _extend(baseobj, attrs)
 {
 	return Object.assign(Object.create(baseobj), attrs);
 };
-
-// Type objects for all builtin types
-export class Type
-{
-	constructor(module, name, doc, constructor=null)
-	{
-		this.module = module;
-		this.name = name;
-		this.doc = doc;
-		this._constructor = constructor;
-	}
-
-	instancecheck(obj)
-	{
-		return obj instanceof this._constructor;
-	}
-	[symbols.getattr](attrname)
-	{
-		switch (attrname)
-		{
-			case "__module__":
-				return this.module;
-			case "__name__":
-				return this.name;
-			case "__doc__":
-				return this.doc;
-			default:
-				throw new AttributeError(this, attrname);
-		}
-	}
-
-	[symbols.repr]()
-	{
-		return this.toString();
-	}
-
-	toString()
-	{
-		return "<type " + this.fullname() + ">";
-	}
-
-	fullname()
-	{
-		if (this.module === null)
-			return this.name;
-		else
-			return this.module + "." + this.name;
-	}
-
-	dir()
-	{
-		return this.attrs;
-	}
-
-	getattr(obj, attrname)
-	{
-		if (obj === null || obj === undefined)
-			throw new AttributeError(obj, attrname);
-		else if (typeof(obj[symbols.getattr]) === "function")
-			return obj[symbols.getattr](attrname);
-		else if (this.attrs.has(attrname))
-		{
-			let attr = this[attrname];
-			let realattr = function realattr(...args) {
-				return attr.apply(this, [obj, ...args]);
-			};
-			// Unfortunately we can't set ``realattr.name``;
-			realattr._ul4_name = attr._ul4_name || attr.name;
-			realattr._ul4_signature = attr._ul4_signature;
-			realattr._ul4_needsobject = attr._ul4_needsobject;
-			realattr._ul4_needscontext = attr._ul4_needscontext;
-			return realattr;
-		}
-		else
-			throw new AttributeError(obj, attrname);
-	}
-
-	hasattr(obj, attrname)
-	{
-		if (obj === null || obj === undefined)
-			return false;
-		else if (typeof(obj[symbols.getattr]) === "function")
-		{
-			try
-			{
-				obj[symbols.getattr](attrname);
-				return true;
-			}
-			catch (exc)
-			{
-				if (exc instanceof AttributeError && exc.obj === object)
-					return false;
-				else
-					throw exc;
-			}
-		}
-		else
-			return this.attrs.has(attrname);
-	}
-};
-
-Type.prototype.attrs = new Set();
 
 
 class NoneType extends Type
@@ -3908,6 +3954,11 @@ export class ListType extends Type
 		}
 	}
 
+	instancecheck(obj)
+	{
+		return Object.prototype.toString.call(obj) === "[object Array]";
+	}
+
 	append(obj, items)
 	{
 		for (let item of items)
@@ -3971,86 +4022,209 @@ expose(ListType.prototype, ["iterable", "p=", []], {name: "list"});
 export let listtype = new ListType(null, "list", "A list.");
 
 
-class MapType extends Type
+class DictType extends Type
 {
+	[symbols.call](args, kwargs)
+	{
+		let result = new Map();
+		this.update(result, args, kwargs);
+		return result;
+	}
+
+	_ismap(obj)
+	{
+		return obj !== null && typeof(obj) === "object" && typeof(obj.__proto__) === "object" && obj.__proto__ === Map.prototype;
+	}
+
+	_isobject(obj)
+	{
+		return Object.prototype.toString.call(obj) === "[object Object]" && !(obj instanceof Proto);
+	}
+
+	instancecheck(obj)
+	{
+		return dicttype._ismap(obj) || dicttype._isobject(obj);
+	}
+
 	getattr(obj, attrname)
 	{
-		if (this.attrs.has(attrname))
+		if (_ismap(obj))
 		{
-			let attr = this[attrname];
-			let realattr = function realattr(...args) {
-				return attr.apply(this, [obj, ...args]);
-			};
-			// Unfortunately we can't set ``realattr.name``;
-			realattr._ul4_name = attr._ul4_name || attr.name;
-			realattr._ul4_signature = attr._ul4_signature;
-			realattr._ul4_needsobject = attr._ul4_needsobject;
-			realattr._ul4_needscontext = attr._ul4_needscontext;
-			return realattr;
+			if (this.attrs.has(attrname))
+			{
+				let attr = this[attrname];
+				let realattr = function realattr(...args) {
+					return attr.apply(this, [obj, ...args]);
+				};
+				// Unfortunately we can't set ``realattr.name``;
+				realattr._ul4_name = attr._ul4_name || attr.name;
+				realattr._ul4_signature = attr._ul4_signature;
+				realattr._ul4_needsobject = attr._ul4_needsobject;
+				realattr._ul4_needscontext = attr._ul4_needscontext;
+				return realattr;
+			}
+			else
+				return obj.get(attrname);
 		}
 		else
-			return obj.get(attrname);
+		{
+		let result;
+		if (obj && typeof(obj[symbols.getattr]) === "function") // test this before the generic object test
+			result = obj[symbols.getattr](attrname);
+		else
+			result = obj[attrname];
+		if (typeof(result) !== "function")
+			return result;
+		let realresult = function(...args) {
+			// We can use ``apply`` here, as we know that ``obj`` is a real object.
+			return result.apply(obj, args);
+		};
+		realresult._ul4_name = result._ul4_name || result.name;
+		realresult._ul4_signature = result._ul4_signature;
+		realresult._ul4_needsobject = result._ul4_needsobject;
+		realresult._ul4_needscontext = result._ul4_needscontext;
+		return realresult;
+		}
 	}
 
 	get(obj, key, default_=null)
 	{
-		if (obj.has(key))
-			return obj.get(key);
-		return default_;
+		if (_ismap(obj))
+		{
+			if (obj.has(key))
+				return obj.get(key);
+			return default_;
+		}
+		else
+		{
+			let result = obj[key];
+			if (result === undefined && !obj.hasOwnProperty(key))
+				return default_;
+			return result;
+		}
 	}
 
 	items(obj)
 	{
 		let result = [];
-		for (let [key, value] of obj)
-			result.push([key, value]);
+		if (_ismap(obj))
+		{
+			for (let [key, value] of obj)
+				result.push([key, value]);
+		}
+		else
+		{
+			for (let key in obj)
+				result.push([key, obj[key]]);
+		}
 		return result;
 	}
 
 	values(obj)
 	{
 		let result = [];
-		for (let [key, value] of obj)
-			result.push(value);
+		if (_ismap(obj))
+		{
+			for (let [key, value] of obj)
+				result.push(value);
+		}
+		else
+		{
+			for (let key in obj)
+				result.push(obj[key]);
+		}
 		return result;
+	}
+
+	_set(obj, key, value)
+	{
+		if (_ismap(obj))
+			obj.set(key, value);
+		else
+			obj[key] = value;
 	}
 
 	update(obj, others, kwargs)
 	{
-		return _update(obj, others, kwargs);
+		for (let other of others)
+		{
+			if (_ismap(other))
+			{
+				for (let [key, value] of other)
+					dicttype._set(obj, key, value);
+			}
+			else if (_isobject(other))
+			{
+				for (let key in other)
+					dicttype._set(obj, key, other[key]);
+			}
+			else if (_islist(other))
+			{
+				for (let item of other)
+				{
+					if (!_islist(item) || (item.length != 2))
+						throw new TypeError("update() requires a dict or a list of (key, value) pairs");
+					dicttype._set(obj, item[0], item[1]);
+				}
+			}
+			else
+				throw new TypeError("update() requires a dict or a list of (key, value) pairs");
+		}
+		for (let [key, value] of kwargs)
+			dicttype._set(obj, key, value);
+		return null;
 	}
 
 	clear(obj)
 	{
-		obj.clear();
+		if (_ismap(obj))
+			obj.clear();
+		else
+		{
+			for (let key in obj)
+				delete obj[key];
+		}
 		return null;
 	}
 
 	pop(obj, key, default_=Object)
 	{
-		if (!obj.has(key))
+		if (_ismap(obj))
 		{
-			if (default_ === Object)
-				throw new KeyError(obj, key);
-			else
-				return default_;
+			if (obj.has(key))
+			{
+				let result = obj.get(key);
+				obj.delete(key);
+				return result;
+			}
 		}
-		let result = obj.get(key);
-		obj.delete(key);
-		return result;
+		else
+		{
+			for (let [key, value] of Object.entries(obj))
+			{
+				delete obj[key];
+				return value;
+			}
+		}
+		if (default_ === Object)
+			throw new KeyError(obj, key);
+		else
+			return default_;
 	}
 };
 
-MapType.prototype.attrs = new Set(["get", "items", "values", "update", "clear", "pop"]);
+DictType.prototype.attrs = new Set(["get", "items", "values", "update", "clear", "pop"]);
 
-expose(MapType.prototype.get, ["key", "p", "default", "p=", null]);
-expose(MapType.prototype.items, []);
-expose(MapType.prototype.values, []);
-expose(MapType.prototype.update, ["others", "*", "kwargs", "**"]);
-expose(MapType.prototype.clear, []);
-expose(MapType.prototype.pop, ["key", "p", "default", "p=", Object]);
+expose(DictType.prototype, ["args", "*", "kwargs", "**"], {name: "dict"});
 
-export let maptype = new MapType(null, "dict", "An object that maps keys to values.");
+expose(DictType.prototype.get, ["key", "p", "default", "p=", null]);
+expose(DictType.prototype.items, []);
+expose(DictType.prototype.values, []);
+expose(DictType.prototype.update, ["others", "*", "kwargs", "**"]);
+expose(DictType.prototype.clear, []);
+expose(DictType.prototype.pop, ["key", "p", "default", "p=", Object]);
+
+export let dicttype = new DictType(null, "dict", "An object that maps keys to values.");
 
 
 export class SetType extends Type
@@ -4068,6 +4242,11 @@ export class SetType extends Type
 				return result;
 			result.add(value.value);
 		}
+	}
+
+	instancecheck(obj)
+	{
+		return Object.prototype.toString.call(obj) === "[object Set]";
 	}
 
 	add(obj, items)
@@ -4191,6 +4370,11 @@ export let datetype = new DateType(null, "date", "A date");
 
 export class DateTimeType extends Type
 {
+	[symbols.call](year, month, day, hour=0, minute=0, second=0, microsecond=0)
+	{
+		return new Date(year, month-1, day, hour, minute, second, microsecond/1000);
+	}
+
 	instancecheck(obj)
 	{
 		return Object.prototype.toString.call(obj) == "[object Date]";
@@ -4277,7 +4461,7 @@ export class DateTimeType extends Type
 
 	date(obj)
 	{
-		return new Date_(this.year(obj), this.month(obj), this.day(obj));
+		return new Date_(datetimetype.year(obj), datetimetype.month(obj), datetimetype.day(obj));
 	}
 
 	mimeformat(obj)
@@ -4285,7 +4469,7 @@ export class DateTimeType extends Type
 		let weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 		let monthname = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-		return weekdayname[this.weekday(obj)] + ", " + _lpad(obj.getDate(), "0", 2) + " " + monthname[obj.getMonth()] + " " + obj.getFullYear() + " " + _lpad(obj.getHours(), "0", 2) + ":" + _lpad(obj.getMinutes(), "0", 2) + ":" + _lpad(obj.getSeconds(), "0", 2) + " GMT";
+		return weekdayname[datetimetype.weekday(obj)] + ", " + _lpad(obj.getDate(), "0", 2) + " " + monthname[obj.getMonth()] + " " + obj.getFullYear() + " " + _lpad(obj.getHours(), "0", 2) + ":" + _lpad(obj.getMinutes(), "0", 2) + ":" + _lpad(obj.getSeconds(), "0", 2) + " GMT";
 	}
 
 	isoformat(obj)
@@ -4371,69 +4555,6 @@ expose(DateTimeType.prototype.yearday, []);
 expose(DateTimeType.prototype, ["year", "pk", "month", "pk", "day", "pk", "hour", "pk=", 0, "minute", "pk=", 0, "second", "pk=", 0, "microsecond", "pk=", 0], {name: "datetime"});
 
 export let datetimetype = new DateTimeType(null, "datetime", "A datetime");
-
-
-export class ObjectType extends Type
-{
-	getattr(obj, attrname)
-	{
-		let result;
-		if (obj && typeof(obj[symbols.getattr]) === "function") // test this before the generic object test
-			result = obj[symbols.getattr](attrname);
-		else
-			result = obj[attrname];
-		if (typeof(result) !== "function")
-			return result;
-		let realresult = function(...args) {
-			// We can use ``apply`` here, as we know that ``obj`` is a real object.
-			return result.apply(obj, args);
-		};
-		realresult._ul4_name = result._ul4_name || result.name;
-		realresult._ul4_signature = result._ul4_signature;
-		realresult._ul4_needsobject = result._ul4_needsobject;
-		realresult._ul4_needscontext = result._ul4_needscontext;
-		return realresult;
-	}
-
-	get(obj, key, default_=null)
-	{
-		let result = obj[key];
-		if (result === undefined)
-			return default_;
-		return result;
-	}
-
-	items(obj)
-	{
-		let result = [];
-		for (let key in obj)
-			result.push([key, obj[key]]);
-		return result;
-	}
-
-	values(obj)
-	{
-		let result = [];
-		for (let key in obj)
-			result.push(obj[key]);
-		return result;
-	}
-
-	clear(obj)
-	{
-		for (let key in obj)
-			delete obj[key];
-	}
-};
-
-ObjectType.prototype.attrs = new Set(["get", "items", "values", "update", "clear"]);
-
-expose(ObjectType.prototype.get, ["key", "p", "default", "p=", null]);
-expose(ObjectType.prototype.items, []);
-expose(ObjectType.prototype.values, []);
-expose(ObjectType.prototype.clear, []);
-
-export let objecttype = new ObjectType(null, "dict", "An object that maps keys to values.");
 
 
 export class GenericType extends Type
@@ -8327,6 +8448,23 @@ export class ElseBlockAST extends BlockAST
 	}
 };
 
+export class TemplateType extends Type
+{
+	[symbols.call](r=0, g=0, b=0, a=255)
+	{
+		return new Color(r, g, b, a);
+	}
+
+	instancecheck(obj)
+	{
+		return obj instanceof Template;
+	}
+};
+
+expose(TemplateType.prototype, ["source", "pk", "name", "pk=", null, "whitespace", "k=", "keep", "startdelim", "k=", "<?", "enddelim", "k=", "?>", "signature", "k=", null], {name: "Template"});
+
+let templatetype = new TemplateType("ul4", "Template", "An UL4 template.");
+
 export class Template extends BlockAST
 {
 	constructor(template, pos, source, name, whitespace, startdelim, enddelim, signature)
@@ -8342,6 +8480,11 @@ export class Template extends BlockAST
 		this._asts = null;
 		this._ul4_signature = signature;
 		this.parenttemplate = null;
+	}
+
+	[symbols.type]()
+	{
+		return templatetype;
 	}
 
 	[symbols.getattr](attrname)
@@ -9430,28 +9573,14 @@ function _ul4on_dumps(obj, indent=null)
 
 expose(_ul4on_dumps, ["obj", "p", "indent", "pk=", null], {name: "dumps"});
 
-function _ul4on_encoder(indent=null)
-{
-	return new Encoder(indent);
-}
-
-expose(_ul4on_encoder, ["indent", "pk=", null], {name: "Encoder"});
-
-function _ul4on_decoder()
-{
-	return new Decoder();
-}
-
-expose(_ul4on_decoder, [], {name: "Decoder"});
-
 export const _ul4on = new Module(
 	"ul4on",
 	"Object serialization",
 	{
 		loads: _ul4on_loads,
 		dumps: _ul4on_dumps,
-		Encoder: _ul4on_encoder,
-		Decoder: _ul4on_decoder
+		Encoder: encodertype,
+		Decoder: decodertype
 	}
 );
 
@@ -9496,6 +9625,63 @@ export const _math = new Module(
 );
 
 
+export class AttrGetterType extends Type
+{
+	[symbols.call](attrs)
+	{
+		return new AttrGetter(attrs);
+	}
+
+	instancecheck(obj)
+	{
+		return obj instanceof AttrGetter;
+	}
+};
+
+expose(AttrGetterType.prototype, ["attrs", "*"], {name: "attrgetter"});
+
+let attrgettertype = new AttrGetterType("operator", "attrgetter", "A callable object that fetches the given attribute(s) from its operand.");
+
+export class AttrGetter
+{
+	// Create a new AttrGetter object
+	constructor(attrs)
+	{
+		this.attrs = attrs;
+	}
+
+	[symbols.type]()
+	{
+		return attrgettertype;
+	}
+
+	_getone(obj, attrnames)
+	{
+		for (let attrname of attrnames.split("."))
+		{
+			let type = _type(obj);
+			obj = type.getattr(obj, attrname);
+		}
+		return obj;
+	}
+
+	[symbols.call](obj)
+	{
+		if (this.attrs.length === 1)
+			return this._getone(obj, this.attrs[0])
+		else
+		{
+			let result = [];
+			for (let attrnames of this.attrs)
+				result.push(this._getone(obj, attrnames));
+			return result;
+		}
+	}
+};
+
+expose(AttrGetter.prototype, ["obj", "p"], {name: "attrgetter"});
+
+
 export function _attrgetter(attrnames)
 {
 	function getone(obj, dottedname)
@@ -9528,7 +9714,7 @@ export const _operator = new Module(
 	"operator",
 	"Various operators as functions",
 	{
-		attrgetter: _attrgetter
+		attrgetter: attrgettertype
 	}
 );
 
@@ -9615,7 +9801,7 @@ export const _ul4 = new Module(
 		RenderBlockAST: _maketype(RenderBlockAST),
 		RenderBlocksAST: _maketype(RenderBlocksAST),
 		SignatureAST: _maketype(SignatureAST),
-		Template: _maketype(Template),
+		Template: templatetype,
 		TemplateClosure: _maketype(TemplateClosure),
 	}
 );
@@ -9827,39 +10013,6 @@ export function _week4format(obj, firstweekday=null)
 export function _isleap(obj)
 {
 	return new Date(obj.getFullYear(), 1, 29).getMonth() === 1;
-};
-
-export function _update(obj, others, kwargs)
-{
-	if (!_isdict(obj))
-		throw new TypeError("update() requires a dict");
-	for (let other of others)
-	{
-		if (_ismap(other))
-		{
-			for (let [key, value] of other)
-				obj.set(key, value);
-		}
-		else if (_isobject(other))
-		{
-			for (let key in other)
-				obj.set(key, other[key]);
-		}
-		else if (_islist(other))
-		{
-			for (let item of other)
-			{
-				if (!_islist(item) || (item.length != 2))
-					throw new TypeError("update() requires a dict or a list of (key, value) pairs");
-				obj.set(item[0], item[1]);
-			}
-		}
-		else
-			throw new TypeError("update() requires a dict or a list of (key, value) pairs");
-	}
-	for (let [key, value] of kwargs)
-		obj.set(key, value);
-	return null;
 };
 
 export class ColorType extends Type
@@ -10821,6 +10974,7 @@ export let builtins = {
 	float: floattype,
 	list: listtype,
 	set: settype,
+	dict: dicttype,
 	bool: booltype,
 	len: _len,
 	type: _type,
@@ -10867,6 +11021,7 @@ export let builtins = {
 	datetime: datetimetype,
 	timedelta: timedeltatype,
 	monthdelta: monthdeltatype,
+	color: colortype,
 	rgb: _rgb,
 	hls: _hls,
 	hsv: _hsv,
