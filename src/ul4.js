@@ -2524,6 +2524,9 @@ export function _type(obj)
 		return dicttype;
 	else if (_isdatetime(obj))
 		return datetimetype;
+	// Don't use `_isfunction()` here as this would return `true` for templates
+	else if (typeof(obj) === "function")
+		return functiontype;
 	else
 	{
 		let constructor = obj.constructor;
@@ -2705,16 +2708,16 @@ export function _ismonthdelta(obj)
 	return monthdeltatype.instancecheck(obj);
 };
 
-// Check if ``obj`` is a template
+// Check if ``obj`` is a template (either a normal one or a locally defined)
 export function _istemplate(obj)
 {
-	return (obj instanceof Template || obj instanceof TemplateClosure);
+	return obj !== null && (obj instanceof Template) || (obj instanceof TemplateClosure);
 };
 
 // Check if ``obj`` is a function
 export function _isfunction(obj)
 {
-	return typeof(obj) === "function" || (Object.prototype.toString.call(obj) === "[object Object]" && (obj instanceof Template || obj instanceof TemplateClosure));
+	return functiontype.instancecheck(obj);
 };
 
 // Check if ``obj`` is a list
@@ -4555,6 +4558,17 @@ expose(DateTimeType.prototype.yearday, []);
 expose(DateTimeType.prototype, ["year", "pk", "month", "pk", "day", "pk", "hour", "pk=", 0, "minute", "pk=", 0, "second", "pk=", 0, "microsecond", "pk=", 0], {name: "datetime"});
 
 export let datetimetype = new DateTimeType(null, "datetime", "A datetime");
+
+
+export class FunctionType extends Type
+{
+	instancecheck(obj)
+	{
+		return typeof(obj) === "function" || _istemplate(obj);
+	}
+};
+
+export let functiontype = new FunctionType(null, "function", "A callable function");
 
 
 export class GenericType extends Type
