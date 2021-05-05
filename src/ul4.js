@@ -37,7 +37,7 @@ export { version };
 // Version of the UL4 API
 // I.e. this version should be compatible with the Python and Java
 // implementations that support the same API version.
-export const api_version = "50";
+export const api_version = "51";
 
 
 /// Symbols for interfaces implemented in UL4
@@ -8622,14 +8622,12 @@ export class Template extends BlockAST
 {
 	static classdoc = "An UL4 template";
 
-	constructor(template, pos, source, name, whitespace, startdelim, enddelim, signature)
+	constructor(template, pos, source, name, whitespace, signature)
 	{
 		super(template, pos);
 		this._source = source;
 		this.name = name;
 		this.whitespace = whitespace;
-		this.startdelim = startdelim;
-		this.enddelim = enddelim;
 		this.docpos = null;
 		this.signature = signature;
 		this._asts = null;
@@ -8650,10 +8648,6 @@ export class Template extends BlockAST
 				return this.name;
 			case "whitespace":
 				return this.whitespace;
-			case "startdelim":
-				return this.startdelim;
-			case "enddelim":
-				return this.enddelim;
 			case "doc":
 				return this.doc();
 			case "signature":
@@ -8680,8 +8674,6 @@ export class Template extends BlockAST
 		encoder.dump(this.name);
 		encoder.dump(this._source);
 		encoder.dump(this.whitespace);
-		encoder.dump(this.startdelim);
-		encoder.dump(this.enddelim);
 		encoder.dump(this.docpos);
 		encoder.dump(this.parenttemplate);
 		if (this.signature === null || this.signature instanceof SignatureAST)
@@ -8715,8 +8707,6 @@ export class Template extends BlockAST
 		this.name = decoder.load();
 		this._source = decoder.load();
 		this.whitespace = decoder.load();
-		this.startdelim = decoder.load();
-		this.enddelim = decoder.load();
 		this.docpos = decoder.load();
 		this.parenttemplate = decoder.load();
 		signature = decoder.load();
@@ -8751,16 +8741,6 @@ export class Template extends BlockAST
 		}
 		out.push(" whitespace=");
 		out.push(_repr(this.whitespace));
-		if (this.startdelim !== "<?")
-		{
-			out.push(" startdelim=");
-			out.push(_repr(this.startdelim));
-		}
-		if (this.enddelim !== "?>")
-		{
-			out.push(" enddelim=");
-			out.push(_repr(this.enddelim));
-		}
 		out.push(">");
 	}
 
@@ -8959,8 +8939,6 @@ export class TemplateClosure extends Proto
 		this.tag = template.tag;
 		this.endtag = template.endtag;
 		this._source = template._source;
-		this.startdelim = template.startdelim;
-		this.enddelim = template.enddelim;
 		this.docpos = template.docpos;
 		this.content = template.content;
 	}
