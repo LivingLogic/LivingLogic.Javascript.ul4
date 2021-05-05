@@ -8162,9 +8162,9 @@ export class SliceAST extends CodeAST
 
 SliceAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["index1", "index2"]);
 
-export class SetVarAST extends CodeAST
+export class ChangeVarAST extends CodeAST
 {
-	static classdoc = "AST node for setting a variable, attribute or item to a value (e.g.\n``x = y``).";
+	static classdoc = "Base class for all AST nodes that are assignment operators, i.e. that\nset or modify a variable/attribute or item.";
 
 	constructor(template, pos, lvalue, value)
 	{
@@ -8183,6 +8183,11 @@ export class SetVarAST extends CodeAST
 		this.value._repr(out);
 		out.push(">");
 	}
+};
+
+export class SetVarAST extends ChangeVarAST
+{
+	static classdoc = "AST node for setting a variable, attribute or item to a value (e.g.\n``x = y``).";
 
 	_eval(context)
 	{
@@ -8195,7 +8200,7 @@ export class SetVarAST extends CodeAST
 
 SetVarAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["lvalue", "value"]);
 
-export class ModifyVarAST extends SetVarAST
+export class ModifyVarAST extends ChangeVarAST
 {
 	_eval(context)
 	{
