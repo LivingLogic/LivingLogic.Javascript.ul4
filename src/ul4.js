@@ -6073,6 +6073,8 @@ AST.prototype._ul4onattrs = ["template", "startpos"];
 
 export class TextAST extends AST
 {
+	static classdoc = "AST node for literal text (i.e. the stuff between tags).";
+
 	constructor(template, pos)
 	{
 		super(template, pos);
@@ -6104,6 +6106,8 @@ export class TextAST extends AST
 
 export class IndentAST extends TextAST
 {
+	static classdoc = "AST node for literal text that is an indentation at the start of the line.";
+
 	constructor(template, pos, text)
 	{
 		super(template, pos);
@@ -6157,6 +6161,8 @@ export class IndentAST extends TextAST
 
 export class LineEndAST extends TextAST
 {
+	static classdoc = "AST node for literal text that is the end of a line.";
+
 	_str(out)
 	{
 		out.push("lineend ");
@@ -6177,6 +6183,8 @@ export class CodeAST extends AST
 
 export class ConstAST extends CodeAST
 {
+	static classdoc = "AST node for load a constant value.";
+
 	constructor(template, pos, value)
 	{
 		super(template, pos);
@@ -6259,6 +6267,8 @@ export class ItemArgBase extends CodeAST
 
 export class SeqItemAST extends ItemArgBase
 {
+	static classdoc = "AST node for an item in a list/set \"literal\" (e.g. ``{x, y}`` or ``[x, y]``)";
+
 	constructor(template, pos, value)
 	{
 		super(template, pos);
@@ -6289,6 +6299,8 @@ SeqItemAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["va
 
 export class UnpackSeqItemAST extends ItemArgBase
 {
+	static classdoc = "AST node for an ``*`` unpacking expression in a list/set \"literal\"\n(e.g. the ``y`` in ``{x, *y}`` or ``[x, *y]``)";
+
 	constructor(template, pos, value)
 	{
 		super(template, pos);
@@ -6331,6 +6343,8 @@ UnpackSeqItemAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.conca
 
 export class DictItemAST extends ItemArgBase
 {
+	static classdoc = "AST node for a dictionary entry in a dict expression (:class:`DictAST`).";
+
 	constructor(template, pos, key, value)
 	{
 		super(template, pos);
@@ -6359,6 +6373,8 @@ DictItemAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.concat(["k
 
 export class UnpackDictItemAST extends ItemArgBase
 {
+	static classdoc = "AST node for ``**`` unpacking expressions in dict \"literal\"\n(e.g. the ``**u`` in ``{k: v, **u}``).";
+
 	constructor(template, pos, item)
 	{
 		super(template, pos);
@@ -6401,6 +6417,8 @@ UnpackDictItemAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.conc
 
 export class PositionalArgumentAST extends ItemArgBase
 {
+	static classdoc = "AST node for a positional argument. (e.g. the ``x`` in ``f(x)``).";
+
 	constructor(template, pos, value)
 	{
 		super(template, pos);
@@ -6425,6 +6443,8 @@ PositionalArgumentAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.
 
 export class KeywordArgumentAST extends ItemArgBase
 {
+	static classdoc = "AST node for a keyword argument in a :class:`CallAST` (e.g. the ``x=y``\nin the function call``f(x=y)``).";
+
 	constructor(template, pos, name, value)
 	{
 		super(template, pos);
@@ -6454,6 +6474,8 @@ KeywordArgumentAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.con
 
 export class UnpackListArgumentAST extends ItemArgBase
 {
+	static classdoc = "AST node for an ``*`` unpacking expressions in a :class:`CallAST`\n(e.g. the ``*x`` in ``f(*x)``).";
+
 	constructor(template, pos, item)
 	{
 		super(template, pos);
@@ -6478,6 +6500,8 @@ UnpackListArgumentAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.
 
 export class UnpackDictArgumentAST extends ItemArgBase
 {
+	static classdoc = "AST node for an ``**`` unpacking expressions in a :class:`CallAST`\n(e.g. the ``**x`` in ``f(**x)``).";
+
 	constructor(template, pos, item)
 	{
 		super(template, pos);
@@ -6531,6 +6555,8 @@ UnpackDictArgumentAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.
 
 export class ListAST extends CodeAST
 {
+	static classdoc = "AST node for creating a list object (e.g. ``[x, y, *z]``).";
+
 	constructor(template, pos)
 	{
 		super(template, pos);
@@ -6561,6 +6587,8 @@ ListAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["items"]);
 
 export class ListComprehensionAST extends CodeAST
 {
+	static classdoc = "AST node for a list comprehension (e.g. ``[v for (a, b) in w if c]``.";
+
 	constructor(template, pos, item, varname, container, condition)
 	{
 		super(template, pos);
@@ -6613,6 +6641,8 @@ ListComprehensionAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.conca
 
 export class SetAST extends CodeAST
 {
+	static classdoc = "AST node for creating a set object (e.g. ``{x, y, *z}``.";
+
 	constructor(template, pos)
 	{
 		super(template, pos);
@@ -6645,6 +6675,8 @@ SetAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["items"]);
 
 export class SetComprehensionAST extends CodeAST
 {
+	static classdoc = "AST node for a set comprehension (e.g. ``{v for (a, b) in w if c}``.";
+
 	constructor(template, pos, item, varname, container, condition)
 	{
 		super(template, pos);
@@ -6715,6 +6747,8 @@ SetComprehensionAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat
 
 export class DictAST extends CodeAST
 {
+	static classdoc = "AST node for creating a dict object (e.g. `{k: v, **u}`.";
+
 	constructor(template, pos)
 	{
 		super(template, pos);
@@ -6756,6 +6790,8 @@ DictAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["items"]);
 
 export class DictComprehensionAST extends CodeAST
 {
+	static classdoc = "AST node for a dictionary comprehension (e.g. ``{k: v for (a, b) in w if c}``.";
+
 	constructor(template, pos, key, value, varname, container, condition)
 	{
 		super(template, pos);
@@ -6817,6 +6853,8 @@ DictComprehensionAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.conca
 
 export class GeneratorExpressionAST extends CodeAST
 {
+	static classdoc = "AST node for a generator expression (e.g. ``(x for (a, b) in w if c)``).";
+
 	constructor(template, pos, item, varname, container, condition)
 	{
 		super(template, pos);
@@ -6879,6 +6917,8 @@ GeneratorExpressionAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.con
 
 export class VarAST extends CodeAST
 {
+	static classdoc = "AST node for getting a variable.";
+
 	constructor(template, pos, name)
 	{
 		super(template, pos);
@@ -6955,6 +6995,8 @@ UnaryAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["obj"]);
 // Negation
 export class NegAST extends UnaryAST
 {
+	static classdoc = "AST node for a unary negation expression (e.g. ``-x``).";
+
 	_do(obj)
 	{
 		if (obj !== null && typeof(obj[symbols.neg]) === "function")
@@ -6966,6 +7008,8 @@ export class NegAST extends UnaryAST
 // Bitwise not
 export class BitNotAST extends UnaryAST
 {
+	static classdoc = "AST node for a bitwise unary \"not\" expression that returns its operand\nwith its bits inverted (e.g. ``~x``).";
+
 	_do(obj)
 	{
 		return -obj-1;
@@ -6975,6 +7019,8 @@ export class BitNotAST extends UnaryAST
 // Not
 export class NotAST extends UnaryAST
 {
+	static classdoc = "AST node for a unary \"not\" expression (e.g. ``not x``).";
+
 	_do(obj)
 	{
 		return !_bool(obj);
@@ -6984,6 +7030,8 @@ export class NotAST extends UnaryAST
 // If expression
 export class IfAST extends CodeAST
 {
+	static classdoc = "AST node for the ternary inline ``if/else`` operator (e.g. ``x if y else z``).";
+
 	constructor(template, pos, objif, objcond, objelse)
 	{
 		super(template, pos);
@@ -7025,6 +7073,8 @@ IfAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["objif", "ob
 
 export class ReturnAST extends UnaryAST
 {
+	static classdoc = "AST node for a ``<?return?>`` tag (e.g. ``<?return x?>``).";
+
 	_eval(context)
 	{
 		let result = this.obj._handle_eval(context);
@@ -7040,6 +7090,8 @@ export class ReturnAST extends UnaryAST
 
 export class PrintAST extends UnaryAST
 {
+	static classdoc = "AST node for a ``<?print?>`` tag (e.g. ``<?print x?>``.";
+
 	_eval(context)
 	{
 		let obj = this.obj._handle_eval(context);
@@ -7056,6 +7108,8 @@ export class PrintAST extends UnaryAST
 
 export class PrintXAST extends UnaryAST
 {
+	static classdoc = "AST node for a ``<?printx?>`` tag (e.g. ``<?printx x?>``.";
+
 	_eval(context)
 	{
 		let obj = this.obj._handle_eval(context);
@@ -7103,6 +7157,8 @@ BinaryAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["obj1", 
 // Item access and assignment: dict[key], list[index], string[index], color[index]
 export class ItemAST extends BinaryAST
 {
+	static classdoc = "AST node for subscripting expression (e.g. ``x[y]``).";
+
 	_do(obj1, obj2)
 	{
 		let result = this._get(obj1, obj2);
@@ -7217,6 +7273,8 @@ export class ItemAST extends BinaryAST
 // Identifty test operator ``is``
 export class IsAST extends BinaryAST
 {
+	static classdoc = "AST node for a binary ``is`` comparison expression (e.g. ``x is y``).";
+
 	_do(obj1, obj2)
 	{
 		return obj1 === obj2;
@@ -7226,6 +7284,8 @@ export class IsAST extends BinaryAST
 // Inverted identity test operator ``is not``
 export class IsNotAST extends BinaryAST
 {
+	static classdoc = "AST node for a binary ``is not`` comparison expression (e.g. ``x is not y``).";
+
 	_do(obj1, obj2)
 	{
 		return obj1 !== obj2;
@@ -7235,6 +7295,8 @@ export class IsNotAST extends BinaryAST
 // Comparison operator ==
 export class EQAST extends BinaryAST
 {
+	static classdoc = "AST node for the binary equality comparison (e.g. ``x == y``.";
+
 	_do(obj1, obj2)
 	{
 		return _eq(obj1, obj2);
@@ -7244,6 +7306,8 @@ export class EQAST extends BinaryAST
 // Comparison operator !=
 export class NEAST extends BinaryAST
 {
+	static classdoc = "AST node for a binary inequalitiy comparison (e.g. ``x != y``).";
+
 	_do(obj1, obj2)
 	{
 		return _ne(obj1, obj2);
@@ -7253,6 +7317,8 @@ export class NEAST extends BinaryAST
 // Comparison operator <
 export class LTAST extends BinaryAST
 {
+	static classdoc = "AST node for the binary \"less than\" comparison (e.g. ``x < y``).";
+
 	_do(obj1, obj2)
 	{
 		return _lt(obj1, obj2);
@@ -7262,6 +7328,8 @@ export class LTAST extends BinaryAST
 // Comparison operator <=
 export class LEAST extends BinaryAST
 {
+	static classdoc = "AST node for the binary \"less than or equal\" comparison (e.g. ``x <= y``).";
+
 	_do(obj1, obj2)
 	{
 		return _le(obj1, obj2);
@@ -7271,6 +7339,8 @@ export class LEAST extends BinaryAST
 // Comparison operator >
 export class GTAST extends BinaryAST
 {
+	static classdoc = "AST node for the binary \"greater than\" comparison (e.g. ``x > y``).";
+
 	_do(obj1, obj2)
 	{
 		return _gt(obj1, obj2);
@@ -7280,6 +7350,8 @@ export class GTAST extends BinaryAST
 // Comparison operator >=
 export class GEAST extends BinaryAST
 {
+	static classdoc = "AST node for the binary \"greater than or equal\" comparison (e.g. ``x >= y``).";
+
 	_do(obj1, obj2)
 	{
 		return _ge(obj1, obj2);
@@ -7289,6 +7361,8 @@ export class GEAST extends BinaryAST
 // Containment test: string in string, obj in list, key in dict, value in rgb
 export class ContainsAST extends BinaryAST
 {
+	static classdoc = "AST node for the binary containment testing operator (e.g. ``x in y``).";
+
 	_do(obj, container)
 	{
 		if (typeof(obj) === "string" && typeof(container) === "string")
@@ -7323,6 +7397,8 @@ export class ContainsAST extends BinaryAST
 // Inverted containment test
 export class NotContainsAST extends BinaryAST
 {
+	static classdoc = "AST node for an inverted containment testing expression (e.g. ``x not in y``).";
+
 	_do(obj, container)
 	{
 		return !ContainsAST.prototype._do(obj, container);
@@ -7332,6 +7408,8 @@ export class NotContainsAST extends BinaryAST
 // Addition: num + num, string + string
 export class AddAST extends BinaryAST
 {
+	static classdoc = "AST node for a binary addition expression that adds its two operands and\nreturns the result  (e.g. ``x + y``).";
+
 	_do(obj1, obj2)
 	{
 		if (obj1 && typeof(obj1[symbols.add]) === "function")
@@ -7361,6 +7439,8 @@ export class AddAST extends BinaryAST
 // Substraction: num - num
 export class SubAST extends BinaryAST
 {
+	static classdoc = "AST node for the binary subtraction operator.";
+
 	_do(obj1, obj2)
 	{
 		if (obj1 && typeof(obj1[symbols.sub]) === "function")
@@ -7437,6 +7517,8 @@ export class SubAST extends BinaryAST
 // Multiplication: num * num, int * str, str * int, int * list, list * int
 export class MulAST extends BinaryAST
 {
+	static classdoc = "AST node for the binary multiplication expression (e.g. ``x * y``).";
+
 	_do(obj1, obj2)
 	{
 		if (obj1 && typeof(obj1[symbols.mul]) === "function")
@@ -7501,6 +7583,8 @@ export class MulAST extends BinaryAST
 // Truncating division
 export class FloorDivAST extends BinaryAST
 {
+	static classdoc = "AST node for a binary truncating division expression (e.g. ``x // y``).";
+
 	_do(obj1, obj2)
 	{
 		if (obj1 && typeof(obj1[symbols.floordiv]) === "function")
@@ -7523,6 +7607,8 @@ export class FloorDivAST extends BinaryAST
 // "Real" division
 export class TrueDivAST extends BinaryAST
 {
+	static classdoc = "AST node for a binary true division expression (e.g. ``x / y``).";
+
 	_do(obj1, obj2)
 	{
 		if (obj1 && typeof(obj1[symbols.truediv]) === "function")
@@ -7545,6 +7631,8 @@ export class TrueDivAST extends BinaryAST
 // Modulo
 export class ModAST extends BinaryAST
 {
+	static classdoc = "AST node for a binary modulo expression (e.g. ``x % y``).";
+
 	_do(obj1, obj2)
 	{
 		return _mod(obj1, obj2);
@@ -7559,6 +7647,8 @@ export class ModAST extends BinaryAST
 // Bitwise left shift
 export class ShiftLeftAST extends BinaryAST
 {
+	static classdoc = "AST node for a bitwise left shift expression (e.g. ``x << y``).";
+
 	_do(obj1, obj2)
 	{
 		if (obj2 === false)
@@ -7585,6 +7675,8 @@ export class ShiftLeftAST extends BinaryAST
 // Bitwise right shift
 export class ShiftRightAST extends BinaryAST
 {
+	static classdoc = "AST node for a bitwise right shift expression (e.g. ``x >> y``).";
+
 	_do(obj1, obj2)
 	{
 		if (obj2 === false)
@@ -7611,6 +7703,8 @@ export class ShiftRightAST extends BinaryAST
 // Bitwise and
 export class BitAndAST extends BinaryAST
 {
+	static classdoc = "AST node for a binary bitwise \"and\" expression (e.g ``x & y``).";
+
 	_do(obj1, obj2)
 	{
 		if (obj2 === false)
@@ -7629,6 +7723,8 @@ export class BitAndAST extends BinaryAST
 // Bitwise exclusive or
 export class BitXOrAST extends BinaryAST
 {
+	static classdoc = "AST node for the binary bitwise \"exclusive or\" expression (e.g. ``x ^ y``).";
+
 	_do(obj1, obj2)
 	{
 		if (obj2 === false)
@@ -7647,6 +7743,8 @@ export class BitXOrAST extends BinaryAST
 // Bitwise or
 export class BitOrAST extends BinaryAST
 {
+	static classdoc = "AST node for a binary bitwise \"or\" expression (e.g. ``x | y``).";
+
 	_do(obj1, obj2)
 	{
 		if (obj2 === false)
@@ -7664,6 +7762,8 @@ export class BitOrAST extends BinaryAST
 
 export class AndAST extends BinaryAST
 {
+	static classdoc = "AST node for the binary \"and\" expression (i.e. ``x and y``).";
+
 	_eval(context)
 	{
 		let obj1 = this.obj1._handle_eval(context);
@@ -7676,6 +7776,8 @@ export class AndAST extends BinaryAST
 
 export class OrAST extends BinaryAST
 {
+	static classdoc = "AST node for a binary \"or\" expression (e.g. ``x or y``).";
+
 	_eval(context)
 	{
 		let obj1 = this.obj1._handle_eval(context);
@@ -7688,6 +7790,8 @@ export class OrAST extends BinaryAST
 
 export class AttrAST extends CodeAST
 {
+	static classdoc = "AST node for an expression that gets or sets an attribute of an object.\n(e.g. ``x.y``).";
+
 	constructor(template, pos, obj, attrname)
 	{
 		super(template, pos);
@@ -7764,6 +7868,8 @@ AttrAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["obj", "at
 
 export class CallAST extends CodeAST
 {
+	static classdoc = "AST node for calling an object (e.g. ``f(x, y)``).";
+
 	constructor(template, pos, obj, args)
 	{
 		super(template, pos);
@@ -7818,6 +7924,8 @@ CallAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["obj", "ar
 
 export class RenderAST extends CallAST
 {
+	static classdoc = "AST node for rendering a template (e.g. ``<?render t(x)?>``.";
+
 	constructor(template, pos, obj, args)
 	{
 		super(template, pos, obj, args);
@@ -7884,6 +7992,8 @@ RenderAST.prototype._reprname = "RenderAST";
 
 export class RenderXAST extends RenderAST
 {
+	static classdoc = "AST node for rendering a template and XML-escaping the output\n(e.g. ``<?renderx t(x)?>``.";
+
 	_handle_eval(context)
 	{
 		context.escapes.push(_xmlescape);
@@ -7903,6 +8013,8 @@ export class RenderXAST extends RenderAST
 
 export class RenderBlockAST extends RenderAST
 {
+	static classdoc = "AST node for rendering a template via a ``<?renderblock?>`` block and\npassing the content of the block as one additional keyword argument named\n``content``.";
+
 	_handle_additional_arguments(context, args, kwargs)
 	{
 		if (kwargs.hasOwnProperty("content"))
@@ -7929,6 +8041,8 @@ RenderBlockAST.prototype._ul4onattrs = RenderAST.prototype._ul4onattrs.concat(["
 
 export class RenderBlocksAST extends RenderAST
 {
+	static classdoc = "AST node for rendering a template and passing additional arguments via\nnested variable definitions, e.g.::";
+
 	_handle_additional_arguments(context, args, kwargs)
 	{
 		let localcontext = context.inheritvars();
@@ -8008,6 +8122,8 @@ slice.prototype.type = new Type(null, "slice", "A slice specification.");
 // List/String slice
 export class SliceAST extends CodeAST
 {
+	static classdoc = "AST node for creating a slice object (used in ``obj[index1:index2]``).";
+
 	constructor(template, pos, index1, index2)
 	{
 		super(template, pos);
@@ -8043,6 +8159,8 @@ SliceAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["index1",
 
 export class SetVarAST extends CodeAST
 {
+	static classdoc = "AST node for setting a variable, attribute or item to a value (e.g.\n``x = y``).";
+
 	constructor(template, pos, lvalue, value)
 	{
 		super(template, pos);
@@ -8085,66 +8203,77 @@ export class ModifyVarAST extends SetVarAST
 
 export class AddVarAST extends ModifyVarAST
 {
+	static classdoc = "AST node for an augmented assignment expression that adds a value to a\nvariable (e.g. ``x += y``).";
 };
 
 AddVarAST.prototype._operator = AddAST.prototype;
 
 export class SubVarAST extends ModifyVarAST
 {
+	static classdoc = "AST node for an augmented assignment expression that subtracts a value from\na variable/attribute/item. (e.g. ``x -= y``).";
 };
 
 SubVarAST.prototype._operator = SubAST.prototype;
 
 export class MulVarAST extends ModifyVarAST
 {
+	static classdoc = "AST node for an augmented assignment expression that assigns the result\nof a multiplication to its left operand. (e.g. ``x *= y``).";
 };
 
 MulVarAST.prototype._operator = MulAST.prototype;
 
 export class TrueDivVarAST extends ModifyVarAST
 {
+	static classdoc = "AST node for an augmented assignment expression that assigns the result\nof a truncation division to its left operand. (e.g. ``x //= y``).";
 };
 
 TrueDivVarAST.prototype._operator = TrueDivAST.prototype;
 
 export class FloorDivVarAST extends ModifyVarAST
 {
+	static classdoc = "AST node for augmented assignment expression that divides a variable by a\nvalue, truncating to an integer value (e.g. ``x //= y``).";
 };
 
 FloorDivVarAST.prototype._operator = FloorDivAST.prototype;
 
 export class ModVarAST extends ModifyVarAST
 {
+	static classdoc = "AST node for an augmented assignment expression that assigns the result\nof a modulo expression to its left operand. (e.g. ``x %= y``).";
 };
 
 ModVarAST.prototype._operator = ModAST.prototype;
 
 export class ShiftLeftVarAST extends ModifyVarAST
 {
+	static classdoc = "AST node for an augmented assignment expression that assigns the result\nof a \"shift left\" expression to its left operand. (e.g. ``x <<= y``).";
 };
 
 ShiftLeftVarAST.prototype._operator = ShiftLeftAST.prototype;
 
 export class ShiftRightVarAST extends ModifyVarAST
 {
+	static classdoc = "AST node for an augmented assignment expression that assigns the result\nof a \"shift right\" expression to its left operand. (e.g. ``x >>= y``).";
 };
 
 ShiftRightVarAST.prototype._operator = ShiftRightAST.prototype;
 
 export class BitAndVarAST extends ModifyVarAST
 {
+	static classdoc = "AST node for an augmented assignment expression that assigns the result\nof a binary bitwise \"and\" expression to its left operand.\n(e.g. ``x &= y``).";
 };
 
 BitAndVarAST.prototype._operator = BitAndAST.prototype;
 
 export class BitXOrVarAST extends ModifyVarAST
 {
+	static classdoc = "AST node for an augmented assignment expression that assigns the result\nof a binary bitwise \"exclusive or\" expression to its left operand.\n(e.g. ``x ^= y``).";
 };
 
 BitXOrVarAST.prototype._operator = BitXOrAST.prototype;
 
 export class BitOrVarAST extends ModifyVarAST
 {
+	static classdoc = "AST node for an augmented assignment expression that assigns the result\nof a binary bitwise \"or\" expression to its left operand.\n(e.g. ``x |= y``).";
 };
 
 BitOrVarAST.prototype._operator = BitOrAST.prototype;
@@ -8198,6 +8327,8 @@ BlockAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["stoppos"
 
 export class ForBlockAST extends BlockAST
 {
+	static classdoc = "AST node for a ``<?for?>`` loop.";
+
 	constructor(template, pos, varname, container)
 	{
 		super(template, pos);
@@ -8284,6 +8415,8 @@ ForBlockAST.prototype._ul4onattrs = BlockAST.prototype._ul4onattrs.concat(["varn
 
 export class WhileBlockAST extends BlockAST
 {
+	static classdoc = "AST node for a ``<?while?>`` loop.";
+
 	constructor(template, pos, condition)
 	{
 		super(template, pos);
@@ -8338,6 +8471,8 @@ WhileBlockAST.prototype._ul4onattrs = BlockAST.prototype._ul4onattrs.concat(["co
 
 export class BreakAST extends CodeAST
 {
+	static classdoc = "AST node for a ``<?break?>`` tag inside a ``<?for?>`` loop.";
+
 	_eval(context)
 	{
 		throw new BreakException();
@@ -8357,6 +8492,8 @@ export class BreakAST extends CodeAST
 
 export class ContinueAST extends CodeAST
 {
+	static classdoc = "AST node for a ``<?continue?>`` tag inside a ``<?for?>`` block.";
+
 	_eval(context)
 	{
 		throw new ContinueException();
@@ -8376,6 +8513,8 @@ export class ContinueAST extends CodeAST
 
 export class ConditionalBlocksAST extends BlockAST
 {
+	static classdoc = "AST node for a conditional ``<?if?>/<?elif?>/<?else?>`` block.";
+
 	_eval(context)
 	{
 		for (let block of this.content)
@@ -8430,18 +8569,22 @@ ConditionalBlockAST.prototype._ul4onattrs = BlockAST.prototype._ul4onattrs.conca
 
 export class IfBlockAST extends ConditionalBlockAST
 {
+	static classdoc = "AST node for an ``<?if?>`` block in an ``<?if?>/<?elif?>/<?else?>`` block.";
 };
 
 IfBlockAST.prototype._strname = "if";
 
 export class ElIfBlockAST extends ConditionalBlockAST
 {
+	static classdoc = "AST node for an ``<?elif?>`` block.";
 };
 
 ElIfBlockAST.prototype._strname = "else if";
 
 export class ElseBlockAST extends BlockAST
 {
+	static classdoc = "AST node for an ``<?else?>`` block.";
+
 	_repr(out)
 	{
 		out.push("<ElseAST");
@@ -8465,7 +8608,7 @@ export class ElseBlockAST extends BlockAST
 
 export class Template extends BlockAST
 {
-	static classdoc = "An UL4 template.";
+	static classdoc = "An UL4 template";
 
 	constructor(template, pos, source, name, whitespace, startdelim, enddelim, signature)
 	{
@@ -8706,6 +8849,8 @@ Template.prototype._ul4_needscontext = true;
 
 export class SignatureAST extends CodeAST
 {
+	static classdoc = "AST node for the signature of a locally defined subtemplate.";
+
 	constructor(template, pos)
 	{
 		super(template, pos);
@@ -8788,7 +8933,7 @@ export class SignatureAST extends CodeAST
 export class TemplateClosure extends Proto
 {
 	static classmodule = "ul4";
-	static classdoc = "A locally defined UL4 template.";
+	static classdoc = "A locally defined UL4 template";
 
 	constructor(template, signature, vars)
 	{
