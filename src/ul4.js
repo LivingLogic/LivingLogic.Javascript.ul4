@@ -5846,7 +5846,7 @@ export class LocationError extends Exception
 export class AST extends Proto
 {
 	static classmodule = "ul4";
-	static classdoc = "Base type of all UL4 syntax tree nodes";
+	static classdoc = "Base class for all UL4 syntax tree nodes.";
 
 	constructor(template, startpos, stoppos=null)
 	{
@@ -6179,6 +6179,7 @@ export class LineEndAST extends TextAST
 
 export class CodeAST extends AST
 {
+	static classdoc = "The base class of all AST nodes that are not literal text.";
 };
 
 export class ConstAST extends CodeAST
@@ -6968,6 +6969,8 @@ VarAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["name"]);
 
 export class UnaryAST extends CodeAST
 {
+	static classdoc = "Base class for all AST nodes implementing unary expressions\n(i.e. operators with one operand).";
+
 	constructor(template, pos, obj)
 	{
 		super(template, pos);
@@ -7126,6 +7129,8 @@ export class PrintXAST extends UnaryAST
 
 export class BinaryAST extends CodeAST
 {
+	static classdoc = "Base class for all UL4 AST nodes implementing binary expressions\n(i.e. operators with two operands).";
+
 	constructor(template, pos, obj1, obj2)
 	{
 		super(template, pos);
@@ -8280,6 +8285,8 @@ BitOrVarAST.prototype._operator = BitOrAST.prototype;
 
 export class BlockAST extends CodeAST
 {
+	static classdoc = "Base class for all AST nodes that are blocks.";
+
 	constructor(template, startpos, stoppos)
 	{
 		super(template, startpos, stoppos);
