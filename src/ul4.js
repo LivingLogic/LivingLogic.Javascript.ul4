@@ -8185,6 +8185,8 @@ export class ChangeVarAST extends CodeAST
 	}
 };
 
+ChangeVarAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["lvalue", "value"]);
+
 export class SetVarAST extends ChangeVarAST
 {
 	static classdoc = "AST node for setting a variable, attribute or item to a value (e.g.\n``x = y``).";
@@ -8197,8 +8199,6 @@ export class SetVarAST extends ChangeVarAST
 			lvalue._handle_eval_set(context, value);
 	}
 };
-
-SetVarAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["lvalue", "value"]);
 
 export class ModifyVarAST extends ChangeVarAST
 {
