@@ -9427,6 +9427,11 @@ export function _scrypt(string, salt)
 	throw new NotImplementedError("scrypt() is not implemented");
 }
 
+export function _css(value, salt)
+{
+	throw new NotImplementedError("css() is not implemented yet");
+}
+
 // Return an iterator over ``[index, item]`` lists from the iterable object ``iterable``. ``index`` starts at ``start`` (defaulting to 0)
 export function _enumerate(iterable, start=0)
 {
@@ -9703,17 +9708,6 @@ function _ul4on_dumps(obj, indent=null)
 
 expose(_ul4on_dumps, ["obj", "p", "indent", "pk=", null], {name: "dumps"});
 
-export const _ul4on = new Module(
-	"ul4on",
-	"Object serialization",
-	{
-		loads: _ul4on_loads,
-		dumps: _ul4on_dumps,
-		Encoder: encodertype,
-		Decoder: decodertype
-	}
-);
-
 function isclose(a, b, rel_tol=1e-9, abs_tol=0.0)
 {
 	if (a === b)
@@ -9738,21 +9732,6 @@ expose(Math.sin, ["x", "p"]);
 expose(Math.tan, ["x", "p"]);
 expose(Math.sqrt, ["x", "p"]);
 expose(isclose, ["a", "pk", "b", "pk", "rel_tol", "k=", 1e-9, "abs_tol", "k=", 0.0]);
-
-export const _math = new Module(
-	"math",
-	"Math related functions and constants",
-	{
-		pi: Math.PI,
-		e: Math.E,
-		tau: 2 * Math.PI,
-		cos: Math.cos,
-		sin: Math.sin,
-		tan: Math.tan,
-		sqrt: Math.sqrt,
-		isclose: isclose
-	}
-);
 
 
 export class AttrGetterType extends Type
@@ -9840,109 +9819,6 @@ export function _attrgetter(attrnames)
 
 expose(_attrgetter, ["attrs", "*"]);
 
-export const _operator = new Module(
-	"operator",
-	"Various operators as functions",
-	{
-		attrgetter: attrgettertype
-	}
-);
-
-export const _ul4 = new Module(
-	"ul4",
-	"UL4 - A templating language",
-	{
-		AST: _maketype(AST),
-		TextAST: _maketype(TextAST),
-		IndentAST: _maketype(IndentAST),
-		LineEndAST: _maketype(LineEndAST),
-		CodeAST: _maketype(CodeAST),
-		ConstAST: _maketype(ConstAST),
-		SeqItemAST: _maketype(SeqItemAST),
-		UnpackSeqItemAST: _maketype(UnpackSeqItemAST),
-		ListAST: _maketype(ListAST),
-		ListComprehensionAST: _maketype(ListComprehensionAST),
-		SetAST: _maketype(SetAST),
-		SetComprehensionAST: _maketype(SetComprehensionAST),
-		DictItemAST: _maketype(DictItemAST),
-		UnpackDictItemAST: _maketype(UnpackDictItemAST),
-		DictAST: _maketype(DictAST),
-		DictComprehensionAST: _maketype(DictComprehensionAST),
-		GeneratorExpressionAST: _maketype(GeneratorExpressionAST),
-		VarAST: _maketype(VarAST),
-		BlockAST: _maketype(BlockAST),
-		ConditionalBlocksAST: _maketype(ConditionalBlocksAST),
-		IfBlockAST: _maketype(IfBlockAST),
-		ElIfBlockAST: _maketype(ElIfBlockAST),
-		ElseBlockAST: _maketype(ElseBlockAST),
-		ForBlockAST: _maketype(ForBlockAST),
-		WhileBlockAST: _maketype(WhileBlockAST),
-		BreakAST: _maketype(BreakAST),
-		ContinueAST: _maketype(ContinueAST),
-		AttrAST: _maketype(AttrAST),
-		SliceAST: _maketype(SliceAST),
-		UnaryAST: _maketype(UnaryAST),
-		NotAST: _maketype(NotAST),
-		IfAST: _maketype(IfAST),
-		NegAST: _maketype(NegAST),
-		BitNotAST: _maketype(BitNotAST),
-		PrintAST: _maketype(PrintAST),
-		PrintXAST: _maketype(PrintXAST),
-		ReturnAST: _maketype(ReturnAST),
-		BinaryAST: _maketype(BinaryAST),
-		ItemAST: _maketype(ItemAST),
-		ShiftLeftAST: _maketype(ShiftLeftAST),
-		ShiftRightAST: _maketype(ShiftRightAST),
-		BitAndAST: _maketype(BitAndAST),
-		BitXOrAST: _maketype(BitXOrAST),
-		BitOrAST: _maketype(BitOrAST),
-		IsAST: _maketype(IsAST),
-		IsNotAST: _maketype(IsNotAST),
-		EQAST: _maketype(EQAST),
-		NEAST: _maketype(NEAST),
-		LTAST: _maketype(LTAST),
-		LEAST: _maketype(LEAST),
-		GTAST: _maketype(GTAST),
-		GEAST: _maketype(GEAST),
-		ContainsAST: _maketype(ContainsAST),
-		NotContainsAST: _maketype(NotContainsAST),
-		AddAST: _maketype(AddAST),
-		SubAST: _maketype(SubAST),
-		MulAST: _maketype(MulAST),
-		FloorDivAST: _maketype(FloorDivAST),
-		TrueDivAST: _maketype(TrueDivAST),
-		OrAST: _maketype(OrAST),
-		AndAST: _maketype(AndAST),
-		ModAST: _maketype(ModAST),
-		ChangeVarAST: _maketype(ChangeVarAST),
-		SetVarAST: _maketype(SetVarAST),
-		AddVarAST: _maketype(AddVarAST),
-		SubVarAST: _maketype(SubVarAST),
-		MulVarAST: _maketype(MulVarAST),
-		FloorDivVarAST: _maketype(FloorDivVarAST),
-		TrueDivVarAST: _maketype(TrueDivVarAST),
-		ModVarAST: _maketype(ModVarAST),
-		ShiftLeftVarAST: _maketype(ShiftLeftVarAST),
-		ShiftRightVarAST: _maketype(ShiftRightVarAST),
-		BitAndVarAST: _maketype(BitAndVarAST),
-		BitXOrVarAST: _maketype(BitXOrVarAST),
-		BitOrVarAST: _maketype(BitOrVarAST),
-		PositionalArgumentAST: _maketype(PositionalArgumentAST),
-		KeywordArgumentAST: _maketype(KeywordArgumentAST),
-		UnpackListArgumentAST: _maketype(UnpackListArgumentAST),
-		UnpackDictArgumentAST: _maketype(UnpackDictArgumentAST),
-		CallAST: _maketype(CallAST),
-		RenderAST: _maketype(RenderAST),
-		RenderXAST: _maketype(RenderXAST),
-		RenderBlockAST: _maketype(RenderBlockAST),
-		RenderBlocksAST: _maketype(RenderBlocksAST),
-		SignatureAST: _maketype(SignatureAST),
-		Template: _maketype(Template),
-		TemplateClosure: _maketype(TemplateClosure),
-	}
-);
-
-
 expose(_repr, ["obj", "p"], {name: "repr"});
 expose(_ascii, ["obj", "p"], {name: "ascii"});
 expose(_len, ["sequence", "p"], {name: "len"});
@@ -10015,6 +9891,7 @@ expose(_floor, ["x", "p", "digits", "pk=", 0], {name: "floor"});
 expose(_ceil, ["x", "p", "digits", "pk=", 0], {name: "ceil"});
 expose(_md5, ["string", "p"], {name: "md5"});
 expose(_scrypt, ["string", "p", "salt", "pk"], {name: "scrypt"});
+expose(_css, ["value", "p", "default", "p="], {name: "css"});
 
 // Functions implementing UL4 methods
 export function _count(obj, sub, start=null, end=null)
@@ -10580,6 +10457,7 @@ expose(Color.prototype.withluma, ["luma", "pk"]);
 expose(Color.prototype.absluma, ["f", "pk"]);
 expose(Color.prototype.relluma, ["f", "pk"]);
 expose(Color.prototype.invert, ["f", "pk=", 1.0]);
+
 
 export class Date_ extends Proto
 {
@@ -11231,6 +11109,148 @@ export class MonthDelta extends Proto
 };
 
 
+export const _math = new Module(
+	"math",
+	"Math related functions and constants",
+	{
+		pi: Math.PI,
+		e: Math.E,
+		tau: 2 * Math.PI,
+		cos: Math.cos,
+		sin: Math.sin,
+		tan: Math.tan,
+		sqrt: Math.sqrt,
+		isclose: isclose
+	}
+);
+
+
+export const _operator = new Module(
+	"operator",
+	"Various operators as functions",
+	{
+		attrgetter: attrgettertype
+	}
+);
+
+
+export const _ul4 = new Module(
+	"ul4",
+	"UL4 - A templating language",
+	{
+		AST: _maketype(AST),
+		TextAST: _maketype(TextAST),
+		IndentAST: _maketype(IndentAST),
+		LineEndAST: _maketype(LineEndAST),
+		CodeAST: _maketype(CodeAST),
+		ConstAST: _maketype(ConstAST),
+		SeqItemAST: _maketype(SeqItemAST),
+		UnpackSeqItemAST: _maketype(UnpackSeqItemAST),
+		ListAST: _maketype(ListAST),
+		ListComprehensionAST: _maketype(ListComprehensionAST),
+		SetAST: _maketype(SetAST),
+		SetComprehensionAST: _maketype(SetComprehensionAST),
+		DictItemAST: _maketype(DictItemAST),
+		UnpackDictItemAST: _maketype(UnpackDictItemAST),
+		DictAST: _maketype(DictAST),
+		DictComprehensionAST: _maketype(DictComprehensionAST),
+		GeneratorExpressionAST: _maketype(GeneratorExpressionAST),
+		VarAST: _maketype(VarAST),
+		BlockAST: _maketype(BlockAST),
+		ConditionalBlocksAST: _maketype(ConditionalBlocksAST),
+		IfBlockAST: _maketype(IfBlockAST),
+		ElIfBlockAST: _maketype(ElIfBlockAST),
+		ElseBlockAST: _maketype(ElseBlockAST),
+		ForBlockAST: _maketype(ForBlockAST),
+		WhileBlockAST: _maketype(WhileBlockAST),
+		BreakAST: _maketype(BreakAST),
+		ContinueAST: _maketype(ContinueAST),
+		AttrAST: _maketype(AttrAST),
+		SliceAST: _maketype(SliceAST),
+		UnaryAST: _maketype(UnaryAST),
+		NotAST: _maketype(NotAST),
+		IfAST: _maketype(IfAST),
+		NegAST: _maketype(NegAST),
+		BitNotAST: _maketype(BitNotAST),
+		PrintAST: _maketype(PrintAST),
+		PrintXAST: _maketype(PrintXAST),
+		ReturnAST: _maketype(ReturnAST),
+		BinaryAST: _maketype(BinaryAST),
+		ItemAST: _maketype(ItemAST),
+		ShiftLeftAST: _maketype(ShiftLeftAST),
+		ShiftRightAST: _maketype(ShiftRightAST),
+		BitAndAST: _maketype(BitAndAST),
+		BitXOrAST: _maketype(BitXOrAST),
+		BitOrAST: _maketype(BitOrAST),
+		IsAST: _maketype(IsAST),
+		IsNotAST: _maketype(IsNotAST),
+		EQAST: _maketype(EQAST),
+		NEAST: _maketype(NEAST),
+		LTAST: _maketype(LTAST),
+		LEAST: _maketype(LEAST),
+		GTAST: _maketype(GTAST),
+		GEAST: _maketype(GEAST),
+		ContainsAST: _maketype(ContainsAST),
+		NotContainsAST: _maketype(NotContainsAST),
+		AddAST: _maketype(AddAST),
+		SubAST: _maketype(SubAST),
+		MulAST: _maketype(MulAST),
+		FloorDivAST: _maketype(FloorDivAST),
+		TrueDivAST: _maketype(TrueDivAST),
+		OrAST: _maketype(OrAST),
+		AndAST: _maketype(AndAST),
+		ModAST: _maketype(ModAST),
+		ChangeVarAST: _maketype(ChangeVarAST),
+		SetVarAST: _maketype(SetVarAST),
+		AddVarAST: _maketype(AddVarAST),
+		SubVarAST: _maketype(SubVarAST),
+		MulVarAST: _maketype(MulVarAST),
+		FloorDivVarAST: _maketype(FloorDivVarAST),
+		TrueDivVarAST: _maketype(TrueDivVarAST),
+		ModVarAST: _maketype(ModVarAST),
+		ShiftLeftVarAST: _maketype(ShiftLeftVarAST),
+		ShiftRightVarAST: _maketype(ShiftRightVarAST),
+		BitAndVarAST: _maketype(BitAndVarAST),
+		BitXOrVarAST: _maketype(BitXOrVarAST),
+		BitOrVarAST: _maketype(BitOrVarAST),
+		PositionalArgumentAST: _maketype(PositionalArgumentAST),
+		KeywordArgumentAST: _maketype(KeywordArgumentAST),
+		UnpackListArgumentAST: _maketype(UnpackListArgumentAST),
+		UnpackDictArgumentAST: _maketype(UnpackDictArgumentAST),
+		CallAST: _maketype(CallAST),
+		RenderAST: _maketype(RenderAST),
+		RenderXAST: _maketype(RenderXAST),
+		RenderBlockAST: _maketype(RenderBlockAST),
+		RenderBlocksAST: _maketype(RenderBlocksAST),
+		SignatureAST: _maketype(SignatureAST),
+		Template: _maketype(Template),
+		TemplateClosure: _maketype(TemplateClosure),
+	}
+);
+
+
+export const _ul4on = new Module(
+	"ul4on",
+	"Object serialization",
+	{
+		loads: _ul4on_loads,
+		dumps: _ul4on_dumps,
+		Encoder: encodertype,
+		Decoder: decodertype
+	}
+);
+
+
+export const _color = new Module(
+	"color",
+	"Types and functions for handling RGBA colors",
+	{
+		Color: colortype,
+		css: _css
+	}
+);
+
+
 export let builtins = {
 	repr: _repr,
 	ascii: _ascii,
@@ -11286,7 +11306,6 @@ export let builtins = {
 	datetime: datetimetype,
 	timedelta: timedeltatype,
 	monthdelta: monthdeltatype,
-	color: colortype,
 	rgb: _rgb,
 	hls: _hls,
 	hsv: _hsv,
@@ -11319,7 +11338,8 @@ export let builtins = {
 	ul4on: _ul4on,
 	ul4: _ul4,
 	math: _math,
-	operator: _operator
+	operator: _operator,
+	color: _color
 };
 
 
