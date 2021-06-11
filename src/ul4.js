@@ -9427,9 +9427,89 @@ export function _scrypt(string, salt)
 	throw new NotImplementedError("scrypt() is not implemented");
 }
 
-export function _css(value, salt)
+export function _css(value, defaultValue)
 {
-	throw new NotImplementedError("css() is not implemented yet");
+	if (value.startsWith("#"))
+	{
+		if (value.length == 4)
+		{
+			return new Color(
+				17 * parseInt(value[1], 16),
+				17 * parseInt(value[2], 16),
+				17 * parseInt(value[3], 16)
+			);
+		}
+		else if (value.length == 5)
+		{
+			return new Color(
+				17 * parseInt(value[1], 16),
+				17 * parseInt(value[2], 16),
+				17 * parseInt(value[3], 16),
+				17 * parseInt(value[4], 16)
+			);
+		}
+		else if (value.length == 7)
+		{
+			return new Color(
+				parseInt(value.substring(1, 3), 16),
+				parseInt(value.substring(3, 5), 16),
+				parseInt(value.substring(5, 7), 16)
+			);
+		}
+		else if (value.length == 9)
+		{
+			return new Color(
+				parseInt(value.substring(1, 3), 16),
+				parseInt(value.substring(3, 5), 16),
+				parseInt(value.substring(5, 7), 16),
+				parseInt(value.substring(7, 9), 16)
+			);
+		}
+	}
+	else if (value.startsWith("rgb(") && value.endsWith(")"))
+	{
+		let parts = value.slice(4, -1).split(",");
+		if (parts.length == 3)
+		{
+			for (let i = 0; i < 3; ++i)
+			{
+				let part = parts[i];
+				if (part.endsWith("%"))
+					parts[i] = parseInt(part.slice(0, -1), "10")*255/100;
+				else
+					parts[i] = parseInt(part, "10");
+			}
+			return new Color(...parts);
+		}
+	}
+	else if (value.startsWith("rgba(") && value.endsWith(")"))
+	{
+		let parts = value.slice(5, -1).split(",");
+		if (parts.length == 4)
+		{
+			for (let i = 0; i < 4; ++i)
+			{
+				let part = parts[i];
+				if (part.endsWith("%"))
+					parts[i] = parseInt(part.slice(0, -1), "10")*255/100;
+				else if (i == 3)
+					parts[i] = parseFloat(part)*255;
+				else
+					parts[i] = parseInt(part, "10");
+			}
+			return new Color(...parts);
+		}
+	}
+	else
+	{
+		let color = Color.cssColors[value];
+		if (color !== undefined)
+			return color;
+	}
+	if (defaultValue === undefined)
+		throw new ValueError("css() can't interpret " + _repr(value) + " as a CSS color value");
+	else
+		return defaultValue;
 }
 
 // Return an iterator over ``[index, item]`` lists from the iterable object ``iterable``. ``index`` starts at ``start`` (defaulting to 0)
@@ -9891,7 +9971,7 @@ expose(_floor, ["x", "p", "digits", "pk=", 0], {name: "floor"});
 expose(_ceil, ["x", "p", "digits", "pk=", 0], {name: "ceil"});
 expose(_md5, ["string", "p"], {name: "md5"});
 expose(_scrypt, ["string", "p", "salt", "pk"], {name: "scrypt"});
-expose(_css, ["value", "p", "default", "p="], {name: "css"});
+expose(_css, ["value", "p", "default", "p=", undefined], {name: "css"});
 
 // Functions implementing UL4 methods
 export function _count(obj, sub, start=null, end=null)
@@ -10436,6 +10516,52 @@ export class Color extends Proto
 	{
 		return "color";
 	}
+
+	static maroon = new Color(0x80, 0x00, 0x00);
+	static red = new Color(0xff, 0x00, 0x00);
+	static orange = new Color(0xff, 0xa5, 0x00);
+	static yellow = new Color(0xff, 0xff, 0x00);
+	static olive = new Color(0x80, 0x80, 0x00);
+	static purple = new Color(0x80, 0x00, 0x80);
+	static fuchsia = new Color(0xff, 0x00, 0xff);
+	static white = new Color(0xff, 0xff, 0xff);
+	static lime = new Color(0x00, 0xff, 0x00);
+	static green = new Color(0x00, 0x80, 0x00);
+	static navy = new Color(0x00, 0x00, 0x80);
+	static blue = new Color(0x00, 0x00, 0xff);
+	static aqua = new Color(0x00, 0xff, 0xff);
+	static teal = new Color(0x00, 0x80, 0x80);
+	static black = new Color(0x00, 0x00, 0x00);
+	static silver = new Color(0xc0, 0xc0, 0xc0);
+	static gray = new Color(0x80, 0x80, 0x80);
+	// Aliases
+	static magenta = Color.purple;
+	static cyan = Color.aqua;
+
+	static cssColors = {
+		"maroon": Color.maroon,
+		"red": Color.red,
+		"orange": Color.orange,
+		"yellow": Color.yellow,
+		"olive": Color.olive,
+		"purple": Color.purple,
+		"fuchsia": Color.fuchsia,
+		"white": Color.white,
+		"lime": Color.lime,
+		"green": Color.green,
+		"navy": Color.navy,
+		"blue": Color.blue,
+		"aqua": Color.aqua,
+		"teal": Color.teal,
+		"black": Color.black,
+		"silver": Color.silver,
+		"gray": Color.gray,
+		"magenta": Color.magenta,
+		"cyan": Color.cyan,
+		// :lColor.iases
+		"magenta": Color.magenta,
+		"cyan": Color.cyan
+	};
 };
 
 expose(Color.prototype.r, []);
