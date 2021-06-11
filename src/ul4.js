@@ -10266,6 +10266,8 @@ export class Color extends Proto
 				return expose(this.relluma.bind(this), ["f", "pk"]);
 			case "invert":
 				return expose(this.invert.bind(this), ["f", "pk=", 1.0]);
+			case "combine":
+				return expose(this.combine.bind(this), ["r", "pk=", null, "g", "pk=", null, "b", "pk=", null, "a", "pk=", null]);
 			default:
 				throw new AttributeError(this, attrname);
 		}
@@ -10512,6 +10514,16 @@ export class Color extends Proto
 		);
 	}
 
+	combine(r=null, g=null, b=null, a=null)
+	{
+		return new Color(
+			r != null ? r : this._r,
+			g != null ? g : this._g,
+			b != null ? b : this._b,
+			a != null ? a : this._a
+		);
+	}
+
 	ul4type()
 	{
 		return "color";
@@ -10583,6 +10595,7 @@ expose(Color.prototype.withluma, ["luma", "pk"]);
 expose(Color.prototype.absluma, ["f", "pk"]);
 expose(Color.prototype.relluma, ["f", "pk"]);
 expose(Color.prototype.invert, ["f", "pk=", 1.0]);
+expose(Color.prototype.combine, ["r", "pk=", null, "g", "pk=", null, "b", "pk=", null, "a", "pk=", null]);
 
 
 export class Date_ extends Proto
