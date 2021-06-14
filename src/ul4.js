@@ -9512,6 +9512,38 @@ export function _css(value, defaultValue)
 		return defaultValue;
 }
 
+export function _mix(values)
+{
+	let r = 0.0;
+	let g = 0.0;
+	let b = 0.0;
+	let a = 0.0;
+	let weight = 1.0;
+	let sumweights = 0.0;
+
+	for (let value of values)
+	{
+		if (value instanceof Color)
+		{
+			sumweights += weight;
+			r += weight * value._r;
+			g += weight * value._g;
+			b += weight * value._b;
+			a += weight * (255-value._a);
+		}
+		else if (typeof(value) === "number")
+		{
+			weight = value;
+		}
+		else
+			throw new ArgumentError("color.mix() arguments msut be numbers or colors, not " + _type(value).fullname());
+	}
+	if (sumweights == 0.0)
+		throw new ValueError("at least one of the arguments must be a color and at least one of the weights must be >0");
+
+	return new Color(r/sumweights, g/sumweights, b/sumweights, 255-a/sumweights);
+}
+
 // Return an iterator over ``[index, item]`` lists from the iterable object ``iterable``. ``index`` starts at ``start`` (defaulting to 0)
 export function _enumerate(iterable, start=0)
 {
@@ -9972,6 +10004,7 @@ expose(_ceil, ["x", "p", "digits", "pk=", 0], {name: "ceil"});
 expose(_md5, ["string", "p"], {name: "md5"});
 expose(_scrypt, ["string", "p", "salt", "pk"], {name: "scrypt"});
 expose(_css, ["value", "p", "default", "p=", undefined], {name: "css"});
+expose(_mix, ["values", "*"], {name: "mix"});
 
 // Functions implementing UL4 methods
 export function _count(obj, sub, start=null, end=null)
@@ -10123,7 +10156,7 @@ export class ColorType extends Type
 
 expose(ColorType.prototype, ["r", "pk=", 0, "g", "pk=", 0, "b", "pk=", 0, "a", "pk=", 255], {name: "color"});
 
-let colortype = new ColorType(null, "color", "An RGBA color (with 8-bit red, green, blue and alpha values).");
+let colortype = new ColorType("color", "Color", "An RGBA color (with 8-bit red, green, blue and alpha values).");
 
 export class Color extends Proto
 {
@@ -11385,7 +11418,8 @@ export const _color = new Module(
 	"Types and functions for handling RGBA colors",
 	{
 		Color: colortype,
-		css: _css
+		css: _css,
+		mix: _mix
 	}
 );
 
