@@ -10269,12 +10269,12 @@ export class Color extends Proto
 				return a;
 			case "hue":
 				return expose(this.hue.bind(this), []);
-			case "lum":
-				return expose(this.lum.bind(this), []);
+			case "light":
+				return expose(this.light.bind(this), []);
 			case "sat":
 				return expose(this.sat.bind(this), []);
-			case "luma":
-				return expose(this.luma.bind(this), []);
+			case "lum":
+				return expose(this.lum.bind(this), []);
 			case "hls":
 				return expose(this.hls.bind(this), []);
 			case "hlsa":
@@ -10285,18 +10285,18 @@ export class Color extends Proto
 				return expose(this.hsva.bind(this), []);
 			case "witha":
 				return expose(this.witha.bind(this), ["a", "pk"]);
+			case "withlight":
+				return expose(this.withlight.bind(this), ["light", "pk"]);
+			case "abslight":
+				return expose(this.abslight.bind(this), ["f", "pk"]);
+			case "rellight":
+				return expose(this.rellight.bind(this), ["f", "pk"]);
 			case "withlum":
 				return expose(this.withlum.bind(this), ["lum", "pk"]);
 			case "abslum":
 				return expose(this.abslum.bind(this), ["f", "pk"]);
 			case "rellum":
 				return expose(this.rellum.bind(this), ["f", "pk"]);
-			case "withluma":
-				return expose(this.withluma.bind(this), ["luma", "pk"]);
-			case "absluma":
-				return expose(this.absluma.bind(this), ["f", "pk"]);
-			case "relluma":
-				return expose(this.relluma.bind(this), ["f", "pk"]);
 			case "invert":
 				return expose(this.invert.bind(this), ["f", "pk=", 1.0]);
 			case "combine":
@@ -10358,7 +10358,7 @@ export class Color extends Proto
 		return this.hls()[0];
 	}
 
-	lum()
+	light()
 	{
 		return this.hls()[1];
 	}
@@ -10368,7 +10368,7 @@ export class Color extends Proto
 		return this.hls()[2];
 	}
 
-	luma()
+	lum()
 	{
 		return (0.2126 * this._r + 0.7152 * this._g + 0.0722 * this._b)/255;
 	}
@@ -10452,23 +10452,23 @@ export class Color extends Proto
 		return factor*upper + (1-factor) * lower
 	}
 
-	withlum(lum)
+	withlight(light)
 	{
-		if (typeof(lum) !== "number")
-			throw new TypeError("withlum() requires a number");
+		if (typeof(light) !== "number")
+			throw new TypeError("withlight() requires a number");
 		let hlsa = this.hlsa();
-		return _hls(hlsa[0], lum, hlsa[2], hlsa[3]);
+		return _hls(hlsa[0], light, hlsa[2], hlsa[3]);
 	}
 
-	abslum(f)
+	abslight(f)
 	{
 		if (typeof(f) !== "number")
-			throw new TypeError("abslum() requires a number");
+			throw new TypeError("abslight() requires a number");
 		let hlsa = this.hlsa();
-		return _hls(hlsa[0], lum + f, hlsa[2], hlsa[3]);
+		return _hls(hlsa[0], hlsa[1] + f, hlsa[2], hlsa[3]);
 	}
 
-	rellum(f)
+	rellight(f)
 	{
 		if (typeof(f) !== "number")
 			throw new TypeError("rellum() requires a number");
@@ -10480,20 +10480,20 @@ export class Color extends Proto
 		return _hls(hlsa[0], hlsa[0], hlsa[2], hlsa[3]);
 	}
 
-	withluma(luma)
+	withlum(lum)
 	{
-		if (typeof(luma) !== "number")
-			throw new TypeError("withluma() requires a number");
+		if (typeof(lum) !== "number")
+			throw new TypeError("withlum() requires a number");
 
-		let luma_old = this.luma();
-		if (luma_old == 0.0 || luma_old == 1.0)
+		let lum_old = this.lum();
+		if (lum_old == 0.0 || lum_old == 1.0)
 		{
-			let v = luma*255;
+			let v = lum*255;
 			return new Color(v, v, v, this._a);
 		}
-		else if (luma > luma_old)
+		else if (lum > lum_old)
 		{
-			let f = (luma-luma_old)/(1-luma_old);
+			let f = (lum-lum_old)/(1-lum_old);
 			return new Color(
 				this._interpolate(this._r, 255, f),
 				this._interpolate(this._g, 255, f),
@@ -10501,9 +10501,9 @@ export class Color extends Proto
 				this._a,
 			);
 		}
-		else if (luma < luma_old)
+		else if (lum < lum_old)
 		{
-			let f = luma/luma_old;
+			let f = lum/lum_old;
 			return new Color(
 				this._interpolate(0, this._r, f),
 				this._interpolate(0, this._g, f),
@@ -10515,23 +10515,23 @@ export class Color extends Proto
 			return this;
 	}
 
-	absluma(f)
+	abslum(f)
 	{
 		if (typeof(f) !== "number")
-			throw new TypeError("absluma() requires a number");
-		return this.withluma(this.luma() + f);
+			throw new TypeError("abslum() requires a number");
+		return this.withlum(this.lum() + f);
 	}
 
-	relluma(f)
+	rellum(f)
 	{
 		if (typeof(f) !== "number")
-			throw new TypeError("relluma() requires a number");
-		let luma = this.luma();
+			throw new TypeError("rellum() requires a number");
+		let lum = this.lum();
 		if (f > 0)
-			luma += (1-luma)*f;
+			lum += (1-lum)*f;
 		else if (f < 0)
-			luma += luma*f;
-		return this.withluma(luma);
+			lum += lum*f;
+		return this.withlum(lum);
 	}
 
 	invert(f=1.0)
@@ -10621,12 +10621,12 @@ expose(Color.prototype.hlsa, []);
 expose(Color.prototype.hsv, []);
 expose(Color.prototype.hsva, []);
 expose(Color.prototype.witha, ["a", "pk"]);
+expose(Color.prototype.withlight, ["light", "pk"]);
+expose(Color.prototype.abslight, ["f", "pk"]);
+expose(Color.prototype.rellight, ["f", "pk"]);
 expose(Color.prototype.withlum, ["lum", "pk"]);
 expose(Color.prototype.abslum, ["f", "pk"]);
 expose(Color.prototype.rellum, ["f", "pk"]);
-expose(Color.prototype.withluma, ["luma", "pk"]);
-expose(Color.prototype.absluma, ["f", "pk"]);
-expose(Color.prototype.relluma, ["f", "pk"]);
 expose(Color.prototype.invert, ["f", "pk=", 1.0]);
 expose(Color.prototype.combine, ["r", "pk=", null, "g", "pk=", null, "b", "pk=", null, "a", "pk=", null]);
 
