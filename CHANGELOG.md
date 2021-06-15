@@ -42,6 +42,10 @@ The following methods have been added to `color.Color`: `hue()`, `light()`,
 `sat()`, `withhue()`, `withsat()`, `withlum()`, `ablum()`, `rellum()`,
 `invert()` and `combine()`.
 
+Always assume that the Javascript types `Map` and `Set` exist.
+
+Use symbols for implementing UL4 poeation in classes.
+
 
 ## Changes in 1.9.1 (2021-01-15)
 
