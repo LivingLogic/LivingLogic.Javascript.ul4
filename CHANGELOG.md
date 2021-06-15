@@ -1,5 +1,47 @@
 # Changes
 
+## Changes in 1.10 (2021-06-15)
+
+UL4 now support positional-only arguments. They following functions use that now:
+
+	*	`first(iterable, /, default=None)`,
+	*	`last(iterable, /, default=None)`,
+	*	`isfirst(iterable, /)`,
+	*	`islast(iterable, /)`,
+	*	`isfirstlast(iterable, /)`,
+	*	`enumfl(iterable, /)`,
+	*	`monthdelta(months=0, /)`,
+	*	`ul4on.dumps(obj, /, indent)`,
+	*	`ul4on.loads(dump, /, registry=None)`,
+
+`type()` now returns type objects instead of a simple string. Type objects can
+be used for types testing via the new `isinstance()` function. Some type objects
+can be called to create new instances of those types.
+
+The following functions are now callable type objects instead: `bool`, `int`,
+`float`, `str`, `date`, `datetime`, `timedelta`, `monthdelta`, `list`, `set`,
+`dict` and `color`.
+
+The following modules have been added to the builtin UL4 objects:
+
+* `ul4` contains all UL4 AST classes;
+* `ul4on` contains the functions `dumps()` and `loads()` and the types
+  `Encoder` and `Decoder`;
+* `operator` contains the type `attrgetter` and
+* `math` contains the constants `e`, `pi` and `tau` as well as the functions
+  `cos()`, `sin()`, `tan()`, `sqrt()` and `isclose()`.
+* `color` contains the type `Color` and the functions `css` and `mix`.
+
+Tag delimiters can now no longer be customized. They are always `<?` and `?>`.
+
+The color method `abslum()` has been renamed to `abslight()` and `rellum()` has
+been renamed to `rellight()`.
+
+The following methods have been added to `color.Color`: `hue()`, `light()`,
+`sat()`, `withhue()`, `withsat()`, `withlum()`, `ablum()`, `rellum()`,
+`invert()` and `combine()`.
+
+
 ## Changes in 1.9.1 (2021-01-15)
 
 Fixed the implementation of various division operations.
