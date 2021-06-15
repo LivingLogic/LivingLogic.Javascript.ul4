@@ -1,6 +1,6 @@
 {
 	"name": "@livinglogic/ul4",
-	"version": "1.9.1",
+	"version": "1.10.0",
 	"description": "Cross-platform templating library and object serialisation",
 	"keywords": [
 		"UL4",
