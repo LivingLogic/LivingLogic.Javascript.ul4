@@ -10473,11 +10473,12 @@ export class Color extends Proto
 		if (typeof(f) !== "number")
 			throw new TypeError("rellum() requires a number");
 		let hlsa = this.hlsa();
+		let light = hlsa[1];
 		if (f > 0)
-			hlsa[1] += (1-hlsa[1])*f;
+			light += (1-light)*f;
 		else if (f < 0)
-			hlsa[1] += hlsa[1]*f;
-		return _hls(hlsa[0], hlsa[0], hlsa[2], hlsa[3]);
+			light += light*f;
+		return _hls(hlsa[0], light, hlsa[2], hlsa[3]);
 	}
 
 	withlum(lum)
