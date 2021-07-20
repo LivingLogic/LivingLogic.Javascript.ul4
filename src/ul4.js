@@ -7093,7 +7093,7 @@ export class ReturnAST extends UnaryAST
 
 export class PrintAST extends UnaryAST
 {
-	static classdoc = "AST node for a ``<?print?>`` tag (e.g. ``<?print x?>``.";
+	static classdoc = "AST node for a ``<?print?>`` tag (e.g. ``<?print x?>``).";
 
 	_eval(context)
 	{
@@ -7111,7 +7111,7 @@ export class PrintAST extends UnaryAST
 
 export class PrintXAST extends UnaryAST
 {
-	static classdoc = "AST node for a ``<?printx?>`` tag (e.g. ``<?printx x?>``.";
+	static classdoc = "AST node for a ``<?printx?>`` tag (e.g. ``<?printx x?>``).";
 
 	_eval(context)
 	{
