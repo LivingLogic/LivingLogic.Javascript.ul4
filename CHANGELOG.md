@@ -1,5 +1,12 @@
 # Changes
 
+## Changes in 1.10.1 (2021-07-21)
+
+Fixed construction of UL4 stacktraces: Now the stacktrace will only consist of
+the initial exception, a `LocationError` for the originating `AST` and
+additional `LocationError` for each template call. Previously each AST node
+added a stack frame.
+
 ## Changes in 1.10 (2021-06-15)
 
 UL4 now supports positional-only arguments. They following functions use that

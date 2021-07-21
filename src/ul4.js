@@ -6002,7 +6002,7 @@ export class AST extends Proto
 		}
 		catch (exc)
 		{
-			if (!(exc instanceof InternalException) && !(exc instanceof LocationError))
+			if (!exc.context)
 				this._decorate_exception(exc);
 			throw exc;
 		}
