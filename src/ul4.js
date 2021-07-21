@@ -11613,7 +11613,7 @@ export function report_exc(exc)
 	if (console && console.error)
 	{
 		let errors = [];
-		for (;;) 
+		for (;;)
 		{
 			errors.unshift(exc);
 			if (exc.context !== undefined && exc.context !== null)
