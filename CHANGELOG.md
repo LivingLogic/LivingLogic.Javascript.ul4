@@ -16,7 +16,7 @@ now:
 	*	`ul4on.loads(dump, /, registry=None)`,
 
 `type()` now returns type objects instead of a simple string. Type objects can
-be used for types testing via the new `isinstance()` function. Some type objects
+be used for type testing via the new `isinstance()` function. Some type objects
 can be called to create new instances of those types.
 
 The following functions are now callable type objects instead: `bool`, `int`,
