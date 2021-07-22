@@ -1335,9 +1335,9 @@ export function _internal_call(context, f, name, functioncontext, signature, nee
 
 export function _callfunction(context, f, args, kwargs)
 {
-	let name = f._ul4_name || f.name;
 	if (f._ul4_signature === undefined || f._ul4_needsobject === undefined || f._ul4_needscontext === undefined)
 		throw new TypeError(_repr(f) + " is not callable by UL4");
+	let name = f._ul4_name || f.name;
 	return _internal_call(context, f, name, null, f._ul4_signature, f._ul4_needscontext, f._ul4_needsobject, args, kwargs);
 };
 
