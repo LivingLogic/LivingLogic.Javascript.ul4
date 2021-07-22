@@ -1,6 +1,6 @@
 # Changes
 
-## Changes in HEAD (2021-07-??)
+## Changes in 1.10.2 (2021-07-22)
 
 Fixed handling of calls to undefined functions or templates. Now a call to an
 undefined function will properly terminated with an exception:
