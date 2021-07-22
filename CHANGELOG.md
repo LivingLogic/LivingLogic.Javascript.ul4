@@ -1,5 +1,14 @@
 # Changes
 
+## Changes in HEAD (2021-07-??)
+
+Fixed handling of calls to undefined functions or templates. Now a call to an
+undefined function will properly terminated with an exception:
+
+```
+TypeError: <undefined> is not callable by UL4
+```
+
 ## Changes in 1.10.1 (2021-07-21)
 
 Fixed construction of UL4 stacktraces: Now the stacktrace will only consist of

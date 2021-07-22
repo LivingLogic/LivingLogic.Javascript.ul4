@@ -1335,7 +1335,7 @@ export function _internal_call(context, f, name, functioncontext, signature, nee
 
 export function _callfunction(context, f, args, kwargs)
 {
-	if (f._ul4_signature === undefined || f._ul4_needsobject === undefined || f._ul4_needscontext === undefined)
+	if (!f || f._ul4_signature === undefined || f._ul4_needsobject === undefined || f._ul4_needscontext === undefined)
 		throw new TypeError(_repr(f) + " is not callable by UL4");
 	let name = f._ul4_name || f.name;
 	return _internal_call(context, f, name, null, f._ul4_signature, f._ul4_needscontext, f._ul4_needsobject, args, kwargs);
@@ -1343,14 +1343,14 @@ export function _callfunction(context, f, args, kwargs)
 
 export function _callobject(context, obj, args, kwargs)
 {
-	if (obj._ul4_signature === undefined || obj._ul4_needsobject === undefined || obj._ul4_needscontext === undefined)
+	if (!obj || obj._ul4_signature === undefined || obj._ul4_needsobject === undefined || obj._ul4_needscontext === undefined)
 		throw new TypeError(_repr(obj) + " is not callable by UL4");
 	return _internal_call(context, obj[symbols.call], obj.name, obj, obj._ul4_signature, obj._ul4_needscontext, obj._ul4_needsobject, args, kwargs);
 };
 
 export function _callrender(context, obj, args, kwargs)
 {
-	if (obj._ul4_signature === undefined || obj._ul4_needsobject === undefined || obj._ul4_needscontext === undefined)
+	if (!obj || obj._ul4_signature === undefined || obj._ul4_needsobject === undefined || obj._ul4_needscontext === undefined)
 		throw new TypeError(_repr(obj) + " is not renderable by UL4");
 	return _internal_call(context, obj[symbols.render], obj.name, obj, obj._ul4_signature, obj._ul4_needscontext, obj._ul4_needsobject, args, kwargs);
 };
