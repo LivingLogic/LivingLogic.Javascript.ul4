@@ -18,7 +18,7 @@ added a stack frame.
 
 ## Changes in 1.10 (2021-06-15)
 
-UL4 now supports positional-only arguments. They following functions use that
+UL4 now supports positional-only arguments. Thy following functions use that
 now:
 
 	*	`first(iterable, /, default=None)`,
