@@ -537,7 +537,7 @@ export class Type
 
 	getattr(obj, attrname)
 	{
-		if (typeof(obj[symbols.getattr]) === "function")
+		if (typeof(obj) === "object" && typeof(obj[symbols.getattr]) === "function")
 			return obj[symbols.getattr](attrname);
 		else if (this.attrs.has(attrname))
 		{
@@ -558,7 +558,7 @@ export class Type
 
 	hasattr(obj, attrname)
 	{
-		if (typeof(obj[symbols.getattr]) === "function")
+		if (typeof(obj) === "object" && typeof(obj[symbols.getattr]) === "function")
 		{
 			try
 			{

@@ -1,5 +1,10 @@
 # Changes
 
+## Changes in 1.10.3 (2021-11-03)
+
+Passing `null` to `Type.getattr()` or `Type.hasattr()` now raises the correct
+exception.
+
 ## Changes in 1.10.2 (2021-07-22)
 
 Fixed handling of calls to undefined functions or templates. Now a call to an
