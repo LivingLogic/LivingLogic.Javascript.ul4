@@ -8394,8 +8394,10 @@ export class ForBlockAST extends BlockAST
 				lvalue._handle_eval_set(context, value);
 			try
 			{
-				// We can't call _handle_eval() here, as this would in turn call this function again, leading to infinite recursion
-				// But we don't have to, as wrapping original exception in ``Error`` has already been done by the lower levels
+				// We can't call _handle_eval() here, as this would in turn call
+				// this function again, leading to infinite recursion. But we
+				// don't have to, as wrapping the original exception in ``Error``
+				// has already been done by the lower levels.
 				super._eval(context);
 			}
 			catch (exc)
@@ -8462,8 +8464,10 @@ export class WhileBlockAST extends BlockAST
 				break;
 			try
 			{
-				// We can't call _handle_eval() here, as this would in turn call this function again, leading to infinite recursion
-				// But we don't have to, as wrapping the original exception in ``Error`` has already been done by the lower levels
+				// We can't call _handle_eval() here, as this would in turn call
+				// this function again, leading to infinite recursion. But we
+				// don't have to, as wrapping the original exception in ``Error``
+				// has already been done by the lower levels.
 				super._eval(context);
 			}
 			catch (exc)
@@ -8997,13 +9001,15 @@ export class TemplateClosure extends Proto
 TemplateClosure.prototype._ul4_needsobject = true;
 TemplateClosure.prototype._ul4_needscontext = true;
 
-// Create a color object from the red, green, blue and alpha values ``r``, ``g``, ``b`` and ``b``
+// Create a color object from the red, green, blue and alpha values
+// ``r``, ``g``, ``b`` and ``b``
 export function _rgb(r, g, b, a)
 {
 	return new Color(255*r, 255*g, 255*b, 255*a);
 };
 
-// Convert ``obj`` to a string and escape the characters ``&``, ``<``, ``>``, ``'`` and ``"`` with their XML character/entity reference
+// Convert ``obj`` to a string and escape the characters ``&``, ``<``, ``>``,
+// ``'`` and ``"`` with their XML character/entity reference
 export function _xmlescape(obj)
 {
 	obj = _str(obj);
@@ -9161,14 +9167,16 @@ export function _sum(iterable, start=0)
 	return start;
 };
 
-// Return the first value produced by iterating through ``iterable`` (defaulting to ``defaultValue`` if the iterator is empty)
+// Return the first value produced by iterating through ``iterable``
+// (defaulting to ``defaultValue`` if the iterator is empty)
 export function _first(iterable, defaultValue=null)
 {
 	let item = _iter(iterable).next();
 	return item.done ? defaultValue : item.value;
 };
 
-// Return the last value produced by iterating through ``iterable`` (defaulting to ``defaultValue`` if the iterator is empty)
+// Return the last value produced by iterating through ``iterable``
+// (defaulting to ``defaultValue`` if the iterator is empty)
 export function _last(iterable, defaultValue=null)
 {
 	let value = defaultValue;
@@ -9232,7 +9240,8 @@ export function _sorted(context, iterable, key=null, reverse=false)
 	}
 };
 
-// Return a iterable object iterating from ``start`` up to (but not including) ``stop`` with a step size of ``step``
+// Return a iterable object iterating from ``start`` up to (but not including)
+// ``stop`` with a step size of ``step``
 export function _range(start, stop=Object, step=Object)
 {
 	if (step === Object)
@@ -9544,7 +9553,8 @@ export function _mix(values)
 	return new Color(r/sumweights, g/sumweights, b/sumweights, 255-a/sumweights);
 }
 
-// Return an iterator over ``[index, item]`` lists from the iterable object ``iterable``. ``index`` starts at ``start`` (defaulting to 0)
+// Return an iterator over ``[index, item]`` lists from the iterable object
+// ``iterable``. ``index`` starts at ``start`` (defaulting to 0).
 export function _enumerate(iterable, start=0)
 {
 	return {
@@ -9557,7 +9567,8 @@ export function _enumerate(iterable, start=0)
 	};
 };
 
-// Return an iterator over ``[isfirst, item]`` lists from the iterable object ``iterable`` (``isfirst`` is true for the first item, false otherwise)
+// Return an iterator over ``[isfirst, item]`` lists from the iterable object
+// ``iterable`` (``isfirst`` is true for the first item, false otherwise).
 export function _isfirst(iterable)
 {
 	let iter = _iter(iterable);
@@ -9572,7 +9583,8 @@ export function _isfirst(iterable)
 	};
 };
 
-// Return an iterator over ``[islast, item]`` lists from the iterable object ``iterable`` (``islast`` is true for the last item, false otherwise)
+// Return an iterator over ``[islast, item]`` lists from the iterable object
+// ``iterable`` (``islast`` is true for the last item, false otherwise).
 export function _islast(iterable)
 {
 	let iter = _iter(iterable);
@@ -9589,7 +9601,9 @@ export function _islast(iterable)
 	};
 };
 
-// Return an iterator over ``[isfirst, islast, item]`` lists from the iterable object ``iterable`` (``isfirst`` is true for the first item, ``islast`` is true for the last item. Both are false otherwise)
+// Return an iterator over ``[isfirst, islast, item]`` lists from the iterable
+// object ``iterable`` (``isfirst`` is true for the first item, ``islast``
+// is true for the last item. Both are false otherwise).
 export function _isfirstlast(iterable)
 {
 	let iter = _iter(iterable);
@@ -9608,7 +9622,9 @@ export function _isfirstlast(iterable)
 	};
 };
 
-// Return an iterator over ``[index, isfirst, islast, item]`` lists from the iterable object ``iterable`` (``isfirst`` is true for the first item, ``islast`` is true for the last item. Both are false otherwise)
+// Return an iterator over ``[index, isfirst, islast, item]`` lists from the
+// iterable object ``iterable`` (``isfirst`` is true for the first item,
+// ``islast`` is true for the last item. Both are false otherwise).
 export function _enumfl(iterable, start=0)
 {
 	let iter = _iter(iterable);
@@ -9628,7 +9644,8 @@ export function _enumfl(iterable, start=0)
 	};
 };
 
-// Return an iterator over lists, where the i'th list consists of all i'th items from the arguments (terminating when the shortest argument ends)
+// Return an iterator over lists, where the i'th list consists of all i'th
+// items from the arguments (terminating when the shortest argument ends).
 export function _zip(iterables)
 {
 	let result;
@@ -9662,7 +9679,7 @@ export function _zip(iterables)
 	}
 };
 
-// Return the absolute value for the number ``number``
+// Return the absolute value for the number ``number``.
 export function _abs(number)
 {
 	if (number !== null && typeof(number[symbols.abs]) === "function")
@@ -9670,7 +9687,7 @@ export function _abs(number)
 	return Math.abs(number);
 };
 
-// Return a ``Date`` object from the arguments passed in
+// Return a ``Date`` object from the arguments passed in.
 export function _date(year, month, day)
 {
 	return datetype[symbols.call](year, month, day);
@@ -9681,19 +9698,20 @@ export function _datetime(year, month, day, hour=0, minute=0, second=0, microsec
 	return datetimetype[symbols.call](year, month, day, hour, minute, second, microsecond);
 };
 
-// Return a ``TimeDelta`` object from the arguments passed in
+// Return a ``TimeDelta`` object from the arguments passed in.
 export function _timedelta(days=0, seconds=0, microseconds=0)
 {
 	return TimeDelta.type[symbols.call](days, seconds, microseconds);
 };
 
-// Return a ``MonthDelta`` object from the arguments passed in
+// Return a ``MonthDelta`` object from the arguments passed in.
 export function _monthdelta(months=0)
 {
 	return MonthDelta.type[symbols.call](months);
 };
 
-// Return a ``Color`` object from the hue, luminescence, saturation and alpha values ``h``, ``l``, ``s`` and ``a`` (i.e. using the HLS color model)
+// Return a ``Color`` object from the hue, luminescence, saturation and
+// alpha values ``h``, ``l``, ``s`` and ``a`` (i.e. using the HLS color model).
 export function _hls(h, l, s, a)
 {
 	let _v = function _v(m1, m2, hue)
@@ -9721,7 +9739,8 @@ export function _hls(h, l, s, a)
 	return _rgb(_v(m1, m2, h+1/3), _v(m1, m2, h), _v(m1, m2, h-1/3), a);
 };
 
-// Return a ``Color`` object from the hue, saturation, value and alpha values ``h``, ``s``, ``v`` and ``a`` (i.e. using the HSV color model)
+// Return a ``Color`` object from the hue, saturation, value and alpha values
+// ``h``, ``s``, ``v`` and ``a`` (i.e. using the HSV color model).
 export function _hsv(h, s, v, a)
 {
 	if (s === 0.0)
@@ -9748,7 +9767,8 @@ export function _hsv(h, s, v, a)
 	}
 };
 
-// Return the item with the key ``key`` from the dict ``container``. If ``container`` doesn't have this key, return ``defaultvalue``
+// Return the item with the key ``key`` from the dict ``container``.
+// If ``container`` doesn't have this key, return ``defaultvalue``.
 export function _get(container, key, defaultvalue)
 {
 	if (_ismap(container))
@@ -9767,13 +9787,13 @@ export function _get(container, key, defaultvalue)
 	throw new TypeError("get() requires a dict");
 };
 
-// Return a ``Date`` object for the current time
+// Return a ``Date`` object for the current time.
 export function now()
 {
 	return new Date();
 };
 
-// Return a ``Date`` object for the current time in UTC
+// Return a ``Date`` object for the current time in UTC.
 export function utcnow()
 {
 	let now = new Date();
@@ -9781,7 +9801,7 @@ export function utcnow()
 	return new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds(), now.getUTCMilliseconds());
 };
 
-// Return an ``Date`` object for today
+// Return an ``Date`` object for today.
 export function today()
 {
 	let now = new Date();
