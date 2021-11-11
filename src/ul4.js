@@ -10603,9 +10603,6 @@ export class Color extends Proto
 		"silver": Color.silver,
 		"gray": Color.gray,
 		"magenta": Color.magenta,
-		"cyan": Color.cyan,
-		// :lColor.iases
-		"magenta": Color.magenta,
 		"cyan": Color.cyan
 	};
 };
