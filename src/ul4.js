@@ -30,9 +30,9 @@
 /*jslint vars: true */
 
 // Version of this Javascript package
-import { version } from '../package.json';
+import packageInfo from '../package.json';
 
-export { version };
+export const version = packageInfo.version;
 
 // Version of the UL4 API
 // I.e. this version should be compatible with the Python and Java
@@ -2572,18 +2572,16 @@ export function _getattr(obj, attrname, default_=null)
 	}
 };
 
-// Return wether the object ``obj`` has an attribute with the name ``attrname``
+// Return whether the object ``obj`` has an attribute with the name ``attrname``
 export function _hasattr(obj, attrname)
 {
-	let proto = Protocol.get(obj);
-	return proto.hasattr(obj, attrname);
+	return _type(obj).hasattr(obj, attrname);
 };
 
 // Return the names of the attributes of the object ``obj`` as a set.
 export function _dir(obj)
 {
-	let proto = Protocol.get(obj);
-	return proto.dir();
+	return _type(obj).dir();
 };
 
 // Return whether any of the items in ``iterable`` are true
@@ -2923,7 +2921,7 @@ export function _asjson(obj)
 export function _fromjson(string)
 {
 	// The following is from jQuery's parseJSON function
-	string = StrProtocol.strip(string);
+	string = strtype.strip(string);
 	if (JSON && JSON.parse)
 		return JSON.parse(string);
 	if (_rvalidchars.test(string.replace(_rvalidescape, "@").replace(_rvalidtokens, "]").replace(_rvalidbraces, "")))
@@ -3175,7 +3173,7 @@ function _format_datetime(obj, fmt, lang)
 					c = _lpad(((obj.getHours()-1) % 12)+1, "0", 2);
 					break;
 				case "j":
-					c = _lpad(DateTimeProtocol.yearday(obj), "0", 3);
+					c = _lpad(datetimetype.yearday(obj), "0", 3);
 					break;
 				case "m":
 					c = _lpad(obj.getMonth()+1, "0", 2);
@@ -3719,7 +3717,7 @@ export class StrType extends Type
 				let result = [];
 				while (obj.length)
 				{
-					obj = StrProtocol.lstrip(obj, null);
+					obj = strtype.lstrip(obj, null);
 					let part;
 					if (!maxsplit--)
 						 part = obj; // Take the rest of the string
@@ -3774,7 +3772,7 @@ export class StrType extends Type
 				let result = [];
 				while (obj.length)
 				{
-					obj = StrProtocol.rstrip(obj);
+					obj = strtype.rstrip(obj);
 					let part;
 					if (!maxsplit--)
 						 part = obj; // Take the rest of the string
@@ -4107,6 +4105,22 @@ class DictType extends Type
 		}
 	}
 
+	keys(obj)
+	{
+		let result = [];
+		if (_ismap(obj))
+		{
+			for (let [key, value] of obj)
+				result.push(key);
+		}
+		else
+		{
+			for (let key in obj)
+				result.push(key);
+		}
+		return _iter(result);
+	}
+
 	items(obj)
 	{
 		let result = [];
@@ -4120,7 +4134,7 @@ class DictType extends Type
 			for (let key in obj)
 				result.push([key, obj[key]]);
 		}
-		return result;
+		return _iter(result);
 	}
 
 	values(obj)
@@ -4136,7 +4150,7 @@ class DictType extends Type
 			for (let key in obj)
 				result.push(obj[key]);
 		}
-		return result;
+		return _iter(result);
 	}
 
 	_set(obj, key, value)
@@ -4216,11 +4230,12 @@ class DictType extends Type
 	}
 };
 
-DictType.prototype.attrs = new Set(["get", "items", "values", "update", "clear", "pop"]);
+DictType.prototype.attrs = new Set(["get", "keys", "items", "values", "update", "clear", "pop"]);
 
 expose(DictType.prototype, ["args", "*", "kwargs", "**"], {name: "dict"});
 
 expose(DictType.prototype.get, ["key", "p", "default", "p=", null]);
+expose(DictType.prototype.keys, []);
 expose(DictType.prototype.items, []);
 expose(DictType.prototype.values, []);
 expose(DictType.prototype.update, ["others", "*", "kwargs", "**"]);
@@ -4613,933 +4628,6 @@ export class GenericType extends Type
 		return obj instanceof this._constructor;
 	}
 }
-
-export let Protocol = {
-	attrs: new Set(),
-
-	ul4type: function ul4type()
-	{
-		return "Protocol";
-	},
-
-	dir: function dir()
-	{
-		return this.attrs;
-	},
-
-	get: function get(obj)
-	{
-		if (_isstr(obj))
-			return StrProtocol;
-		else if (_islist(obj))
-			return ListProtocol;
-		else if (_isdate(obj))
-			return DateProtocol;
-		else if (_isset(obj))
-			return SetProtocol;
-		else if (_ismap(obj))
-			return MapProtocol;
-		else if (_isdatetime(obj))
-			return DateTimeProtocol;
-		else if (_isobject(obj))
-			return ObjectProtocol;
-		else
-			return Protocol;
-	},
-
-	getattr: function getattr(obj, attrname)
-	{
-		if (obj === null || obj === undefined)
-			throw new AttributeError(obj, attrname);
-		else if (typeof(obj[symbols.getattr]) === "function")
-			return obj[symbols.getattr](attrname);
-		else if (this.attrs.has(attrname))
-		{
-			let attr = this[attrname];
-			let realattr = function realattr(...args) {
-				return attr.apply(this, [obj, ...args]);
-			};
-			// Unfortunately we can't set ``realattr.name``;
-			realattr._ul4_name = attr._ul4_name || attr.name;
-			realattr._ul4_signature = attr._ul4_signature;
-			realattr._ul4_needsobject = attr._ul4_needsobject;
-			realattr._ul4_needscontext = attr._ul4_needscontext;
-			return realattr;
-		}
-		else
-			throw new AttributeError(obj, attrname);
-	},
-
-	hasattr: function hasattr(obj, attrname)
-	{
-		if (obj === null || obj === undefined)
-			return false;
-		else if (typeof(obj[symbols.getattr]) === "function")
-		{
-			try
-			{
-				obj[symbols.getattr](attrname);
-				return true;
-			}
-			catch (exc)
-			{
-				if (exc instanceof AttributeError && exc.obj === object)
-					return false;
-				else
-					throw exc;
-			}
-		}
-		else
-			return this.attrs.has(attrname);
-	}
-};
-
-
-export let StrProtocol = _extend(Protocol,
-{
-	attrs: new Set([
-		"split",
-		"rsplit",
-		"splitlines",
-		"strip",
-		"lstrip",
-		"rstrip",
-		"upper",
-		"lower",
-		"capitalize",
-		"startswith",
-		"endswith",
-		"replace",
-		"count",
-		"find",
-		"rfind",
-		"join"
-	]),
-
-	ul4type: function ul4type(obj)
-	{
-		return "str";
-	},
-
-	count: function count(obj, sub, start=null, end=null)
-	{
-		return _count(obj, sub, start, end);
-	},
-
-	find: function find(obj, sub, start=null, end=null)
-	{
-		return _find(obj, sub, start, end);
-	},
-
-	rfind: function rfind(obj, sub, start=null, end=null)
-	{
-		return _rfind(obj, sub, start, end);
-	},
-
-	replace: function replace(obj, old, new_, count=null)
-	{
-		if (count === null)
-			count = obj.length;
-
-		let result = [];
-		while (obj.length)
-		{
-			let pos = obj.indexOf(old);
-			if (pos === -1 || !count--)
-			{
-				result.push(obj);
-				break;
-			}
-			result.push(obj.substr(0, pos));
-			result.push(new_);
-			obj = obj.substr(pos + old.length);
-		}
-		return result.join("");
-	},
-
-	strip: function strip(obj, chars=null)
-	{
-		chars = chars || " \r\n\t";
-		if (typeof(chars) !== "string")
-			throw new TypeError("strip() requires a string argument");
-
-		while (obj && chars.indexOf(obj[0]) >= 0)
-			obj = obj.substr(1);
-		while (obj && chars.indexOf(obj[obj.length-1]) >= 0)
-			obj = obj.substr(0, obj.length-1);
-		return obj;
-	},
-
-	lstrip: function lstrip(obj, chars=null)
-	{
-		chars = chars || " \r\n\t";
-		if (typeof(chars) !== "string")
-			throw new TypeError("lstrip() requires a string argument");
-
-		while (obj && chars.indexOf(obj[0]) >= 0)
-			obj = obj.substr(1);
-		return obj;
-	},
-
-	rstrip: function rstrip(obj, chars=null)
-	{
-		chars = chars || " \r\n\t";
-		if (typeof(chars) !== "string")
-			throw new TypeError("rstrip() requires a string argument");
-
-		while (obj && chars.indexOf(obj[obj.length-1]) >= 0)
-			obj = obj.substr(0, obj.length-1);
-		return obj;
-	},
-
-	split: function split(obj, sep=null, maxsplit=null)
-	{
-		if (sep !== null && typeof(sep) !== "string")
-			throw new TypeError("split() requires a string");
-
-		if (maxsplit === null)
-		{
-			let result = obj.split(sep !== null ? sep : /[ \n\r\t]+/);
-			if (sep === null)
-			{
-				if (result.length && !result[0].length)
-					result.splice(0, 1);
-				if (result.length && !result[result.length-1].length)
-					result.splice(-1);
-			}
-			return result;
-		}
-		else
-		{
-			if (sep !== null)
-			{
-				let result = [];
-				while (obj.length)
-				{
-					let pos = obj.indexOf(sep);
-					if (pos === -1 || !maxsplit--)
-					{
-						result.push(obj);
-						break;
-					}
-					result.push(obj.substr(0, pos));
-					obj = obj.substr(pos + sep.length);
-				}
-				return result;
-			}
-			else
-			{
-				let result = [];
-				while (obj.length)
-				{
-					obj = StrProtocol.lstrip(obj, null);
-					let part;
-					if (!maxsplit--)
-						 part = obj; // Take the rest of the string
-					else
-						part = obj.split(/[ \n\r\t]+/, 1)[0];
-					if (part.length)
-						result.push(part);
-					obj = obj.substr(part.length);
-				}
-				return result;
-			}
-		}
-	},
-
-	rsplit: function rsplit(obj, sep=null, maxsplit=null)
-	{
-		if (sep !== null && typeof(sep) !== "string")
-			throw new TypeError("rsplit() requires a string as second argument");
-
-		if (maxsplit === null)
-		{
-			let result = obj.split(sep !== null ? sep : /[ \n\r\t]+/);
-			if (sep === null)
-			{
-				if (result.length && !result[0].length)
-					result.splice(0, 1);
-				if (result.length && !result[result.length-1].length)
-					result.splice(-1);
-			}
-			return result;
-		}
-		else
-		{
-			if (sep !== null)
-			{
-				let result = [];
-				while (obj.length)
-				{
-					let pos = obj.lastIndexOf(sep);
-					if (pos === -1 || !maxsplit--)
-					{
-						result.unshift(obj);
-						break;
-					}
-					result.unshift(obj.substr(pos+sep.length));
-					obj = obj.substr(0, pos);
-				}
-				return result;
-			}
-			else
-			{
-				let result = [];
-				while (obj.length)
-				{
-					obj = StrProtocol.rstrip(obj);
-					let part;
-					if (!maxsplit--)
-						 part = obj; // Take the rest of the string
-					else
-					{
-						part = obj.split(/[ \n\r\t]+/);
-						part = part[part.length-1];
-					}
-					if (part.length)
-						result.unshift(part);
-					obj = obj.substr(0, obj.length-part.length);
-				}
-				return result;
-			}
-		}
-	},
-
-	splitlines: function splitlines(obj, keepends=false)
-	{
-		let pos = 0;
-		let startpos;
-		let lookingAtLineEnd = function lookingAtLineEnd()
-		{
-			let c = obj[pos];
-			if (c === '\n' || c == '\u000B' || c == '\u000C' || c == '\u001C' || c == '\u001D' || c == '\u001E' || c == '\u0085' || c == '\u2028' || c == '\u2029')
-				return 1;
-			if (c === '\r')
-			{
-				if (pos == length-1)
-					return 1;
-				if (obj[pos+1] === '\n')
-					return 2;
-				return 1;
-			}
-			return 0;
-		};
-
-		let result = [], length = obj.length;
-
-		for (pos = 0, startpos = 0;;)
-		{
-			if (pos >= length)
-			{
-				if (startpos != pos)
-					result.push(obj.substring(startpos));
-				return result;
-			}
-			let lineendlen = lookingAtLineEnd();
-			if (!lineendlen)
-				++pos;
-			else
-			{
-				let endpos = pos + (keepends ? lineendlen : 0);
-				result.push(obj.substring(startpos, endpos));
-				pos += lineendlen;
-				startpos = pos;
-			}
-		}
-	},
-
-	lower: function lower(obj)
-	{
-		return obj.toLowerCase();
-	},
-
-	upper: function upper(obj)
-	{
-		return obj.toUpperCase();
-	},
-
-	capitalize: function capitalize(obj)
-	{
-		if (obj.length)
-			obj = obj[0].toUpperCase() + obj.slice(1).toLowerCase();
-		return obj;
-	},
-
-	join: function join(obj, iterable)
-	{
-		let resultlist = [];
-		for (let iter = _iter(iterable);;)
-		{
-			let item = iter.next();
-			if (item.done)
-				break;
-			resultlist.push(item.value);
-		}
-		return resultlist.join(obj);
-	},
-
-	startswith: function startswith(obj, prefix)
-	{
-		if (typeof(prefix) === "string")
-			return obj.substr(0, prefix.length) === prefix;
-		else if (_islist(prefix))
-		{
-			for (let singlepre of prefix)
-			{
-				if (obj.substr(0, singlepre.length) === singlepre)
-					return true;
-			}
-			return false;
-		}
-		else
-			throw new TypeError("startswith() argument must be string");
-	},
-
-	endswith: function endswith(obj, suffix)
-	{
-		if (typeof(suffix) === "string")
-			return obj.substr(obj.length-suffix.length) === suffix;
-		else if (_islist(suffix))
-		{
-			for (let singlesuf of suffix)
-			{
-				if (obj.substr(obj.length-singlesuf.length) === singlesuf)
-					return true;
-			}
-			return false;
-		}
-		else
-			throw new TypeError("endswith() argument must be string or list of strings");
-	}
-});
-
-expose(StrProtocol.count, ["sub", "p", "start", "p=", null, "end", "p=", null]);
-expose(StrProtocol.find, ["sub", "p", "start", "p=", null, "end", "p=", null]);
-expose(StrProtocol.rfind, ["sub", "p", "start", "p=", null, "end", "p=", null]);
-expose(StrProtocol.replace, ["old", "p", "new", "p", "count", "p=", null]);
-expose(StrProtocol.strip, ["chars", "p=", null]);
-expose(StrProtocol.lstrip, ["chars", "p=", null]);
-expose(StrProtocol.rstrip, ["chars", "p=", null]);
-expose(StrProtocol.split, ["sep", "pk=", null, "maxsplit", "pk=", null]);
-expose(StrProtocol.rsplit, ["sep", "pk=", null, "maxsplit", "pk=", null]);
-expose(StrProtocol.splitlines, ["keepends", "pk=", false]);
-expose(StrProtocol.lower, []);
-expose(StrProtocol.upper, []);
-expose(StrProtocol.capitalize, []);
-expose(StrProtocol.join, ["iterable", "p"]);
-expose(StrProtocol.startswith, ["prefix", "p"]);
-expose(StrProtocol.endswith, ["suffix", "p"]);
-
-
-export let ListProtocol = _extend(Protocol,
-{
-	attrs: new Set([
-		"append",
-		"insert",
-		"pop",
-		"count",
-		"find",
-		"rfind"
-	]),
-
-	ul4type: function ul4type(obj)
-	{
-		return "list";
-	},
-
-	append: function append(obj, items)
-	{
-		for (let item of items)
-			obj.push(item);
-		return null;
-	},
-
-	insert: function insert(obj, pos, items)
-	{
-		if (pos < 0)
-			pos += obj.length;
-
-		for (let item of items)
-			obj.splice(pos++, 0, item);
-		return null;
-	},
-
-	pop: function pop(obj, pos)
-	{
-		if (pos < 0)
-			pos += obj.length;
-
-		let result = obj[pos];
-		obj.splice(pos, 1);
-		return result;
-	},
-
-	count: function count(obj, sub, start=null, end=null)
-	{
-		return _count(obj, sub, start, end);
-	},
-
-	find: function find(obj, sub, start=null, end=null)
-	{
-		return _find(obj, sub, start, end);
-	},
-
-	rfind: function rfind(obj, sub, start=null, end=null)
-	{
-		return _rfind(obj, sub, start, end);
-	}
-});
-
-expose(ListProtocol.append, ["items", "*"]);
-expose(ListProtocol.insert, ["pos", "p", "items", "*"]);
-expose(ListProtocol.pop, ["pos", "p=", -1]);
-expose(ListProtocol.count, ["sub", "p", "start", "p=", null, "end", "p=", null]);
-expose(ListProtocol.find, ["sub", "p", "start", "p=", null, "end", "p=", null]);
-expose(ListProtocol.rfind, ["sub", "p", "start", "p=", null, "end", "p=", null]);
-
-
-export let MapProtocol = _extend(Protocol,
-{
-	attrs: new Set(["get", "items", "values", "update", "clear", "pop"]),
-
-	ul4type: function ul4type(obj)
-	{
-		return "dict";
-	},
-
-	getattr: function getattr(obj, attrname)
-	{
-		if (this.attrs.has(attrname))
-		{
-			let attr = this[attrname];
-			let realattr = function realattr(...args) {
-				return attr.apply(this, [obj, ...args]);
-			};
-			// Unfortunately we can't set ``realattr.name``;
-			realattr._ul4_name = attr._ul4_name || attr.name;
-			realattr._ul4_signature = attr._ul4_signature;
-			realattr._ul4_needsobject = attr._ul4_needsobject;
-			realattr._ul4_needscontext = attr._ul4_needscontext;
-			return realattr;
-		}
-		else
-			return obj.get(attrname);
-	},
-
-	get: function get(obj, key, default_=null)
-	{
-		if (obj.has(key))
-			return obj.get(key);
-		return default_;
-	},
-
-	items: function items(obj)
-	{
-		let result = [];
-		for (let [key, value] of obj)
-			result.push([key, value]);
-		return result;
-	},
-
-	values: function values(obj)
-	{
-		let result = [];
-		for (let [key, value] of obj)
-			result.push(value);
-		return result;
-	},
-
-	update: function update(obj, others, kwargs)
-	{
-		return _update(obj, others, kwargs);
-	},
-
-	clear: function clear(obj)
-	{
-		obj.clear();
-		return null;
-	},
-
-	pop: function pop(obj, key, default_=Object)
-	{
-		if (!obj.has(key))
-		{
-			if (default_ === Object)
-				throw new KeyError(obj, key);
-			else
-				return default_;
-		}
-		let result = obj.get(key);
-		obj.delete(key);
-		return result;
-	}
-});
-
-expose(MapProtocol.get, ["key", "p", "default", "p=", null]);
-expose(MapProtocol.items, []);
-expose(MapProtocol.values, []);
-expose(MapProtocol.update, ["others", "*", "kwargs", "**"]);
-expose(MapProtocol.clear, []);
-expose(MapProtocol.pop, ["key", "p", "default", "p=", Object]);
-
-export let SetProtocol = _extend(Protocol,
-{
-	attrs: new Set(["add", "clear"]),
-
-	ul4type: function ul4type(obj)
-	{
-		return "set";
-	},
-
-	add: function add(obj, items)
-	{
-		for (let item of items)
-			obj.add(item);
-	},
-
-	clear: function clear(obj)
-	{
-		obj.clear();
-		return null;
-	}
-});
-
-expose(SetProtocol.add, ["items", "*"]);
-expose(SetProtocol.clear, []);
-
-export let DateProtocol = _extend(Protocol,
-{
-	attrs: new Set([
-		"weekday",
-		"week",
-		"calendar",
-		"day",
-		"month",
-		"year",
-		"date",
-		"mimeformat",
-		"isoformat",
-		"yearday"
-	]),
-
-	ul4type: function ul4type(obj)
-	{
-		return "date";
-	},
-
-	weekday: function weekday(obj)
-	{
-		return DateTimeProtocol.weekday(obj._date);
-	},
-
-	calendar: function calendar(obj, firstweekday=0, mindaysinfirstweek=4)
-	{
-		return DateTimeProtocol.calendar(obj._date, firstweekday, mindaysinfirstweek);
-	},
-
-	week: function week(obj, firstweekday=0, mindaysinfirstweek=4)
-	{
-		return DateTimeProtocol.calendar(obj._date, firstweekday, mindaysinfirstweek)[1];
-	},
-
-	day: function day(obj)
-	{
-		return obj._date.getDate();
-	},
-
-	month: function month(obj)
-	{
-		return obj._date.getMonth()+1;
-	},
-
-	year: function year(obj)
-	{
-		return obj._date.getFullYear();
-	},
-
-	date: function date(obj)
-	{
-		return obj;
-	},
-
-	mimeformat: function mimeformat(obj)
-	{
-		let weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-		let monthname = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-		let d = obj._date;
-
-		return weekdayname[DateTimeProtocol.weekday(d)] + ", " + _lpad(d.getDate(), "0", 2) + " " + monthname[d.getMonth()] + " " + d.getFullYear();
-	},
-
-	isoformat: function isoformat(obj)
-	{
-		let d = obj._date;
-		return d.getFullYear() + "-" + _lpad((d.getMonth()+1).toString(), "0", 2) + "-" + _lpad(d.getDate().toString(), "0", 2);
-	},
-
-	yearday: function yearday(obj)
-	{
-		return DateTimeProtocol.yearday(obj._date);
-	}
-});
-
-expose(DateProtocol.weekday, []);
-expose(DateProtocol.calendar, ["firstweekday", "pk=", 0, "mindaysinfirstweek", "pk=", 4]);
-expose(DateProtocol.week, ["firstweekday", "pk=", 0, "mindaysinfirstweek", "pk=", 4]);
-expose(DateProtocol.day, []);
-expose(DateProtocol.month, []);
-expose(DateProtocol.year, []);
-expose(DateProtocol.date, []);
-expose(DateProtocol.mimeformat, []);
-expose(DateProtocol.isoformat, []);
-expose(DateProtocol.yearday, []);
-
-
-export let DateTimeProtocol = _extend(Protocol,
-{
-	attrs: new Set([
-		"weekday",
-		"week",
-		"calendar",
-		"day",
-		"month",
-		"year",
-		"hour",
-		"minute",
-		"second",
-		"microsecond",
-		"date",
-		"mimeformat",
-		"isoformat",
-		"yearday"
-	]),
-
-	ul4type: function ul4type(obj)
-	{
-		return "datetime";
-	},
-
-	weekday: function weekday(obj)
-	{
-		let d = obj.getDay();
-		return d ? d-1 : 6;
-	},
-
-	calendar: function calendar(obj, firstweekday=0, mindaysinfirstweek=4)
-	{
-		// Normalize parameters
-		firstweekday = _mod(firstweekday, 7);
-		if (mindaysinfirstweek < 1)
-			mindaysinfirstweek = 1;
-		else if (mindaysinfirstweek > 7)
-			mindaysinfirstweek = 7;
-
-		// ``obj`` might be in the first week of the next year, or last week of
-		// the previous year, so we might have to try those too.
-		for (let offset = +1; offset >= -1; --offset)
-		{
-			let year = obj.getFullYear() + offset;
-			// ``refdate`` will always be in week 1
-			let refDate = new Date(year, 0, mindaysinfirstweek);
-			// Go back to the start of ``refdate``s week (i.e. day 1 of week 1)
-			let weekDayDiff = _mod(DateTimeProtocol.weekday(refDate) - firstweekday, 7);
-			let weekStartYear = refDate.getFullYear();
-			let weekStartMonth = refDate.getMonth();
-			let weekStartDay = refDate.getDate() - weekDayDiff;
-			let weekStart = new Date(weekStartYear, weekStartMonth, weekStartDay);
-			// Is our date ``obj`` at or after day 1 of week 1?
-			if (obj.getTime() >= weekStart.getTime())
-			{
-				let diff = SubAST.prototype._do(obj, weekStart);
-				// Add 1, because the first week is week 1, not week 0
-				let week = Math.floor(diff.days()/7) + 1;
-				return [year, week, DateTimeProtocol.weekday(obj)];
-			}
-		}
-	},
-
-	week: function week(obj, firstweekday=0, mindaysinfirstweek=4)
-	{
-		return DateTimeProtocol.calendar(obj, firstweekday, mindaysinfirstweek)[1];
-	},
-
-	day: function day(obj)
-	{
-		return obj.getDate();
-	},
-
-	month: function month(obj)
-	{
-		return obj.getMonth()+1;
-	},
-
-	year: function year(obj)
-	{
-		return obj.getFullYear();
-	},
-
-	hour: function hour(obj)
-	{
-		return obj.getHours();
-	},
-
-	minute: function minute(obj)
-	{
-		return obj.getMinutes();
-	},
-
-	second: function second(obj)
-	{
-		return obj.getSeconds();
-	},
-
-	microsecond: function microsecond(obj)
-	{
-		return obj.getMilliseconds() * 1000;
-	},
-
-	date: function date(obj)
-	{
-		return new Date_(DateTimeProtocol.year(obj), DateTimeProtocol.month(obj), DateTimeProtocol.day(obj));
-	},
-
-	mimeformat: function mimeformat(obj)
-	{
-		let weekdayname = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-		let monthname = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-
-		return weekdayname[DateTimeProtocol.weekday(obj)] + ", " + _lpad(obj.getDate(), "0", 2) + " " + monthname[obj.getMonth()] + " " + obj.getFullYear() + " " + _lpad(obj.getHours(), "0", 2) + ":" + _lpad(obj.getMinutes(), "0", 2) + ":" + _lpad(obj.getSeconds(), "0", 2) + " GMT";
-	},
-
-	isoformat: function isoformat(obj)
-	{
-		let year = obj.getFullYear();
-		let month = obj.getMonth()+1;
-		let day = obj.getDate();
-		let hour = obj.getHours();
-		let minute = obj.getMinutes();
-		let second = obj.getSeconds();
-		let ms = obj.getMilliseconds();
-		let result = year + "-" + _lpad(month.toString(), "0", 2) + "-" + _lpad(day.toString(), "0", 2) + "T" + _lpad(hour.toString(), "0", 2) + ":" + _lpad(minute.toString(), "0", 2) + ":" + _lpad(second.toString(), "0", 2);
-		if (ms)
-			result += "." + _lpad(ms.toString(), "0", 3) + "000";
-		return result;
-	},
-
-	yearday: function yearday(obj)
-	{
-		let leap = _isleap(obj) ? 1 : 0;
-		let day = obj.getDate();
-		switch (obj.getMonth())
-		{
-			case 0:
-				return day;
-			case 1:
-				return 31 + day;
-			case 2:
-				return 31 + 28 + leap + day;
-			case 3:
-				return 31 + 28 + leap + 31 + day;
-			case 4:
-				return 31 + 28 + leap + 31 + 30 + day;
-			case 5:
-				return 31 + 28 + leap + 31 + 30 + 31 + day;
-			case 6:
-				return 31 + 28 + leap + 31 + 30 + 31 + 30 + day;
-			case 7:
-				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + day;
-			case 8:
-				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + day;
-			case 9:
-				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + day;
-			case 10:
-				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + day;
-			case 11:
-				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30 + day;
-		}
-	}
-});
-
-expose(DateTimeProtocol.weekday, []);
-expose(DateTimeProtocol.calendar, ["firstweekday", "pk=", 0, "mindaysinfirstweek", "pk=", 4]);
-expose(DateTimeProtocol.week, ["firstweekday", "pk=", 0, "mindaysinfirstweek", "pk=", 4]);
-expose(DateTimeProtocol.day, []);
-expose(DateTimeProtocol.month, []);
-expose(DateTimeProtocol.year, []);
-expose(DateTimeProtocol.hour, []);
-expose(DateTimeProtocol.minute, []);
-expose(DateTimeProtocol.second, []);
-expose(DateTimeProtocol.microsecond, []);
-expose(DateTimeProtocol.date, []);
-expose(DateTimeProtocol.mimeformat, []);
-expose(DateTimeProtocol.isoformat, []);
-expose(DateTimeProtocol.yearday, []);
-
-
-export let ObjectProtocol = _extend(Protocol,
-{
-	attrs: new Set(["get", "items", "values", "update", "clear"]),
-
-	ul4type: function ul4type(obj)
-	{
-		return "dict";
-	},
-
-	getattr: function getattr(obj, attrname)
-	{
-		let result;
-		if (obj && typeof(obj[symbols.getattr]) === "function") // test this before the generic object test
-			result = obj[symbols.getattr](attrname);
-		else
-			result = obj[attrname];
-		if (typeof(result) !== "function")
-			return result;
-		let realresult = function(...args) {
-			// We can use ``apply`` here, as we know that ``obj`` is a real object.
-			return result.apply(obj, args);
-		};
-		realresult._ul4_name = result._ul4_name || result.name;
-		realresult._ul4_signature = result._ul4_signature;
-		realresult._ul4_needsobject = result._ul4_needsobject;
-		realresult._ul4_needscontext = result._ul4_needscontext;
-		return realresult;
-	},
-
-	get: function get(obj, key, default_=null)
-	{
-		let result = obj[key];
-		if (result === undefined)
-			return default_;
-		return result;
-	},
-
-	items: function items(obj)
-	{
-		let result = [];
-		for (let key in obj)
-			result.push([key, obj[key]]);
-		return result;
-	},
-
-	values: function values(obj)
-	{
-		let result = [];
-		for (let key in obj)
-			result.push(obj[key]);
-		return result;
-	},
-
-	clear: function clear(obj)
-	{
-		for (let key in obj)
-			delete obj[key];
-	}
-});
-
-expose(ObjectProtocol.get, ["key", "p", "default", "p=", null]);
-expose(ObjectProtocol.items, []);
-expose(ObjectProtocol.values, []);
-expose(ObjectProtocol.clear, []);
 
 
 export class Context
@@ -6184,7 +5272,7 @@ export class CodeAST extends AST
 
 export class ConstAST extends CodeAST
 {
-	static classdoc = "AST node for load a constant value.";
+	static classdoc = "AST node for a constant value.";
 
 	constructor(template, pos, value)
 	{
@@ -6392,7 +5480,19 @@ export class UnpackDictItemAST extends ItemArgBase
 	_eval_dict(context, result)
 	{
 		let item = this.item._handle_eval(context);
-		if (_islist(item))
+		if (_isiter(item))
+		{
+			for (;;)
+			{
+				let subitem = item.next();
+				if (subitem.done)
+					break;
+				if (!_islist(subitem.value) || subitem.value.length != 2)
+					throw new ArgumentError("** requires an iterable of (key, value) pairs");
+				result.set(subitem.value[0], subitem.value[1]);
+			}
+		}
+		else if (_islist(item))
 		{
 			for (let subitem of item)
 			{
@@ -7311,7 +6411,7 @@ export class EQAST extends BinaryAST
 // Comparison operator !=
 export class NEAST extends BinaryAST
 {
-	static classdoc = "AST node for a binary inequalitiy comparison (e.g. ``x != y``).";
+	static classdoc = "AST node for a binary inequality comparison (e.g. ``x != y``).";
 
 	_do(obj1, obj2)
 	{
@@ -7413,7 +6513,7 @@ export class NotContainsAST extends BinaryAST
 // Addition: num + num, string + string
 export class AddAST extends BinaryAST
 {
-	static classdoc = "AST node for a binary addition expression that adds its two operands and\nreturns the result  (e.g. ``x + y``).";
+	static classdoc = "AST node for a binary addition expression (e.g. ``x + y``).";
 
 	_do(obj1, obj2)
 	{
@@ -7433,7 +6533,7 @@ export class AddAST extends BinaryAST
 	{
 		if (_islist(obj1) && _islist(obj2))
 		{
-			ListProtocol.append(obj1, obj2);
+			listtype.append(obj1, obj2);
 			return obj1;
 		}
 		else
@@ -7444,7 +6544,7 @@ export class AddAST extends BinaryAST
 // Substraction: num - num
 export class SubAST extends BinaryAST
 {
-	static classdoc = "AST node for the binary subtraction operator.";
+	static classdoc = "AST node for the binary subtraction expression (e.g. ``x - y``).";
 
 	_do(obj1, obj2)
 	{
@@ -7479,15 +6579,15 @@ export class SubAST extends BinaryAST
 		// From now on obj1 is > than obj2
 
 		let year1 = obj1.getFullYear();
-		let yearday1 = DateTimeProtocol.yearday(obj1);
+		let yearday1 = datetimetype.yearday(obj1);
 		let year2 = obj2.getFullYear();
-		let yearday2 = DateTimeProtocol.yearday(obj2);
+		let yearday2 = datetimetype.yearday(obj2);
 
 		let diffdays = 0;
 
 		while (year1 > year2)
 		{
-			diffdays += DateProtocol.yearday(_date(year2, 12, 31));
+			diffdays += datetype.yearday(_date(year2, 12, 31));
 			++year2;
 		}
 		diffdays += yearday1 - yearday2;
@@ -10141,7 +9241,7 @@ export function _week4format(obj, firstweekday=null)
 	else
 		firstweekday %= 7;
 
-	let yearday = DateTimeProtocol.yearday(obj)+6;
+	let yearday = datetimetype.yearday(obj)+6;
 	let jan1 = new Date(obj.getFullYear(), 0, 1);
 	let jan1weekday = jan1.getDay();
 	if (--jan1weekday < 0)
@@ -10175,6 +9275,32 @@ export class ColorType extends Type
 };
 
 expose(ColorType.prototype, ["r", "pk=", 0, "g", "pk=", 0, "b", "pk=", 0, "a", "pk=", 255], {name: "color"});
+
+ColorType.prototype.attrs = new Set([
+	"a",
+	"abslight",
+	"abslum",
+	"b",
+	"combine",
+	"g",
+	"hls",
+	"hlsa",
+	"hsv",
+	"hsva",
+	"hue",
+	"invert",
+	"light",
+	"lum",
+	"r",
+	"rellight",
+	"rellum",
+	"sat",
+	"witha",
+	"withhue",
+	"withlight",
+	"withlum",
+	"withsat"
+]);
 
 let colortype = new ColorType("color", "Color", "An RGBA color (with 8-bit red, green, blue and alpha values).");
 
@@ -10303,6 +9429,8 @@ export class Color extends Proto
 				return expose(this.hsv.bind(this), []);
 			case "hsva":
 				return expose(this.hsva.bind(this), []);
+			case "withhue":
+				return expose(this.withhue.bind(this), ["hue", "pk"]);
 			case "witha":
 				return expose(this.witha.bind(this), ["a", "pk"]);
 			case "withlight":
@@ -10311,6 +9439,8 @@ export class Color extends Proto
 				return expose(this.abslight.bind(this), ["f", "pk"]);
 			case "rellight":
 				return expose(this.rellight.bind(this), ["f", "pk"]);
+			case "withsat":
+				return expose(this.withsat.bind(this), ["sat", "pk"]);
 			case "withlum":
 				return expose(this.withlum.bind(this), ["lum", "pk"]);
 			case "abslum":
@@ -10460,6 +9590,14 @@ export class Color extends Proto
 		return hsv.concat(this._a/255.0);
 	}
 
+	withhue(hue)
+	{
+		if (typeof(hue) !== "number")
+			throw new TypeError("withhue() requires a number");
+		let hlsa = this.hlsa();
+		return _hls(hue, hlsa[1], hlsa[2], hlsa[3]);
+	}
+
 	witha(a)
 	{
 		if (typeof(a) !== "number")
@@ -10499,6 +9637,14 @@ export class Color extends Proto
 		else if (f < 0)
 			light += light*f;
 		return _hls(hlsa[0], light, hlsa[2], hlsa[3]);
+	}
+
+	withsat(sat)
+	{
+		if (typeof(sat) !== "number")
+			throw new TypeError("withsat() requires a number");
+		let hlsa = this.hlsa();
+		return _hls(hlsa[0], hlsa[1], sat, hlsa[3]);
 	}
 
 	withlum(lum)
@@ -10638,10 +9784,12 @@ expose(Color.prototype.hls, []);
 expose(Color.prototype.hlsa, []);
 expose(Color.prototype.hsv, []);
 expose(Color.prototype.hsva, []);
-expose(Color.prototype.witha, ["a", "pk"]);
+expose(Color.prototype.withhue, ["hue", "pk"]);
 expose(Color.prototype.withlight, ["light", "pk"]);
 expose(Color.prototype.abslight, ["f", "pk"]);
 expose(Color.prototype.rellight, ["f", "pk"]);
+expose(Color.prototype.withsat, ["sat", "pk"]);
+expose(Color.prototype.witha, ["a", "pk"]);
 expose(Color.prototype.withlum, ["lum", "pk"]);
 expose(Color.prototype.abslum, ["f", "pk"]);
 expose(Color.prototype.rellum, ["f", "pk"]);
