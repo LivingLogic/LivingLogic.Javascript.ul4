@@ -1,9 +1,21 @@
 # Changes
 
+## Changes in 1.11.0 (2021-11-17)
+
+Updated logic for exporting the version number for Webpack compatibility.
+
+Removed all `Protocol` classes and their use.
+
+Implement the UL4 method `dict.keys()`.
+
+Add color methods `withhue()` and `withsat()`.
+
+
 ## Changes in 1.10.3 (2021-11-03)
 
 Passing `null` to `Type.getattr()` or `Type.hasattr()` now raises the correct
 exception.
+
 
 ## Changes in 1.10.2 (2021-07-22)
 
@@ -20,6 +32,7 @@ Fixed construction of UL4 stacktraces: Now the stacktrace will only consist of
 the initial exception, a `LocationError` for the originating `AST` and
 additional `LocationError` for each template call. Previously each AST node
 added a stack frame.
+
 
 ## Changes in 1.10 (2021-06-15)
 
