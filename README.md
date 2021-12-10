@@ -27,13 +27,13 @@ The Python documentation contains more info on
 
 Install the npm packages:
 
-```
+```bash
 npm install
 ```
 
 Build `dist/umd/ul4.js` and `dist/esm/ul4.js`:
 
-```
+```bash
 npm run build
 ```
 
