@@ -53,7 +53,7 @@ export let symbols = {
 	call: Symbol("ul4.call"),
 	// Implementing this interface makes an object renderable in UL4
 	render: Symbol("ul4.render"),
-	// Test whether an object is contained in this object UL4s `in` operator
+	// Test whether an object is contained in this object via UL4s `in` operator
 	contains: Symbol("ul4.contains"),
 	// Compare two objects for equality via UL4s `==` operator
 	eq: Symbol("ul4.eq"),
@@ -120,15 +120,15 @@ export function expose(f, signature, options)
 };
 
 
-// This is outside of ``Proto`` on purpose
-// This way reactive frameworks like ``Vue.js`` don't get to see it
+// This is outside of `Proto` on purpose
+// This way reactive frameworks like `Vue.js` don't get to see it
 // and complain about mutating render functions when those create new objects.
 let _nextid = 1;
 
 ///
 /// Base class for all our classes.
 /// This implements support for proper UL4ON serialization:
-/// AS Javascript has no way to look up an object by its identity, we need to
+/// As Javascript has no way to look up an object by its identity, we need to
 /// give each instance a unique identifier ourselves.
 ///
 export class Proto
@@ -144,16 +144,16 @@ export class Proto
 		return this === other;
 	}
 
-	// To overwrite equality comparison, you only have to overwrite ``[symbols.eq]``,
-	// ``[symbols.ne]`` will be synthesized from that
+	// To overwrite equality comparison, you only have to overwrite `[symbols.eq]`,
+	// `[symbols.ne]` will be synthesized from that
 	[symbols.ne](other)
 	{
 		return !this[symbols.eq](other);
 	}
 
 	// For other comparison operators, each method has to be implemented:
-	// ``<`` calls ``[symbols.lt]``, ``<=`` calls ``[symbols.le]``, ``>`` calls ``[symbols.gt]`` and
-	// ``>=`` calls ``[symbols.ge]``
+	// `<` calls `[symbols.lt]`, `<=` calls `[symbols.le]`, `>` calls `[symbols.gt]` and
+	// `>=` calls `[symbols.ge]`
 
 	[symbols.bool]()
 	{
@@ -308,7 +308,7 @@ export class Signature extends Proto
 		}
 	}
 
-	// Create the argument array for calling a function with this signature with the arguments available from ``args``
+	// Create the argument array for calling a function with this signature with the arguments available from `args`
 	bindArray(name, args, kwargs)
 	{
 		let decname = name !== null ? name + "() " : "";
@@ -404,7 +404,7 @@ export class Signature extends Proto
 		return finalargs;
 	}
 
-	// Create the argument object for calling a function with this signature with the arguments available from ``args``
+	// Create the argument object for calling a function with this signature with the arguments available from `args`
 	bindObject(name, args, kwargs)
 	{
 		args = this.bindArray(name, args, kwargs);
@@ -545,7 +545,7 @@ export class Type
 			let realattr = function realattr(...args) {
 				return attr.apply(this, [obj, ...args]);
 			};
-			// Unfortunately we can't set ``realattr.name``;
+			// Unfortunately we can't set `realattr.name`;
 			realattr._ul4_name = attr._ul4_name || attr.name;
 			realattr._ul4_signature = attr._ul4_signature;
 			realattr._ul4_needsobject = attr._ul4_needsobject;
@@ -587,14 +587,14 @@ Type.prototype.attrs = new Set();
 
 const _registry = {};
 
-// Register the constructor function ``f`` under the name ``name`` with the UL4ON machinery
+// Register the constructor function `f` under the name `name` with the UL4ON machinery
 export function register(name, f)
 {
 	f.prototype.ul4onname = name;
 	_registry[name] = f;
 };
 
-// Return a string that contains the object ``obj`` in the UL4ON serialization format
+// Return a string that contains the object `obj` in the UL4ON serialization format
 export function dumps(obj, indent=null)
 {
 	let encoder = new Encoder(indent);
@@ -603,9 +603,9 @@ export function dumps(obj, indent=null)
 	return output.join("");
 };
 
-// Load an object from the string ``dump``.
-// ``dump`` must contain the object in the UL4ON serialization format
-// ``registry`` may be null or a dictionary mapping type names to constructor functions
+// Load an object from the string `dump`.
+// `dump` must contain the object in the UL4ON serialization format
+// `registry` may be null or a dictionary mapping type names to constructor functions
 export function loads(dump, registry=null)
 {
 	let decoder = new Decoder(registry);
@@ -877,7 +877,7 @@ export class Decoder
 		}
 	}
 
-	// Read ``size`` characters from the buffer
+	// Read `size` characters from the buffer
 	read(size)
 	{
 		if (this.pos+size > this.input.length)
@@ -1307,7 +1307,7 @@ export function _stacktrace(exc)
 	return output;
 };
 
-// Call a function ``f`` with UL4 argument handling
+// Call a function `f` with UL4 argument handling
 export function _internal_call(context, f, name, functioncontext, signature, needscontext, needsobject, args, kwargs)
 {
 	let finalargs;
@@ -1500,7 +1500,7 @@ function _lineColFromPos(source, pos)
 	return [line, col];
 }
 
-// Compare ``obj1`` and ``obj2`` if they have the same value
+// Compare `obj1` and `obj2` if they have the same value
 export function _eq(obj1, obj2)
 {
 	let numbertypes = ["boolean", "number"];
@@ -1558,7 +1558,7 @@ export function _eq(obj1, obj2)
 			// Shortcut, if it's the same object
 			if (obj1 === obj2)
 				return true;
-			// Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
+			// Test that each attribute of `obj1` can also be found in `obj2` and has the same value
 			for (let key in obj1)
 			{
 				if (obj2.hasOwnProperty(key))
@@ -1569,7 +1569,7 @@ export function _eq(obj1, obj2)
 				else
 					return false;
 			}
-			// Test that each attribute of ``obj2`` is also in ``obj1`` (the value has been tested before)
+			// Test that each attribute of `obj2` is also in `obj1` (the value has been tested before)
 			for (let key in obj2)
 			{
 				if (!obj1.hasOwnProperty(key))
@@ -1579,7 +1579,7 @@ export function _eq(obj1, obj2)
 		}
 		else if (_ismap(obj2))
 		{
-			// Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
+			// Test that each attribute of `obj1` can also be found in `obj2` and has the same value
 			for (let key in obj1)
 			{
 				if (obj2.has(key))
@@ -1590,7 +1590,7 @@ export function _eq(obj1, obj2)
 				else
 					return false;
 			}
-			// Test that each attribute of ``obj2`` is also in ``obj1`` (the value has been tested before)
+			// Test that each attribute of `obj2` is also in `obj1` (the value has been tested before)
 			for (let [ket, value] of obj2)
 			{
 				if (!obj1.hasOwnProperty(key))
@@ -1605,7 +1605,7 @@ export function _eq(obj1, obj2)
 	{
 		if (_isobject(obj2))
 		{
-			// Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
+			// Test that each attribute of `obj1` can also be found in `obj2` and has the same value
 			for (let [key, value] of obj1)
 			{
 				if (!obj2.hasOwnProperty(key))
@@ -1613,7 +1613,7 @@ export function _eq(obj1, obj2)
 				else if (!_eq(obj1.get(key), obj2[key]))
 					return false;
 			}
-			// Test that each attribute of ``obj2`` is also in ``obj1`` (the value has been tested before)
+			// Test that each attribute of `obj2` is also in `obj1` (the value has been tested before)
 			for (let key in obj2)
 			{
 				if (!obj1.has(key))
@@ -1629,7 +1629,7 @@ export function _eq(obj1, obj2)
 			if (obj1.size != obj2.size)
 				return false;
 			let result = true;
-			// Test that each attribute of ``obj1`` can also be found in ``obj2`` and has the same value
+			// Test that each attribute of `obj1` can also be found in `obj2` and has the same value
 			for (let [key, value] of obj1)
 			{
 				if (!obj2.has(key))
@@ -1666,7 +1666,7 @@ export function _eq(obj1, obj2)
 		return obj1 === obj2;
 };
 
-// Compare ``obj1`` and ``obj2`` if they don't have the same value
+// Compare `obj1` and `obj2` if they don't have the same value
 export function _ne(obj1, obj2)
 {
 	if (obj1 && typeof(obj1[symbols.ne]) === "function")
@@ -1683,13 +1683,13 @@ export function _unorderable(operator, obj1, obj2)
 };
 
 // Return:
-// -1 when ``obj1 < obj2``,
-//  0 when ``obj1 == obj2``,
-//  1 when ``obj1 > obj2``,
-//  null when ``obj1`` and ``obj2`` are comparable, but neither of the previous cases holds (only for sets)
+// -1 when `obj1 < obj2`,
+//  0 when `obj1 == obj2`,
+//  1 when `obj1 > obj2`,
+//  null when `obj1` and `obj2` are comparable, but neither of the previous cases holds (only for sets)
 // raise TypeError if objects are uncomparable
-// This the purpose of ``_cmp`` is to support implementation of <, <=, > and >=
-// and dicts/maps are not comparable with the operator ``_cmp`` does not support dicts/maps
+// This the purpose of `_cmp` is to support implementation of <, <=, > and >=
+// and dicts/maps are not comparable with the operator `_cmp` does not support dicts/maps
 
 export function _cmp(operator, obj1, obj2)
 {
@@ -1779,7 +1779,7 @@ export function _cmp(operator, obj1, obj2)
 	return _unorderable(operator, obj1, obj2);
 };
 
-// Return whether ``obj1 < obj2``
+// Return whether `obj1 < obj2`
 export function _lt(obj1, obj2)
 {
 	let numbertypes = ["boolean", "number"];
@@ -1855,7 +1855,7 @@ export function _lt(obj1, obj2)
 	_unorderable("<", obj1, obj2);
 };
 
-// Return whether ``obj1 <= obj2``
+// Return whether `obj1 <= obj2`
 export function _le(obj1, obj2)
 {
 	let numbertypes = ["boolean", "number"];
@@ -1939,7 +1939,7 @@ export function _le(obj1, obj2)
 	_unorderable("<=", obj1, obj2);
 };
 
-// Return whether ``obj1 > obj2``
+// Return whether `obj1 > obj2`
 export function _gt(obj1, obj2)
 {
 	let numbertypes = ["boolean", "number"];
@@ -2023,7 +2023,7 @@ export function _gt(obj1, obj2)
 	_unorderable(">", obj1, obj2);
 };
 
-// Return whether ``obj1 >= obj2``
+// Return whether `obj1 >= obj2`
 export function _ge(obj1, obj2)
 {
 	let numbertypes = ["boolean", "number"];
@@ -2107,7 +2107,7 @@ export function _ge(obj1, obj2)
 	_unorderable(">=", obj1, obj2);
 };
 
-// Return an iterator for ``obj``
+// Return an iterator for `obj`
 export function _iter(obj)
 {
 	if (typeof(obj) === "string" || _islist(obj))
@@ -2398,7 +2398,7 @@ function _repr_internal(obj, ascii)
 	return "?";
 };
 
-// Return a string representation of ``obj``: If possible this should be an object literal supported by UL4, otherwise the output should be bracketed with ``<`` and ``>``
+// Return a string representation of `obj`: If possible this should be an object literal supported by UL4, otherwise the output should be bracketed with `<` and `>`
 export function _repr(obj)
 {
 	return _repr_internal(obj, false);
@@ -2438,43 +2438,43 @@ function _datetime_str(obj)
 	return result;
 };
 
-// Convert ``obj`` to a string
+// Convert `obj` to a string
 export function _str(obj="")
 {
 	return strtype[symbols.call](obj);
 }
 
-// Convert ``obj`` to bool, according to its "truth value"
+// Convert `obj` to bool, according to its "truth value"
 export function _bool(obj)
 {
 	return booltype[symbols.call](obj);
 };
 
-// Convert ``obj`` to an integer (if ``base`` is given ``obj`` must be a string and ``base`` is the base for the conversion (default is 10))
+// Convert `obj` to an integer (if `base` is given `obj` must be a string and `base` is the base for the conversion (default is 10))
 export function _int(obj=0, base=null)
 {
 	return inttype[symbols.call](obj, base);
 };
 
-// Convert ``obj`` to a float
+// Convert `obj` to a float
 export function _float(obj)
 {
 	return floattype[symbols.call](obj);
 };
 
-// Convert ``obj`` to a list
+// Convert `obj` to a list
 export function _list(obj)
 {
 	return listtype[symbols.call](obj);
 };
 
-// Convert ``obj`` to a set
+// Convert `obj` to a set
 export function _set(obj=[])
 {
 	return settype[symbols.call](obj);
 };
 
-// Return the length of ``sequence``
+// Return the length of `sequence`
 export function _len(sequence)
 {
 	if (typeof(sequence) === "string" || _islist(sequence))
@@ -2537,7 +2537,7 @@ export function _type(obj)
 	}
 };
 
-// (this is non-trivial, because it follows the Python semantic of ``-5 % 2`` being ``1``)
+// (this is non-trivial, because it follows the Python semantic of `-5 % 2` being `1`)
 export function _mod(obj1, obj2)
 {
 	if (obj1 === null || obj1 === undefined || obj2 === null || obj2 === undefined)
@@ -2554,8 +2554,8 @@ export function _mod(obj1, obj2)
 	return obj1 - div * obj2;
 };
 
-// Return the attribute with the name ``attrname`` of the object ``obj``
-// If ``obj`` doesn't have such an attribute, return ``default_``
+// Return the attribute with the name `attrname` of the object `obj`
+// If `obj` doesn't have such an attribute, return `default_`
 export function _getattr(obj, attrname, default_=null)
 {
 	try
@@ -2572,19 +2572,19 @@ export function _getattr(obj, attrname, default_=null)
 	}
 };
 
-// Return whether the object ``obj`` has an attribute with the name ``attrname``
+// Return whether the object `obj` has an attribute with the name `attrname`
 export function _hasattr(obj, attrname)
 {
 	return _type(obj).hasattr(obj, attrname);
 };
 
-// Return the names of the attributes of the object ``obj`` as a set.
+// Return the names of the attributes of the object `obj` as a set.
 export function _dir(obj)
 {
 	return _type(obj).dir();
 };
 
-// Return whether any of the items in ``iterable`` are true
+// Return whether any of the items in `iterable` are true
 export function _any(iterable)
 {
 	if (typeof(iterable) === "string")
@@ -2609,7 +2609,7 @@ export function _any(iterable)
 	}
 };
 
-// Return whether all of the items in ``iterable`` are true
+// Return whether all of the items in `iterable` are true
 export function _all(iterable)
 {
 	if (typeof(iterable) === "string")
@@ -2634,50 +2634,50 @@ export function _all(iterable)
 	}
 };
 
-// Check if ``obj`` is undefined
+// Check if `obj` is undefined
 export function _isundefined(obj)
 {
 	return obj === undefined;
 };
 
 
-// Check if ``obj`` is *not* undefined
+// Check if `obj` is *not* undefined
 export function _isdefined(obj)
 {
 	return obj !== undefined;
 };
 
-// Check if ``obj`` is ``None``
+// Check if `obj` is `None`
 export function _isnone(obj)
 {
 	return nonetype.instancecheck(obj);
 };
 
-// Check if ``obj`` is a boolean
+// Check if `obj` is a boolean
 export function _isbool(obj)
 {
 	return booltype.instancecheck(obj);
 };
 
-// Check if ``obj`` is a int
+// Check if `obj` is a int
 export function _isint(obj)
 {
 	return inttype.instancecheck(obj);
 };
 
-// Check if ``obj`` is a float
+// Check if `obj` is a float
 export function _isfloat(obj)
 {
 	return floattype.instancecheck(obj);
 };
 
-// Check if ``obj`` is a string
+// Check if `obj` is a string
 export function _isstr(obj)
 {
 	return strtype.instancecheck(obj);
 };
 
-// Check if ``obj`` is a datetime
+// Check if `obj` is a datetime
 export function _isdatetime(obj)
 {
 	return datetimetype.instancecheck(obj);
@@ -2688,85 +2688,85 @@ export function _isdate(obj)
 	return datetype.instancecheck(obj);
 };
 
-// Check if ``obj`` is a color
+// Check if `obj` is a color
 export function _iscolor(obj)
 {
 	return colortype.instancecheck(obj);
 };
 
-// Check if ``obj`` is a timedelta object
+// Check if `obj` is a timedelta object
 export function _istimedelta(obj)
 {
 	return timedeltatype.instancecheck(obj);
 };
 
-// Check if ``obj`` is a monthdelta object
+// Check if `obj` is a monthdelta object
 export function _ismonthdelta(obj)
 {
 	return monthdeltatype.instancecheck(obj);
 };
 
-// Check if ``obj`` is a template (either a normal one or a locally defined)
+// Check if `obj` is a template (either a normal one or a locally defined)
 export function _istemplate(obj)
 {
 	return obj !== null && (obj instanceof Template) || (obj instanceof TemplateClosure);
 };
 
-// Check if ``obj`` is a function
+// Check if `obj` is a function
 export function _isfunction(obj)
 {
 	return functiontype.instancecheck(obj);
 };
 
-// Check if ``obj`` is a list
+// Check if `obj` is a list
 export function _islist(obj)
 {
 	return listtype.instancecheck(obj);
 };
 
-// Check if ``obj`` is a set
+// Check if `obj` is a set
 export function _isset(obj)
 {
 	return settype.instancecheck(obj);
 };
 
-// Check if ``obj`` is an exception (at least a UL4 exception)
+// Check if `obj` is an exception (at least a UL4 exception)
 export function _isexception(obj)
 {
 	return (obj instanceof Exception);
 };
 
-// Check if ``obj`` is an iterator
+// Check if `obj` is an iterator
 export function _isiter(obj)
 {
 	return obj !== null && typeof(obj) === "object" && typeof(obj.next) === "function";
 };
 
-// Check if ``obj`` is a JS object
+// Check if `obj` is a JS object
 export function _isobject(obj)
 {
 	return dicttype._isobject(obj);
 };
 
-// Check if ``obj`` is a ``Map``
+// Check if `obj` is a `Map`
 export function _ismap(obj)
 {
 	return dicttype._ismap(obj);
 };
 
-// Check if ``obj`` is a dict (i.e. a normal Javascript object or a ``Map``)
+// Check if `obj` is a dict (i.e. a normal Javascript object or a `Map`)
 export function _isdict(obj)
 {
 	return dicttype.instancecheck(obj);
 };
 
-// Check if ``obj`` is an instance of ``type``
+// Check if `obj` is an instance of `type`
 export function _isinstance(obj, type)
 {
 	return type.instancecheck(obj);
 };
 
-// Repeat string ``str`` ``rep`` times
+// Repeat string `str` `rep` times
 export function _str_repeat(str, rep)
 {
 	let result = "";
@@ -2821,7 +2821,7 @@ function _str_json(str)
 	return '"' + result + '"';
 };
 
-// Encodes ``obj`` in the Javascript Object Notation (see http://json.org/; with support for dates, colors and templates)
+// Encodes `obj` in the Javascript Object Notation (see http://json.org/; with support for dates, colors and templates)
 export function _asjson(obj)
 {
 	if (obj === null)
@@ -2917,7 +2917,7 @@ export function _asjson(obj)
 	throw new TypeError("asjson() requires a serializable object");
 };
 
-// Decodes the string ``string`` from the Javascript Object Notation (see http://json.org/) and returns the resulting object
+// Decodes the string `string` from the Javascript Object Notation (see http://json.org/) and returns the resulting object
 export function _fromjson(string)
 {
 	// The following is from jQuery's parseJSON function
@@ -2929,13 +2929,13 @@ export function _fromjson(string)
 	throw new TypeError("invalid JSON");
 };
 
-// Encodes ``obj`` in the UL4 Object Notation format
+// Encodes `obj` in the UL4 Object Notation format
 export function _asul4on(obj, indent=null)
 {
 	return dumps(obj, indent);
 };
 
-// Decodes the string ``string`` from the UL4 Object Notation format and returns the resulting decoded object
+// Decodes the string `string` from the UL4 Object Notation format and returns the resulting decoded object
 export function _fromul4on(string)
 {
 	return loads(string);
@@ -3380,7 +3380,7 @@ function _format_int(obj, fmt, lang)
 	return output;
 };
 
-// Format ``obj`` using the format string ``fmt`` in the language ``lang``
+// Format `obj` using the format string `fmt` in the language `lang`
 export function _format(obj, fmt, lang)
 {
 	if (lang === undefined || lang === null)
@@ -3458,7 +3458,7 @@ export let undefinedtype = new UndefinedType(null, "undefined", "An undefined va
 
 class BoolType extends Type
 {
-	// Convert ``obj`` to bool, according to its "truth value"
+	// Convert `obj` to bool, according to its "truth value"
 	[symbols.call](obj=false)
 	{
 		if (obj === undefined || obj === null || obj === false || obj === 0 || obj === "")
@@ -3495,7 +3495,7 @@ export let booltype = new BoolType(null, "bool", "An boolean value");
 
 class IntType extends Type
 {
-	// Convert ``obj`` to an integer (if ``base`` is given ``obj`` must be a string and ``base`` is the base for the conversion (default is 10))
+	// Convert `obj` to an integer (if `base` is given `obj` must be a string and `base` is the base for the conversion (default is 10))
 	[symbols.call](obj=0, base=null)
 	{
 		let result;
@@ -3540,7 +3540,7 @@ export let inttype = new IntType(null, "int", "An integer");
 
 class FloatType extends Type
 {
-	// Convert ``obj`` to a float
+	// Convert `obj` to a float
 	[symbols.call](obj=0.0)
 	{
 		if (typeof(obj) === "string")
@@ -3940,7 +3940,7 @@ export let strtype = new StrType(null, "str", "A string.");
 
 export class ListType extends Type
 {
-	// Convert ``obj`` to a list
+	// Convert `obj` to a list
 	[symbols.call](obj)
 	{
 		let iter = _iter(obj);
@@ -4057,7 +4057,7 @@ class DictType extends Type
 				let realattr = function realattr(...args) {
 					return attr.apply(this, [obj, ...args]);
 				};
-				// Unfortunately we can't set ``realattr.name``;
+				// Unfortunately we can't set `realattr.name`;
 				realattr._ul4_name = attr._ul4_name || attr.name;
 				realattr._ul4_signature = attr._ul4_signature;
 				realattr._ul4_needsobject = attr._ul4_needsobject;
@@ -4077,7 +4077,7 @@ class DictType extends Type
 		if (typeof(result) !== "function")
 			return result;
 		let realresult = function(...args) {
-			// We can use ``apply`` here, as we know that ``obj`` is a real object.
+			// We can use `apply` here, as we know that `obj` is a real object.
 			return result.apply(obj, args);
 		};
 		realresult._ul4_name = result._ul4_name || result.name;
@@ -4247,7 +4247,7 @@ export let dicttype = new DictType(null, "dict", "An object that maps keys to va
 
 export class SetType extends Type
 {
-	// Convert ``obj`` to a set
+	// Convert `obj` to a set
 	[symbols.call](obj=[])
 	{
 		let iter = _iter(obj);
@@ -4291,7 +4291,7 @@ export let settype = new SetType(null, "set", "A set.");
 
 export class DateType extends Type
 {
-	// Return a ``Date`` object from the arguments passed in
+	// Return a `Date` object from the arguments passed in
 	[symbols.call](year, month, day)
 	{
 		return new Date_(year, month, day);
@@ -4413,20 +4413,20 @@ export class DateTimeType extends Type
 		else if (mindaysinfirstweek > 7)
 			mindaysinfirstweek = 7;
 
-		// ``obj`` might be in the first week of the next year, or last week of
+		// `obj` might be in the first week of the next year, or last week of
 		// the previous year, so we might have to try those too.
 		for (let offset = +1; offset >= -1; --offset)
 		{
 			let year = obj.getFullYear() + offset;
-			// ``refdate`` will always be in week 1
+			// `refdate` will always be in week 1
 			let refDate = new Date(year, 0, mindaysinfirstweek);
-			// Go back to the start of ``refdate``s week (i.e. day 1 of week 1)
+			// Go back to the start of `refdate`s week (i.e. day 1 of week 1)
 			let weekDayDiff = _mod(this.weekday(refDate) - firstweekday, 7);
 			let weekStartYear = refDate.getFullYear();
 			let weekStartMonth = refDate.getMonth();
 			let weekStartDay = refDate.getDate() - weekDayDiff;
 			let weekStart = new Date(weekStartYear, weekStartMonth, weekStartDay);
-			// Is our date ``obj`` at or after day 1 of week 1?
+			// Is our date `obj` at or after day 1 of week 1?
 			if (obj.getTime() >= weekStart.getTime())
 			{
 				let diff = SubAST.prototype._do(obj, weekStart);
@@ -4641,7 +4641,7 @@ export class Context
 		this._output = [];
 	}
 
-	/* Return a clone of the ``Context``, but with a fresh empty ``vars`` objects that inherits from the previous one.
+	/* Return a clone of the `Context`, but with a fresh empty `vars` objects that inherits from the previous one.
 	 * This is used by the various comprehensions to avoid leaking loop variables.
 	 */
 	inheritvars()
@@ -4651,7 +4651,7 @@ export class Context
 		return context;
 	}
 
-	/* Return a clone of the ``Context`` with one additional indentation (this is used by ``RenderAST``) */
+	/* Return a clone of the `Context` with one additional indentation (this is used by `RenderAST`) */
 	withindent(indent)
 	{
 		let context = Object.create(this);
@@ -4663,7 +4663,7 @@ export class Context
 		return context;
 	}
 
-	/* Return a clone of the ``Context`` with the output buffer replaced (this is used by ``renders`` to collect the output in a separate buffer) */
+	/* Return a clone of the `Context` with the output buffer replaced (this is used by `renders` to collect the output in a separate buffer) */
 	replaceoutput()
 	{
 		let context = Object.create(this);
@@ -4706,7 +4706,7 @@ export class Context
 
 /// Exceptions
 
-// Note that extending ``Error`` doesn't work, so we do it the "clasr" way
+// Note that extending `Error` doesn't work, so we do it the "clasr" way
 export function Exception(message, fileName, lineNumber)
 {
 	let instance = new Error(message, fileName, lineNumber);
@@ -6259,7 +6259,7 @@ export class BinaryAST extends CodeAST
 
 BinaryAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["obj1", "obj2"]);
 
-// Item access and assignment: dict[key], list[index], string[index], color[index]
+// Item access and assignment (`x[y]`): dict[key], list[index], string[index], color[index]
 export class ItemAST extends BinaryAST
 {
 	static classdoc = "AST node for subscripting expression (e.g. ``x[y]``).";
@@ -6307,7 +6307,7 @@ export class ItemAST extends BinaryAST
 				return container[key];
 			}
 		}
-		else if (container && typeof(container[symbols.getitem]) === "function") // objects without ``_getitem__`` don't support item access
+		else if (container && typeof(container[symbols.getitem]) === "function") // objects without `_getitem__` don't support item access
 			return container[symbols.getitem](key);
 		else if (_ismap(container))
 			return container.get(key);
@@ -6375,7 +6375,7 @@ export class ItemAST extends BinaryAST
 	}
 };
 
-// Identifty test operator ``is``
+// Identifty test operator (`x is y`)
 export class IsAST extends BinaryAST
 {
 	static classdoc = "AST node for a binary ``is`` comparison expression (e.g. ``x is y``).";
@@ -6386,7 +6386,7 @@ export class IsAST extends BinaryAST
 	}
 };
 
-// Inverted identity test operator ``is not``
+// Inverted identity test operator (`x is not y`)
 export class IsNotAST extends BinaryAST
 {
 	static classdoc = "AST node for a binary ``is not`` comparison expression (e.g. ``x is not y``).";
@@ -6397,7 +6397,7 @@ export class IsNotAST extends BinaryAST
 	}
 };
 
-// Comparison operator ==
+// Comparison operator (`x == y`)
 export class EQAST extends BinaryAST
 {
 	static classdoc = "AST node for the binary equality comparison (e.g. ``x == y``.";
@@ -6408,7 +6408,7 @@ export class EQAST extends BinaryAST
 	}
 };
 
-// Comparison operator !=
+// Comparison operator (`x != y`)
 export class NEAST extends BinaryAST
 {
 	static classdoc = "AST node for a binary inequality comparison (e.g. ``x != y``).";
@@ -6419,7 +6419,7 @@ export class NEAST extends BinaryAST
 	}
 };
 
-// Comparison operator <
+// Comparison operator (`x < y`)
 export class LTAST extends BinaryAST
 {
 	static classdoc = "AST node for the binary \"less than\" comparison (e.g. ``x < y``).";
@@ -6430,7 +6430,7 @@ export class LTAST extends BinaryAST
 	}
 };
 
-// Comparison operator <=
+// Comparison operator (`x <= y`)
 export class LEAST extends BinaryAST
 {
 	static classdoc = "AST node for the binary \"less than or equal\" comparison (e.g. ``x <= y``).";
@@ -6441,7 +6441,7 @@ export class LEAST extends BinaryAST
 	}
 };
 
-// Comparison operator >
+// Comparison operator (`x > y`)
 export class GTAST extends BinaryAST
 {
 	static classdoc = "AST node for the binary \"greater than\" comparison (e.g. ``x > y``).";
@@ -6452,7 +6452,7 @@ export class GTAST extends BinaryAST
 	}
 };
 
-// Comparison operator >=
+// Comparison operator (`x >= y`)
 export class GEAST extends BinaryAST
 {
 	static classdoc = "AST node for the binary \"greater than or equal\" comparison (e.g. ``x >= y``).";
@@ -6463,7 +6463,7 @@ export class GEAST extends BinaryAST
 	}
 };
 
-// Containment test: string in string, obj in list, key in dict, value in rgb
+// Containment test (`x in y`): string in string, obj in list, key in dict, value in rgb
 export class ContainsAST extends BinaryAST
 {
 	static classdoc = "AST node for the binary containment testing operator (e.g. ``x in y``).";
@@ -6499,7 +6499,7 @@ export class ContainsAST extends BinaryAST
 	}
 };
 
-// Inverted containment test
+// Inverted containment test (`x not in y`)
 export class NotContainsAST extends BinaryAST
 {
 	static classdoc = "AST node for an inverted containment testing expression (e.g. ``x not in y``).";
@@ -6510,7 +6510,7 @@ export class NotContainsAST extends BinaryAST
 	}
 };
 
-// Addition: num + num, string + string
+// Addition (`x + y`): num + num, string + string
 export class AddAST extends BinaryAST
 {
 	static classdoc = "AST node for a binary addition expression (e.g. ``x + y``).";
@@ -6541,7 +6541,7 @@ export class AddAST extends BinaryAST
 	}
 };
 
-// Substraction: num - num
+// Substraction (`x - y`): num - num
 export class SubAST extends BinaryAST
 {
 	static classdoc = "AST node for the binary subtraction expression (e.g. ``x - y``).";
@@ -6619,7 +6619,7 @@ export class SubAST extends BinaryAST
 };
 
 
-// Multiplication: num * num, int * str, str * int, int * list, list * int
+// Multiplication (`x * y`): num * num, int * str, str * int, int * list, list * int
 export class MulAST extends BinaryAST
 {
 	static classdoc = "AST node for the binary multiplication expression (e.g. ``x * y``).";
@@ -6685,7 +6685,7 @@ export class MulAST extends BinaryAST
 	}
 };
 
-// Truncating division
+// Truncating division (`x // y`)
 export class FloorDivAST extends BinaryAST
 {
 	static classdoc = "AST node for a binary truncating division expression (e.g. ``x // y``).";
@@ -6709,7 +6709,7 @@ export class FloorDivAST extends BinaryAST
 	}
 };
 
-// "Real" division
+// "Real" division (`x / y`)
 export class TrueDivAST extends BinaryAST
 {
 	static classdoc = "AST node for a binary true division expression (e.g. ``x / y``).";
@@ -6733,7 +6733,7 @@ export class TrueDivAST extends BinaryAST
 	}
 };
 
-// Modulo
+// Modulo (`x % y`)
 export class ModAST extends BinaryAST
 {
 	static classdoc = "AST node for a binary modulo expression (e.g. ``x % y``).";
@@ -6749,7 +6749,7 @@ export class ModAST extends BinaryAST
 	}
 };
 
-// Bitwise left shift
+// Bitwise left shift (`x << y`)
 export class ShiftLeftAST extends BinaryAST
 {
 	static classdoc = "AST node for a bitwise left shift expression (e.g. ``x << y``).";
@@ -6777,7 +6777,7 @@ export class ShiftLeftAST extends BinaryAST
 	}
 };
 
-// Bitwise right shift
+// Bitwise right shift (`x >> y`)
 export class ShiftRightAST extends BinaryAST
 {
 	static classdoc = "AST node for a bitwise right shift expression (e.g. ``x >> y``).";
@@ -6805,7 +6805,7 @@ export class ShiftRightAST extends BinaryAST
 	}
 };
 
-// Bitwise and
+// Bitwise and (`x & y`)
 export class BitAndAST extends BinaryAST
 {
 	static classdoc = "AST node for a binary bitwise \"and\" expression (e.g ``x & y``).";
@@ -6825,7 +6825,7 @@ export class BitAndAST extends BinaryAST
 	}
 };
 
-// Bitwise exclusive or
+// Bitwise exclusive or (`x ^ y`)
 export class BitXOrAST extends BinaryAST
 {
 	static classdoc = "AST node for the binary bitwise \"exclusive or\" expression (e.g. ``x ^ y``).";
@@ -6845,7 +6845,7 @@ export class BitXOrAST extends BinaryAST
 	}
 };
 
-// Bitwise or
+// Bitwise or (`x | y`)
 export class BitOrAST extends BinaryAST
 {
 	static classdoc = "AST node for a binary bitwise \"or\" expression (e.g. ``x | y``).";
@@ -6865,6 +6865,7 @@ export class BitOrAST extends BinaryAST
 	}
 };
 
+// Boolean logical and (`x and y`)
 export class AndAST extends BinaryAST
 {
 	static classdoc = "AST node for the binary \"and\" expression (i.e. ``x and y``).";
@@ -6879,6 +6880,7 @@ export class AndAST extends BinaryAST
 	}
 };
 
+// Boolean logical or (`x or y`)
 export class OrAST extends BinaryAST
 {
 	static classdoc = "AST node for a binary \"or\" expression (e.g. ``x or y``).";
@@ -6893,6 +6895,7 @@ export class OrAST extends BinaryAST
 	}
 };
 
+// Attribute access (`x.y`)
 export class AttrAST extends CodeAST
 {
 	static classdoc = "AST node for an expression that gets or sets an attribute of an object.\n(e.g. ``x.y``).";
@@ -6971,6 +6974,7 @@ export class AttrAST extends CodeAST
 
 AttrAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["obj", "attrname"]);
 
+// Function call (`x(y, z)`)
 export class CallAST extends CodeAST
 {
 	static classdoc = "AST node for calling an object (e.g. ``f(x, y)``).";
@@ -7224,7 +7228,7 @@ export class slice extends Proto
 slice.prototype.type = new Type(null, "slice", "A slice specification.");
 
 
-// List/String slice
+// List/String slice (`x[y:z]`)
 export class SliceAST extends CodeAST
 {
 	static classdoc = "AST node for creating a slice object (used in ``obj[index1:index2]``).";
@@ -7496,7 +7500,7 @@ export class ForBlockAST extends BlockAST
 			{
 				// We can't call _handle_eval() here, as this would in turn call
 				// this function again, leading to infinite recursion. But we
-				// don't have to, as wrapping the original exception in ``Error``
+				// don't have to, as wrapping the original exception in `Error`
 				// has already been done by the lower levels.
 				super._eval(context);
 			}
@@ -7566,7 +7570,7 @@ export class WhileBlockAST extends BlockAST
 			{
 				// We can't call _handle_eval() here, as this would in turn call
 				// this function again, leading to infinite recursion. But we
-				// don't have to, as wrapping the original exception in ``Error``
+				// don't have to, as wrapping the original exception in `Error`
 				// has already been done by the lower levels.
 				super._eval(context);
 			}
@@ -8102,14 +8106,14 @@ TemplateClosure.prototype._ul4_needsobject = true;
 TemplateClosure.prototype._ul4_needscontext = true;
 
 // Create a color object from the red, green, blue and alpha values
-// ``r``, ``g``, ``b`` and ``b``
+// `r`, `g`, `b` and `b`
 export function _rgb(r, g, b, a)
 {
 	return new Color(255*r, 255*g, 255*b, 255*a);
 };
 
-// Convert ``obj`` to a string and escape the characters ``&``, ``<``, ``>``,
-// ``'`` and ``"`` with their XML character/entity reference
+// Convert `obj` to a string and escape the characters `&`, `<`, `>`,
+// `'` and `"` with their XML character/entity reference
 export function _xmlescape(obj)
 {
 	obj = _str(obj);
@@ -8121,7 +8125,7 @@ export function _xmlescape(obj)
 	return obj;
 };
 
-// Convert ``obj`` to a string suitable for output into a CSV file
+// Convert `obj` to a string suitable for output into a CSV file
 export function _csv(obj)
 {
 	if (obj === null)
@@ -8133,7 +8137,7 @@ export function _csv(obj)
 	return obj;
 };
 
-// Return a string containing one character with the codepoint ``i``
+// Return a string containing one character with the codepoint `i`
 export function _chr(i)
 {
 	if (typeof(i) !== "number")
@@ -8141,7 +8145,7 @@ export function _chr(i)
 	return String.fromCharCode(i);
 };
 
-// Return the codepoint for the one and only character in the string ``c``
+// Return the codepoint for the one and only character in the string `c`
 export function _ord(c)
 {
 	if (typeof(c) !== "string" || c.length != 1)
@@ -8254,7 +8258,7 @@ export function _max(context, defaultValue=Object, key=null, args=[])
 	}
 };
 
-// Return the of the values from the iterable starting with ``start`` (default ``0``)
+// Return the of the values from the iterable starting with `start` (default `0`)
 export function _sum(iterable, start=0)
 {
 	for (let iter = _iter(iterable);;)
@@ -8267,16 +8271,16 @@ export function _sum(iterable, start=0)
 	return start;
 };
 
-// Return the first value produced by iterating through ``iterable``
-// (defaulting to ``defaultValue`` if the iterator is empty)
+// Return the first value produced by iterating through `iterable`
+// (defaulting to `defaultValue` if the iterator is empty)
 export function _first(iterable, defaultValue=null)
 {
 	let item = _iter(iterable).next();
 	return item.done ? defaultValue : item.value;
 };
 
-// Return the last value produced by iterating through ``iterable``
-// (defaulting to ``defaultValue`` if the iterator is empty)
+// Return the last value produced by iterating through `iterable`
+// (defaulting to `defaultValue` if the iterator is empty)
 export function _last(iterable, defaultValue=null)
 {
 	let value = defaultValue;
@@ -8291,7 +8295,7 @@ export function _last(iterable, defaultValue=null)
 	return value;
 };
 
-// Return a sorted version of ``iterable``
+// Return a sorted version of `iterable`
 export function _sorted(context, iterable, key=null, reverse=false)
 {
 	if (key === null)
@@ -8340,8 +8344,8 @@ export function _sorted(context, iterable, key=null, reverse=false)
 	}
 };
 
-// Return a iterable object iterating from ``start`` up to (but not including)
-// ``stop`` with a step size of ``step``
+// Return a iterable object iterating from `start` up to (but not including)
+// `stop` with a step size of `step`
 export function _range(start, stop=Object, step=Object)
 {
 	if (step === Object)
@@ -8420,19 +8424,19 @@ export function _slice(iterable, start, stop=Object, step=Object)
 	};
 };
 
-// ``%`` escape unsafe characters in the string ``string``
+// `%` escape unsafe characters in the string `string`
 export function _urlquote(string)
 {
 	return encodeURIComponent(string);
 };
 
-// The inverse function of ``urlquote``
+// The inverse function of `urlquote`
 export function _urlunquote(string)
 {
 	return decodeURIComponent(string);
 };
 
-// Return a reverse iterator over ``sequence``
+// Return a reverse iterator over `sequence`
 export function _reversed(sequence)
 {
 	if (typeof(sequence) !== "string" && !_islist(sequence)) // We don't have to materialize strings or lists
@@ -8445,13 +8449,13 @@ export function _reversed(sequence)
 	};
 };
 
-// Returns a random number in the interval ``[0;1[``
+// Returns a random number in the interval `[0;1[`
 export function _random()
 {
 	return Math.random();
 };
 
-// Return a randomly select item from ``range(start, stop, step)``
+// Return a randomly select item from `range(start, stop, step)`
 export function _randrange(start, stop=Object, step=Object)
 {
 	if (step === Object)
@@ -8475,7 +8479,7 @@ export function _randrange(start, stop=Object, step=Object)
 	return start + step*Math.floor(value * n);
 };
 
-// Return a random item/char from the list/string ``sequence``
+// Return a random item/char from the list/string `sequence`
 export function _randchoice(sequence)
 {
 	let iscolor = _iscolor(sequence);
@@ -8486,7 +8490,7 @@ export function _randchoice(sequence)
 	return sequence[Math.floor(Math.random() * sequence.length)];
 };
 
-// Round a number ``x`` to ``digits`` decimal places (may be negative)
+// Round a number `x` to `digits` decimal places (may be negative)
 export function _round(x, digits=0)
 {
 	if (digits)
@@ -8498,7 +8502,7 @@ export function _round(x, digits=0)
 		return Math.round(x);
 };
 
-// Round a number ``x`` down to ``digits`` decimal places (may be negative)
+// Round a number `x` down to `digits` decimal places (may be negative)
 export function _floor(x, digits=0)
 {
 	if (digits)
@@ -8510,7 +8514,7 @@ export function _floor(x, digits=0)
 		return Math.floor(x);
 };
 
-// Round a number ``x`` up to ``digits`` decimal places (may be negative)
+// Round a number `x` up to `digits` decimal places (may be negative)
 export function _ceil(x, digits=0)
 {
 	if (digits)
@@ -8653,8 +8657,8 @@ export function _mix(values)
 	return new Color(r/sumweights, g/sumweights, b/sumweights, 255-a/sumweights);
 }
 
-// Return an iterator over ``[index, item]`` lists from the iterable object
-// ``iterable``. ``index`` starts at ``start`` (defaulting to 0).
+// Return an iterator over `[index, item]` lists from the iterable object
+// `iterable`. `index` starts at `start` (defaulting to 0).
 export function _enumerate(iterable, start=0)
 {
 	return {
@@ -8667,8 +8671,8 @@ export function _enumerate(iterable, start=0)
 	};
 };
 
-// Return an iterator over ``[isfirst, item]`` lists from the iterable object
-// ``iterable`` (``isfirst`` is true for the first item, false otherwise).
+// Return an iterator over `[isfirst, item]` lists from the iterable object
+// `iterable` (`isfirst` is true for the first item, false otherwise).
 export function _isfirst(iterable)
 {
 	let iter = _iter(iterable);
@@ -8683,8 +8687,8 @@ export function _isfirst(iterable)
 	};
 };
 
-// Return an iterator over ``[islast, item]`` lists from the iterable object
-// ``iterable`` (``islast`` is true for the last item, false otherwise).
+// Return an iterator over `[islast, item]` lists from the iterable object
+// `iterable` (`islast` is true for the last item, false otherwise).
 export function _islast(iterable)
 {
 	let iter = _iter(iterable);
@@ -8701,8 +8705,8 @@ export function _islast(iterable)
 	};
 };
 
-// Return an iterator over ``[isfirst, islast, item]`` lists from the iterable
-// object ``iterable`` (``isfirst`` is true for the first item, ``islast``
+// Return an iterator over `[isfirst, islast, item]` lists from the iterable
+// object `iterable` (`isfirst` is true for the first item, `islast`
 // is true for the last item. Both are false otherwise).
 export function _isfirstlast(iterable)
 {
@@ -8722,9 +8726,9 @@ export function _isfirstlast(iterable)
 	};
 };
 
-// Return an iterator over ``[index, isfirst, islast, item]`` lists from the
-// iterable object ``iterable`` (``isfirst`` is true for the first item,
-// ``islast`` is true for the last item. Both are false otherwise).
+// Return an iterator over `[index, isfirst, islast, item]` lists from the
+// iterable object `iterable` (`isfirst` is true for the first item,
+// `islast` is true for the last item. Both are false otherwise).
 export function _enumfl(iterable, start=0)
 {
 	let iter = _iter(iterable);
@@ -8779,7 +8783,7 @@ export function _zip(iterables)
 	}
 };
 
-// Return the absolute value for the number ``number``.
+// Return the absolute value for the number `number`.
 export function _abs(number)
 {
 	if (number !== null && typeof(number[symbols.abs]) === "function")
@@ -8787,7 +8791,7 @@ export function _abs(number)
 	return Math.abs(number);
 };
 
-// Return a ``Date`` object from the arguments passed in.
+// Return a `Date` object from the arguments passed in.
 export function _date(year, month, day)
 {
 	return datetype[symbols.call](year, month, day);
@@ -8798,20 +8802,20 @@ export function _datetime(year, month, day, hour=0, minute=0, second=0, microsec
 	return datetimetype[symbols.call](year, month, day, hour, minute, second, microsecond);
 };
 
-// Return a ``TimeDelta`` object from the arguments passed in.
+// Return a `TimeDelta` object from the arguments passed in.
 export function _timedelta(days=0, seconds=0, microseconds=0)
 {
 	return TimeDelta.type[symbols.call](days, seconds, microseconds);
 };
 
-// Return a ``MonthDelta`` object from the arguments passed in.
+// Return a `MonthDelta` object from the arguments passed in.
 export function _monthdelta(months=0)
 {
 	return MonthDelta.type[symbols.call](months);
 };
 
-// Return a ``Color`` object from the hue, luminescence, saturation and
-// alpha values ``h``, ``l``, ``s`` and ``a`` (i.e. using the HLS color model).
+// Return a `Color` object from the hue, luminescence, saturation and
+// alpha values `h`, `l`, `s` and `a` (i.e. using the HLS color model).
 export function _hls(h, l, s, a)
 {
 	let _v = function _v(m1, m2, hue)
@@ -8839,8 +8843,8 @@ export function _hls(h, l, s, a)
 	return _rgb(_v(m1, m2, h+1/3), _v(m1, m2, h), _v(m1, m2, h-1/3), a);
 };
 
-// Return a ``Color`` object from the hue, saturation, value and alpha values
-// ``h``, ``s``, ``v`` and ``a`` (i.e. using the HSV color model).
+// Return a `Color` object from the hue, saturation, value and alpha values
+// `h`, `s`, `v` and `a` (i.e. using the HSV color model).
 export function _hsv(h, s, v, a)
 {
 	if (s === 0.0)
@@ -8867,8 +8871,8 @@ export function _hsv(h, s, v, a)
 	}
 };
 
-// Return the item with the key ``key`` from the dict ``container``.
-// If ``container`` doesn't have this key, return ``defaultvalue``.
+// Return the item with the key `key` from the dict `container`.
+// If `container` doesn't have this key, return `defaultvalue`.
 export function _get(container, key, defaultvalue)
 {
 	if (_ismap(container))
@@ -8887,21 +8891,21 @@ export function _get(container, key, defaultvalue)
 	throw new TypeError("get() requires a dict");
 };
 
-// Return a ``Date`` object for the current time.
+// Return a `Date` object for the current time.
 export function now()
 {
 	return new Date();
 };
 
-// Return a ``Date`` object for the current time in UTC.
+// Return a `Date` object for the current time in UTC.
 export function utcnow()
 {
 	let now = new Date();
-	// FIXME: The timezone is wrong for the new ``Date`` object.
+	// FIXME: The timezone is wrong for the new `Date` object.
 	return new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds(), now.getUTCMilliseconds());
 };
 
-// Return an ``Date`` object for today.
+// Return an `Date` object for today.
 export function today()
 {
 	let now = new Date();
@@ -10219,7 +10223,7 @@ export class TimeDelta extends Proto
 
 export class MonthDeltaType extends Type
 {
-	// Return a ``MonthDelta`` object from the arguments passed in
+	// Return a `MonthDelta` object from the arguments passed in
 	[symbols.call](months=0)
 	{
 		return new MonthDelta(months);
