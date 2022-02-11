@@ -1,5 +1,10 @@
 # Changes
 
+## Changes in 1.11.1 (2022-02-11)
+
+Fixed a bug for item access in objects.
+
+
 ## Changes in 1.11.0 (2021-11-17)
 
 Updated logic for exporting the version number for Webpack compatibility.

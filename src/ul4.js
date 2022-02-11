@@ -6311,6 +6311,8 @@ export class ItemAST extends BinaryAST
 			return container[symbols.getitem](key);
 		else if (_ismap(container))
 			return container.get(key);
+		else if (_isobject(container))
+			return container[key];
 		else
 			throw new TypeError(_type(container).fullname() + " object is not subscriptable");
 	}
