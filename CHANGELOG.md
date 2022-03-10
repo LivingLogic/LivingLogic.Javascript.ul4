@@ -1,5 +1,11 @@
 # Changes
 
+## Changes in 1.12.0 (2022-03-10)
+
+Added new classes `RenderOrPrintAST`, `RenderOrPrintXAST`,
+`RenderXOrPrintAST`, `RenderXOrPrintXAST`.
+
+
 ## Changes in 1.11.1 (2022-02-11)
 
 Fixed a bug for item access in objects.
