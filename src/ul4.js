@@ -1332,9 +1332,33 @@ export function _internal_call(context, f, name, functioncontext, signature, nee
 	return f.apply(functioncontext, finalargs);
 };
 
-export function _callfunction(context, f, args, kwargs)
+export function _function_is_callable(f)
 {
 	if (!f || f._ul4_signature === undefined || f._ul4_needsobject === undefined || f._ul4_needscontext === undefined)
+		return false;
+	else
+		return true;
+}
+
+export function _object_is_callable(obj)
+{
+	if (!_function_is_callable(obj) || typeof(obj[symbols.call]) !== "function")
+		return false;
+	else
+		return true;
+}
+
+export function _object_is_renderable(obj)
+{
+	if (!_function_is_callable(obj) || typeof(obj[symbols.render]) !== "function")
+		return false;
+	else
+		return true;
+}
+
+export function _callfunction(context, f, args, kwargs)
+{
+	if (!_function_is_callable(f))
 		throw new TypeError(_repr(f) + " is not callable by UL4");
 	let name = f._ul4_name || f.name;
 	return _internal_call(context, f, name, null, f._ul4_signature, f._ul4_needscontext, f._ul4_needsobject, args, kwargs);
@@ -1342,14 +1366,14 @@ export function _callfunction(context, f, args, kwargs)
 
 export function _callobject(context, obj, args, kwargs)
 {
-	if (!obj || obj._ul4_signature === undefined || obj._ul4_needsobject === undefined || obj._ul4_needscontext === undefined)
+	if (!_object_is_callable(obj))
 		throw new TypeError(_repr(obj) + " is not callable by UL4");
 	return _internal_call(context, obj[symbols.call], obj.name, obj, obj._ul4_signature, obj._ul4_needscontext, obj._ul4_needsobject, args, kwargs);
 };
 
 export function _callrender(context, obj, args, kwargs)
 {
-	if (!obj || obj._ul4_signature === undefined || obj._ul4_needsobject === undefined || obj._ul4_needscontext === undefined)
+	if (!_object_is_renderable(obj))
 		throw new TypeError(_repr(obj) + " is not renderable by UL4");
 	return _internal_call(context, obj[symbols.render], obj.name, obj, obj._ul4_signature, obj._ul4_needscontext, obj._ul4_needsobject, args, kwargs);
 };
@@ -7021,17 +7045,73 @@ export class RenderAST extends CallAST
 		}
 	}
 
+	_render_object(context, obj, args, kwargs)
+	{
+		return _callrender(context, obj, args, kwargs);
+	}
+
+	_renderx_object(context, obj, args, kwargs)
+	{
+		context.escapes.push(_xmlescape);
+
+		let result = null;
+		try
+		{
+			result = _callrender(context, obj, args, kwargs);
+		}
+		finally
+		{
+			context.escapes.splice(context.escapes.length-1, 1);
+		}
+		return result;
+	}
+
+	_real_render_object(context, obj, args, kwargs)
+	{
+		this._render_object(context, obj, args, kwargs);
+	}
+
+	_print_object(context, obj, args, kwargs)
+	{
+		let output = _str(obj);
+		context.output(output);
+	}
+
+	_printx_object(context, obj)
+	{
+		let output = _xmlescape(obj);
+		context.output(output);
+	}
+
+	_dont_print_object(context, obj)
+	{
+		throw new TypeError(_repr(obj) + " is not renderable by UL4");
+	}
+
+	_real_print_object(context, obj)
+	{
+		this._dont_print_object(context, obj);
+	}
+
 	_handle_eval(context)
 	{
 		let localcontext = context.withindent(this.indent !== null ? this.indent.text : null);
 		let obj = this.obj._handle_eval(localcontext);
+		// If the object turns out to not be renderable we nonetheless evaluate the arguments
 		let [args, kwargs] = this._makeargs(localcontext);
 		this._handle_additional_arguments(localcontext, args, kwargs);
 
 		try
 		{
-			let result = _callrender(localcontext, obj, args, kwargs);
-			return result;
+			if (_object_is_renderable(obj))
+			{
+				this._real_render_object(localcontext, obj, args, kwargs);
+			}
+			else
+			{
+				this._real_print_object(localcontext, obj);
+			}
+			return null;
 		}
 		catch (exc)
 		{
@@ -7052,20 +7132,63 @@ export class RenderXAST extends RenderAST
 {
 	static classdoc = "AST node for rendering a template and XML-escaping the output\n(e.g. ``<?renderx t(x)?>``.";
 
-	_handle_eval(context)
+	_real_render_object(context, obj, args, kwargs)
 	{
-		context.escapes.push(_xmlescape);
+		this._renderx_object(context, obj, args, kwargs);
+	}
+};
 
-		let result = null;
-		try
-		{
-			result = super._handle_eval(context);
-		}
-		finally
-		{
-			context.escapes.splice(context.escapes.length-1, 1);
-		}
-		return result;
+
+export class RenderOrPrintAST extends RenderAST
+{
+	static classdoc = "AST node for rendering a template or printing an object.";
+
+	_real_print_object(context, obj)
+	{
+		this._print_object(context, obj);
+	}
+};
+
+
+export class RenderOrPrintXAST extends RenderAST
+{
+	static classdoc = "AST node for rendering a template or printing an object\n(e.g. ``<?render_or_printx t(x)?>``.";
+
+	_real_print_object(context, obj)
+	{
+		this._printx_object(context, obj);
+	}
+};
+
+
+export class RenderXOrPrintAST extends RenderAST
+{
+	static classdoc = "AST node for rendering a template or printing an object\n(e.g. ``<?renderx_or_print t(x)?>``.";
+
+	_real_render_object(context, obj, args, kwargs)
+	{
+		this._renderx_object(context, obj, args, kwargs);
+	}
+
+	_real_print_object(context, obj)
+	{
+		this._print_object(context, obj);
+	}
+};
+
+
+export class RenderXOrPrintXAST extends RenderAST
+{
+	static classdoc = "AST node for rendering a template or printing an object\n(e.g. ``<?renderx_or_printx t(x)?>``.";
+
+	_real_render_object(context, obj, args, kwargs)
+	{
+		this._renderx_object(context, obj, args, kwargs);
+	}
+
+	_real_print_object(context, obj)
+	{
+		this._printx_object(context, obj);
 	}
 };
 
@@ -10529,6 +10652,10 @@ export const _ul4 = new Module(
 		CallAST: _maketype(CallAST),
 		RenderAST: _maketype(RenderAST),
 		RenderXAST: _maketype(RenderXAST),
+		RenderOrPrintAST: _maketype(RenderOrPrintAST),
+		RenderOrPrintXAST: _maketype(RenderOrPrintXAST),
+		RenderXOrPrintAST: _maketype(RenderXOrPrintAST),
+		RenderXOrPrintXAST: _maketype(RenderXOrPrintXAST),
 		RenderBlockAST: _maketype(RenderBlockAST),
 		RenderBlocksAST: _maketype(RenderBlocksAST),
 		SignatureAST: _maketype(SignatureAST),
@@ -10710,6 +10837,10 @@ const constructors = [
 	[CallAST, "call"],
 	[RenderAST, "render"],
 	[RenderXAST, "renderx"],
+	[RenderOrPrintAST, "render_or_print"],
+	[RenderOrPrintXAST, "render_or_printx"],
+	[RenderXOrPrintAST, "renderx_or_print"],
+	[RenderXOrPrintXAST, "renderx_or_printx"],
 	[RenderBlockAST, "renderblock"],
 	[RenderBlocksAST, "renderblocks"],
 	[SetVarAST, "setvar"],
