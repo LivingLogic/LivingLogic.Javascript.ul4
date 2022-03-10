@@ -360,7 +360,7 @@ export class Signature extends Proto
 				if (param !== undefined && param.type.indexOf("k") >= 0)
 				{
 					if (haveValues[param.pos])
-						throw new ArgumentError("Duplicate keyword argument " + argname + " for " + name + "()");
+						throw new ArgumentError("Duplicate keyword argument " + _repr(argname) + " for " + name + "()");
 					finalargs[param.pos] = argvalue;
 					haveValues[param.pos] = true;
 				}
@@ -369,11 +369,11 @@ export class Signature extends Proto
 					if (varkw !== null)
 					{
 						if (varkw.has(argname))
-							throw new ArgumentError("Duplicate keyword argument " + argname + " for " + name + "()");
+							throw new ArgumentError("Duplicate keyword argument " + _repr(argname) + " for " + name + "()");
 						varkw.set(argname, argvalue);
 					}
 					else
-						throw new ArgumentError(name + "() doesn't support an argument named " + argname);
+						throw new ArgumentError(name + "() doesn't support an argument named " + _repr(argname));
 				}
 			}
 		}
@@ -454,8 +454,7 @@ export class Signature extends Proto
 		buffer.push(param.name);
 		if (param.type.endsWith("="))
 		{
-			buffer.push("=");
-			buffer.push(_repr(param.defaultValue));
+			buffer.push("=", _repr(param.defaultValue));
 		}
 	}
 
@@ -2297,9 +2296,7 @@ function _map_repr(obj, ascii)
 	{
 		if (i++)
 			v.push(", ");
-		v.push(_repr_internal(key, ascii));
-		v.push(": ");
-		v.push(_repr_internal(value, ascii));
+		v.push(_repr_internal(key, ascii), ": ", _repr_internal(value, ascii));
 	}
 
 	v.push("}");
@@ -2354,9 +2351,7 @@ function _object_repr(obj, ascii)
 			continue;
 		if (i++)
 			v.push(", ");
-		v.push(_repr_internal(key, ascii));
-		v.push(": ");
-		v.push(_repr_internal(obj[key], ascii));
+		v.push(_repr_internal(key, ascii), ": ", _repr_internal(obj[key], ascii));
 	}
 	v.push("}");
 	return v.join("");
@@ -2865,9 +2860,7 @@ export function _asjson(obj)
 				first = false;
 			else
 				v.push(", ");
-			v.push(_asjson(key));
-			v.push(": ");
-			v.push(_asjson(value));
+			v.push(_asjson(key), ": ", _asjson(value));
 		}
 		v.push("}");
 		return v.join("");
@@ -2883,9 +2876,7 @@ export function _asjson(obj)
 				first = false;
 			else
 				v.push(", ");
-			v.push(_asjson(key));
-			v.push(": ");
-			v.push(_asjson(obj[key]));
+			v.push(_asjson(key), ": ", _asjson(obj[key]));
 		}
 		v.push("}");
 		return v.join("");
@@ -3635,8 +3626,7 @@ export class StrType extends Type
 				result.push(obj);
 				break;
 			}
-			result.push(obj.substr(0, pos));
-			result.push(new_);
+			result.push(obj.substr(0, pos), new_);
 			obj = obj.substr(pos + old.length);
 		}
 		return result.join("");
@@ -5180,15 +5170,12 @@ export class TextAST extends AST
 
 	_str(out)
 	{
-		out.push("text ");
-		out.push(_repr(this.text));
+		out.push("text ", _repr(this.text));
 	}
 
 	_repr(out)
 	{
-		out.push("<TextAST ");
-		out.push(_repr(this.text));
-		out.push(">");
+		out.push("<", this.constructor.name, " ", _repr(this.text), ">");
 	}
 };
 
@@ -5235,15 +5222,7 @@ export class IndentAST extends TextAST
 
 	_str(out)
 	{
-		out.push("indent ");
-		out.push(_repr(this.text));
-	}
-
-	_repr(out)
-	{
-		out.push("<IndentAST ");
-		out.push(_repr(this.text));
-		out.push(">");
+		out.push("indent ", _repr(this.text));
 	}
 };
 
@@ -5253,15 +5232,7 @@ export class LineEndAST extends TextAST
 
 	_str(out)
 	{
-		out.push("lineend ");
-		out.push(_repr(this.text));
-	}
-
-	_repr(out)
-	{
-		out.push("<LineEndAST ");
-		out.push(_repr(this.text));
-		out.push(">");
+		out.push("lineend ", _repr(this.text));
 	}
 };
 
@@ -5282,9 +5253,7 @@ export class ConstAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<ConstAST value=");
-		out.push(_repr(this.value));
-		out.push(">");
+		out.push("<", this.constructor.name, " ", _repr(this.value), ">");
 	}
 
 	_eval(context)
@@ -5366,9 +5335,7 @@ export class SeqItemAST extends ItemArgBase
 
 	_repr(out)
 	{
-		out.push("<SeqItemAST value=");
-		out.push(_repr(this.value));
-		out.push(">");
+		out.push("<", this.constructor.name, " value=", _repr(this.value), ">");
 	}
 
 	_eval_list(context, result)
@@ -5398,9 +5365,7 @@ export class UnpackSeqItemAST extends ItemArgBase
 
 	_repr(out)
 	{
-		out.push("<UnpackSeqItemAST value=");
-		out.push(_repr(this.value));
-		out.push(">");
+		out.push("<", this.constructor.name, " value=", _repr(this.value), ">");
 	}
 
 	_eval_list(context, result)
@@ -5443,11 +5408,15 @@ export class DictItemAST extends ItemArgBase
 
 	_repr(out)
 	{
-		out.push("<DictItemAST key=");
-		out.push(_repr(this.key));
-		out.push(" value=");
-		out.push(_repr(this.value));
-		out.push(">");
+		out.push(
+			"<",
+			this.constructor.name,
+			" key=",
+			_repr(this.key),
+			" value=",
+			_repr(this.value),
+			">"
+		);
 	}
 
 	_eval_dict(context, result)
@@ -5472,9 +5441,7 @@ export class UnpackDictItemAST extends ItemArgBase
 
 	_repr(out)
 	{
-		out.push("<UnpackDictItemAST item=");
-		out.push(_repr(this.item));
-		out.push(">");
+		out.push("<", this.constructor.name, " item=", _repr(this.item), ">");
 	}
 
 	_eval_dict(context, result)
@@ -5528,9 +5495,7 @@ export class PositionalArgumentAST extends ItemArgBase
 
 	_repr(out)
 	{
-		out.push("<PositionalArgumentAST value=");
-		this.value._repr(out);
-		out.push(">");
+		out.push("<", this.constructor.name, " value=", _repr(this.value), ">");
 	}
 
 	_eval_call(context, args, kwargs)
@@ -5544,7 +5509,7 @@ PositionalArgumentAST.prototype._ul4onattrs = ItemArgBase.prototype._ul4onattrs.
 
 export class KeywordArgumentAST extends ItemArgBase
 {
-	static classdoc = "AST node for a keyword argument in a :class:`CallAST` (e.g. the ``x=y``\nin the function call``f(x=y)``).";
+	static classdoc = "AST node for a keyword argument in a :class:`CallAST` (e.g. the ``x=y``\nin the function call ``f(x=y)``).";
 
 	constructor(template, pos, name, value)
 	{
@@ -5555,11 +5520,15 @@ export class KeywordArgumentAST extends ItemArgBase
 
 	_repr(out)
 	{
-		out.push("<KeywordArgumentAST name=");
-		out.push(_repr(this.name));
-		out.push(" value=");
-		this.value._repr(out);
-		out.push(">");
+		out.push(
+			"<",
+			this.constructor.name,
+			" name=",
+			_repr(this.name),
+			" value=",
+			_repr(this.value),
+			">"
+		);
 	}
 
 	_eval_call(context, args, kwargs)
@@ -5585,9 +5554,7 @@ export class UnpackListArgumentAST extends ItemArgBase
 
 	_repr(out)
 	{
-		out.push("<UnpackListArgumentAST item=");
-		this.item._repr(out);
-		out.push(">");
+		out.push("<", this.constructor.name, " item=", _repr(this.item), ">");
 	}
 
 	_eval_call(context, args, kwargs)
@@ -5611,9 +5578,7 @@ export class UnpackDictArgumentAST extends ItemArgBase
 
 	_repr(out)
 	{
-		out.push("<UnpackDictArgumentAST item=");
-		this.item._repr(out);
-		out.push(">");
+		out.push("<", this.constructor.name, " item=", _repr(this.item), ">");
 	}
 
 	_eval_call(context, args, kwargs)
@@ -5666,7 +5631,7 @@ export class ListAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<ListAST");
+		out.push("<", this.constructor.name);
 		for (let item of this.items)
 		{
 			out.push(" ");
@@ -5701,12 +5666,9 @@ export class ListComprehensionAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<ListComprehensionAST");
-		out.push(" item=");
+		out.push("<", this.constructor.name, " item=");
 		this.item._repr(out);
-		out.push(" varname=");
-		out.push(_repr(this.varname));
-		out.push(" container=");
+		out.push(" varname=", _repr(this.varname), " container=");
 		this.container._repr(out);
 		if (this.condition !== null)
 		{
@@ -5752,7 +5714,7 @@ export class SetAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<SetAST");
+		out.push("<", this.constructor.name);
 		for (let item of this.items)
 		{
 			out.push(" ");
@@ -5806,8 +5768,7 @@ export class SetComprehensionAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<SetComprehensionAST");
-		out.push(" item=");
+		out.push("<", this.constructor.name, " item=");
 		this.item._repr(out);
 		out.push(" varname=");
 		this.varname._repr(out);
@@ -5869,7 +5830,7 @@ export class DictAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<DictAST");
+		out.push("<", this.constructor.name);
 		for (let item of this.items)
 		{
 			out.push(" ");
@@ -5905,8 +5866,7 @@ export class DictComprehensionAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<DictComprehensionAST");
-		out.push(" key=");
+		out.push("<", this.constructor.name, " key=");
 		this.key._repr(out);
 		out.push(" value=");
 		this.value._repr(out);
@@ -5967,8 +5927,7 @@ export class GeneratorExpressionAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<GeneratorExpressionAST");
-		out.push(" item=");
+		out.push("<", this.constructor.name, " item=");
 		this.item._repr(out);
 		out.push(" varname=");
 		this.varname._repr(out);
@@ -6028,9 +5987,7 @@ export class VarAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<VarAST name=");
-		out.push(_repr(this.name));
-		out.push(">");
+		out.push("<", this.constructor.name, " name=", _repr(this.name), ">");
 	}
 
 	_eval(context)
@@ -6079,9 +6036,7 @@ export class UnaryAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<");
-		out.push(this.constructor.name);
-		out.push(" obj=");
+		out.push("<", this.constructor.name, " obj=");
 		this.obj._repr(out);
 		out.push(">");
 	}
@@ -6145,19 +6100,18 @@ export class IfAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<");
-		out.push(this.constructor.name);
-		out.push(+1);
-		out.push("objif=");
+		out.push(
+			"<",
+			this.constructor.name,
+			+1,
+			"objif="
+		);
 		this.objif._repr(out);
-		out.push(0);
-		out.push("objcond=");
+		out.push(0, "objcond=");
 		this.objcond._repr(out);
-		out.push(0);
-		out.push("objelse=");
+		out.push(0, "objelse=");
 		this.objelse._repr(out);
-		out.push(-1);
-		out.push(">");
+		out.push(-1, ">");
 	}
 
 	_eval(context)
@@ -6240,9 +6194,7 @@ export class BinaryAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<");
-		out.push(this.constructor.name);
-		out.push(" obj1=");
+		out.push("<", this.constructor.name, " obj1=");
 		this.obj1._repr(out);
 		out.push(" obj2=");
 		this.obj2._repr(out);
@@ -6911,12 +6863,9 @@ export class AttrAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<AttrAST");
-		out.push(" obj=");
+		out.push("<", this.constructor.name, " obj=");
 		this.obj._repr(out);
-		out.push(" attrname=");
-		out.push(_repr(this.attrname));
-		out.push(">");
+		out.push(" attrname=", _repr(this.attrname), ">");
 	}
 
 	_eval(context)
@@ -6990,8 +6939,7 @@ export class CallAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<CallAST");
-		out.push(" obj=");
+		out.push("<", this.constructor.name, " obj=");
 		this.obj._repr(out);
 		for (let arg of this.args)
 		{
@@ -7033,6 +6981,7 @@ export class CallAST extends CodeAST
 
 CallAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["obj", "args"]);
 
+
 export class RenderAST extends CallAST
 {
 	static classdoc = "AST node for rendering a template (e.g. ``<?render t(x)?>``.";
@@ -7045,12 +6994,13 @@ export class RenderAST extends CallAST
 
 	_repr(out)
 	{
-		out.push("<");
-		out.push(this._reprname);
-		out.push("<RenderAST");
-		out.push(" indent=");
-		out.push(_repr(this.indent));
-		out.push(" obj=");
+		out.push(
+			"<",
+			this.constructor.name,
+			" indent=",
+			_repr(this.indent.text),
+			" obj="
+		);
 		this.obj._repr(out);
 		out.push(0);
 		for (let arg of this.args)
@@ -7059,18 +7009,15 @@ export class RenderAST extends CallAST
 			arg._repr(out);
 			out.push(0);
 		}
-		out.push(-1);
-		out.push(">");
+		out.push(-1, ">");
 	}
 
 	_str(out)
 	{
-		out.push("render ");
-		out.push(this.tag.code.replace(/\r?\n/g, ' '));
+		out.push("render ", this.source.replace(/\r?\n/g, ' '));
 		if (this.indent !== null)
 		{
-			out.push(" with indent ");
-			out.push(_repr(this.indent.text));
+			out.push(" with indent ", _repr(this.indent.text));
 		}
 	}
 
@@ -7099,7 +7046,7 @@ export class RenderAST extends CallAST
 };
 
 RenderAST.prototype._ul4onattrs = CallAST.prototype._ul4onattrs.concat(["indent"]);
-RenderAST.prototype._reprname = "RenderAST";
+
 
 export class RenderXAST extends RenderAST
 {
@@ -7122,9 +7069,24 @@ export class RenderXAST extends RenderAST
 	}
 };
 
+
 export class RenderBlockAST extends RenderAST
 {
 	static classdoc = "AST node for rendering a template via a ``<?renderblock?>`` block and\npassing the content of the block as one additional keyword argument named\n``content``.";
+
+	_repr(out)
+	{
+		out.push("<", this.constructor.name, +1, "obj=");
+		this.obj._repr(out);
+		for (let arg of this.args)
+		{
+			out.push(0);
+			arg._repr(out);
+		}
+		out.push(0, "content=");
+		this.content._repr(out);
+		out.push(-1, ">");
+	}
 
 	_handle_additional_arguments(context, args, kwargs)
 	{
@@ -7150,9 +7112,27 @@ export class RenderBlockAST extends RenderAST
 
 RenderBlockAST.prototype._ul4onattrs = RenderAST.prototype._ul4onattrs.concat(["stoppos", "content"]);
 
+
 export class RenderBlocksAST extends RenderAST
 {
 	static classdoc = "AST node for rendering a template and passing additional arguments via\nnested variable definitions, e.g.::";
+
+	_repr(out)
+	{
+		out.push("<", this.constructor.name, +1, "obj=");
+		this.obj._repr(out);
+		for (let arg of this.args)
+		{
+			out.push(0);
+			arg._repr(out);
+		}
+		for (let item of this.content)
+		{
+			out.push(0);
+			item._repr(out);
+		}
+		out.push(-1, ">");
+	}
 
 	_handle_additional_arguments(context, args, kwargs)
 	{
@@ -7185,6 +7165,7 @@ export class RenderBlocksAST extends RenderAST
 };
 
 RenderBlocksAST.prototype._ul4onattrs = RenderAST.prototype._ul4onattrs.concat(["stoppos", "content"]);
+
 
 // Slice object
 export class slice extends Proto
@@ -7244,7 +7225,7 @@ export class SliceAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<SliceAST");
+		out.push("<", this.constructor.name);
 		if (this.index1 !== null)
 		{
 			out.push(" index1=");
@@ -7281,11 +7262,13 @@ export class ChangeVarAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<");
-		out.push(this.constructor.name);
-		out.push(" lvalue=");
-		out.push(_repr(this.lvalue));
-		out.push(" value=");
+		out.push(
+			"<",
+			this.constructor.name,
+			" lvalue=",
+			_repr(this.lvalue),
+			" value="
+		);
 		this.value._repr(out);
 		out.push(">");
 	}
@@ -7422,8 +7405,7 @@ export class BlockAST extends CodeAST
 		}
 		else
 		{
-			out.push("pass");
-			out.push(0);
+			out.push("pass", 0);
 		}
 	}
 
@@ -7456,10 +7438,13 @@ export class ForBlockAST extends BlockAST
 
 	_repr(out)
 	{
-		out.push("<ForBlockAST");
-		out.push(" varname=");
-		out.push(_repr(this.varname));
-		out.push(" container=");
+		out.push(
+			"<",
+			this.constructor.name,
+			" varname=",
+			_repr(this.varname),
+			" container="
+		);
 		this.container._repr(out);
 		out.push(">");
 	}
@@ -7524,8 +7509,7 @@ export class ForBlockAST extends BlockAST
 		this._str_varname(out, this.varname);
 		out.push(" in ");
 		this.container._str(out);
-		out.push(":");
-		out.push(+1);
+		out.push(":", +1);
 		BlockAST.prototype._str.call(this, out);
 		out.push(-1);
 	}
@@ -7545,8 +7529,7 @@ export class WhileBlockAST extends BlockAST
 
 	_repr(out)
 	{
-		out.push("<WhileAST");
-		out.push(" condition=");
+		out.push("<", this.constructor.name, " condition=");
 		this.condition._repr(out);
 		out.push(">");
 	}
@@ -7555,8 +7538,7 @@ export class WhileBlockAST extends BlockAST
 	{
 		out.push("while ");
 		this.condition._repr(out);
-		out.push(":");
-		out.push(+1);
+		out.push(":", +1);
 		BlockAST.prototype._str.call(this, out);
 		out.push(-1);
 	}
@@ -7602,13 +7584,12 @@ export class BreakAST extends CodeAST
 
 	_str(out)
 	{
-		out.push("break");
-		out.push(0);
+		out.push("break", 0);
 	}
 
 	_repr(out)
 	{
-		out.push("<BreakAST>");
+		out.push("<", this.constructor.name, ">");
 	}
 };
 
@@ -7623,13 +7604,12 @@ export class ContinueAST extends CodeAST
 
 	_str(out)
 	{
-		out.push("continue");
-		out.push(0);
+		out.push("continue", 0);
 	}
 
 	_repr(out)
 	{
-		out.push("<ContinueAST>");
+		out.push("<", this.constructor.name, ">");
 	}
 };
 
@@ -7661,20 +7641,16 @@ export class ConditionalBlockAST extends  BlockAST
 
 	_repr(out)
 	{
-		out.push("<");
-		out.push(this.constructor.name);
-		out.push(" condition=");
+		out.push("<", this.constructor.name, " condition=");
 		this.condition._repr(out);
 		out.push(">");
 	}
 
 	_str(out)
 	{
-		out.push(this._strname);
-		out.push(" ");
+		out.push(this._strname, " ");
 		this.condition._str(out);
-		out.push(":");
-		out.push(+1);
+		out.push(":", +1);
 		BlockAST.prototype._str.call(this, out);
 		out.push(-1);
 	}
@@ -7709,14 +7685,12 @@ export class ElseBlockAST extends BlockAST
 
 	_repr(out)
 	{
-		out.push("<ElseAST");
-		out.push(">");
+		out.push("<", this.constructor.name, ">");
 	}
 
 	_str(out)
 	{
-		out.push("else:");
-		out.push(+1);
+		out.push("else:", +1);
 		BlockAST.prototype._str.call(this, out);
 		out.push(-1);
 	}
@@ -7793,8 +7767,7 @@ export class Template extends BlockAST
 			signature = [];
 			for (let param of this.signature.params)
 			{
-				signature.push(param.name);
-				signature.push(param.type);
+				signature.push(param.name, param.type);
 				if (param.type.endsWith("="))
 					signature.push(param.defaultValue);
 			}
@@ -7843,23 +7816,20 @@ export class Template extends BlockAST
 
 	_repr(out)
 	{
-		out.push("<Template");
+		out.push("<", this.constructor.name);
 		if (this.name !== null)
-		{
-			out.push(" name=");
-			out.push(_repr(this.name));
-		}
-		out.push(" whitespace=");
-		out.push(_repr(this.whitespace));
-		out.push(">");
+			out.push(" name=", _repr(this.name));
+		out.push(" whitespace=", _repr(this.whitespace), ">");
 	}
 
 	_str(out)
 	{
-		out.push("def ");
-		out.push(this.name ? this.name : "unnamed");
-		out.push(":");
-		out.push(+1);
+		out.push(
+			"def ",
+			this.name ? this.name : "unnamed",
+			":",
+			+1
+		);
 		BlockAST.prototype._str.call(this, out);
 		out.push(-1);
 	}
@@ -7967,8 +7937,7 @@ export class SignatureAST extends CodeAST
 
 		for (let param of this.params)
 		{
-			dump.push(param[0]);
-			dump.push(param[1]);
+			dump.push(param[0], param[1]);
 			if (param[1].endsWith("="))
 				dump.push(param[2]);
 		}
@@ -8014,8 +7983,7 @@ export class SignatureAST extends CodeAST
 		let args = [];
 		for (let param of this.params)
 		{
-			args.push(param.name);
-			args.push(param.type);
+			args.push(param.name, param.type);
 			if (param.type.endsWith("="))
 				args.push(param.defaultValue._handle_eval(context));
 		}
@@ -8024,9 +7992,7 @@ export class SignatureAST extends CodeAST
 
 	_repr(out)
 	{
-		out.push("<");
-		out.push(this.constructor.name);
-		out.push(" params=");
+		out.push("<", this.constructor.name, " params=");
 		this.params._repr(out);
 		out.push(">");
 	}
@@ -9973,16 +9939,15 @@ export class TimeDelta extends Proto
 		let hours = Math.floor(minutes / 60);
 		minutes = minutes % 60;
 
-		v.push("" + hours);
-		v.push(":");
-		v.push(_lpad(minutes.toString(), "0", 2));
-		v.push(":");
-		v.push(_lpad(seconds.toString(), "0", 2));
+		v.push(
+			"" + hours,
+			":",
+			_lpad(minutes.toString(), "0", 2),
+			":",
+			_lpad(seconds.toString(), "0", 2)
+		);
 		if (this._microseconds)
-		{
-			v.push(".");
-			v.push(_lpad(this._microseconds.toString(), "0", 6));
-		}
+			v.push(".", _lpad(this._microseconds.toString(), "0", 6));
 		return v.join("");
 	}
 
@@ -10803,11 +10768,8 @@ export function report_exc(exc)
 
 		function css(text, style)
 		{
-			texts.push("%c");
-			args.push(style);
-			texts.push(text);
-			texts.push("%c");
-			args.push("");
+			texts.push("%c", text, "%c");
+			args.push(style, "");
 		}
 
 		function em(s)
