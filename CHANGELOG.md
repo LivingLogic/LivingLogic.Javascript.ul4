@@ -1,5 +1,10 @@
 # Changes
 
+## Changes in 1.12.1 (2022-03-16)
+
+Use `Symbol.for()` to reuse symbols defined by another version of UL4.
+
+
 ## Changes in 1.12.0 (2022-03-10)
 
 Added new classes `RenderOrPrintAST`, `RenderOrPrintXAST`,

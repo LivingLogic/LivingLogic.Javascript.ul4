@@ -44,63 +44,63 @@ export const api_version = "51";
 
 export let symbols = {
 	// Convert an object to a string via UL4s `str()` function
-	str: Symbol("ul4.str"),
+	str: Symbol.for("ul4.str"),
 	// Return a unambiguous string representation of the object via UL4s `repr()` function
-	repr: Symbol("ul4.repr"),
+	repr: Symbol.for("ul4.repr"),
 	// Convert an object to a boolean value via UL4s `bool()` function
-	bool: Symbol("ul4.bool"),
+	bool: Symbol.for("ul4.bool"),
 	// Implementing this interface makes an object callable in UL4
-	call: Symbol("ul4.call"),
+	call: Symbol.for("ul4.call"),
 	// Implementing this interface makes an object renderable in UL4
-	render: Symbol("ul4.render"),
+	render: Symbol.for("ul4.render"),
 	// Test whether an object is contained in this object via UL4s `in` operator
-	contains: Symbol("ul4.contains"),
+	contains: Symbol.for("ul4.contains"),
 	// Compare two objects for equality via UL4s `==` operator
-	eq: Symbol("ul4.eq"),
+	eq: Symbol.for("ul4.eq"),
 	// Compare two objects for inequality via UL4s `!=` operator
-	ne: Symbol("ul4.ne"),
+	ne: Symbol.for("ul4.ne"),
 	// Compare two objects for "less then" via UL4s `<` operator
-	lt: Symbol("ul4.lt"),
+	lt: Symbol.for("ul4.lt"),
 	// Compare two objects for "less then or equal" via UL4s `<=` operator
-	le: Symbol("ul4.le"),
+	le: Symbol.for("ul4.le"),
 	// Compare two objects for "greater then" via UL4s `>` operator
-	gt: Symbol("ul4.gt"),
+	gt: Symbol.for("ul4.gt"),
 	// Compare two objects for "greater then or equal" via UL4s `>=` operator
-	ge: Symbol("ul4.ge"),
+	ge: Symbol.for("ul4.ge"),
 	// Negate an object via UL4s unary `-` operator
-	neg: Symbol("ul4.neg"),
+	neg: Symbol.for("ul4.neg"),
 	// Return the absolute value of an object via UL4s `abs()` function
-	abs: Symbol("ul4.abs"),
+	abs: Symbol.for("ul4.abs"),
 	// Add two objects via UL4s `+` operator (as a method of the left operand)
-	add: Symbol("ul4.add"),
+	add: Symbol.for("ul4.add"),
 	// Add two objects via UL4s `+` operator (as a method of the right operand)
-	radd: Symbol("ul4.radd"),
+	radd: Symbol.for("ul4.radd"),
 	// Subtract two objects via UL4s `-` operator (as a method of the left operand)
-	sub: Symbol("ul4.sub"),
+	sub: Symbol.for("ul4.sub"),
 	// Subtract two objects via UL4s `-` operator (as a method of the right operand)
-	rsub: Symbol("ul4.rsub"),
+	rsub: Symbol.for("ul4.rsub"),
 	// Multiply two objects via UL4s `*` operator (as a method of the left operand)
-	mul: Symbol("ul4.mul"),
+	mul: Symbol.for("ul4.mul"),
 	// Multiply two objects via UL4s `*` operator (as a method of the right operand)
-	rmul: Symbol("ul4.rmul"),
+	rmul: Symbol.for("ul4.rmul"),
 	// Divide two objects via UL4s `/` operator (as a method of the left operand)
-	truediv: Symbol("ul4.truediv"),
+	truediv: Symbol.for("ul4.truediv"),
 	// Divide two objects via UL4s `/` operator (as a method of the right operand)
-	rtruediv: Symbol("ul4.rtruediv"),
+	rtruediv: Symbol.for("ul4.rtruediv"),
 	// Divide two objects via UL4s `//` operator (as a method of the left operand)
-	floordiv: Symbol("ul4.floordiv"),
+	floordiv: Symbol.for("ul4.floordiv"),
 	// Divide two objects via UL4s `//` operator (as a method of the right operand)
-	rfloordiv: Symbol("ul4.rfloordiv"),
+	rfloordiv: Symbol.for("ul4.rfloordiv"),
 	// Get an attribute of an object via UL4
-	getattr: Symbol("ul4.getattr"),
+	getattr: Symbol.for("ul4.getattr"),
 	// Set an attribute of an object via UL4
-	setattr: Symbol("ul4.setattr"),
+	setattr: Symbol.for("ul4.setattr"),
 	// Get an item of a container object via UL4s `[]` operator
-	getitem: Symbol("ul4.getitem"),
+	getitem: Symbol.for("ul4.getitem"),
 	// Set an item of a container object via UL4 UL4s `[] =` operator
-	setitem: Symbol("ul4.setitem"),
+	setitem: Symbol.for("ul4.setitem"),
 	// Return the UL4 type of an object
-	type: Symbol("ul4.type"),
+	type: Symbol.for("ul4.type"),
 };
 
 
