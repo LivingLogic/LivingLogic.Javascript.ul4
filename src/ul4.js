@@ -3529,7 +3529,7 @@ class IntType extends Type
 			{
 				result = parseInt(obj);
 				if (result.toString() == "NaN")
-				throw new TypeError("invalid literal for int()");
+					throw new TypeError("invalid literal for int()");
 				return result;
 			}
 			else if (typeof(obj) === "number")
