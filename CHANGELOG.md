@@ -1,5 +1,15 @@
 # Changes
 
+## Changes in 1.13.0 (2022-06-13)
+
+Removed the attribute `__id__` for all instances of `ul4.Proto`, since a `Map`
+can now be used for mapping objects to their backref index in UL4ON dumps.
+
+Added a `repr` method to `ul4.Module`.
+
+Detect "classes" in `repr` so that they don't get output as `<function foo>`.
+
+
 ## Changes in 1.12.1 (2022-03-16)
 
 Use `Symbol.for()` to reuse symbols defined by another version of UL4.
