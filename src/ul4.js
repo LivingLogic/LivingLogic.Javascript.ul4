@@ -120,22 +120,14 @@ export function expose(f, signature, options)
 };
 
 
-// This is outside of `Proto` on purpose
-// This way reactive frameworks like `Vue.js` don't get to see it
-// and complain about mutating render functions when those create new objects.
-let _nextid = 1;
-
 ///
 /// Base class for all our classes.
-/// This implements support for proper UL4ON serialization:
-/// As Javascript has no way to look up an object by its identity, we need to
-/// give each instance a unique identifier ourselves.
+/// This implements the equality comparison operators.
 ///
 export class Proto
 {
 	constructor()
 	{
-		this.__id__ = _nextid++;
 	}
 
 	// equality comparison of objects defaults to identity comparison
@@ -158,6 +150,12 @@ export class Proto
 	[symbols.bool]()
 	{
 		return true;
+	}
+
+	// Default `repr` implementation.
+	[symbols.repr]()
+	{
+		return "<" + this.constructor.name + ">";
 	}
 };
 
@@ -638,7 +636,7 @@ export class Encoder
 		this.output = null;
 		this._level = 0;
 		this._strings2index = {};
-		this._ids2index = {};
+		this._objects2index = new Map();
 		this._backrefs = 0;
 	}
 
@@ -725,16 +723,13 @@ export class Encoder
 			this._line("r", obj.start, obj.stop);
 		else if (obj.ul4onname && obj.ul4ondump)
 		{
-			if (obj.__id__)
+			let index = this._objects2index[obj];
+			if (index !== undefined)
 			{
-				let index = this._ids2index[obj.__id__];
-				if (index !== undefined)
-				{
-					this._line("^" + index);
-					return;
-				}
-				this._ids2index[obj.__id__] = this._backrefs++;
+				this._line("^" + index);
+				return;
 			}
+			this._objects2index[obj] = this._backrefs++;
 			if (obj.ul4onid)
 				this._line("P", obj.ul4onname, obj.ul4onid);
 			else
@@ -2396,10 +2391,14 @@ function _repr_internal(obj, ascii)
 	else if (typeof(obj) === "number")
 		return "" + obj;
 	else if (typeof(obj) === "function")
+	{
+		if (obj.prototype !== undefined)
+			return "<class " + obj.name + ">";
 		if (obj._ul4_name || obj.name)
 			return "<function " + (obj._ul4_name || obj.name) + ">";
 		else
 			return "<anonymous function>";
+	}
 	else if (_isdate(obj))
 		return _date_repr(obj, ascii);
 	else if (_isdatetime(obj))
@@ -4728,7 +4727,6 @@ export function Exception(message, fileName, lineNumber)
 		Object.setPrototypeOf(instance, Object.getPrototypeOf(this));
 	else
 		instance.__proto__ = this;
-	instance.__id__ = _nextid++;
 	instance.context = null;
 	return instance;
 };
@@ -9018,6 +9016,11 @@ export class Module
 		if (this.hasOwnProperty(attrname))
 			return this[attrname];
 		throw new ul4.AttributeError(this, attrname);
+	}
+
+	[symbols.repr]()
+	{
+		return "<module " + this.__name__ + ">";
 	}
 };
 
