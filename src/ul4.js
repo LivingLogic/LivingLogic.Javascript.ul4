@@ -7911,7 +7911,7 @@ export class Template extends BlockAST
 			throw new ValueError("UL4ON doesn't support templates in 'source' format in Javascript implementation");
 
 		if (loaded_api_version !== api_version)
-			throw new ValueError("invalid version, expected " + api_version + ", got " + loaded_api_version);
+			throw new ValueError("Invalid UL4 version, expected " + api_version + ", got " + loaded_api_version);
 
 		this.name = decoder.load();
 		this._source = decoder.load();
