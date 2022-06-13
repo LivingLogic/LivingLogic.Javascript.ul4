@@ -723,13 +723,13 @@ export class Encoder
 			this._line("r", obj.start, obj.stop);
 		else if (obj.ul4onname && obj.ul4ondump)
 		{
-			let index = this._objects2index[obj];
+			let index = this._objects2index.get(obj);
 			if (index !== undefined)
 			{
 				this._line("^" + index);
 				return;
 			}
-			this._objects2index[obj] = this._backrefs++;
+			this._objects2index.set(obj, this._backrefs++);
 			if (obj.ul4onid)
 				this._line("P", obj.ul4onname, obj.ul4onid);
 			else
