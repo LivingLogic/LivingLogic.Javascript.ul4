@@ -157,6 +157,11 @@ export class Proto
 	{
 		return "<" + this.constructor.name + ">";
 	}
+
+	toString()
+	{
+		return this[symbols.repr]();
+	}
 };
 
 
