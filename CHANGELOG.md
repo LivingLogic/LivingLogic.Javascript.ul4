@@ -1,5 +1,10 @@
 # Changes
 
+## Changes in 1.13.1 (2022-07-08)
+
+Fixed calling `Type.getattr()` and `Type.hasattr()` with `null`.
+
+
 ## Changes in 1.13.0 (2022-06-13)
 
 Removed the attribute `__id__` for all instances of `ul4.Proto`, since a `Map`
