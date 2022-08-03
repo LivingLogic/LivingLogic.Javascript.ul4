@@ -1,5 +1,10 @@
 # Changes
 
+## Changes in HEAD (2022-08-??)
+
+`TextAST` objects now store their text directly.
+
+
 ## Changes in 1.13.1 (2022-07-08)
 
 Fixed calling `Type.getattr()` and `Type.hasattr()` with `null`.

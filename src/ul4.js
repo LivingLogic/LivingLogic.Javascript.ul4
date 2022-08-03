@@ -5180,14 +5180,10 @@ export class TextAST extends AST
 {
 	static classdoc = "AST node for literal text (i.e. the stuff between tags).";
 
-	constructor(template, pos)
+	constructor(template, pos, text)
 	{
 		super(template, pos);
-	}
-
-	get text()
-	{
-		return this.source;
+		this.text = text;
 	}
 
 	_eval(context)
@@ -5206,45 +5202,17 @@ export class TextAST extends AST
 	}
 };
 
+TextAST.prototype._ul4onattrs = AST.prototype._ul4onattrs.concat(["text"]);
+
 export class IndentAST extends TextAST
 {
 	static classdoc = "AST node for literal text that is an indentation at the start of the line.";
-
-	constructor(template, pos, text)
-	{
-		super(template, pos);
-		this._text = text;
-	}
-
-	get text()
-	{
-		if (this.template !== undefined)
-			return this._text === null ? this.source : this._text;
-		else
-			return null;
-	}
 
 	_eval(context)
 	{
 		for (let indent of context.indents)
 			context.output(indent);
 		context.output(this.text);
-	}
-
-	ul4ondump(encoder)
-	{
-		super.ul4ondump(encoder);
-
-		if (this._text === this.source)
-			encoder.dump(null);
-		else
-			encoder.dump(this._text);
-	}
-
-	ul4onload(decoder)
-	{
-		super.ul4onload(decoder);
-		this._text = decoder.load();
 	}
 
 	_str(out)
