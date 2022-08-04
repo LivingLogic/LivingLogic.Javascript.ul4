@@ -1,6 +1,6 @@
 # Changes
 
-## Changes in HEAD (2022-08-??)
+## Changes in 1.14.0 (2022-08-04)
 
 `TextAST` objects now store their text directly.
 
