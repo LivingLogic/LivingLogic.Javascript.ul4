@@ -3,8 +3,8 @@
  * http://www.livinglogic.de/Python/ul4c/
  * http://www.livinglogic.de/Python/ul4on/
  *
- * Copyright 2011-2021 by LivingLogic AG, Bayreuth/Germany
- * Copyright 2011-2021 by Walter Dörwald
+ * Copyright 2011-2022 by LivingLogic AG, Bayreuth/Germany
+ * Copyright 2011-2022 by Walter Dörwald
  *
  * All Rights Reserved
  *
@@ -37,7 +37,7 @@ export const version = packageInfo.version;
 // Version of the UL4 API
 // I.e. this version should be compatible with the Python and Java
 // implementations that support the same API version.
-export const api_version = "51";
+export const api_version = "52";
 
 
 /// Symbols for interfaces implemented in UL4
@@ -4953,14 +4953,16 @@ export class AST extends Proto
 	static classmodule = "ul4";
 	static classdoc = "Base class for all UL4 syntax tree nodes.";
 
-	constructor(template, startpos, stoppos=null)
+	constructor(template, startposstart, startposstop, stopposstart=-1, stopposstop=-1)
 	{
 		super();
 		this.template = template;
-		this.startpos = startpos;
+		this.startposstart = startposstart;
+		this.startposstop = startposstop;
 		this._startline = null;
 		this._startcol = null;
-		this.stoppos = stoppos;
+		this.stopposstart = stopposstart;
+		this.stopposstop = stopposstop;
 		this._stopline = null;
 		this._stopcol = null;
 	}
@@ -4968,30 +4970,30 @@ export class AST extends Proto
 	get startline()
 	{
 		if (this._startline === null)
-			[this._startline, this._startcol] = _lineColFromPos(this.template._source, this.startpos.start);
+			[this._startline, this._startcol] = _lineColFromPos(this.template._source, this.startposstart);
 		return this._startline;
 	}
 
 	get startcol()
 	{
 		if (this._startcol === null)
-			[this._startline, this._startcol] = _lineColFromPos(this.template._source, this.startpos.start);
+			[this._startline, this._startcol] = _lineColFromPos(this.template._source, this.startposstart);
 		return this._startcol;
 	}
 
 	get startsource()
 	{
-		return this.startpos.of(this.template._source);
+		return this.template._source.slice(this.startposstart, this.startposstop);
 	}
 
 	get startsourceprefix()
 	{
-		return _sourceprefix(this.template._source, this.startpos.start);
+		return _sourceprefix(this.template._source, this.startposstart);
 	}
 
 	get startsourcesuffix()
 	{
-		return _sourcesuffix(this.template._source, this.startpos.stop);
+		return _sourcesuffix(this.template._source, this.startposstop);
 	}
 
 	get fullsource()
@@ -4999,56 +5001,63 @@ export class AST extends Proto
 		return this.template._source;
 	}
 
+	get startpos()
+	{
+		return new slice(this.startposstart, this.startposstop);
+	}
+
+	get stoppos()
+	{
+		return this.stopposstart == -1 ? null : new slice(this.stopposstart, this.stopposstop);
+	}
+
 	get pos()
 	{
-		if (this.stoppos === null)
-			return this.startpos;
-		else
-			return new slice(this.startpos.start, this.stoppos.stop);
+		return new slice(this.startposstart, this.stopposstop === -1 ? this.startposstop : this.stopposstop);
 	}
 
 	get source()
 	{
-		return this.pos.of(this.template._source);
+		return this.template._source.slice(this.startposstart, this.stopposstop === -1 ? this.startposstop : this.stopposstop);
 	}
 
 	get sourceprefix()
 	{
-		return _sourceprefix(this.template._source, this.pos.start);
+		return _sourceprefix(this.template._source, this.startposstart);
 	}
 
 	get sourcesuffix()
 	{
-		return _sourcesuffix(this.template._source, this.pos.stop);
+		return _sourcesuffix(this.template._source, this.stopposstop === -1 ? this.startposstop : this.stopposstop);
 	}
 
 	get stopline()
 	{
 		if (this._stopline === null)
-			[this._stopline, this._stopcol] = _lineColFromPos(this.template._source, this.stoppos.stop);
+			[this._stopline, this._stopcol] = _lineColFromPos(this.template._source, this.stopposstop);
 		return this._stopline;
 	}
 
 	get stopcol()
 	{
 		if (this._stopcol === null)
-			[this._stopline, this._stopcol] = _lineColFromPos(this.template._source, this.stoppos.stop);
+			[this._stopline, this._stopcol] = _lineColFromPos(this.template._source, this.stopposstop);
 		return this._stopcol;
 	}
 
 	get stopsource()
 	{
-		return this.stoppos != null ? this.stoppos.of(this.template._source) : null;
+		return this.stoppos != null ? this.template._source.slice(this.stopposstart, this.stopposstop) : null;
 	}
 
 	get stopsourceprefix()
 	{
-		return this.stoppos != null ? _sourceprefix(this.template._source, this.stoppos.start) : null;
+		return this.stoppos != null ? _sourceprefix(this.template._source, this.stopposstart) : null;
 	}
 
 	get stopsourcesuffix()
 	{
-		return this.stoppos != null ? _sourcesuffix(this.template._source, this.stoppos.stop) : null;
+		return this.stoppos != null ? _sourcesuffix(this.template._source, this.stopposstop) : null;
 	}
 
 	[symbols.getattr](attrname)
@@ -5174,15 +5183,15 @@ export class AST extends Proto
 };
 
 // used in ul4ondump/ul4ondump to automatically dump these attributes
-AST.prototype._ul4onattrs = ["template", "startpos"];
+AST.prototype._ul4onattrs = ["template", "startposstart", "startposstop"];
 
 export class TextAST extends AST
 {
 	static classdoc = "AST node for literal text (i.e. the stuff between tags).";
 
-	constructor(template, pos, text)
+	constructor(template, posstart, posstop, text)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.text = text;
 	}
 
@@ -5240,9 +5249,9 @@ export class ConstAST extends CodeAST
 {
 	static classdoc = "AST node for a constant value.";
 
-	constructor(template, pos, value)
+	constructor(template, posstart, posstop, value)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.value = value;
 	}
 
@@ -5322,9 +5331,9 @@ export class SeqItemAST extends ItemArgBase
 {
 	static classdoc = "AST node for an item in a list/set \"literal\" (e.g. ``{x, y}`` or ``[x, y]``)";
 
-	constructor(template, pos, value)
+	constructor(template, posstart, posstop, value)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.value = value;
 	}
 
@@ -5352,9 +5361,9 @@ export class UnpackSeqItemAST extends ItemArgBase
 {
 	static classdoc = "AST node for an ``*`` unpacking expression in a list/set \"literal\"\n(e.g. the ``y`` in ``{x, *y}`` or ``[x, *y]``)";
 
-	constructor(template, pos, value)
+	constructor(template, posstart, posstop, value)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.value = value;
 	}
 
@@ -5394,9 +5403,9 @@ export class DictItemAST extends ItemArgBase
 {
 	static classdoc = "AST node for a dictionary entry in a dict expression (:class:`DictAST`).";
 
-	constructor(template, pos, key, value)
+	constructor(template, posstart, posstop, key, value)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.key = key;
 		this.value = value;
 	}
@@ -5428,9 +5437,9 @@ export class UnpackDictItemAST extends ItemArgBase
 {
 	static classdoc = "AST node for ``**`` unpacking expressions in dict \"literal\"\n(e.g. the ``**u`` in ``{k: v, **u}``).";
 
-	constructor(template, pos, item)
+	constructor(template, posstart, posstop, item)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.item = item;
 	}
 
@@ -5482,9 +5491,9 @@ export class PositionalArgumentAST extends ItemArgBase
 {
 	static classdoc = "AST node for a positional argument. (e.g. the ``x`` in ``f(x)``).";
 
-	constructor(template, pos, value)
+	constructor(template, posstart, posstop, value)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.value = value;
 	}
 
@@ -5506,9 +5515,9 @@ export class KeywordArgumentAST extends ItemArgBase
 {
 	static classdoc = "AST node for a keyword argument in a :class:`CallAST` (e.g. the ``x=y``\nin the function call ``f(x=y)``).";
 
-	constructor(template, pos, name, value)
+	constructor(template, posstart, posstop, name, value)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.name = name;
 		this.value = value;
 	}
@@ -5541,9 +5550,9 @@ export class UnpackListArgumentAST extends ItemArgBase
 {
 	static classdoc = "AST node for an ``*`` unpacking expressions in a :class:`CallAST`\n(e.g. the ``*x`` in ``f(*x)``).";
 
-	constructor(template, pos, item)
+	constructor(template, posstart, posstop, item)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.item = item;
 	}
 
@@ -5565,9 +5574,9 @@ export class UnpackDictArgumentAST extends ItemArgBase
 {
 	static classdoc = "AST node for an ``**`` unpacking expressions in a :class:`CallAST`\n(e.g. the ``**x`` in ``f(**x)``).";
 
-	constructor(template, pos, item)
+	constructor(template, posstart, posstop, item)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.item = item;
 	}
 
@@ -5618,9 +5627,9 @@ export class ListAST extends CodeAST
 {
 	static classdoc = "AST node for creating a list object (e.g. ``[x, y, *z]``).";
 
-	constructor(template, pos)
+	constructor(template, posstart, posstop)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.items = [];
 	}
 
@@ -5650,9 +5659,9 @@ export class ListComprehensionAST extends CodeAST
 {
 	static classdoc = "AST node for a list comprehension (e.g. ``[v for (a, b) in w if c]``.";
 
-	constructor(template, pos, item, varname, container, condition)
+	constructor(template, posstart, posstop, item, varname, container, condition)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.item = item;
 		this.varname = varname;
 		this.container = container;
@@ -5701,9 +5710,9 @@ export class SetAST extends CodeAST
 {
 	static classdoc = "AST node for creating a set object (e.g. ``{x, y, *z}``.";
 
-	constructor(template, pos)
+	constructor(template, posstart, posstop)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.items = [];
 	}
 
@@ -5735,9 +5744,9 @@ export class SetComprehensionAST extends CodeAST
 {
 	static classdoc = "AST node for a set comprehension (e.g. ``{v for (a, b) in w if c}``.";
 
-	constructor(template, pos, item, varname, container, condition)
+	constructor(template, posstart, posstop, item, varname, container, condition)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.item = item;
 		this.varname = varname;
 		this.container = container;
@@ -5806,9 +5815,9 @@ export class DictAST extends CodeAST
 {
 	static classdoc = "AST node for creating a dict object (e.g. `{k: v, **u}`.";
 
-	constructor(template, pos)
+	constructor(template, posstart, posstop)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.items = [];
 	}
 
@@ -5849,9 +5858,9 @@ export class DictComprehensionAST extends CodeAST
 {
 	static classdoc = "AST node for a dictionary comprehension (e.g. ``{k: v for (a, b) in w if c}``.";
 
-	constructor(template, pos, key, value, varname, container, condition)
+	constructor(template, posstart, posstop, key, value, varname, container, condition)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.key = key;
 		this.value = value;
 		this.varname = varname;
@@ -5911,9 +5920,9 @@ export class GeneratorExpressionAST extends CodeAST
 {
 	static classdoc = "AST node for a generator expression (e.g. ``(x for (a, b) in w if c)``).";
 
-	constructor(template, pos, item, varname, container, condition)
+	constructor(template, posstart, posstop, item, varname, container, condition)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.item = item;
 		this.varname = varname;
 		this.container = container;
@@ -5974,9 +5983,9 @@ export class VarAST extends CodeAST
 {
 	static classdoc = "AST node for getting a variable.";
 
-	constructor(template, pos, name)
+	constructor(template, posstart, posstop, name)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.name = name;
 	}
 
@@ -6023,9 +6032,9 @@ export class UnaryAST extends CodeAST
 {
 	static classdoc = "Base class for all AST nodes implementing unary expressions\n(i.e. operators with one operand).";
 
-	constructor(template, pos, obj)
+	constructor(template, posstart, posstop, obj)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.obj = obj;
 	}
 
@@ -6085,9 +6094,9 @@ export class IfAST extends CodeAST
 {
 	static classdoc = "AST node for the ternary inline ``if/else`` operator (e.g. ``x if y else z``).";
 
-	constructor(template, pos, objif, objcond, objelse)
+	constructor(template, posstart, posstop, objif, objcond, objelse)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.objif = objif;
 		this.objcond = objcond;
 		this.objelse = objelse;
@@ -6180,9 +6189,9 @@ export class BinaryAST extends CodeAST
 {
 	static classdoc = "Base class for all UL4 AST nodes implementing binary expressions\n(i.e. operators with two operands).";
 
-	constructor(template, pos, obj1, obj2)
+	constructor(template, posstart, posstop, obj1, obj2)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.obj1 = obj1;
 		this.obj2 = obj2;
 	}
@@ -6849,9 +6858,9 @@ export class AttrAST extends CodeAST
 {
 	static classdoc = "AST node for an expression that gets or sets an attribute of an object.\n(e.g. ``x.y``).";
 
-	constructor(template, pos, obj, attrname)
+	constructor(template, posstart, posstop, obj, attrname)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.obj = obj;
 		this.attrname = attrname;
 	}
@@ -6925,9 +6934,9 @@ export class CallAST extends CodeAST
 {
 	static classdoc = "AST node for calling an object (e.g. ``f(x, y)``).";
 
-	constructor(template, pos, obj, args)
+	constructor(template, posstart, posstop, obj, args)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.obj = obj;
 		this.args = args;
 	}
@@ -6981,9 +6990,9 @@ export class RenderAST extends CallAST
 {
 	static classdoc = "AST node for rendering a template (e.g. ``<?render t(x)?>``.";
 
-	constructor(template, pos, obj, args)
+	constructor(template, posstart, posstop, obj, args)
 	{
-		super(template, pos, obj, args);
+		super(template, posstart, posstop, obj, args);
 		this.indent = null;
 	}
 
@@ -7204,7 +7213,7 @@ export class RenderBlockAST extends RenderAST
 	}
 };
 
-RenderBlockAST.prototype._ul4onattrs = RenderAST.prototype._ul4onattrs.concat(["stoppos", "content"]);
+RenderBlockAST.prototype._ul4onattrs = RenderAST.prototype._ul4onattrs.concat(["stopposstart", "stopposstop", "content"]);
 
 
 export class RenderBlocksAST extends RenderAST
@@ -7258,7 +7267,7 @@ export class RenderBlocksAST extends RenderAST
 	}
 };
 
-RenderBlocksAST.prototype._ul4onattrs = RenderAST.prototype._ul4onattrs.concat(["stoppos", "content"]);
+RenderBlocksAST.prototype._ul4onattrs = RenderAST.prototype._ul4onattrs.concat(["stopposstart", "stopposstop", "content"]);
 
 
 // Slice object
@@ -7310,9 +7319,9 @@ export class SliceAST extends CodeAST
 {
 	static classdoc = "AST node for creating a slice object (used in ``obj[index1:index2]``).";
 
-	constructor(template, pos, index1, index2)
+	constructor(template, posstart, posstop, index1, index2)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.index1 = index1;
 		this.index2 = index2;
 	}
@@ -7347,9 +7356,9 @@ export class ChangeVarAST extends CodeAST
 {
 	static classdoc = "Base class for all AST nodes that are assignment operators, i.e. that\nset or modify a variable/attribute or item.";
 
-	constructor(template, pos, lvalue, value)
+	constructor(template, posstart, posstop, lvalue, value)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.lvalue = lvalue;
 		this.value = value;
 	}
@@ -7475,9 +7484,9 @@ export class BlockAST extends CodeAST
 {
 	static classdoc = "Base class for all AST nodes that are blocks.";
 
-	constructor(template, startpos, stoppos)
+	constructor(template, startposstart, startposstop, stopposstart, stopposstop)
 	{
-		super(template, startpos, stoppos);
+		super(template, startposstart, startposstop, stopposstart, stopposstop);
 		this.content = [];
 	}
 
@@ -7517,15 +7526,15 @@ export class BlockAST extends CodeAST
 	}
 };
 
-BlockAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["stoppos", "content"]);
+BlockAST.prototype._ul4onattrs = CodeAST.prototype._ul4onattrs.concat(["stopposstart", "stopposstop", "content"]);
 
 export class ForBlockAST extends BlockAST
 {
 	static classdoc = "AST node for a ``<?for?>`` loop.";
 
-	constructor(template, pos, varname, container)
+	constructor(template, posstart, posstop, varname, container)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.varname = varname;
 		this.container = container;
 	}
@@ -7615,9 +7624,9 @@ export class WhileBlockAST extends BlockAST
 {
 	static classdoc = "AST node for a ``<?while?>`` loop.";
 
-	constructor(template, pos, condition)
+	constructor(template, posstart, posstop, condition)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.condition = condition;
 	}
 
@@ -7727,9 +7736,9 @@ export class ConditionalBlocksAST extends BlockAST
 
 export class ConditionalBlockAST extends  BlockAST
 {
-	constructor(template, pos, condition)
+	constructor(template, posstart, posstop, condition)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.condition = condition;
 	}
 
@@ -7800,13 +7809,14 @@ export class Template extends BlockAST
 {
 	static classdoc = "An UL4 template";
 
-	constructor(template, pos, source, name, whitespace, signature)
+	constructor(template, posstart, posstop, source, name, whitespace, signature)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this._source = source;
 		this.name = name;
 		this.whitespace = whitespace;
-		this.docpos = null;
+		this.docposstart = -1;
+		this.docposstop = -1;
 		this.signature = signature;
 		this._asts = null;
 		this._ul4_signature = signature;
@@ -7852,7 +7862,8 @@ export class Template extends BlockAST
 		encoder.dump(this.name);
 		encoder.dump(this._source);
 		encoder.dump(this.whitespace);
-		encoder.dump(this.docpos);
+		encoder.dump(this.docposstart);
+		encoder.dump(this.docposstop);
 		encoder.dump(this.parenttemplate);
 		if (this.signature === null || this.signature instanceof SignatureAST)
 			signature = this.signature;
@@ -7884,7 +7895,8 @@ export class Template extends BlockAST
 		this.name = decoder.load();
 		this._source = decoder.load();
 		this.whitespace = decoder.load();
-		this.docpos = decoder.load();
+		this.docposstart = decoder.load();
+		this.docposstop = decoder.load();
 		this.parenttemplate = decoder.load();
 		signature = decoder.load();
 		if (_islist(signature))
@@ -7970,7 +7982,7 @@ export class Template extends BlockAST
 
 	doc()
 	{
-		return this.docpos != null ? this.docpos.of(this._source) : null;
+		return this.docposstart !== -1 ? this._source.slice(this.docposstart, this.docposstop) : null;
 	}
 
 	_callbound(context, vars)
@@ -8017,9 +8029,9 @@ export class SignatureAST extends CodeAST
 {
 	static classdoc = "AST node for the signature of a locally defined subtemplate.";
 
-	constructor(template, pos)
+	constructor(template, posstart, posstop)
 	{
-		super(template, pos);
+		super(template, posstart, posstop);
 		this.params = [];
 	}
 

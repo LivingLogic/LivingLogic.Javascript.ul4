@@ -4,6 +4,9 @@
 
 `TextAST` objects now store their text directly.
 
+Template source code offsets are now stored as two integer values instead
+of as a `Slice` objects.
+
 
 ## Changes in 1.13.1 (2022-07-08)
 
