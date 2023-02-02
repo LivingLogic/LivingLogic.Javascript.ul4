@@ -1,8 +1,14 @@
 # Changes
 
+## Changes in 1.15.1 (2023-02-02)
+
+Fixed version number in `package.json`.
+
+
 ## Changes in 1.15.0 (2023-02-02)
 
 Add support for the `e` and `f` formats for floating point numbers in `format()`.
+
 
 ## Changes in 1.14.0 (2022-08-04)
 
