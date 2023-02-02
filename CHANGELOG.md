@@ -1,6 +1,6 @@
 # Changes
 
-## Changes in HEAD
+## Changes in 1.15.0 (2023-02-02)
 
 Add support for the `e` and `f` formats for floating point numbers in `format()`.
 
