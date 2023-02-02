@@ -3250,74 +3250,129 @@ function _format_datetime(obj, fmt, lang)
 	return result.join("");
 };
 
+class Format
+{
+	static integer_types = ['b', 'c', 'd', 'o', 'x', 'X', 'n'];
+	static float_types = ['e', 'E', 'f', 'F'];
+
+	constructor(fmt)
+	{
+		let work = fmt;
+		// [[fill]align][sign][#][0][minimumwidth][.precision][type]
+	
+		// Defaults
+		this.fill = ' ';
+		this.align = '>'; // '<', '>', '=' or '^'
+		this.sign = '-'; // '+', '-' or ' '
+		this.alternate = false;
+		this.minimumwidth = 0;
+		this.precision = 6;
+		this.type = 'd'; // 'b', 'c', 'd', 'e', 'E', 'f', 'F', 'o', 'x', 'X' or 'n'
+
+		// Determine output type
+		if (/[bcdeEfFoxXn]$/.test(work))
+		{
+			this.type = work.substring(work.length-1);
+			work = work.substring(0, work.length-1);
+		}
+	
+		// extract precision
+		if (/[\.\d+]$/.test(work))
+		{
+			let indexOfLastDot = work.lastIndexOf(".")
+			this.precision = Number(work.substring(indexOfLastDot).substring(1))
+			work = work.substring(0, indexOfLastDot);
+		}
+	
+		// Extract minimum width
+		if (/\d+$/.test(work))
+		{
+			let minimumwidthStr = /\d+$/.exec(work);
+			work = work.replace(/\d+$/, "");
+			if (/^0/.test(minimumwidthStr))
+			{
+				this.align = '=';
+				this.fill = '0';
+			}
+			this.minimumwidth = parseInt(minimumwidthStr);
+		}
+	
+		// Alternate form?
+		if (/#$/.test(work))
+		{
+			this.alternate = true;
+			work = work.substring(0, work.length-1);
+		}
+	
+		// Determine sign
+		if (/[+ -]$/.test(work))
+		{
+			if (this.type == 'c')
+				throw new ValueError("sign not allowed for integer format type 'c'");
+				this.sign = work.substring(work.length-1);
+			work = work.substring(0, work.length-1);
+		}
+	
+		// Extract fill and align char
+		if (work.length >= 3)
+			throw new ValueError("illegal integer format string " + _repr(fmt));
+		else if (work.length == 2)
+		{
+			if (/[<>=^]$/.test(work))
+			{
+				this.align = work[1];
+				this.fill = work[0];
+			}
+			else
+				throw new ValueError("illegal integer format string " + _repr(fmt));
+		}
+		else if (work.length == 1)
+		{
+			if (/^[<>=^]$/.test(work))
+				this.align = work;
+			else
+				throw new ValueError("illegal integer format string " + _repr(fmt));
+		}
+	}
+
+	is_integer_type()
+	{
+		return Format.integer_types.includes(this.type);
+	}
+
+	get_integer_type_or_default()
+	{
+		if (this.is_integer_type())
+			return this.type;
+		else
+			return 'd';
+	}
+
+	is_float_type()
+	{
+		return Format.float_types.includes(this.type);
+	}
+
+	get_float_type_or_default()
+	{
+		if (this.is_float_type())
+			return this.type;
+		else
+			return 'f';
+	}
+};
+
 function _format_int(obj, fmt, lang)
 {
-	let work = fmt;
+	// [[fill]align][sign][#][0][minimumwidth][type]
 
 	// Defaults
-	let fill = ' ';
-	let align = '>'; // '<', '>', '=' or '^'
-	let sign = '-'; // '+', '-' or ' '
-	let alternate = false;
-	let minimumwidth = 0;
-	let type = 'd'; // 'b', 'c', 'd', 'o', 'x', 'X' or 'n'
-
-	// Determine output type
-	if (/[bcdoxXn]$/.test(work))
-	{
-		type = work.substring(work.length-1);
-		work = work.substring(0, work.length-1);
-	}
-
-	// Extract minimum width
-	if (/\d+$/.test(work))
-	{
-		let minimumwidthStr = /\d+$/.exec(work);
-		work = work.replace(/\d+$/, "");
-		if (/^0/.test(minimumwidthStr))
-		{
-			align = '=';
-			fill = '0';
-		}
-		minimumwidth = parseInt(minimumwidthStr);
-	}
-
-	// Alternate form?
-	if (/#$/.test(work))
-	{
-		alternate = true;
-		work = work.substring(0, work.length-1);
-	}
-
-	// Determine sign
-	if (/[+ -]$/.test(work))
-	{
-		if (type == 'c')
-			throw new ValueError("sign not allowed for integer format type 'c'");
-		sign = work.substring(work.length-1);
-		work = work.substring(0, work.length-1);
-	}
-
-	// Extract fill and align char
-	if (work.length >= 3)
-		throw new ValueError("illegal integer format string " + _repr(fmt));
-	else if (work.length == 2)
-	{
-		if (/[<>=^]$/.test(work))
-		{
-			align = work[1];
-			fill = work[0];
-		}
-		else
-			throw new ValueError("illegal integer format string " + _repr(fmt));
-	}
-	else if (work.length == 1)
-	{
-		if (/^[<>=^]$/.test(work))
-			align = work;
-		else
-			throw new ValueError("illegal integer format string " + _repr(fmt));
-	}
+	let fill = fmt.fill;
+	let align = fmt.align; // '<', '>', '=' or '^'
+	let sign = fmt.sign; // '+', '-' or ' '
+	let alternate = fmt.alternate;
+	let minimumwidth = fmt.minimumwidth;
+	let type = fmt.get_integer_type_or_default(); // 'b', 'c', 'd', 'o', 'x', 'X' or 'n'
 
 	// Basic number formatting
 	let neg = obj < 0;
@@ -3399,6 +3454,83 @@ function _format_int(obj, fmt, lang)
 	return output;
 };
 
+
+function _format_float(obj, fmt, lang)
+{
+	let work = fmt;
+	// [[fill]align][sign][#][0][minimumwidth][.precision][type]
+
+	// Defaults
+	let fill = fmt.fill;
+	let align = fmt.align; // '<', '>', '=' or '^'
+	let sign = fmt.sign; // '+', '-' or ' '
+	let alternate = fmt.alternate;
+	let minimumwidth = fmt.minimumwidth;
+	let precision = fmt.precision;
+	let type = fmt.get_float_type_or_default(); // 'e', 'E', 'f', 'F'
+
+	// Basic number formatting
+	let neg = obj < 0;
+
+	if (neg)
+		obj = -obj;
+
+	let output;
+	if (type === 'e' || type === 'E')
+	{
+		output = obj.toExponential(precision);
+		if (type === 'E')
+			output = output.replace('e', 'E');
+	}
+	else
+	{
+		output = obj.toFixed(precision);
+		if (precision === 0 && alternate)
+			output += ".";
+	}
+
+	// The rest of the formatting
+	if (align === '=')
+	{
+		if (neg || sign !== '-')
+			--minimumwidth;
+
+		if (output.length < minimumwidth)
+			output = _str_repeat(fill, minimumwidth-output.length) + output;
+
+		if (neg)
+			output = "-" + output;
+		else if (sign != '-')
+			output = sign + output;
+	}
+	else
+	{
+		if (neg)
+			output = "-" + output;
+		else if (sign != '-')
+			output = sign + output;
+		if (output.length < minimumwidth)
+		{
+			if (align == '<')
+				output = output + _str_repeat(fill, minimumwidth-output.length);
+			else if (align == '>')
+				output = _str_repeat(fill, minimumwidth-output.length) + output;
+			else // if (align == '^')
+			{
+				let pad = minimumwidth - output.length;
+				let padBefore = Math.floor(pad/2);
+				let padAfter = pad-padBefore;
+				output = _str_repeat(fill, padBefore) + output + _str_repeat(fill, padAfter);
+			}
+		}
+	}
+
+	if (["de", "fr", "it", "es", "nl", "no", "pl", "ru", "sv"].includes(lang))
+		output = output.replace(".", ",")
+
+	return output;
+};
+
 // Format `obj` using the format string `fmt` in the language `lang`
 export function _format(obj, fmt, lang)
 {
@@ -3419,8 +3551,14 @@ export function _format(obj, fmt, lang)
 		return _format_datetime(obj._date, fmt, lang);
 	if (_isdatetime(obj))
 		return _format_datetime(obj, fmt, lang);
-	else if (_isint(obj))
-		return _format_int(obj, fmt, lang);
+	else if (typeof(obj) === "number")
+	{
+		let format = new Format(fmt);
+		if (_isfloat(obj) || format.is_float_type())
+			return _format_float(obj, format, lang);
+		else
+			return _format_int(obj, format, lang);
+	}
 	else if (obj === true)
 		return _format_int(1, fmt, lang);
 	else if (obj === false)

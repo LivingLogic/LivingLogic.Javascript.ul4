@@ -1,5 +1,9 @@
 # Changes
 
+## Changes in HEAD
+
+Add support for the `e` and `f` formats for floating point numbers in `format()`.
+
 ## Changes in 1.14.0 (2022-08-04)
 
 `TextAST` objects now store their text directly.
