@@ -19,7 +19,7 @@ you see.
 To run the tests you can execute the following command in an XIST checkout:
 
 ```
-pytest -v -l test/test_ul4.py -m 'js' -v
+pytest -v -l test/test_ul4.py -m 'js'
 ```
 
 
