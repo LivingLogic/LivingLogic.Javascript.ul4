@@ -1,6 +1,6 @@
 # Changes
 
-## Changes in HEAD (2023-02-08)
+## Changes in 1.15.2 (2023-02-08)
 
 Fixed `format()` for integers and booleans.
 
