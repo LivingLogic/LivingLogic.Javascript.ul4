@@ -3277,7 +3277,7 @@ class Format
 		}
 	
 		// extract precision
-		if (/[\.\d+]$/.test(work))
+		if (/\.\d+$/.test(work))
 		{
 			let indexOfLastDot = work.lastIndexOf(".")
 			this.precision = Number(work.substring(indexOfLastDot).substring(1))
