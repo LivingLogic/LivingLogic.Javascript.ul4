@@ -1,5 +1,10 @@
 # Changes
 
+## Changes in HEAD (2023-02-08)
+
+Fixed `format()` for integers and booleans.
+
+
 ## Changes in 1.15.1 (2023-02-02)
 
 Fixed version number in `package.json`.
