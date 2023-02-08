@@ -3560,9 +3560,9 @@ export function _format(obj, fmt, lang)
 			return _format_int(obj, format, lang);
 	}
 	else if (obj === true)
-		return _format_int(1, fmt, lang);
+		return _format_int(1, new Format(fmt), lang);
 	else if (obj === false)
-		return _format_int(0, fmt, lang);
+		return _format_int(0, new Format(fmt), lang);
 };
 
 export function _lpad(string, pad, len)
