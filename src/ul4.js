@@ -7136,13 +7136,10 @@ export class RenderAST extends CallAST
 
 	_repr(out)
 	{
-		out.push(
-			"<",
-			this.constructor.name,
-			" indent=",
-			_repr(this.indent.text),
-			" obj="
-		);
+		out.push("<", this.constructor.name);
+		if (this.indent !== null)
+			out.push(" indent=", _repr(this.indent.text));
+		out.push(" obj=");
 		this.obj._repr(out);
 		out.push(0);
 		for (let arg of this.args)
