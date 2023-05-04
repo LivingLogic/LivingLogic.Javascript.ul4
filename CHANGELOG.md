@@ -2,7 +2,7 @@
 
 ## Changes in 1.15.3 (2023-05-04)
 
-Fixed `RenderAST._repr()`.
+Fixed handling of indentation in `RenderAST._repr()`.
 
 
 ## Changes in 1.15.2 (2023-02-08)
