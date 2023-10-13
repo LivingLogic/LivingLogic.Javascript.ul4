@@ -4693,6 +4693,11 @@ export class DateTimeType extends Type
 				return 31 + 28 + leap + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30 + day;
 		}
 	}
+
+	timestamp(obj)
+	{
+		return obj.getTime() / 1000.0;
+	}
 };
 
 DateTimeType.prototype.attrs = new Set([
@@ -4709,7 +4714,8 @@ DateTimeType.prototype.attrs = new Set([
 	"date",
 	"mimeformat",
 	"isoformat",
-	"yearday"
+	"yearday",
+	"timestamp"
 ]);
 
 expose(DateTimeType.prototype.weekday, []);
@@ -4726,6 +4732,7 @@ expose(DateTimeType.prototype.date, []);
 expose(DateTimeType.prototype.mimeformat, []);
 expose(DateTimeType.prototype.isoformat, []);
 expose(DateTimeType.prototype.yearday, []);
+expose(DateTimeType.prototype.timestamp, []);
 expose(DateTimeType.prototype, ["year", "pk", "month", "pk", "day", "pk", "hour", "pk=", 0, "minute", "pk=", 0, "second", "pk=", 0, "microsecond", "pk=", 0], {name: "datetime"});
 
 export let datetimetype = new DateTimeType(null, "datetime", "A datetime");
