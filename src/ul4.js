@@ -7951,11 +7951,12 @@ export class Template extends BlockAST
 {
 	static classdoc = "An UL4 template";
 
-	constructor(template, posstart, posstop, source, name, whitespace, signature)
+	constructor(template, posstart, posstop, source, name, namespace, whitespace, signature)
 	{
 		super(template, posstart, posstop);
 		this._source = source;
 		this.name = name;
+		this.namespace = namespace;
 		this.whitespace = whitespace;
 		this.docposstart = -1;
 		this.docposstop = -1;
@@ -7976,6 +7977,10 @@ export class Template extends BlockAST
 				return this.source;
 			case "name":
 				return this.name;
+			case "namespace":
+				return this.namespace;
+			case "fullname":
+				return this.fullname;
 			case "whitespace":
 				return this.whitespace;
 			case "doc":
@@ -8002,6 +8007,7 @@ export class Template extends BlockAST
 		let signature;
 		encoder.dump(api_version);
 		encoder.dump(this.name);
+		encoder.dump(this.namespace);
 		encoder.dump(this._source);
 		encoder.dump(this.whitespace);
 		encoder.dump(this.docposstart);
@@ -8035,6 +8041,7 @@ export class Template extends BlockAST
 			throw new ValueError("Invalid UL4 version, expected " + api_version + ", got " + loaded_api_version);
 
 		this.name = decoder.load();
+		this.namespace = decoder.load();
 		this._source = decoder.load();
 		this.whitespace = decoder.load();
 		this.docposstart = decoder.load();
@@ -8046,6 +8053,13 @@ export class Template extends BlockAST
 		this.signature = signature;
 		this._ul4_signature = signature;
 		super.ul4onload(decoder);
+	}
+
+	get fullname()
+	{
+		if (this.name == null)
+			return null;
+		return this.namespace != null ? this.namespace + "." + this.name : this.name;
 	}
 
 	loads(string)
@@ -8066,7 +8080,7 @@ export class Template extends BlockAST
 	{
 		out.push("<", this.constructor.name);
 		if (this.name !== null)
-			out.push(" name=", _repr(this.name));
+			out.push(" fullname=", this.fullname);
 		out.push(" whitespace=", _repr(this.whitespace), ">");
 	}
 
@@ -8074,7 +8088,7 @@ export class Template extends BlockAST
 	{
 		out.push(
 			"def ",
-			this.name ? this.name : "unnamed",
+			this.fullname || "unnamed",
 			":",
 			+1
 		);
@@ -8260,6 +8274,7 @@ export class TemplateClosure extends Proto
 		this._ul4_signature = signature;
 		// Copy over the required attribute from the template
 		this.name = template.name;
+		this.namespace = template.namespace;
 		this.tag = template.tag;
 		this.endtag = template.endtag;
 		this._source = template._source;

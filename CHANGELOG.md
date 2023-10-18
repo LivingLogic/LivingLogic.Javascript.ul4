@@ -4,6 +4,8 @@
 
 Add method `timestamp` to UL4 type `datetime`.
 
+Add attributes `namespace` and `fullname` to class `Template`.
+
 
 ## Changes in 1.15.3 (2023-05-04)
 
