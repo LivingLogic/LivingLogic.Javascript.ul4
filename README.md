@@ -12,7 +12,7 @@ serialization format.
 # Implementations
 
 Apart from this Javascript implementation there are implementations of UL4
-and UL4ON for [Python](https://github.com/LivingLogic/LivingLogic.Python.xist),
+and UL4ON for [Python](https://github.com/LivingLogic/LivingLogic.Python.xist)
 and [Java](https://github.com/LivingLogic/LivingLogic.Java.ul4).
 
 
