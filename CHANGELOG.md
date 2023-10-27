@@ -1,6 +1,6 @@
 # Changes
 
-## Changes in HEAD (2023-05-04)
+## Changes in 1.16.0 (2023-10-27)
 
 Add method `timestamp` to UL4 type `datetime`.
 
