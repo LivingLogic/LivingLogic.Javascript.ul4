@@ -1,5 +1,10 @@
 # Changes
 
+## Changes in 1.16.1 (2023-11-22)
+
+Removed `package.json` from `package.json`.
+
+
 ## Changes in 1.16.0 (2023-10-27)
 
 Add method `timestamp` to UL4 type `datetime`.

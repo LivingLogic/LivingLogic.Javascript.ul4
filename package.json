@@ -35,8 +35,7 @@
 		"rollup": "^3.10.0"
 	},
 	"dependencies": {
-		"blueimp-md5": "^2.19.0",
-		"package.json": "^2.0.1"
+		"blueimp-md5": "^2.19.0"
 	},
 	"bugs": {
 		"url": "https://github.com/LivingLogic/LivingLogic.Javascript.ul4/issues"

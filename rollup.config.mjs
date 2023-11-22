@@ -14,7 +14,7 @@ const plugins = [
 			"@babel/preset-env"
 		],
 		plugins: [
-			"@babel/plugin-proposal-class-properties"
+			"@babel/plugin-transform-class-properties"
 		]
 	}),
 	terser({
