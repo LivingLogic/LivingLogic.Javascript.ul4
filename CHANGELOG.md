@@ -1,5 +1,11 @@
 # Changes
 
+## Changes in 1.17.0 (2024-07-08)
+
+Fixed double XML escaping when the `renders()` method was called inside
+a `renderx` tag.
+
+
 ## Changes in 1.16.1 (2023-11-22)
 
 Removed `package.json` from `package.json`.
