@@ -4793,6 +4793,61 @@ export class GenericType extends Type
 }
 
 
+export class StringStream
+{
+	constructor()
+	{
+		this._output = [];
+	}
+
+	write(str)
+	{
+		this._output.push(str);
+	}
+
+	toString()
+	{
+		return this._output.join("");
+	}
+};
+
+
+export class NullStream
+{
+	constructor()
+	{
+	}
+
+	write(str)
+	{
+	}
+
+	toString()
+	{
+		return "";
+	}
+};
+
+
+export class XMLEscapeStream
+{
+	constructor(stream)
+	{
+		this._stream = stream;
+	}
+
+	write(str)
+	{
+		this._stream.write(_xmlescape(str));
+	}
+
+	toString()
+	{
+		return this._stream.toString();
+	}
+};
+
+
 export class Context
 {
 	constructor(vars=null, globals=null)
@@ -4801,7 +4856,7 @@ export class Context
 		this.globals = _extend(builtins, globals || {});
 		this.indents = [];
 		this.escapes = [];
-		this._output = [];
+		this._output = new StringStream();
 	}
 
 	/* Return a clone of the `Context`, but with a fresh empty `vars` objects that inherits from the previous one.
@@ -4830,7 +4885,7 @@ export class Context
 	replaceoutput()
 	{
 		let context = Object.create(this);
-		context._output = [];
+		context._output = new StringStream();
 		return context;
 	}
 
@@ -4841,16 +4896,14 @@ export class Context
 		return context;
 	}
 
-	output(value)
+	write(value)
 	{
-		for (let escape of this.escapes)
-			value = escape(value);
-		this._output.push(value);
+		this._output.write(value);
 	}
 
 	getoutput()
 	{
-		return this._output.join("");
+		return this._output.toString();
 	}
 
 	get(name)
@@ -5342,7 +5395,7 @@ export class TextAST extends AST
 
 	_eval(context)
 	{
-		context.output(this.text);
+		context.write(this.text);
 	}
 
 	_str(out)
@@ -5365,8 +5418,8 @@ export class IndentAST extends TextAST
 	_eval(context)
 	{
 		for (let indent of context.indents)
-			context.output(indent);
-		context.output(this.text);
+			context.write(indent);
+		context.write(this.text);
 	}
 
 	_str(out)
@@ -6302,7 +6355,7 @@ export class PrintAST extends UnaryAST
 	{
 		let obj = this.obj._handle_eval(context);
 		let output = _str(obj);
-		context.output(output);
+		context.write(output);
 	}
 
 	_str(out)
@@ -6320,7 +6373,7 @@ export class PrintXAST extends UnaryAST
 	{
 		let obj = this.obj._handle_eval(context);
 		let output = _xmlescape(obj);
-		context.output(output);
+		context.write(output);
 	}
 
 	_str(out)
@@ -7174,16 +7227,16 @@ export class RenderAST extends CallAST
 
 	_renderx_object(context, obj, args, kwargs)
 	{
-		context.escapes.push(_xmlescape);
-
 		let result = null;
+		let oldstream = context._output;
 		try
 		{
+			context._output = new XMLEscapeStream(oldstream);
 			result = _callrender(context, obj, args, kwargs);
 		}
 		finally
 		{
-			context.escapes.splice(context.escapes.length-1, 1);
+			context._output = oldstream;
 		}
 		return result;
 	}
@@ -7196,13 +7249,13 @@ export class RenderAST extends CallAST
 	_print_object(context, obj, args, kwargs)
 	{
 		let output = _str(obj);
-		context.output(output);
+		context.write(output);
 	}
 
 	_printx_object(context, obj)
 	{
 		let output = _xmlescape(obj);
-		context.output(output);
+		context.write(output);
 	}
 
 	_dont_print_object(context, obj)
@@ -8144,6 +8197,8 @@ export class Template extends BlockAST
 	_callbound(context, vars)
 	{
 		let localcontext = context.replacevars(vars);
+		// Ignore normal output from the template
+		localcontext._output = new NullStream();
 		try
 		{
 			BlockAST.prototype._eval.call(this, localcontext);
