@@ -8197,6 +8197,7 @@ export class Template extends BlockAST
 	_callbound(context, vars)
 	{
 		let localcontext = context.replacevars(vars);
+		// Ignore normal output from the template
 		localcontext._output = new NullStream();
 		try
 		{
