@@ -1,5 +1,10 @@
 # Changes
 
+## Changes in 1.18.0 (2024-11-13)
+
+Added support for `operator.itemgetter`.
+
+
 ## Changes in 1.17.0 (2024-07-08)
 
 Fixed double XML escaping when the `renders()` method was called inside

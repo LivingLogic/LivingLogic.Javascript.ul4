@@ -9318,33 +9318,58 @@ export class AttrGetter
 expose(AttrGetter.prototype, ["obj", "p"], {name: "attrgetter"});
 
 
-export function _attrgetter(attrnames)
+
+
+export class ItemGetterType extends Type
 {
-	function getone(obj, dottedname)
+	[symbols.call](indices)
 	{
-		let result = obj;
-		for (let name of dottedname.split("."))
-			result = AttrAST.prototype._get(result, name);
-		return result;
+		return new ItemGetter(indices);
 	}
 
-	function get(obj)
+	instancecheck(obj)
 	{
-		if (attrnames.length === 1)
-			return getone(obj, attrnames[0]);
+		return obj instanceof ItemGetter;
+	}
+};
+
+expose(ItemGetterType.prototype, ["indices", "*"], {name: "itemgetter"});
+
+let itemgettertype = new ItemGetterType("operator", "tiemgetter", "A callable object that fetches the given item(s) from its operand.");
+
+export class ItemGetter
+{
+	// Create a new ItemGetter object
+	constructor(indices)
+	{
+		this.indices = indices;
+	}
+
+	[symbols.type]()
+	{
+		return itemgettertype;
+	}
+
+	_getone(obj, index)
+	{
+		return ItemAST.prototype._do(obj, index);
+	}
+
+	[symbols.call](obj)
+	{
+		if (this.indices.length === 1)
+			return this._getone(obj, this.indices[0])
 		else
 		{
 			let result = [];
-			for (let dottedattrname of attrnames)
-				result.push(getone(obj, dottedattrname));
+			for (let index of this.indices)
+				result.push(this._getone(obj, index));
 			return result;
 		}
 	}
-	expose(get, ["obj", "p"]);
-	return get;
-}
+};
 
-expose(_attrgetter, ["attrs", "*"]);
+expose(ItemGetter.prototype, ["obj", "p"], {name: "itemgetter"});
 
 expose(_repr, ["obj", "p"], {name: "repr"});
 expose(_ascii, ["obj", "p"], {name: "ascii"});
@@ -10761,7 +10786,8 @@ export const _operator = new Module(
 	"operator",
 	"Various operators as functions",
 	{
-		attrgetter: attrgettertype
+		attrgetter: attrgettertype,
+		itemgetter: itemgettertype
 	}
 );
 
