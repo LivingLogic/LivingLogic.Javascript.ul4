@@ -9673,7 +9673,14 @@ export class Color extends Proto
 	{
 		if (this._a !== 0xff)
 		{
-			return "rgba(" + this._r + ", " + this._g + ", " + this._b + ", " + (this._a/255) + ")";
+			let r = _lpad(this._r.toString(16), "0", 2);
+			let g = _lpad(this._g.toString(16), "0", 2);
+			let b = _lpad(this._b.toString(16), "0", 2);
+			let a = _lpad(this._a.toString(16), "0", 2);
+			if (r[0] === r[1] && g[0] === g[1] && b[0] === b[1] && a[0] === a[1])
+				return "#" + r[0] + g[0] + b[0] + a[0];
+			else
+				return "#" + r + g + b + a;
 		}
 		else
 		{

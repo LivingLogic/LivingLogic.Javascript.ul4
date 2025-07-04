@@ -1,5 +1,11 @@
 # Changes
 
+## Changes in HEAD (2025-??-??)
+
+`str()` output for colors now no longer uses the `rgba()` format for color
+that have an alpha channel.
+
+
 ## Changes in 1.18.0 (2024-11-13)
 
 Added support for `operator.itemgetter`.
