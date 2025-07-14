@@ -1,6 +1,6 @@
 # Changes
 
-## Changes in HEAD (2025-??-??)
+## Changes in 1.19.0 (2025-07-14)
 
 `str()` output for colors now no longer uses the `rgba()` format for color
 that have an alpha channel.
