@@ -5,6 +5,9 @@
 `str()` output for colors now no longer uses the `rgba()` format for color
 that have an alpha channel.
 
+Added the following methods to `str`: `isdigit()`, `isasciidigit()`,
+`removesuffix()` and `removeprefix()`.
+
 
 ## Changes in 1.18.0 (2024-11-13)
 

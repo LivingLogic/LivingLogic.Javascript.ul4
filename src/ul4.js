@@ -3833,6 +3833,22 @@ export class StrType extends Type
 		return obj;
 	}
 
+	removeprefix(obj, prefix)
+	{
+		if (obj.startsWith(prefix))
+			return obj.substring(prefix.length);
+		else
+			return obj;
+	}
+
+	removesuffix(obj, suffix)
+	{
+		if (obj.endsWith(suffix))
+			return obj.substring(0, obj.length - suffix.length);
+		else
+			return obj;
+	}
+
 	split(obj, sep=null, maxsplit=null)
 	{
 		if (sep !== null && typeof(sep) !== "string")
@@ -4071,6 +4087,8 @@ StrType.prototype.attrs = new Set([
 	"strip",
 	"lstrip",
 	"rstrip",
+	"removeprefix",
+	"removesuffix",
 	"upper",
 	"lower",
 	"capitalize",
@@ -4092,6 +4110,8 @@ expose(StrType.prototype.replace, ["old", "p", "new", "p", "count", "p=", null])
 expose(StrType.prototype.strip, ["chars", "p=", null]);
 expose(StrType.prototype.lstrip, ["chars", "p=", null]);
 expose(StrType.prototype.rstrip, ["chars", "p=", null]);
+expose(StrType.prototype.removeprefix, ["prefix", "p"]);
+expose(StrType.prototype.removesuffix, ["suffix", "p"]);
 expose(StrType.prototype.split, ["sep", "pk=", null, "maxsplit", "pk=", null]);
 expose(StrType.prototype.rsplit, ["sep", "pk=", null, "maxsplit", "pk=", null]);
 expose(StrType.prototype.splitlines, ["keepends", "pk=", false]);
