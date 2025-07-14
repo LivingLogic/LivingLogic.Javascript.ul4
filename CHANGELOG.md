@@ -1,5 +1,14 @@
 # Changes
 
+## Changes in 1.19.0 (2025-07-14)
+
+`str()` output for colors now no longer uses the `rgba()` format for color
+that have an alpha channel.
+
+Added the following methods to `str`: `isdigit()`, `isasciidigit()`,
+`removesuffix()` and `removeprefix()`.
+
+
 ## Changes in 1.18.0 (2024-11-13)
 
 Added support for `operator.itemgetter`.
