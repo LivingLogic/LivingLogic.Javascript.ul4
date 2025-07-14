@@ -4103,6 +4103,8 @@ expose(StrType.prototype.startswith, ["prefix", "p"]);
 expose(StrType.prototype.endswith, ["suffix", "p"]);
 expose(StrType.prototype.isdigit, []);
 expose(StrType.prototype, ["obj", "p=", ""], {name: "str"});
+expose(StrType.prototype.isdigit, []);
+expose(StrType.prototype.isasciidigit, []);
 
 export let strtype = new StrType(null, "str", "A string.");
 
